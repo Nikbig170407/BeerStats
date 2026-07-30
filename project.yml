@@ -27,7 +27,14 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: BeerStats
+      - path: App
+      - path: Core
+      - path: DesignSystem
+      - path: Features
+      - path: Models
+      - path: Repositories
+      - path: Services
+      - path: Resources
     dependencies:
       - package: Firebase
         product: FirebaseAuth
