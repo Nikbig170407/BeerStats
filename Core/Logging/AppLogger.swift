@@ -9,6 +9,7 @@
 //  Verwendung: AppLogger.firestore.info("Spiel \(gameId) geladen")
 //
 
+import Foundation
 import os
 
 enum AppLogger {
