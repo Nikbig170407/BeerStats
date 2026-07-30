@@ -17,18 +17,22 @@ import UserNotifications
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
 
-    func application(
+func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        FirebaseApp.configure()
-        AppLogger.app.info("Firebase erfolgreich initialisiert")
+        // Bereits in BeerStatsApp.init() konfiguriert (siehe dortiger Kommentar
+        // zur Startreihenfolge) – hier nur zur Absicherung, falls dieser
+        // AppDelegate-Callback doch vor dem App-Init ausgeführt wird.
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+            AppLogger.app.info("Firebase erfolgreich initialisiert")
+        }
 
         configurePushNotifications(application)
 
         return true
     }
-
     // MARK: - Push Notifications
 
     private func configurePushNotifications(_ application: UIApplication) {
