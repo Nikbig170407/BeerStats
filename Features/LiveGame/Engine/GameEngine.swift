@@ -18,27 +18,6 @@
 
 import Foundation
 
-/// Alles, was ein Spieler während des Spiels auslösen kann.
-enum GameAction: Equatable {
-    /// Becher auf dem gegnerischen Rack getroffen.
-    case hitCup(index: Int)
-    /// Danebengeworfen, Ball ist aus dem Spiel.
-    case miss
-    /// Weder Becher noch Tisch getroffen.
-    case airball
-    /// Ball kam ohne Bodenkontakt zurück und wurde gefangen – derselbe
-    /// Spieler bekommt einen Trickshot-Bonuswurf.
-    case rebound
-    /// Zweiter Werfer trifft denselben Becher wie sein Teamkollege.
-    case bombe
-    /// Nächster Treffer war ein Aufsetzer.
-    case toggleBounce
-    /// Becher im Rahmen einer erzwungenen Auswahl wegstellen.
-    case chooseCup(index: Int)
-    /// Gegnerische Becher neu aufstellen.
-    case reRack(RackFormation)
-}
-
 /// Was durch eine Aktion tatsächlich passiert ist – Grundlage für
 /// Animationen, Haptik und den Ereignis-Log.
 enum GameEvent: Equatable {

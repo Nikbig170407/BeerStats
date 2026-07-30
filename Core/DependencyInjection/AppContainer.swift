@@ -18,6 +18,7 @@ struct AppContainer {
     let authRepository: AuthRepositoryProtocol
     let friendRepository: FriendRepositoryProtocol
     let gameRepository: GameRepositoryProtocol
+    let throwRepository: ThrowRepositoryProtocol
 
     /// Produktive Konfiguration mit echten Firebase-Implementierungen.
     static func live() -> AppContainer {
@@ -25,17 +26,20 @@ struct AppContainer {
         let userService = FirebaseUserService()
         let friendService = FirebaseFriendService()
         let gameService = FirebaseGameService()
+        let throwService = FirebaseThrowService()
 
         let authRepository = AuthRepository(authService: authService, userService: userService)
         let friendRepository = FriendRepository(friendService: friendService, userService: userService)
         let gameRepository = GameRepository(gameService: gameService)
+        let throwRepository = ThrowRepository(throwService: throwService)
 
         return AppContainer(
             authService: authService,
             userService: userService,
             authRepository: authRepository,
             friendRepository: friendRepository,
-            gameRepository: gameRepository
+            gameRepository: gameRepository,
+            throwRepository: throwRepository
         )
     }
 
@@ -45,17 +49,20 @@ struct AppContainer {
         let userService = PreviewUserService()
         let friendService = PreviewFriendService()
         let gameService = PreviewGameService()
+        let throwService = PreviewThrowService()
 
         let authRepository = AuthRepository(authService: authService, userService: userService)
         let friendRepository = FriendRepository(friendService: friendService, userService: userService)
         let gameRepository = GameRepository(gameService: gameService)
+        let throwRepository = ThrowRepository(throwService: throwService)
 
         return AppContainer(
             authService: authService,
             userService: userService,
             authRepository: authRepository,
             friendRepository: friendRepository,
-            gameRepository: gameRepository
+            gameRepository: gameRepository,
+            throwRepository: throwRepository
         )
     }
 }
@@ -114,4 +121,11 @@ private final class PreviewGameService: GameServiceProtocol {
         AsyncStream { continuation in continuation.yield([]) }
     }
     func updateGameStatus(gameId: String, status: GameStatus, startedAt: Date?) async throws {}
+}
+
+private final class PreviewThrowService: ThrowServiceProtocol {
+    func appendThrow(_ throwEvent: Throw, gameId: String) async throws {}
+    func observeThrows(gameId: String) -> AsyncStream<[Throw]> {
+        AsyncStream { continuation in continuation.yield([]) }
+    }
 }

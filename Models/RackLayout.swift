@@ -125,7 +125,10 @@ struct RackLayout: Equatable {
 // MARK: - Formationen
 
 /// Eine wählbare Aufstellung beim Re-Rack.
-struct RackFormation: Identifiable, Equatable {
+///
+/// `Codable`, weil ein Re-Rack als Eintrag im Throw-Log landet und beim
+/// Nachspielen exakt dieselbe Aufstellung ergeben muss.
+struct RackFormation: Identifiable, Equatable, Codable {
 
     let name: String
     /// Becher pro Reihe, Index 0 = hintere Tischkante.

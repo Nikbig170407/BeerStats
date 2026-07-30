@@ -90,6 +90,14 @@ struct Throw: Codable, Identifiable, Equatable {
     /// entfernten Becher, ausgewählt vom Team, das sie trinken muss.
     var chosenCupIds: [String]?
 
+    /// Die auslösende Aktion aus der Regel-Engine.
+    ///
+    /// Die Felder oben beschreiben den Wurf fachlich (Grundlage für die
+    /// Statistik-Aggregation), dieses Feld beschreibt ihn exakt genug, um
+    /// den Spielstand daraus wiederherzustellen. Beides zusammen macht den
+    /// Log sowohl auswertbar als auch wiederabspielbar.
+    var action: GameAction?
+
     @ServerTimestamp var timestamp: Date?
 
     init(
@@ -106,7 +114,8 @@ struct Throw: Codable, Identifiable, Equatable {
         enablesTrickshot: Bool = false,
         triggeredByThrowId: String? = nil,
         cupsRemoved: Int = 0,
-        chosenCupIds: [String]? = nil
+        chosenCupIds: [String]? = nil,
+        action: GameAction? = nil
     ) {
         self.id = id
         self.playerId = playerId
@@ -122,6 +131,7 @@ struct Throw: Codable, Identifiable, Equatable {
         self.triggeredByThrowId = triggeredByThrowId
         self.cupsRemoved = cupsRemoved
         self.chosenCupIds = chosenCupIds
+        self.action = action
     }
 
     /// Ob ein Airball bei diesem Wurf eine Trink-Strafe auslöst. Zentral

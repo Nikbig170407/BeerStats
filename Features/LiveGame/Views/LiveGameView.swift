@@ -23,9 +23,22 @@ struct LiveGameView: View {
 
     @State private var abortProgress: CGFloat = 0
 
-    init(teams: [Team], format: GameFormat, playersPerTeam: Int, perspectiveTeamIndex: Int = 0) {
+    init(
+        teams: [Team],
+        format: GameFormat,
+        playersPerTeam: Int,
+        perspectiveTeamIndex: Int = 0,
+        gameId: String? = nil,
+        throwRepository: ThrowRepositoryProtocol? = nil
+    ) {
         _viewModel = StateObject(
-            wrappedValue: LiveGameViewModel(teams: teams, format: format, playersPerTeam: playersPerTeam)
+            wrappedValue: LiveGameViewModel(
+                teams: teams,
+                format: format,
+                playersPerTeam: playersPerTeam,
+                gameId: gameId,
+                throwRepository: throwRepository
+            )
         )
         self.perspectiveTeamIndex = perspectiveTeamIndex
     }

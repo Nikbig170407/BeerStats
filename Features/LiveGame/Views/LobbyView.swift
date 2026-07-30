@@ -12,6 +12,9 @@ import SwiftUI
 struct LobbyView: View {
 
     @StateObject private var viewModel: LobbyViewModel
+    /// Über die Environment statt über den Initialisierer, damit der
+    /// aufrufende HomeView-Code unverändert bleibt.
+    @Environment(\.appContainer) private var appContainer
 
     init(gameRepository: GameRepositoryProtocol, gameId: String, currentUserId: String) {
         _viewModel = StateObject(
@@ -74,7 +77,9 @@ struct LobbyView: View {
                     teams: game.teams,
                     format: game.format,
                     playersPerTeam: game.type == .oneVsOne ? 1 : 2,
-                    perspectiveTeamIndex: perspectiveTeamIndex(in: game)
+                    perspectiveTeamIndex: perspectiveTeamIndex(in: game),
+                    gameId: viewModel.gameId,
+                    throwRepository: appContainer.throwRepository
                 )
             } label: {
                 Text("Live-Tracking öffnen")

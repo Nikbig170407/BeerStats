@@ -28,46 +28,138 @@ final class LiveGameViewModel: ObservableObject {
     let teams: [Team]
     let format: GameFormat
 
+    private let playersPerTeam: Int
+    private let gameId: String?
+    private let throwRepository: ThrowRepositoryProtocol?
+
+    /// Lokale Zustands-Schnappschüsse. Sie machen Undo sofort sichtbar,
+    /// unabhängig davon, ob der kompensierende Log-Eintrag schon
+    /// zurückbestätigt wurde – und sie sind der einzige Undo-Weg, wenn gar
+    /// kein Repository angebunden ist.
     private var history: [LiveGameState] = []
     private var highlightDismissTask: Task<Void, Never>?
+    private var observationTask: Task<Void, Never>?
 
     private static let maxHistory = 60
     private static let maxLogEntries = 30
 
     // MARK: - Aufbau
 
-    init(teams: [Team], format: GameFormat, playersPerTeam: Int) {
+    /// `gameId` und `throwRepository` sind optional, damit sich der Screen
+    /// auch ohne Firestore betreiben lässt – etwa in SwiftUI-Previews.
+    init(
+        teams: [Team],
+        format: GameFormat,
+        playersPerTeam: Int,
+        gameId: String? = nil,
+        throwRepository: ThrowRepositoryProtocol? = nil
+    ) {
         self.teams = teams
         self.format = format
+        self.playersPerTeam = playersPerTeam
+        self.gameId = gameId
+        self.throwRepository = throwRepository
         self.state = GameEngine.makeInitialState(format: format, playersPerTeam: playersPerTeam)
+        observeThrows()
+    }
+
+    deinit {
+        observationTask?.cancel()
+        highlightDismissTask?.cancel()
+    }
+
+    /// Der Log ist die Wahrheit: Sobald ein Eintrag ankommt – vom eigenen
+    /// Gerät oder von einem Mitspieler – wird der Spielstand daraus neu
+    /// aufgebaut.
+    private func observeThrows() {
+        guard let gameId, let throwRepository else { return }
+        observationTask = Task { [weak self] in
+            guard let self else { return }
+            for await entries in throwRepository.observeThrows(gameId: gameId) {
+                let rebuilt = throwRepository.replay(
+                    entries,
+                    format: self.format,
+                    playersPerTeam: self.playersPerTeam
+                )
+                // Firestore liefert eigene Schreibvorgänge sofort aus dem
+                // lokalen Cache mit. Ein Unterschied zum aktuellen Zustand
+                // bedeutet hier also: Ein Mitspieler hat etwas eingegeben.
+                if rebuilt != self.state {
+                    withAnimation(AppAnimation.standard) { self.state = rebuilt }
+                }
+            }
+        }
     }
 
     // MARK: - Aktionen
 
     func perform(_ action: GameAction) {
-        // Der Zustand ist ein Wert-Typ, ein Snapshot ist daher schlicht eine
-        // Kopie – das macht Undo beliebig tief und kostet fast nichts.
-        let snapshot = state
+        let thrower = state.currentThrower
         let result = GameEngine.apply(action, to: state, format: format)
 
         guard result.state != state else { return }   // Aktion war nicht erlaubt
 
-        history.append(snapshot)
-        if history.count > Self.maxHistory { history.removeFirst() }
-
+        // Optimistisch sofort anzeigen: Am Tisch darf zwischen Tippen und
+        // sichtbarer Reaktion keine Netzwerk-Latenz liegen.
+        let snapshot = state
         state = result.state
         handle(result.events)
+
+        guard action.isPersistable else { return }
+        history.append(snapshot)
+        if history.count > Self.maxHistory { history.removeFirst() }
+        persist(action, by: thrower, basedOn: result.state)
+    }
+
+    private func persist(_ action: GameAction, by thrower: PlayerRef, basedOn newState: LiveGameState) {
+        guard let gameId, let throwRepository else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await throwRepository.record(
+                    action: action,
+                    by: thrower,
+                    in: newState,
+                    gameId: gameId,
+                    teams: self.teams
+                )
+            } catch {
+                AppLogger.firestore.error("Wurf konnte nicht gespeichert werden: \(error.localizedDescription)")
+            }
+        }
     }
 
     var canUndo: Bool { !history.isEmpty }
 
+    /// Rückgängig heißt: lokal sofort zurückspringen und zusätzlich einen
+    /// kompensierenden Eintrag anhängen. Der Log bleibt dadurch vollständig
+    /// – nichts wird gelöscht – und die Mitspieler sehen die Korrektur.
     func undo() {
         guard let previous = history.popLast() else { return }
+
+        let thrower = state.currentThrower
+        let snapshot = state
         state = previous
+
         highlightDismissTask?.cancel()
         highlight = nil
         appendLog("↶ Letzte Aktion rückgängig gemacht.")
         HapticManager.lightImpact()
+
+        guard let gameId, let throwRepository else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await throwRepository.recordUndo(
+                    by: thrower,
+                    in: snapshot,
+                    gameId: gameId,
+                    teams: self.teams
+                )
+            } catch {
+                AppLogger.firestore.error("Undo konnte nicht gespeichert werden: \(error.localizedDescription)")
+            }
+        }
     }
 
     // MARK: - Abfragen für die View
