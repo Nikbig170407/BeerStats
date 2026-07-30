@@ -1,0 +1,122 @@
+// firestore.rules
+//
+// Zentrale Zugriffsregel (siehe Architektur-Dokument 9.3): Clients dürfen
+// NIE Statistiken oder Ranglisten schreiben – das passiert ausschließlich
+// über Cloud Functions mit Admin-Rechten, die diese Regeln umgehen.
+// Clients dürfen bei Spielen nur `throws`-Dokumente ERSTELLEN (nie ändern
+// oder löschen), damit das Append-Only-Log manipulationssicher bleibt.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // MARK: - users
+
+    match /users/{userId} {
+      // Profile sind für alle angemeldeten Nutzer lesbar (Suche, Freundes-
+      // vorschläge). Feingranularere Sichtbarkeit (privacySettings) wird
+      // clientseitig respektiert, nicht über Rules erzwungen – echte
+      // Geheimhaltung einzelner Felder bräuchte separate Dokumente, was für
+      // Statistik-Sichtbarkeit hier bewusst nicht nötig ist.
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
+      // `stats` darf NICHT vom Client geschrieben werden, auch nicht vom
+      // Owner selbst – nur über eine Cloud Function. Wird über die
+      // fehlende Erlaubnis für geänderte `stats`-Felder erzwungen.
+      allow update: if isOwner(userId)
+                    && request.resource.data.stats == resource.data.stats;
+      allow delete: if false; // Löschung nur über Cloud Function (Kaskade)
+
+      // Kanonische Lifetime-Statistik – ausschließlich lesbar für den Owner,
+      // Schreibzugriff ausschließlich über Cloud Functions (Admin SDK).
+      match /stats/{document=**} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+    }
+
+    // Verhindert doppelte Usernamen: Erstellung nur, wenn die Dokument-ID
+    // (= Username) noch nicht existiert; danach unveränderlich.
+    match /usernames/{username} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // MARK: - friendships
+
+    match /friendships/{friendshipId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+
+      allow create: if isSignedIn()
+                    && request.auth.uid in request.resource.data.participantIds
+                    && request.resource.data.requestedBy == request.auth.uid
+                    && request.resource.data.status == 'pending';
+
+      // Nur der NICHT anfragende Teilnehmer darf den Status ändern
+      // (annehmen/ablehnen) – verhindert, dass sich jemand selbst bestätigt.
+      allow update: if isSignedIn()
+                    && request.auth.uid in resource.data.participantIds
+                    && request.auth.uid != resource.data.requestedBy
+                    && request.resource.data.participantIds == resource.data.participantIds
+                    && request.resource.data.requestedBy == resource.data.requestedBy;
+
+      allow delete: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+    }
+
+    // MARK: - games
+
+    match /games/{gameId} {
+      allow read: if isSignedIn()
+                  && (request.auth.uid in resource.data.allPlayerIds || resource.data.isPublic == true);
+
+      allow create: if isSignedIn()
+                    && request.auth.uid == request.resource.data.createdBy
+                    && request.auth.uid in request.resource.data.allPlayerIds;
+
+      // Teilnehmer dürfen den Live-Zustand aktualisieren (Score, cupsRemaining,
+      // Status etc.) – die feingranulare Wurf-für-Wurf-Konsistenz stellt die
+      // Cloud Function sicher, die auf neue throws-Dokumente reagiert.
+      allow update: if isSignedIn() && request.auth.uid in resource.data.allPlayerIds;
+
+      allow delete: if false;
+
+      // Append-Only-Log: nur Erstellung erlaubt, niemals Änderung/Löschung.
+      match /throws/{throwId} {
+        allow read: if isSignedIn()
+                    && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.allPlayerIds;
+
+        allow create: if isSignedIn()
+                      && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.allPlayerIds;
+
+        allow update, delete: if false;
+      }
+
+      // Einmalige Zusammenfassung nach Spielende – ausschließlich über
+      // Cloud Function geschrieben.
+      match /statistics/{document=**} {
+        allow read: if isSignedIn()
+                    && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.allPlayerIds;
+        allow write: if false;
+      }
+    }
+
+    // MARK: - leaderboards
+
+    // Ausschließlich von Cloud Functions geschrieben, für alle angemeldeten
+    // Nutzer lesbar.
+    match /leaderboards/{scope}/entries/{userId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}
