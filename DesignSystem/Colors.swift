@@ -47,4 +47,14 @@ enum BeerStatsColor {
     static let success = Color("StatusSuccess")
     static let warning = Color("StatusWarning")
     static let error = Color("StatusError")
+
+    // Becher-Farben für das Live-Tracking. Anders als die Farben oben sind
+    // das keine Theme-Werte, sondern die Farbe eines realen Gegenstands
+    // (Red Solo Cup) – sie bleiben deshalb in jedem Erscheinungsbild gleich.
+    // Die fünf Abstufungen bilden zusammen die Wölbung des Bechers ab.
+    static let cupHighlight = Color("CupHighlight")
+    static let cupBase = Color("CupBase")
+    static let cupMid = Color("CupMid")
+    static let cupShadow = Color("CupShadow")
+    static let cupRimEdge = Color("CupRimEdge")
 }

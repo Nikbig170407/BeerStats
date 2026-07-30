@@ -69,10 +69,29 @@ struct LobbyView: View {
                 }
             }
         } else if game.status == .active {
-            Text("Live-Tracking folgt in Schritt 7")
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            NavigationLink {
+                LiveGameView(
+                    teams: game.teams,
+                    format: game.format,
+                    playersPerTeam: game.type == .oneVsOne ? 1 : 2,
+                    perspectiveTeamIndex: perspectiveTeamIndex(in: game)
+                )
+            } label: {
+                Text("Live-Tracking öffnen")
+                    .font(BeerStatsFont.headline)
+                    .foregroundStyle(BeerStatsColor.textOnAccent)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(BeerStatsColor.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+            .buttonStyle(PressableButtonStyle())
         }
+    }
+
+    /// Das eigene Team gehört nach unten auf den Spielscreen – man tippt auf
+    /// die gegnerischen Becher, und die sollen oben liegen.
+    private func perspectiveTeamIndex(in game: Game) -> Int {
+        game.teams.firstIndex { $0.playerIds.contains(viewModel.currentUserId) } ?? 0
     }
 
     private func teamCard(_ team: Team?) -> some View {
