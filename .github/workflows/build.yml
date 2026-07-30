@@ -1,0 +1,64 @@
+# .github/workflows/build.yml
+#
+# Baut BeerStats bei jedem Push auf einem GitHub-gehosteten macOS-Runner.
+# Ergebnis ist eine UNSIGNIERTE .ipa-Datei als Download-Artefakt.
+# Die eigentliche Signierung für dein Gerät übernimmt anschließend
+# Sideloadly auf deinem PC mit deiner Apple-ID (siehe README.md).
+#
+# Ablauf: checkout → XcodeGen generiert das .xcodeproj → xcodebuild baut
+# ohne Code-Signing für echte iPhones (SDK iphoneos) → .app wird in das
+# IPA-Format (Payload/App.app als .zip) verpackt → Upload als Artefakt.
+
+name: Build BeerStats (unsigned IPA)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # erlaubt manuelles Starten über den "Run workflow"-Button
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: XcodeGen installieren
+        run: brew install xcodegen
+
+      - name: Xcode-Projekt generieren
+        run: xcodegen generate
+
+      - name: Swift-Package-Abhängigkeiten cachen
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('project.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: App bauen (ohne Code-Signing, für echtes iPhone)
+        run: |
+          xcodebuild \
+            -project BeerStats.xcodeproj \
+            -scheme BeerStats \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            clean build
+
+      - name: In IPA-Format verpacken
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/BeerStats.app Payload/
+          zip -r BeerStats.ipa Payload
+
+      - name: IPA als Download-Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: BeerStats-ipa
+          path: BeerStats.ipa
+          retention-days: 14
