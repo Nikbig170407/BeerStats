@@ -19,6 +19,9 @@ enum AppConstants {
         static let friendships = "friendships"
         static let games = "games"
         static let throwsSubcollection = "throws"
+        /// Mitspieler ohne eigenes Konto, verwaltet vom Besitzer des
+        /// übergeordneten User-Dokuments (siehe PlayerProfile).
+        static let playersSubcollection = "players"
         static let statisticsSubcollection = "statistics"
         static let statsSummaryDocument = "summary"
         static let leaderboards = "leaderboards"
@@ -46,5 +49,8 @@ enum AppConstants {
     enum Validation {
         static let usernameMinLength = 3
         static let usernameMaxLength = 20
+        /// Namen von Mitspieler-Profilen stehen auf engen Chips im
+        /// Spielscreen – deshalb kürzer begrenzt als ein Benutzername.
+        static let profileNameMaxLength = 14
     }
 }

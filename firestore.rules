@@ -42,6 +42,20 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow write: if false;
       }
+
+      // Mitspieler-Profile ohne eigenes Konto, verwaltet vom Besitzer
+      // dieses User-Dokuments (siehe PlayerProfile.swift).
+      //
+      // Anders als bei `stats` schreibt hier bewusst der Client: In dieser
+      // Ausbaustufe rechnet das iPhone die Statistiken am Spielende, weil
+      // Cloud Functions den kostenpflichtigen Blaze-Tarif voraussetzen.
+      // Die Daten gehören ausschließlich dem Besitzer, ein fremder Zugriff
+      // ist damit ohnehin ausgeschlossen. Sollen die Zahlen später
+      // serverseitig fortgeschrieben werden, wird hier auf `write: false`
+      // umgestellt.
+      match /players/{profileId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Verhindert doppelte Usernamen: Erstellung nur, wenn die Dokument-ID

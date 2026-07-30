@@ -19,6 +19,7 @@ struct AppContainer {
     let friendRepository: FriendRepositoryProtocol
     let gameRepository: GameRepositoryProtocol
     let throwRepository: ThrowRepositoryProtocol
+    let playerProfileRepository: PlayerProfileRepositoryProtocol
 
     /// Produktive Konfiguration mit echten Firebase-Implementierungen.
     static func live() -> AppContainer {
@@ -27,11 +28,13 @@ struct AppContainer {
         let friendService = FirebaseFriendService()
         let gameService = FirebaseGameService()
         let throwService = FirebaseThrowService()
+        let profileService = FirebasePlayerProfileService()
 
         let authRepository = AuthRepository(authService: authService, userService: userService)
         let friendRepository = FriendRepository(friendService: friendService, userService: userService)
         let gameRepository = GameRepository(gameService: gameService)
         let throwRepository = ThrowRepository(throwService: throwService)
+        let playerProfileRepository = PlayerProfileRepository(profileService: profileService)
 
         return AppContainer(
             authService: authService,
@@ -39,7 +42,8 @@ struct AppContainer {
             authRepository: authRepository,
             friendRepository: friendRepository,
             gameRepository: gameRepository,
-            throwRepository: throwRepository
+            throwRepository: throwRepository,
+            playerProfileRepository: playerProfileRepository
         )
     }
 
@@ -50,11 +54,13 @@ struct AppContainer {
         let friendService = PreviewFriendService()
         let gameService = PreviewGameService()
         let throwService = PreviewThrowService()
+        let profileService = PreviewPlayerProfileService()
 
         let authRepository = AuthRepository(authService: authService, userService: userService)
         let friendRepository = FriendRepository(friendService: friendService, userService: userService)
         let gameRepository = GameRepository(gameService: gameService)
         let throwRepository = ThrowRepository(throwService: throwService)
+        let playerProfileRepository = PlayerProfileRepository(profileService: profileService)
 
         return AppContainer(
             authService: authService,
@@ -62,7 +68,8 @@ struct AppContainer {
             authRepository: authRepository,
             friendRepository: friendRepository,
             gameRepository: gameRepository,
-            throwRepository: throwRepository
+            throwRepository: throwRepository,
+            playerProfileRepository: playerProfileRepository
         )
     }
 }
@@ -128,4 +135,24 @@ private final class PreviewThrowService: ThrowServiceProtocol {
     func observeThrows(gameId: String) -> AsyncStream<[Throw]> {
         AsyncStream { continuation in continuation.yield([]) }
     }
+}
+
+private final class PreviewPlayerProfileService: PlayerProfileServiceProtocol {
+    private let samples: [PlayerProfile] = [
+        PlayerProfile(id: "p1", name: "Nik", emoji: "🍺", color: .amber),
+        PlayerProfile(id: "p2", name: "Lena", emoji: "🔥", color: .red),
+        PlayerProfile(id: "p3", name: "Tom", emoji: "🎯", color: .green),
+        PlayerProfile(id: "p4", name: "Mia", emoji: "⚡️", color: .blue)
+    ]
+
+    func observeProfiles(ownerId: String) -> AsyncStream<[PlayerProfile]> {
+        AsyncStream { continuation in continuation.yield(samples) }
+    }
+    func fetchProfiles(ownerId: String) async throws -> [PlayerProfile] { samples }
+    func createProfile(_ profile: PlayerProfile, ownerId: String) async throws -> String { "preview-profile-id" }
+    func updateProfileDetails(
+        profileId: String, ownerId: String, name: String,
+        emoji: String, color: ProfileColor, isActive: Bool
+    ) async throws {}
+    func incrementStatistics(profileId: String, ownerId: String, deltas: ProfileStatisticsDelta) async throws {}
 }

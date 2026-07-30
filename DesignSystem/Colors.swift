@@ -58,3 +58,24 @@ enum BeerStatsColor {
     static let cupShadow = Color("CupShadow")
     static let cupRimEdge = Color("CupRimEdge")
 }
+
+// MARK: - Profilfarben
+
+/// Bildet die im Modell gespeicherten Farbnamen auf konkrete Farben ab.
+///
+/// Die Zuordnung liegt bewusst hier und nicht im Modell: `ProfileColor`
+/// bleibt dadurch frei von SwiftUI, und die Palette lässt sich anpassen,
+/// ohne bestehende Profile zu migrieren.
+extension ProfileColor {
+
+    var color: Color {
+        switch self {
+        case .amber: return BeerStatsColor.accent
+        case .red: return BeerStatsColor.accentSecondary
+        case .green: return BeerStatsColor.success
+        case .blue: return Color(red: 0.29, green: 0.56, blue: 0.89)
+        case .purple: return Color(red: 0.61, green: 0.45, blue: 0.87)
+        case .teal: return Color(red: 0.24, green: 0.71, blue: 0.678)
+        }
+    }
+}
