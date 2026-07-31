@@ -67,7 +67,11 @@ struct CupFillLoadingView: View {
 
 /// Trapezförmiger Becher-Umriss – die typische Form eines Beerpong-Bechers,
 /// oben breiter als unten.
-private struct CupShape: Shape {
+///
+/// Nicht `private`, weil `CupFillGauge` dieselbe Form als Kennzahl-Anzeige
+/// wiederverwendet. Ein zweiter, leicht abweichender Becher-Umriss im
+/// Projekt wäre genau die Art Dopplung, die das Design-System vermeiden soll.
+struct CupShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let topInset = rect.width * 0.08
@@ -83,8 +87,8 @@ private struct CupShape: Shape {
 }
 
 /// Leicht wellige Oberkante der Flüssigkeit – das eine bewusst gewählte,
-/// bewegte Detail dieser Ansicht.
-private struct LiquidWaveShape: Shape {
+/// bewegte Detail dieser Ansicht. Wird von `CupFillGauge` mitbenutzt.
+struct LiquidWaveShape: Shape {
     var phase: CGFloat // 0...1
 
     var animatableData: CGFloat {

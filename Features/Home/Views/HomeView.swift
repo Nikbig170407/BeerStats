@@ -66,11 +66,24 @@ struct HomeView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
+                        ProfilesView(
+                            repository: container.playerProfileRepository,
+                            ownerId: viewModel.currentUserId
+                        )
+                    } label: {
+                        Image(systemName: "person.crop.circle.badge.checkmark")
+                            .foregroundStyle(BeerStatsColor.textPrimary)
+                    }
+                    .accessibilityLabel("Mitspieler verwalten")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
                         FriendsView(friendRepository: container.friendRepository, currentUserId: viewModel.currentUserId)
                     } label: {
                         Image(systemName: "person.2.fill")
-                            .foregroundStyle(BeerStatsColor.textPrimary)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
                     }
+                    .accessibilityLabel("Freunde")
                 }
             }
         }
