@@ -31,6 +31,14 @@ final class LiveGameViewModel: ObservableObject {
     private let playersPerTeam: Int
     private let gameId: String?
     private let throwRepository: ThrowRepositoryProtocol?
+    private let gameRepository: GameRepositoryProtocol?
+    private let profileRepository: PlayerProfileRepositoryProtocol?
+    private let ownerId: String?
+
+    /// Verhindert doppelte Auswertung: Das Spielende kann sowohl lokal als
+    /// auch erneut durch den Log-Stream auftreten, gezählt werden darf es
+    /// aber nur einmal.
+    private var didSettleGame = false
 
     /// Lokale Zustands-Schnappschüsse. Sie machen Undo sofort sichtbar,
     /// unabhängig davon, ob der kompensierende Log-Eintrag schon
@@ -52,13 +60,19 @@ final class LiveGameViewModel: ObservableObject {
         format: GameFormat,
         playersPerTeam: Int,
         gameId: String? = nil,
-        throwRepository: ThrowRepositoryProtocol? = nil
+        throwRepository: ThrowRepositoryProtocol? = nil,
+        gameRepository: GameRepositoryProtocol? = nil,
+        profileRepository: PlayerProfileRepositoryProtocol? = nil,
+        ownerId: String? = nil
     ) {
         self.teams = teams
         self.format = format
         self.playersPerTeam = playersPerTeam
         self.gameId = gameId
         self.throwRepository = throwRepository
+        self.gameRepository = gameRepository
+        self.profileRepository = profileRepository
+        self.ownerId = ownerId
         self.state = GameEngine.makeInitialState(format: format, playersPerTeam: playersPerTeam)
         observeThrows()
     }
@@ -125,6 +139,51 @@ final class LiveGameViewModel: ObservableObject {
                 )
             } catch {
                 AppLogger.firestore.error("Wurf konnte nicht gespeichert werden: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    // MARK: - Spielende auswerten
+
+    /// Hält das Ergebnis fest und schreibt die Kennzahlen auf die Profile.
+    ///
+    /// Zwei bewusste Entscheidungen: Die Auswertung passiert erst am Ende
+    /// und nicht nach jedem Wurf, weil der Spielstand durch Nachspielen des
+    /// Logs entsteht – zurückgenommene Würfe sind darin bereits
+    /// herausgerechnet. Und sie passiert erst auf ausdrückliche Bestätigung
+    /// im Sieger-Screen, damit „Rückgängig" bis dahin nutzbar bleibt, ohne
+    /// dass bereits geschriebene Zahlen wieder falsch würden.
+    func confirmResult() {
+        guard state.isFinished, !didSettleGame else { return }
+        didSettleGame = true
+
+        let finishedState = state
+        let winningTeamId = finishedState.winnerTeamIndex.flatMap { index -> String? in
+            teams.indices.contains(index) ? teams[index].id : nil
+        }
+        let profileIdsByTeam = teams.map(\.playerIds)
+
+        Task { [weak self] in
+            guard let self else { return }
+
+            if let gameId, let gameRepository {
+                do {
+                    try await gameRepository.finishGame(gameId: gameId, winnerTeamId: winningTeamId)
+                } catch {
+                    AppLogger.firestore.error("Spielende konnte nicht gespeichert werden: \(error.localizedDescription)")
+                }
+            }
+
+            if let ownerId, let profileRepository {
+                do {
+                    try await profileRepository.applyFinishedGame(
+                        state: finishedState,
+                        profileIdsByTeam: profileIdsByTeam,
+                        ownerId: ownerId
+                    )
+                } catch {
+                    AppLogger.firestore.error("Statistiken konnten nicht geschrieben werden: \(error.localizedDescription)")
+                }
             }
         }
     }

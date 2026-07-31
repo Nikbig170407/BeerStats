@@ -21,4 +21,8 @@ protocol GameServiceProtocol {
     func observeUserGames(userId: String) -> AsyncStream<[Game]>
 
     func updateGameStatus(gameId: String, status: GameStatus, startedAt: Date?) async throws
+
+    /// Schließt ein Spiel ab: Status, Sieger und Endzeitpunkt in einem
+    /// Schreibvorgang. `winnerTeamId` ist bei einem Unentschieden `nil`.
+    func finishGame(gameId: String, winnerTeamId: String?) async throws
 }

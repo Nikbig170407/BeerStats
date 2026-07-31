@@ -2,9 +2,17 @@
 //  NewGameViewModel.swift
 //  BeerStats
 //
-//  Steuert Modus-Auswahl (1v1/2v2) und Mitspieler-Auswahl aus der
-//  Freundesliste. Baut daraus die beiden Teams und legt das Spiel über
-//  GameRepository an.
+//  Modus, Becherzahl und Spielerauswahl für ein neues Spiel.
+//
+//  Die Mitspieler kommen aus den Profilen, nicht aus der Freundesliste: In
+//  dieser Ausbaustufe liegt die App nur auf einem Gerät, und nur über die
+//  Profile lassen sich die Statistiken am Spielende den richtigen Leuten
+//  zuordnen.
+//
+//  Wichtig für das Verständnis des Datenmodells: `Team.playerIds` enthält
+//  hier Profil-IDs, also Leute ohne eigenes Konto. Die Zugriffsberechtigung
+//  auf das Spiel-Dokument hängt deshalb nicht daran, sondern wird separat
+//  als Konto-ID übergeben (siehe Game.allPlayerIds).
 //
 
 import Foundation
@@ -12,66 +20,107 @@ import Foundation
 @MainActor
 final class NewGameViewModel: ObservableObject {
 
-    @Published var gameType: GameType = .oneVsOne {
+    @Published var gameType: GameType = .twoVsTwo {
         didSet { resetSelection() }
     }
-    @Published var teammateId: String?
-    @Published private(set) var opponentIds: Set<String> = []
+    @Published var cupCount: Int = AppConstants.GameDefaults.standardCupCount
 
-    @Published private(set) var friends: [User] = []
-    @Published private(set) var isLoadingFriends = false
+    @Published private(set) var profiles: [PlayerProfile] = []
+    /// Gewählte Profil-IDs, `selection[teamIndex][slot]`.
+    @Published private(set) var selection: [[String?]] = []
+
+    @Published private(set) var isLoading = true
     @Published private(set) var isCreating = false
     @Published var errorMessage: String?
     @Published private(set) var createdGameId: String?
 
     private let gameRepository: GameRepositoryProtocol
-    private let friendRepository: FriendRepositoryProtocol
-    private let userService: UserServiceProtocol
+    private let profileRepository: PlayerProfileRepositoryProtocol
     let currentUserId: String
+    private var observationTask: Task<Void, Never>?
 
     init(
         gameRepository: GameRepositoryProtocol,
-        friendRepository: FriendRepositoryProtocol,
-        userService: UserServiceProtocol,
+        profileRepository: PlayerProfileRepositoryProtocol,
         currentUserId: String
     ) {
         self.gameRepository = gameRepository
-        self.friendRepository = friendRepository
-        self.userService = userService
+        self.profileRepository = profileRepository
         self.currentUserId = currentUserId
+        resetSelection()
+        observeProfiles()
     }
 
-    var requiredOpponentCount: Int {
+    deinit {
+        observationTask?.cancel()
+    }
+
+    // MARK: - Abgeleitete Werte
+
+    var playersPerTeam: Int {
         gameType == .oneVsOne ? 1 : 2
     }
 
-    /// Freunde, die als Gegner wählbar sind (der bereits gewählte Partner
-    /// scheidet aus, damit niemand doppelt im selben Spiel landet).
-    var availableOpponents: [User] {
-        friends.filter { $0.id != teammateId }
+    /// Nur aktive Profile treten an – ausgemusterte Mitspieler sollen nicht
+    /// versehentlich wieder in einer Aufstellung landen.
+    var selectableProfiles: [PlayerProfile] {
+        profiles.filter(\.isActive)
+    }
+
+    private var assignedIds: Set<String> {
+        Set(selection.flatMap { $0 }.compactMap { $0 })
+    }
+
+    /// Profile, die noch keinem Platz zugeordnet sind.
+    var unassignedProfiles: [PlayerProfile] {
+        selectableProfiles.filter { profile in
+            guard let id = profile.id else { return false }
+            return !assignedIds.contains(id)
+        }
+    }
+
+    func profile(withId id: String?) -> PlayerProfile? {
+        guard let id else { return nil }
+        return profiles.first { $0.id == id }
+    }
+
+    func profile(teamIndex: Int, slot: Int) -> PlayerProfile? {
+        guard selection.indices.contains(teamIndex),
+              selection[teamIndex].indices.contains(slot) else { return nil }
+        return profile(withId: selection[teamIndex][slot])
     }
 
     var canCreateGame: Bool {
-        let teammateSatisfied = (gameType == .oneVsOne) || teammateId != nil
-        return teammateSatisfied && opponentIds.count == requiredOpponentCount
-    }
-
-    func loadFriends() async {
-        isLoadingFriends = true
-        defer { isLoadingFriends = false }
-        do {
-            friends = try await friendRepository.fetchAcceptedFriends(currentUserId: currentUserId)
-        } catch {
-            errorMessage = AppError.from(error).errorDescription
+        !isCreating && selection.allSatisfy { team in
+            team.allSatisfy { $0 != nil }
         }
     }
 
-    func toggleOpponent(_ userId: String) {
-        if opponentIds.contains(userId) {
-            opponentIds.remove(userId)
-        } else if opponentIds.count < requiredOpponentCount {
-            opponentIds.insert(userId)
+    var hasEnoughProfiles: Bool {
+        selectableProfiles.count >= playersPerTeam * 2
+    }
+
+    // MARK: - Auswahl
+
+    func assign(profileId: String, teamIndex: Int, slot: Int) {
+        guard selection.indices.contains(teamIndex),
+              selection[teamIndex].indices.contains(slot) else { return }
+        // Falls das Profil woanders steht, dort zuerst entfernen – ein
+        // Spieler kann nicht gleichzeitig in beiden Teams antreten.
+        for team in selection.indices {
+            for position in selection[team].indices where selection[team][position] == profileId {
+                selection[team][position] = nil
+            }
         }
+        selection[teamIndex][slot] = profileId
+        HapticManager.lightImpact()
+    }
+
+    func clear(teamIndex: Int, slot: Int) {
+        guard selection.indices.contains(teamIndex),
+              selection[teamIndex].indices.contains(slot) else { return }
+        selection[teamIndex][slot] = nil
+        HapticManager.lightImpact()
     }
 
     func clearCreatedGame() {
@@ -79,13 +128,27 @@ final class NewGameViewModel: ObservableObject {
     }
 
     private func resetSelection() {
-        teammateId = nil
-        opponentIds.removeAll()
+        selection = Array(
+            repeating: Array(repeating: nil, count: playersPerTeam),
+            count: 2
+        )
     }
+
+    private func observeProfiles() {
+        observationTask = Task { [weak self] in
+            guard let self else { return }
+            for await profiles in profileRepository.observeProfiles(ownerId: currentUserId) {
+                self.profiles = profiles
+                self.isLoading = false
+            }
+        }
+    }
+
+    // MARK: - Anlegen
 
     func createGame() async {
         guard canCreateGame else {
-            errorMessage = "Bitte wähle alle Mitspieler aus."
+            errorMessage = "Bitte besetze alle Plätze."
             return
         }
 
@@ -93,37 +156,27 @@ final class NewGameViewModel: ObservableObject {
         defer { isCreating = false }
 
         do {
-            let me = try await userService.fetchUser(uid: currentUserId)
-
-            var ownPlayerIds = [currentUserId]
-            var ownPlayerNames = [me.displayName]
-            if let teammateId, let teammate = friends.first(where: { $0.id == teammateId }) {
-                ownPlayerIds.append(teammateId)
-                ownPlayerNames.append(teammate.displayName)
+            let teams: [Team] = try selection.map { slots in
+                let chosen = slots.compactMap { profile(withId: $0) }
+                guard chosen.count == playersPerTeam else {
+                    throw AppError.validation("Ein Team ist nicht vollständig besetzt.")
+                }
+                return Team(
+                    id: UUID().uuidString,
+                    playerIds: chosen.compactMap(\.id),
+                    playerNames: chosen.map(\.name),
+                    ballsInPlay: chosen.count
+                )
             }
-
-            let opponents = friends.filter { opponentIds.contains($0.id ?? "") }
-            let opponentPlayerIds = opponents.compactMap(\.id)
-            let opponentPlayerNames = opponents.map(\.displayName)
-
-            let ownTeam = Team(
-                id: UUID().uuidString,
-                playerIds: ownPlayerIds,
-                playerNames: ownPlayerNames,
-                ballsInPlay: ownPlayerIds.count
-            )
-            let opponentTeam = Team(
-                id: UUID().uuidString,
-                playerIds: opponentPlayerIds,
-                playerNames: opponentPlayerNames,
-                ballsInPlay: opponentPlayerIds.count
-            )
 
             createdGameId = try await gameRepository.createGame(
                 type: gameType,
-                teams: [ownTeam, opponentTeam],
-                format: GameFormat(),
-                createdBy: currentUserId
+                teams: teams,
+                format: GameFormat(cupCount: cupCount),
+                createdBy: currentUserId,
+                // Nur mein Konto darf das Spiel lesen und schreiben – die
+                // Mitspieler sind Profile ohne eigenen Zugang.
+                accessUserIds: [currentUserId]
             )
             HapticManager.success()
         } catch {

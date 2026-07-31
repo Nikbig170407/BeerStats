@@ -2,9 +2,13 @@
 //  NewGameView.swift
 //  BeerStats
 //
-//  Modus wählen (1v1/2v2), Mitspieler aus der Freundesliste antippen,
-//  Spiel erstellen. Nach erfolgreicher Erstellung automatischer Übergang
-//  zur Lobby.
+//  Modus und Becherzahl wählen, die Plätze mit Mitspieler-Profilen
+//  besetzen, Spiel erstellen. Nach erfolgreicher Erstellung geht es
+//  automatisch in die Lobby.
+//
+//  Die Aufstellung wird als zwei Reihen von Plätzen gezeigt statt als Liste
+//  mit Häkchen: So ist auf einen Blick erkennbar, wer gegen wen spielt –
+//  und genau so liegen die Teams später auch auf dem Spielscreen.
 //
 
 import SwiftUI
@@ -15,10 +19,12 @@ struct NewGameView: View {
     private let gameRepository: GameRepositoryProtocol
     private let currentUserId: String
 
+    /// Offener Platz, für den gerade ein Spieler gewählt wird.
+    @State private var pickerTarget: SlotTarget?
+
     init(
         gameRepository: GameRepositoryProtocol,
-        friendRepository: FriendRepositoryProtocol,
-        userService: UserServiceProtocol,
+        profileRepository: PlayerProfileRepositoryProtocol,
         currentUserId: String
     ) {
         self.gameRepository = gameRepository
@@ -26,47 +32,32 @@ struct NewGameView: View {
         _viewModel = StateObject(
             wrappedValue: NewGameViewModel(
                 gameRepository: gameRepository,
-                friendRepository: friendRepository,
-                userService: userService,
+                profileRepository: profileRepository,
                 currentUserId: currentUserId
             )
         )
     }
 
+    private struct SlotTarget: Identifiable {
+        let teamIndex: Int
+        let slot: Int
+        var id: String { "\(teamIndex)-\(slot)" }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Picker("Spielmodus", selection: $viewModel.gameType) {
-                    Text("1 vs 1").tag(GameType.oneVsOne)
-                    Text("2 vs 2").tag(GameType.twoVsTwo)
-                }
-                .pickerStyle(.segmented)
+                modePicker
+                cupPicker
 
-                if viewModel.isLoadingFriends {
-                    CupFillLoadingView(size: 48)
+                if viewModel.isLoading {
+                    CupFillLoadingView(size: 64)
                         .frame(maxWidth: .infinity)
-                } else if viewModel.friends.isEmpty {
-                    Text("Du hast noch keine Freunde hinzugefügt. Geh dafür zuerst in den Freunde-Bereich.")
-                        .font(BeerStatsFont.body)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .padding(.top, 32)
+                } else if !viewModel.hasEnoughProfiles {
+                    notEnoughProfiles
                 } else {
-                    if viewModel.gameType == .twoVsTwo {
-                        pickerSection(
-                            title: "Dein Partner",
-                            users: viewModel.friends,
-                            isSelected: { $0 == viewModel.teammateId },
-                            onTap: { userId in
-                                viewModel.teammateId = (viewModel.teammateId == userId) ? nil : userId
-                            }
-                        )
-                    }
-
-                    pickerSection(
-                        title: viewModel.gameType == .oneVsOne ? "Gegner" : "Gegner (2 auswählen)",
-                        users: viewModel.availableOpponents,
-                        isSelected: { viewModel.opponentIds.contains($0) },
-                        onTap: { viewModel.toggleOpponent($0) }
-                    )
+                    lineup
                 }
 
                 if let errorMessage = viewModel.errorMessage {
@@ -74,80 +65,218 @@ struct NewGameView: View {
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.error)
                 }
-
-                if viewModel.isCreating {
-                    CupFillLoadingView(size: 56)
-                        .frame(maxWidth: .infinity)
-                } else {
-                    PrimaryButton(title: "Spiel erstellen", systemImage: "sportscourt.fill") {
-                        Task { await viewModel.createGame() }
-                    }
-                    .opacity(viewModel.canCreateGame ? 1 : 0.4)
-                    .disabled(!viewModel.canCreateGame)
-                }
             }
             .padding(20)
         }
         .background(BeerStatsColor.backgroundPrimary.ignoresSafeArea())
         .navigationTitle("Neues Spiel")
-        .task { await viewModel.loadFriends() }
-        .navigationDestination(isPresented: isShowingLobby) {
-            if let gameId = viewModel.createdGameId {
-                LobbyView(gameRepository: gameRepository, gameId: gameId, currentUserId: currentUserId)
+        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            if viewModel.hasEnoughProfiles {
+                createButton
+                    .padding(20)
+                    .background(BeerStatsColor.backgroundPrimary)
             }
+        }
+        .sheet(item: $pickerTarget) { target in
+            playerPicker(for: target)
+        }
+        .navigationDestination(isPresented: hasCreatedGame) {
+            LobbyView(
+                gameRepository: gameRepository,
+                gameId: viewModel.createdGameId ?? "",
+                currentUserId: currentUserId
+            )
         }
     }
 
-    private var isShowingLobby: Binding<Bool> {
+    private var hasCreatedGame: Binding<Bool> {
         Binding(
             get: { viewModel.createdGameId != nil },
-            set: { isPresented in
-                if !isPresented { viewModel.clearCreatedGame() }
-            }
+            set: { if !$0 { viewModel.clearCreatedGame() } }
         )
     }
 
-    @ViewBuilder
-    private func pickerSection(
-        title: String,
-        users: [User],
-        isSelected: @escaping (String) -> Bool,
-        onTap: @escaping (String) -> Void
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(BeerStatsFont.headline)
-                .foregroundStyle(BeerStatsColor.textPrimary)
+    // MARK: - Einstellungen
 
-            ForEach(users) { user in
-                if let userId = user.id {
-                    friendRow(user, isSelected: isSelected(userId)) {
-                        HapticManager.lightImpact()
-                        onTap(userId)
-                    }
+    private var modePicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionLabel("Modus")
+            Picker("Spielmodus", selection: $viewModel.gameType) {
+                Text("1 vs 1").tag(GameType.oneVsOne)
+                Text("2 vs 2").tag(GameType.twoVsTwo)
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private var cupPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionLabel("Becher pro Team")
+            Picker("Becher", selection: $viewModel.cupCount) {
+                Text("10 Becher").tag(10)
+                Text("6 Becher").tag(6)
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    // MARK: - Aufstellung
+
+    private var lineup: some View {
+        VStack(spacing: 16) {
+            teamRow(teamIndex: 0)
+
+            Text("gegen")
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            teamRow(teamIndex: 1)
+        }
+    }
+
+    private func teamRow(teamIndex: Int) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Team \(teamIndex + 1)")
+            HStack(spacing: 12) {
+                ForEach(0..<viewModel.playersPerTeam, id: \.self) { slot in
+                    slotView(teamIndex: teamIndex, slot: slot)
                 }
             }
         }
     }
 
-    private func friendRow(_ user: User, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                Text(user.displayName)
-                    .font(BeerStatsFont.body)
-                    .foregroundStyle(BeerStatsColor.textPrimary)
-                Spacer()
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(BeerStatsColor.accent)
+    private func slotView(teamIndex: Int, slot: Int) -> some View {
+        let profile = viewModel.profile(teamIndex: teamIndex, slot: slot)
+
+        return Button {
+            if profile == nil {
+                pickerTarget = SlotTarget(teamIndex: teamIndex, slot: slot)
+            } else {
+                viewModel.clear(teamIndex: teamIndex, slot: slot)
+            }
+        } label: {
+            VStack(spacing: 8) {
+                if let profile {
+                    ProfileAvatarView(profile: profile, size: 56)
+                    Text(profile.name)
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                        .lineLimit(1)
+                } else {
+                    ZStack {
+                        Circle()
+                            .strokeBorder(
+                                BeerStatsColor.textSecondary.opacity(0.4),
+                                style: StrokeStyle(lineWidth: 2, dash: [5, 4])
+                            )
+                        Image(systemName: "plus")
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                    }
+                    .frame(width: 56, height: 56)
+                    Text("Wählen")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
                 }
             }
-            .padding(14)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
             .background(
-                isSelected ? BeerStatsColor.accent.opacity(0.15) : BeerStatsColor.surfaceElevated,
-                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                BeerStatsColor.surfaceElevated,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
         }
         .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel(
+            profile.map { "\($0.name), zum Entfernen antippen" } ?? "Freier Platz, Spieler wählen"
+        )
+    }
+
+    // MARK: - Auswahl-Sheet
+
+    private func playerPicker(for target: SlotTarget) -> some View {
+        NavigationStack {
+            Group {
+                if viewModel.unassignedProfiles.isEmpty {
+                    Text("Alle Profile sind schon eingeteilt.")
+                        .font(BeerStatsFont.body)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 10) {
+                            ForEach(viewModel.unassignedProfiles) { profile in
+                                Button {
+                                    if let id = profile.id {
+                                        viewModel.assign(profileId: id, teamIndex: target.teamIndex, slot: target.slot)
+                                    }
+                                    pickerTarget = nil
+                                } label: {
+                                    BeerStatsCard {
+                                        HStack(spacing: 14) {
+                                            ProfileAvatarView(profile: profile)
+                                            Text(profile.name)
+                                                .font(BeerStatsFont.headline)
+                                                .foregroundStyle(BeerStatsColor.textPrimary)
+                                            Spacer()
+                                        }
+                                    }
+                                }
+                                .buttonStyle(PressableButtonStyle())
+                            }
+                        }
+                        .padding(20)
+                    }
+                }
+            }
+            .background(BeerStatsColor.backgroundPrimary.ignoresSafeArea())
+            .navigationTitle("Team \(target.teamIndex + 1)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Abbrechen") { pickerTarget = nil }
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    // MARK: - Randfälle
+
+    private var notEnoughProfiles: some View {
+        BeerStatsCard {
+            VStack(spacing: 8) {
+                Text("Zu wenige Mitspieler")
+                    .font(BeerStatsFont.headline)
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                Text("Für \(viewModel.gameType == .oneVsOne ? "1 vs 1" : "2 vs 2") brauchst du \(viewModel.playersPerTeam * 2) aktive Profile. Lege sie über das Personen-Symbol im Hauptmenü an.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var createButton: some View {
+        Group {
+            if viewModel.isCreating {
+                CupFillLoadingView(size: 52)
+                    .frame(maxWidth: .infinity)
+            } else {
+                PrimaryButton(title: "Spiel erstellen", systemImage: "play.fill") {
+                    Task { await viewModel.createGame() }
+                }
+                .opacity(viewModel.canCreateGame ? 1 : 0.4)
+                .disabled(!viewModel.canCreateGame)
+            }
+        }
+    }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(BeerStatsFont.statLabel)
+            .foregroundStyle(BeerStatsColor.accent)
     }
 }

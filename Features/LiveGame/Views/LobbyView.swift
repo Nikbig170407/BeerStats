@@ -79,7 +79,10 @@ struct LobbyView: View {
                     playersPerTeam: game.type == .oneVsOne ? 1 : 2,
                     perspectiveTeamIndex: perspectiveTeamIndex(in: game),
                     gameId: viewModel.gameId,
-                    throwRepository: appContainer.throwRepository
+                    throwRepository: appContainer.throwRepository,
+                    gameRepository: appContainer.gameRepository,
+                    profileRepository: appContainer.playerProfileRepository,
+                    ownerId: viewModel.currentUserId
                 )
             } label: {
                 Text("Live-Tracking öffnen")

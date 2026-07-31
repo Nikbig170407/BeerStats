@@ -128,6 +128,7 @@ private final class PreviewGameService: GameServiceProtocol {
         AsyncStream { continuation in continuation.yield([]) }
     }
     func updateGameStatus(gameId: String, status: GameStatus, startedAt: Date?) async throws {}
+    func finishGame(gameId: String, winnerTeamId: String?) async throws {}
 }
 
 private final class PreviewThrowService: ThrowServiceProtocol {

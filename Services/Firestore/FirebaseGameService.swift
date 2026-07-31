@@ -64,4 +64,16 @@ final class FirebaseGameService: GameServiceProtocol {
         }
         try await db.collection(AppConstants.Firestore.games).document(gameId).updateData(data)
     }
+
+    func finishGame(gameId: String, winnerTeamId: String?) async throws {
+        var data: [String: Any] = [
+            "status": GameStatus.finished.rawValue,
+            "endedAt": FieldValue.serverTimestamp()
+        ]
+        // Bei einem Unentschieden bleibt das Feld bewusst leer, statt eine
+        // Platzhalter-ID zu schreiben, die später falsch ausgewertet würde.
+        data["winnerTeamId"] = winnerTeamId ?? NSNull()
+
+        try await db.collection(AppConstants.Firestore.games).document(gameId).updateData(data)
+    }
 }

@@ -105,8 +105,7 @@ struct HomeView: View {
         NavigationLink {
             NewGameView(
                 gameRepository: container.gameRepository,
-                friendRepository: container.friendRepository,
-                userService: container.userService,
+                profileRepository: container.playerProfileRepository,
                 currentUserId: viewModel.currentUserId
             )
         } label: {

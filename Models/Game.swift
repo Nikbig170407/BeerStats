@@ -41,11 +41,18 @@ struct Game: Codable, Identifiable, Equatable {
     /// Live-Anzeige ohne den throws-Log auszählen zu müssen.
     var cupsRemaining: [String: Int]
 
-    /// Alle Spieler-IDs beider Teams in einem flachen Array. Firestore kann
-    /// mit `array-contains` nicht in verschachtelte Objekt-Arrays (teams)
-    /// hineinsehen – dieses Feld ist der Grund, warum Security Rules und
-    /// Queries wie "alle aktiven Spiele eines Nutzers" überhaupt effizient
-    /// möglich sind (siehe firestore.rules und firestore.indexes.json).
+    /// Alle Konten, die dieses Spiel sehen und bearbeiten dürfen. Firestore
+    /// kann mit `array-contains` nicht in verschachtelte Objekt-Arrays
+    /// (teams) hineinsehen – dieses Feld ist der Grund, warum Security Rules
+    /// und Queries wie "alle aktiven Spiele eines Nutzers" überhaupt
+    /// effizient möglich sind (siehe firestore.rules und
+    /// firestore.indexes.json).
+    ///
+    /// Wichtig: Das sind **Konto-IDs**, nicht zwingend die Spieler des
+    /// Spiels. Seit der Umstellung auf Mitspieler-Profile enthalten
+    /// `Team.playerIds` Profil-IDs von Leuten ohne eigenes Konto – die
+    /// dürfen hier nicht auftauchen, sonst greift die Zugriffsregel ins
+    /// Leere.
     var allPlayerIds: [String]
 
     /// Laufender Trefferserien-Zähler pro Spieler-ID für die On-Fire-Regel.
@@ -72,7 +79,8 @@ struct Game: Codable, Identifiable, Equatable {
         teams: [Team],
         format: GameFormat = GameFormat(),
         currentTurnTeamId: String? = nil,
-        isPublic: Bool = false
+        isPublic: Bool = false,
+        accessUserIds: [String]? = nil
     ) {
         self.id = id
         self.type = type
@@ -81,7 +89,10 @@ struct Game: Codable, Identifiable, Equatable {
         self.teams = teams
         self.format = format
         self.cupsRemaining = Dictionary(uniqueKeysWithValues: teams.map { ($0.id, format.cupCount) })
-        self.allPlayerIds = teams.flatMap(\.playerIds)
+        // Standardmäßig sind die Spieler auch die Zugriffsberechtigten – das
+        // gilt, solange alle Beteiligten ein eigenes Konto haben. Bei
+        // Profil-Spielen übergibt der Aufrufer stattdessen die Konten.
+        self.allPlayerIds = accessUserIds ?? teams.flatMap(\.playerIds)
         self.playerStreaks = Dictionary(uniqueKeysWithValues: teams.flatMap(\.playerIds).map { ($0, 0) })
         self.currentTurnTeamId = currentTurnTeamId
         self.isPublic = isPublic

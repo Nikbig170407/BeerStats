@@ -13,8 +13,15 @@ import Foundation
 protocol GameRepositoryProtocol {
     func observeUserGames(currentUserId: String) -> AsyncStream<[Game]>
     func observeGame(gameId: String) -> AsyncStream<Game?>
-    func createGame(type: GameType, teams: [Team], format: GameFormat, createdBy: String) async throws -> String
+    func createGame(
+        type: GameType,
+        teams: [Team],
+        format: GameFormat,
+        createdBy: String,
+        accessUserIds: [String]?
+    ) async throws -> String
     func startGame(gameId: String) async throws
+    func finishGame(gameId: String, winnerTeamId: String?) async throws
 }
 
 final class GameRepository: GameRepositoryProtocol {
@@ -33,7 +40,13 @@ final class GameRepository: GameRepositoryProtocol {
         gameService.observeGame(gameId: gameId)
     }
 
-    func createGame(type: GameType, teams: [Team], format: GameFormat, createdBy: String) async throws -> String {
+    func createGame(
+        type: GameType,
+        teams: [Team],
+        format: GameFormat,
+        createdBy: String,
+        accessUserIds: [String]? = nil
+    ) async throws -> String {
         guard teams.count == 2 else {
             throw AppError.validation("Ein Spiel braucht genau 2 Teams.")
         }
@@ -51,12 +64,17 @@ final class GameRepository: GameRepositoryProtocol {
             createdBy: createdBy,
             teams: teams,
             format: format,
-            currentTurnTeamId: teams.first?.id
+            currentTurnTeamId: teams.first?.id,
+            accessUserIds: accessUserIds
         )
         return try await gameService.createGame(game)
     }
 
     func startGame(gameId: String) async throws {
         try await gameService.updateGameStatus(gameId: gameId, status: .active, startedAt: Date())
+    }
+
+    func finishGame(gameId: String, winnerTeamId: String?) async throws {
+        try await gameService.finishGame(gameId: gameId, winnerTeamId: winnerTeamId)
     }
 }

@@ -29,7 +29,10 @@ struct LiveGameView: View {
         playersPerTeam: Int,
         perspectiveTeamIndex: Int = 0,
         gameId: String? = nil,
-        throwRepository: ThrowRepositoryProtocol? = nil
+        throwRepository: ThrowRepositoryProtocol? = nil,
+        gameRepository: GameRepositoryProtocol? = nil,
+        profileRepository: PlayerProfileRepositoryProtocol? = nil,
+        ownerId: String? = nil
     ) {
         _viewModel = StateObject(
             wrappedValue: LiveGameViewModel(
@@ -37,7 +40,10 @@ struct LiveGameView: View {
                 format: format,
                 playersPerTeam: playersPerTeam,
                 gameId: gameId,
-                throwRepository: throwRepository
+                throwRepository: throwRepository,
+                gameRepository: gameRepository,
+                profileRepository: profileRepository,
+                ownerId: ownerId
             )
         )
         self.perspectiveTeamIndex = perspectiveTeamIndex
@@ -386,7 +392,12 @@ struct LiveGameView: View {
             }
 
             VStack(spacing: 10) {
-                PrimaryButton(title: "Fertig", systemImage: "checkmark") { dismiss() }
+                // Erst hier wird das Ergebnis festgeschrieben – vorher bleibt
+                // „Rückgängig" gefahrlos möglich.
+                PrimaryButton(title: "Ergebnis übernehmen", systemImage: "checkmark") {
+                    viewModel.confirmResult()
+                    dismiss()
+                }
                 Button("Rückgängig") { viewModel.undo() }
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
