@@ -22,7 +22,11 @@ struct HomeView: View {
     init(container: AppContainer, currentUserId: String) {
         self.container = container
         _viewModel = StateObject(
-            wrappedValue: HomeViewModel(gameRepository: container.gameRepository, currentUserId: currentUserId)
+            wrappedValue: HomeViewModel(
+                gameRepository: container.gameRepository,
+                profileRepository: container.playerProfileRepository,
+                currentUserId: currentUserId
+            )
         )
     }
 
@@ -32,14 +36,16 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     header
 
-                    newGameLink
-
                     // Bewusst nur das zuletzt begonnene Spiel statt einer
                     // Liste: Es läuft immer höchstens eine Partie, und die
                     // soll nach einem versehentlichen Verlassen weitergehen.
                     if let running = viewModel.resumableGame {
                         resumeLink(for: running)
                     }
+
+                    newGameLink
+                    overviewStrip
+                    destinationCards
                 }
                 .padding(20)
             }
@@ -65,15 +71,8 @@ struct HomeView: View {
                     }
                     .accessibilityLabel(isSoundOn ? "Ton ausschalten" : "Ton einschalten")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        ProfilesView(container: container, ownerId: viewModel.currentUserId)
-                    } label: {
-                        Image(systemName: "person.crop.circle.badge.checkmark")
-                            .foregroundStyle(BeerStatsColor.textPrimary)
-                    }
-                    .accessibilityLabel("Mitspieler verwalten")
-                }
+                // Mitspieler und Rangliste sind jetzt große Karten im Inhalt –
+                // in der Kopfzeile bleiben nur Nebensachen.
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         DeveloperSettingsView(
@@ -127,6 +126,117 @@ struct HomeView: View {
             .background(BeerStatsColor.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(PressableButtonStyle())
+    }
+
+    /// Kennzahlen-Streifen: Gibt dem Startbildschirm Inhalt und zeigt auf
+    /// einen Blick, ob überhaupt schon gespielt wurde.
+    private var overviewStrip: some View {
+        HStack(spacing: 12) {
+            overviewTile(
+                value: "\(viewModel.activeProfiles.count)",
+                label: "Mitspieler",
+                tint: BeerStatsColor.accent
+            )
+            overviewTile(
+                value: "\(viewModel.totalGamesTracked)",
+                label: "Partien",
+                tint: BeerStatsColor.accentSecondary
+            )
+            overviewTile(
+                value: viewModel.leadingProfile?.emoji ?? "–",
+                label: viewModel.leadingProfile?.name ?? "Noch offen",
+                tint: BeerStatsColor.success
+            )
+        }
+    }
+
+    private func overviewTile(value: String, label: String, tint: Color) -> some View {
+        VStack(spacing: 5) {
+            Text(value)
+                .font(.system(size: 25, weight: .heavy, design: .rounded))
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            Text(label)
+                .font(BeerStatsFont.statLabel)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .glassPanel(cornerRadius: 16)
+        .neonEdge(tint, cornerRadius: 16, intensity: 0.35)
+    }
+
+    /// Große Einstiege statt kleiner Symbole in der Kopfzeile – die Statistik
+    /// ist der zweitwichtigste Ort der App und war vorher nur ein Icon.
+    private var destinationCards: some View {
+        VStack(spacing: 12) {
+            NavigationLink {
+                ProfilesView(container: container, ownerId: viewModel.currentUserId)
+            } label: {
+                destinationCard(
+                    title: "Mitspieler & Statistiken",
+                    subtitle: "Profile anlegen, Werte ansehen, vergleichen",
+                    systemImage: "chart.bar.xaxis",
+                    tint: BeerStatsColor.accent
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
+
+            NavigationLink {
+                LeaderboardView(profiles: viewModel.profiles)
+            } label: {
+                destinationCard(
+                    title: "Rangliste",
+                    subtitle: viewModel.leadingProfile.map { "Aktuell vorn: \($0.name)" }
+                        ?? "Noch keine Wertung",
+                    systemImage: "trophy.fill",
+                    tint: BeerStatsColor.warning
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
+            .disabled(viewModel.profiles.isEmpty)
+            .opacity(viewModel.profiles.isEmpty ? 0.45 : 1)
+        }
+    }
+
+    private func destinationCard(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        tint: Color
+    ) -> some View {
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(tint.opacity(0.18))
+                Image(systemName: systemImage)
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+            .frame(width: 56, height: 56)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(BeerStatsFont.headline)
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                Text(subtitle)
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .foregroundStyle(BeerStatsColor.textSecondary)
+        }
+        .padding(16)
+        .glassPanel()
+        .neonEdge(tint, intensity: 0.4)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private func resumeLink(for game: Game) -> some View {

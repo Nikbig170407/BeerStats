@@ -57,7 +57,7 @@ struct LiveGameView: View {
 
     var body: some View {
         ZStack {
-            BeerStatsColor.backgroundPrimary.ignoresSafeArea()
+            GridBackdrop(spacing: 40, lineOpacity: 0.04)
 
             VStack(spacing: 0) {
                 header
@@ -83,9 +83,12 @@ struct LiveGameView: View {
             .padding(.horizontal, 16)
 
             if let highlight = viewModel.highlight {
-                HighlightOverlayView(highlight: highlight)
-                    .id(highlight.id)   // erzwingt den Neustart der Animation bei Folge-Ereignissen
-                    .transition(.opacity)
+                HighlightOverlayView(highlight: highlight) {
+                    viewModel.dismissHighlight()
+                }
+                .id(highlight.id)   // erzwingt den Neustart der Animation bei Folge-Ereignissen
+                .transition(.opacity)
+                .zIndex(1)          // liegt sicher über Racks und Bedienleiste
             }
 
             if viewModel.state.isFinished {
@@ -188,16 +191,36 @@ struct LiveGameView: View {
 
     // MARK: - Team-Zeile
 
+    /// Team-Leiste als eigenes Panel. Das Team am Zug leuchtet – dadurch ist
+    /// aus Armlänge erkennbar, wer dran ist, ohne den Text zu lesen.
     private func teamBar(_ teamIndex: Int) -> some View {
-        VStack(spacing: 6) {
-            HStack {
+        let isActive = !viewModel.state.isFinished && viewModel.state.turnTeamIndex == teamIndex
+        let tint = teamIndex == 0 ? BeerStatsColor.accent : BeerStatsColor.accentSecondary
+        let remaining = viewModel.state.racks[teamIndex].remainingCount
+        let total = viewModel.state.racks[teamIndex].totalSlots
+
+        return VStack(spacing: 8) {
+            HStack(spacing: 8) {
                 Text(viewModel.teamName(teamIndex))
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-                Spacer()
-                Text("\(viewModel.state.racks[teamIndex].remainingCount)")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .kerning(1.4)
+                    .foregroundStyle(isActive ? tint : BeerStatsColor.textSecondary)
+
+                // Fortschrittsbalken der abgeräumten Becher – zeigt den
+                // Spielstand als Bild statt nur als Zahl.
+                GeometryReader { geometry in
+                    let ratio = total > 0 ? CGFloat(remaining) / CGFloat(total) : 0
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(BeerStatsColor.textSecondary.opacity(0.15))
+                        Capsule().fill(tint).frame(width: geometry.size.width * ratio)
+                    }
+                }
+                .frame(height: 4)
+
+                Text("\(remaining)")
                     .font(BeerStatsFont.statValue)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .foregroundStyle(isActive ? tint : BeerStatsColor.textSecondary)
+                    .frame(minWidth: 26, alignment: .trailing)
             }
 
             HStack(spacing: 8) {
@@ -207,7 +230,12 @@ struct LiveGameView: View {
                 Spacer()
             }
         }
-        .padding(.vertical, 6)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .glassPanel(cornerRadius: 16)
+        .neonEdge(tint, cornerRadius: 16, intensity: isActive ? 0.9 : 0.18)
+        .animation(AppAnimation.standard, value: isActive)
+        .animation(AppAnimation.standard, value: remaining)
     }
 
     private func playerChip(_ player: PlayerRef) -> some View {

@@ -396,10 +396,16 @@ final class LiveGameViewModel: ObservableObject {
         case .hit(_, let bounce, let trickshot, _):
             HapticManager.mediumImpact()
             SoundManager.play(.cupHit)
-            if bounce || trickshot {
+            if bounce {
                 show(.init(
-                    kind: .neutral,
-                    title: bounce ? "BOUNCE" : "TRICKSHOT",
+                    kind: .bounce,
+                    title: "BOUNCE!",
+                    subtitle: "Aufsetzer im Becher – zwei Becher, der Gegner wählt den zweiten"
+                ))
+            } else if trickshot {
+                show(.init(
+                    kind: .trickshot,
+                    title: "TRICKSHOT!",
                     subtitle: "Zwei Becher – der Gegner wählt den zweiten"
                 ))
             }
@@ -439,6 +445,14 @@ final class LiveGameViewModel: ObservableObject {
             HapticManager.lightImpact()
             SoundManager.play(.miss)
         }
+    }
+
+    /// Blendet die laufende Einblendung sofort aus – für „antippen zum
+    /// Überspringen".
+    func dismissHighlight() {
+        guard highlight != nil else { return }
+        highlightDismissTask?.cancel()
+        withAnimation(AppAnimation.smoothFade) { highlight = nil }
     }
 
     private func show(_ newHighlight: Highlight) {
@@ -498,7 +512,7 @@ final class LiveGameViewModel: ObservableObject {
         /// Bestimmt Farbe **und** Animation – deshalb nach dem Ereignis
         /// benannt und nicht nach der Stimmung.
         enum Kind: Equatable {
-            case airball, ballsBack, bombe, onFire, reRack, redemption, neutral
+            case airball, ballsBack, bombe, onFire, reRack, redemption, bounce, trickshot, neutral
         }
 
         let id = UUID()
@@ -514,6 +528,8 @@ final class LiveGameViewModel: ObservableObject {
             case .onFire:     return BeerStatsColor.accent
             case .reRack:     return BeerStatsColor.accent
             case .redemption: return BeerStatsColor.accentSecondary
+            case .bounce:     return BeerStatsColor.warning
+            case .trickshot:  return BeerStatsColor.success
             case .neutral:    return BeerStatsColor.textPrimary
             }
         }

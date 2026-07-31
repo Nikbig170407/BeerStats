@@ -19,6 +19,9 @@ struct HighlightOverlayView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let highlight: LiveGameViewModel.Highlight
+    /// Wird beim Antippen aufgerufen – die Einblendung lässt sich damit
+    /// überspringen, ohne dass der Tipp die Bedienelemente darunter erreicht.
+    var onTap: () -> Void = {}
 
     @State private var isAnimating = false
 
@@ -46,11 +49,20 @@ struct HighlightOverlayView: View {
                 .padding(.horizontal, 32)
                 .offset(y: isAnimating ? 0 : 12)
                 .opacity(isAnimating ? 1 : 0)
+
+            Text("Tippen zum Überspringen")
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .padding(.top, 18)
+                .opacity(isAnimating ? 0.7 : 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(backdrop)
-        // Darf keine Eingaben schlucken – siehe Kommentar oben.
-        .allowsHitTesting(false)
+        // Fängt Eingaben bewusst ab: Während der Einblendung darf kein Tipp
+        // versehentlich einen Becher oder Button darunter treffen. Wer es
+        // eilig hat, tippt die Einblendung weg.
+        .contentShape(Rectangle())
+        .onTapGesture { onTap() }
         .onAppear {
             guard !reduceMotion else { isAnimating = true; return }
             withAnimation(.spring(response: 0.34, dampingFraction: 0.55)) { isAnimating = true }
@@ -87,6 +99,8 @@ struct HighlightOverlayView: View {
         case .onFire:       FlameArt(isAnimating: isAnimating, reduceMotion: reduceMotion)
         case .reRack:       SpinArt(symbol: "arrow.triangle.2.circlepath", isAnimating: isAnimating, reduceMotion: reduceMotion)
         case .redemption:   SpinArt(symbol: "flame.circle", isAnimating: isAnimating, reduceMotion: reduceMotion)
+        case .bounce:       BounceArt(reduceMotion: reduceMotion)
+        case .trickshot:    SpinArt(symbol: "tornado", isAnimating: isAnimating, reduceMotion: reduceMotion)
         case .neutral:      EmptyView()
         }
     }
@@ -185,6 +199,71 @@ private struct BallsBackArt: View {
     private func ballAnimation(index: Int) -> Animation? {
         guard !reduceMotion else { return nil }
         return .spring(response: 0.5, dampingFraction: 0.5).delay(Double(index) * 0.1)
+    }
+}
+
+// MARK: - Bounce: Ball springt auf und in den Becher
+
+/// Der Ball setzt auf der Tischkante auf, springt hoch und fällt in den
+/// Becher. Die Stauchung beim Aufkommen macht den Aufprall spürbar – ohne
+/// sie wirkt eine Kugel, die sich bewegt, wie ein schwebender Punkt.
+private struct BounceArt: View {
+
+    let reduceMotion: Bool
+
+    @State private var phase = 0
+
+    private let path: [(x: CGFloat, y: CGFloat, squash: CGFloat)] = [
+        (-46, -26, 1.00),
+        (-24,  22, 0.72),   // Aufprall auf dem Tisch
+        (  2, -30, 1.06),
+        ( 26,  16, 0.80),
+        ( 44, -10, 1.00)
+    ]
+
+    var body: some View {
+        ZStack {
+            // Tischkante als Bezugslinie, sonst schwebt der Ball im Nichts.
+            Capsule()
+                .fill(BeerStatsColor.textSecondary.opacity(0.35))
+                .frame(width: 120, height: 3)
+                .offset(y: 30)
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [.white, Color(white: 0.85), Color(white: 0.62)],
+                        center: UnitPoint(x: 0.34, y: 0.3),
+                        startRadius: 1,
+                        endRadius: 20
+                    )
+                )
+                .frame(width: 26, height: 26)
+                .scaleEffect(x: 2 - current.squash, y: current.squash)
+                .offset(x: current.x, y: current.y)
+                .shadow(color: .black.opacity(0.5), radius: 5, y: 3)
+        }
+        .onAppear {
+            guard !reduceMotion else { phase = path.count - 1; return }
+            animateStep()
+        }
+    }
+
+    private var current: (x: CGFloat, y: CGFloat, squash: CGFloat) {
+        path[min(phase, path.count - 1)]
+    }
+
+    /// Schritt für Schritt statt einer durchgehenden Kurve: Nur so lässt
+    /// sich das harte Aufkommen von der weichen Flugphase unterscheiden.
+    private func animateStep() {
+        guard phase < path.count - 1 else { return }
+        let isImpact = path[phase + 1].squash < 1
+        withAnimation(.easeIn(duration: isImpact ? 0.16 : 0.22)) {
+            phase += 1
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + (isImpact ? 0.16 : 0.22)) {
+            animateStep()
+        }
     }
 }
 
