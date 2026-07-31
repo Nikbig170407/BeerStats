@@ -15,6 +15,10 @@ import SwiftUI
 struct ProfileDetailView: View {
 
     let profile: PlayerProfile
+    /// Alle übrigen Mitspieler – Auswahl für den Direktvergleich.
+    let otherProfiles: [PlayerProfile]
+    let gameRepository: GameRepositoryProtocol
+    let ownerId: String
     let onEdit: () -> Void
 
     private var stats: UserStatistics { profile.statistics }
@@ -31,6 +35,10 @@ struct ProfileDetailView: View {
                     resultSection
                     arsenalSection
                     streakSection
+                }
+
+                if !otherProfiles.isEmpty {
+                    comparisonSection
                 }
             }
             .padding(20)
@@ -137,6 +145,46 @@ struct ProfileDetailView: View {
             BeerStatsColor.surfaceElevated,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
+    }
+
+    /// Direktvergleich gegen jeden anderen Mitspieler.
+    ///
+    /// Bewusst als direkte Links statt über eine Auswahl mit Zustand:
+    /// `navigationDestination(item:)` gibt es erst ab iOS 17, das Ziel
+    /// dieses Projekts ist iOS 16.
+    private var comparisonSection: some View {
+        section("Direktvergleich") {
+            VStack(spacing: 8) {
+                ForEach(otherProfiles) { opponent in
+                    NavigationLink {
+                        HeadToHeadView(
+                            left: profile,
+                            right: opponent,
+                            gameRepository: gameRepository,
+                            ownerId: ownerId
+                        )
+                    } label: {
+                        HStack(spacing: 12) {
+                            ProfileAvatarView(profile: opponent, size: 36)
+                            Text("gegen \(opponent.name)")
+                                .font(BeerStatsFont.body)
+                                .foregroundStyle(BeerStatsColor.textPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(BeerStatsColor.textSecondary)
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+                        .background(
+                            BeerStatsColor.surfaceElevated,
+                            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
+            }
+        }
     }
 
     // MARK: - Bausteine

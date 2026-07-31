@@ -22,6 +22,7 @@ protocol GameRepositoryProtocol {
     ) async throws -> String
     func startGame(gameId: String) async throws
     func finishGame(gameId: String, winnerTeamId: String?) async throws
+    func fetchFinishedGames(userId: String) async throws -> [Game]
 }
 
 final class GameRepository: GameRepositoryProtocol {
@@ -76,5 +77,10 @@ final class GameRepository: GameRepositoryProtocol {
 
     func finishGame(gameId: String, winnerTeamId: String?) async throws {
         try await gameService.finishGame(gameId: gameId, winnerTeamId: winnerTeamId)
+    }
+
+    func fetchFinishedGames(userId: String) async throws -> [Game] {
+        let games = try await gameService.fetchFinishedGames(userId: userId)
+        return games.sorted { ($0.endedAt ?? .distantPast) > ($1.endedAt ?? .distantPast) }
     }
 }

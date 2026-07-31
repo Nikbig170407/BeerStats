@@ -129,6 +129,7 @@ private final class PreviewGameService: GameServiceProtocol {
     }
     func updateGameStatus(gameId: String, status: GameStatus, startedAt: Date?) async throws {}
     func finishGame(gameId: String, winnerTeamId: String?) async throws {}
+    func fetchFinishedGames(userId: String) async throws -> [Game] { [] }
 }
 
 private final class PreviewThrowService: ThrowServiceProtocol {

@@ -25,4 +25,12 @@ protocol GameServiceProtocol {
     /// Schließt ein Spiel ab: Status, Sieger und Endzeitpunkt in einem
     /// Schreibvorgang. `winnerTeamId` ist bei einem Unentschieden `nil`.
     func finishGame(gameId: String, winnerTeamId: String?) async throws
+
+    /// Alle abgeschlossenen Spiele eines Kontos – Grundlage für den
+    /// Direktvergleich zweier Mitspieler.
+    ///
+    /// Bewusst ohne serverseitige Sortierung: Dafür wäre ein dritter
+    /// Index-Eintrag nötig, und bei den hier zu erwartenden Mengen ist
+    /// Sortieren auf dem Gerät ohnehin unmerklich.
+    func fetchFinishedGames(userId: String) async throws -> [Game]
 }

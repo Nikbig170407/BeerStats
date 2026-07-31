@@ -15,6 +15,9 @@ struct HomeView: View {
 
     @StateObject private var viewModel: HomeViewModel
     private let container: AppContainer
+    /// Spiegelt die dauerhaft gespeicherte Einstellung, damit das Symbol in
+    /// der Leiste sofort umspringt.
+    @State private var isSoundOn = SoundManager.isEnabled
 
     init(container: AppContainer, currentUserId: String) {
         self.container = container
@@ -50,12 +53,21 @@ struct HomeView: View {
                             .foregroundStyle(BeerStatsColor.textSecondary)
                     }
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isSoundOn.toggle()
+                        SoundManager.isEnabled = isSoundOn
+                        if isSoundOn { SoundManager.play(.tap) }
+                        HapticManager.lightImpact()
+                    } label: {
+                        Image(systemName: isSoundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                            .foregroundStyle(isSoundOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
+                    }
+                    .accessibilityLabel(isSoundOn ? "Ton ausschalten" : "Ton einschalten")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
-                        ProfilesView(
-                            repository: container.playerProfileRepository,
-                            ownerId: viewModel.currentUserId
-                        )
+                        ProfilesView(container: container, ownerId: viewModel.currentUserId)
                     } label: {
                         Image(systemName: "person.crop.circle.badge.checkmark")
                             .foregroundStyle(BeerStatsColor.textPrimary)

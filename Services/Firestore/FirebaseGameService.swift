@@ -65,6 +65,14 @@ final class FirebaseGameService: GameServiceProtocol {
         try await db.collection(AppConstants.Firestore.games).document(gameId).updateData(data)
     }
 
+    func fetchFinishedGames(userId: String) async throws -> [Game] {
+        let snapshot = try await db.collection(AppConstants.Firestore.games)
+            .whereField("allPlayerIds", arrayContains: userId)
+            .whereField("status", isEqualTo: GameStatus.finished.rawValue)
+            .getDocuments()
+        return snapshot.documents.compactMap { try? $0.data(as: Game.self) }
+    }
+
     func finishGame(gameId: String, winnerTeamId: String?) async throws {
         var data: [String: Any] = [
             "status": GameStatus.finished.rawValue,

@@ -367,6 +367,7 @@ final class LiveGameViewModel: ObservableObject {
         switch event {
         case .hit(_, let bounce, let trickshot, _):
             HapticManager.mediumImpact()
+            SoundManager.play(.cupHit)
             if bounce || trickshot {
                 show(.init(
                     kind: .neutral,
@@ -377,27 +378,38 @@ final class LiveGameViewModel: ObservableObject {
         case .airball(let thrower, let penalised):
             HapticManager.error()
             if penalised {
+                SoundManager.play(.airball)
                 show(.init(kind: .airball, title: "AIRBALL!", subtitle: "\(playerName(thrower)) muss shotten"))
             }
         case .caughtFire(let player):
             HapticManager.success()
+            SoundManager.play(.onFire)
             show(.init(kind: .onFire, title: "ON FIRE!", subtitle: "\(playerName(player)) behält den Ball bis zum ersten Fehlwurf"))
         case .ballsBack(let teamIndex):
             HapticManager.success()
+            SoundManager.play(.ballsBack)
             show(.init(kind: .ballsBack, title: "BALLS BACK!", subtitle: "\(teamName(teamIndex)) wirft nochmal"))
         case .bombe(let choosingTeamIndex):
             HapticManager.success()
+            SoundManager.play(.bombe)
             show(.init(kind: .bombe, title: "BOMBE!", subtitle: "\(teamName(choosingTeamIndex)) wählt 2 weitere Becher"))
         case .redemptionStarted(let teamIndex):
             HapticManager.mediumImpact()
+            SoundManager.play(.onFire)
             show(.init(kind: .redemption, title: "REDEMPTION", subtitle: "\(teamName(teamIndex)) wirft nach"))
         case .reRacked(let teamIndex, let formation):
             HapticManager.mediumImpact()
+            SoundManager.play(.reRack)
             show(.init(kind: .reRack, title: "UMGESTELLT", subtitle: "\(teamName(teamIndex)) stellt auf \(formation.name) um"))
         case .finished:
             HapticManager.success()
-        case .cupChosen, .missed, .rebound:
+            SoundManager.play(.victory)
+        case .cupChosen:
             HapticManager.lightImpact()
+            SoundManager.play(.tap)
+        case .missed, .rebound:
+            HapticManager.lightImpact()
+            SoundManager.play(.miss)
         }
     }
 

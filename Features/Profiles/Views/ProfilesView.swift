@@ -16,9 +16,14 @@ struct ProfilesView: View {
     @StateObject private var viewModel: ProfilesViewModel
     @State private var editorTarget: EditorTarget?
 
-    init(repository: PlayerProfileRepositoryProtocol, ownerId: String) {
+    private let container: AppContainer
+    private let ownerId: String
+
+    init(container: AppContainer, ownerId: String) {
+        self.container = container
+        self.ownerId = ownerId
         _viewModel = StateObject(
-            wrappedValue: ProfilesViewModel(repository: repository, ownerId: ownerId)
+            wrappedValue: ProfilesViewModel(repository: container.playerProfileRepository, ownerId: ownerId)
         )
     }
 
@@ -64,6 +69,16 @@ struct ProfilesView: View {
                         .foregroundStyle(BeerStatsColor.accent)
                 }
                 .accessibilityLabel("Profil anlegen")
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    LeaderboardView(profiles: viewModel.profiles)
+                } label: {
+                    Image(systemName: "trophy.fill")
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                }
+                .accessibilityLabel("Rangliste")
+                .disabled(viewModel.profiles.isEmpty)
             }
         }
         .sheet(item: $editorTarget) { target in
@@ -146,7 +161,12 @@ struct ProfilesView: View {
 
     private func profileRow(_ profile: PlayerProfile) -> some View {
         NavigationLink {
-            ProfileDetailView(profile: profile) {
+            ProfileDetailView(
+                profile: profile,
+                otherProfiles: viewModel.profiles.filter { $0.id != profile.id },
+                gameRepository: container.gameRepository,
+                ownerId: ownerId
+            ) {
                 editorTarget = .existing(profile)
             }
         } label: {
