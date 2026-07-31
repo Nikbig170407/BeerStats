@@ -221,31 +221,47 @@ struct LiveGameView: View {
                 .lineLimit(1)
             if isOnFire { Text("🔥").font(.system(size: 11)) }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 6)
         .background(
             Capsule().fill(isActive ? BeerStatsColor.accent : Color.clear)
         )
         .overlay(
             Capsule().strokeBorder(
                 isOnFire ? BeerStatsColor.accentSecondary : BeerStatsColor.textSecondary.opacity(0.25),
-                lineWidth: 1
+                lineWidth: isOnFire ? 1.5 : 1
             )
         )
         .foregroundStyle(isActive ? BeerStatsColor.textOnAccent : BeerStatsColor.textSecondary)
+        // Wer dran ist, tritt spürbar hervor – am Tisch aus Armlänge lesbar.
+        .scaleEffect(isActive ? 1.06 : 1)
+        .shadow(color: isOnFire ? BeerStatsColor.accentSecondary.opacity(0.5) : .clear, radius: 7)
         .animation(AppAnimation.tap, value: isActive)
+        .animation(AppAnimation.standard, value: isOnFire)
     }
 
     // MARK: - Zug-Anzeige
 
+    /// Zeigt an, wer wirft. Bei Bonuswürfen wechselt die Umrandung auf die
+    /// Akzentfarbe – man erkennt am Rand, dass gerade eine Sonderregel läuft,
+    /// ohne den Text lesen zu müssen.
     private var turnPill: some View {
-        Text(viewModel.turnDescription)
+        let isSpecial = viewModel.state.pending != .normal
+
+        return Text(viewModel.turnDescription)
             .font(BeerStatsFont.statLabel)
-            .foregroundStyle(BeerStatsColor.textSecondary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 5)
+            .foregroundStyle(isSpecial ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
             .background(Capsule().fill(BeerStatsColor.surfaceElevated))
-            .overlay(Capsule().strokeBorder(BeerStatsColor.textSecondary.opacity(0.15), lineWidth: 1))
+            .overlay(
+                Capsule().strokeBorder(
+                    isSpecial ? BeerStatsColor.accent : BeerStatsColor.textSecondary.opacity(0.15),
+                    lineWidth: isSpecial ? 1.5 : 1
+                )
+            )
+            .shadow(color: isSpecial ? BeerStatsColor.accent.opacity(0.35) : .clear, radius: 8)
+            .animation(AppAnimation.standard, value: isSpecial)
             .padding(.vertical, 10)
             .accessibilityAddTraits(.updatesFrequently)
     }

@@ -127,10 +127,15 @@ final class LiveGameViewModel: ObservableObject {
         guard action.isPersistable else { return }
         history.append(snapshot)
         if history.count > Self.maxHistory { history.removeFirst() }
-        persist(action, by: thrower, basedOn: result.state)
+        persist(action, by: thrower, before: snapshot, after: result.state)
     }
 
-    private func persist(_ action: GameAction, by thrower: PlayerRef, basedOn newState: LiveGameState) {
+    private func persist(
+        _ action: GameAction,
+        by thrower: PlayerRef,
+        before: LiveGameState,
+        after: LiveGameState
+    ) {
         guard let gameId, let throwRepository else { return }
         Task { [weak self] in
             guard let self else { return }
@@ -138,7 +143,8 @@ final class LiveGameViewModel: ObservableObject {
                 try await throwRepository.record(
                     action: action,
                     by: thrower,
-                    in: newState,
+                    before: before,
+                    after: after,
                     gameId: gameId,
                     teams: self.teams
                 )
@@ -167,13 +173,18 @@ final class LiveGameViewModel: ObservableObject {
             teams.indices.contains(index) ? teams[index].id : nil
         }
         let profileIdsByTeam = teams.map(\.playerIds)
+        // Die Kennung JETZT festhalten, nicht erst im Task lesen: Eine
+        // Revanche schreibt `gameId` unmittelbar danach um, und dann würde
+        // das falsche – nämlich das gerade erst begonnene – Spiel als beendet
+        // markiert.
+        let settledGameId = gameId
 
         Task { [weak self] in
             guard let self else { return }
 
-            if let gameId, let gameRepository {
+            if let settledGameId, let gameRepository {
                 do {
-                    try await gameRepository.finishGame(gameId: gameId, winnerTeamId: winningTeamId)
+                    try await gameRepository.finishGame(gameId: settledGameId, winnerTeamId: winningTeamId)
                 } catch {
                     AppLogger.firestore.error("Spielende konnte nicht gespeichert werden: \(error.localizedDescription)")
                 }

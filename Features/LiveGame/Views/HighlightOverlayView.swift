@@ -23,41 +23,59 @@ struct HighlightOverlayView: View {
     @State private var isAnimating = false
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             artwork
                 .frame(height: 96)
+                // Farbiger Schein direkt am Motiv statt flächig im
+                // Hintergrund – so hebt es sich ab, statt darin zu versinken.
+                .shadow(color: highlight.tint.opacity(0.55), radius: 26)
 
             Text(highlight.title)
-                .font(BeerStatsFont.largeTitle)
+                .font(.system(size: 40, weight: .heavy, design: .rounded))
                 .foregroundStyle(highlight.tint)
-                .shadow(color: highlight.tint.opacity(0.7), radius: 18)
+                .shadow(color: .black.opacity(0.9), radius: 2, y: 2)
+                .shadow(color: highlight.tint.opacity(0.6), radius: 22)
                 .scaleEffect(isAnimating ? 1 : 0.5)
                 .opacity(isAnimating ? 1 : 0)
 
             Text(highlight.subtitle)
-                .font(BeerStatsFont.body)
+                .font(BeerStatsFont.headline)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(BeerStatsColor.textPrimary)
+                .shadow(color: .black.opacity(0.8), radius: 2)
                 .padding(.horizontal, 32)
                 .offset(y: isAnimating ? 0 : 12)
                 .opacity(isAnimating ? 1 : 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            RadialGradient(
-                colors: [highlight.tint.opacity(0.28), BeerStatsColor.backgroundPrimary.opacity(0.97)],
-                center: .center,
-                startRadius: 10,
-                endRadius: 380
-            )
-            .ignoresSafeArea()
-        )
+        .background(backdrop)
         // Darf keine Eingaben schlucken – siehe Kommentar oben.
         .allowsHitTesting(false)
         .onAppear {
             guard !reduceMotion else { isAnimating = true; return }
             withAnimation(.spring(response: 0.34, dampingFraction: 0.55)) { isAnimating = true }
         }
+    }
+
+    /// Nahezu deckendes Dunkel statt eines eingefärbten Verlaufs.
+    ///
+    /// Vorher lag hinter dem Motiv ein Radialverlauf in genau der Farbe des
+    /// Motivs – Flamme auf Bernstein, Explosion auf Rot. Das Ergebnis war
+    /// matschig. Jetzt trägt der Hintergrund keine Farbe mehr, der Akzent
+    /// sitzt ausschließlich am Objekt selbst.
+    private var backdrop: some View {
+        ZStack {
+            Color.black.opacity(0.72)
+            BeerStatsColor.backgroundPrimary.opacity(0.93)
+            // Sehr dezenter Schein, damit die Mitte nicht tot wirkt.
+            RadialGradient(
+                colors: [highlight.tint.opacity(0.13), .clear],
+                center: .center,
+                startRadius: 0,
+                endRadius: 240
+            )
+        }
+        .ignoresSafeArea()
     }
 
     @ViewBuilder

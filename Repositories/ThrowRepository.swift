@@ -22,7 +22,8 @@ protocol ThrowRepositoryProtocol {
     func record(
         action: GameAction,
         by player: PlayerRef,
-        in state: LiveGameState,
+        before: LiveGameState,
+        after: LiveGameState,
         gameId: String,
         teams: [Team]
     ) async throws
@@ -54,24 +55,31 @@ final class ThrowRepository: ThrowRepositoryProtocol {
     func record(
         action: GameAction,
         by player: PlayerRef,
-        in state: LiveGameState,
+        before: LiveGameState,
+        after: LiveGameState,
         gameId: String,
         teams: [Team]
     ) async throws {
         guard action.isPersistable else { return }
 
+        // Wichtig: Wurf-Typ und Bounce-Kennzeichen stammen aus dem Zustand
+        // VOR der Aktion. Danach ist der Bounce-Schalter bereits
+        // zurückgesetzt und `pending` beschreibt schon den nächsten Wurf –
+        // beides wäre für diesen Eintrag falsch. Die laufenden Nummern
+        // kommen dagegen aus dem Zustand danach, weil sie erst dort
+        // hochgezählt wurden.
         let entry = Throw(
             playerId: playerId(for: player, teams: teams),
             teamId: teamId(at: player.teamIndex, teams: teams),
-            targetTeamId: teamId(at: state.opponent(of: player.teamIndex), teams: teams),
+            targetTeamId: teamId(at: before.opponent(of: player.teamIndex), teams: teams),
             cupId: cupId(for: action),
             result: action.throwResult,
-            throwType: throwType(for: state),
-            sequenceNumber: state.sequenceNumber,
-            roundNumber: state.roundNumber,
-            isBounce: state.bounceArmed && isThrowAtCup(action),
+            throwType: throwType(for: before),
+            sequenceNumber: after.sequenceNumber,
+            roundNumber: after.roundNumber,
+            isBounce: before.bounceArmed && isThrowAtCup(action),
             enablesTrickshot: action == .rebound,
-            cupsRemoved: cupsRemoved(for: action, state: state),
+            cupsRemoved: cupsRemoved(for: action),
             action: action
         )
         try await throwService.appendThrow(entry, gameId: gameId)
@@ -151,15 +159,16 @@ final class ThrowRepository: ThrowRepositoryProtocol {
         }
     }
 
-    /// Wie viele Becher dieser Eintrag vom Tisch nimmt. Bounce und Trickshot
-    /// zählen zwei, die Bombe drei – der zweite bzw. die beiden weiteren
-    /// werden allerdings als eigene `chooseCup`-Einträge protokolliert, damit
-    /// im Log sichtbar bleibt, welche Becher der Gegner gewählt hat.
-    private func cupsRemoved(for action: GameAction, state: LiveGameState) -> Int {
+    /// Wie viele Becher dieser eine Eintrag vom Tisch nimmt.
+    ///
+    /// Bewusst nur der unmittelbare Abgang: Die zusätzlichen Becher bei
+    /// Bounce, Trickshot und Bombe werden vom Gegner ausgewählt und landen
+    /// als eigene `chooseCup`-Einträge im Log – so bleibt nachvollziehbar,
+    /// welche Becher das waren. Die Bombe selbst nimmt gar keinen Becher:
+    /// Der Treffer galt dem Becher, den der Teamkollege schon abgeräumt hat.
+    private func cupsRemoved(for action: GameAction) -> Int {
         switch action {
-        case .hitCup: return 1
-        case .chooseCup: return 1
-        case .bombe: return 1
+        case .hitCup, .chooseCup: return 1
         default: return 0
         }
     }
