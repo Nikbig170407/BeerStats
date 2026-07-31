@@ -44,6 +44,21 @@ protocol PlayerProfileServiceProtocol {
         ownerId: String,
         deltas: ProfileStatisticsDelta
     ) async throws
+
+    /// Setzt die Kennzahlen auf einen festen Wert.
+    ///
+    /// Bewusst getrennt vom additiven Weg und nur für die
+    /// Entwicklereinstellungen gedacht: Beim Korrigieren von Hand oder beim
+    /// Zurücksetzen ist genau das Überschreiben gewollt, das im laufenden
+    /// Betrieb vermieden werden soll.
+    func overwriteStatistics(
+        profileId: String,
+        ownerId: String,
+        statistics: UserStatistics
+    ) async throws
+
+    /// Entfernt ein Profil endgültig.
+    func deleteProfile(profileId: String, ownerId: String) async throws
 }
 
 /// Die Veränderung, die ein abgeschlossenes Spiel an einem Profil bewirkt.

@@ -74,6 +74,23 @@ final class FirebasePlayerProfileService: PlayerProfileServiceProtocol {
         ])
     }
 
+    func overwriteStatistics(
+        profileId: String,
+        ownerId: String,
+        statistics: UserStatistics
+    ) async throws {
+        var corrected = statistics
+        corrected.lastUpdated = Date()
+        let encoded = try Firestore.Encoder().encode(corrected)
+        try await profilesCollection(ownerId: ownerId)
+            .document(profileId)
+            .updateData(["statistics": encoded])
+    }
+
+    func deleteProfile(profileId: String, ownerId: String) async throws {
+        try await profilesCollection(ownerId: ownerId).document(profileId).delete()
+    }
+
     func incrementStatistics(
         profileId: String,
         ownerId: String,

@@ -43,7 +43,7 @@ struct HomeView: View {
                 }
                 .padding(20)
             }
-            .background(BeerStatsColor.backgroundPrimary.ignoresSafeArea())
+            .background(GridBackdrop())
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -76,25 +76,38 @@ struct HomeView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
-                        FriendsView(friendRepository: container.friendRepository, currentUserId: viewModel.currentUserId)
+                        DeveloperSettingsView(
+                            repository: container.playerProfileRepository,
+                            ownerId: viewModel.currentUserId
+                        )
                     } label: {
-                        Image(systemName: "person.2.fill")
+                        Image(systemName: "wrench.and.screwdriver.fill")
                             .foregroundStyle(BeerStatsColor.textSecondary)
                     }
-                    .accessibilityLabel("Freunde")
+                    .accessibilityLabel("Entwicklereinstellungen")
                 }
             }
         }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("BeerStats")
-                .font(BeerStatsFont.largeTitle)
-                .foregroundStyle(BeerStatsColor.textPrimary)
-            Text("Bereit für die nächste Runde?")
-                .font(BeerStatsFont.body)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+        HStack(spacing: 14) {
+            BeerGlassMark(size: 44)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("BeerStats")
+                    .font(BeerStatsFont.largeTitle)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [BeerStatsColor.textPrimary, BeerStatsColor.accent],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                Text("Bereit für die nächste Runde?")
+                    .font(BeerStatsFont.body)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            Spacer()
         }
         .padding(.top, 8)
     }

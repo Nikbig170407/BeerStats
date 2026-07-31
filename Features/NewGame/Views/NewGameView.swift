@@ -64,14 +64,26 @@ struct NewGameView: View {
             }
             .padding(20)
         }
-        .background(BeerStatsColor.backgroundPrimary.ignoresSafeArea())
+        .background(GridBackdrop())
         .navigationTitle("Neues Spiel")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             if viewModel.hasEnoughProfiles {
                 createButton
                     .padding(20)
-                    .background(BeerStatsColor.backgroundPrimary)
+                    // Weicher Verlauf statt harter Kante, damit der Inhalt
+                    // darunter auszulaufen scheint.
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                BeerStatsColor.backgroundPrimary.opacity(0),
+                                BeerStatsColor.backgroundPrimary
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .ignoresSafeArea()
+                    )
             }
         }
         .sheet(item: $pickerTarget) { target in
@@ -127,29 +139,70 @@ struct NewGameView: View {
     // MARK: - Aufstellung
 
     private var lineup: some View {
-        VStack(spacing: 16) {
-            teamRow(teamIndex: 0)
-
-            Text("gegen")
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
-
-            teamRow(teamIndex: 1)
+        VStack(spacing: 0) {
+            teamPanel(teamIndex: 0, tint: BeerStatsColor.accent)
+            versusBadge
+            teamPanel(teamIndex: 1, tint: BeerStatsColor.accentSecondary)
         }
     }
 
-    private func teamRow(teamIndex: Int) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionLabel("Team \(teamIndex + 1)")
+    /// Das VS zwischen den Teams, mit Leuchtlinien nach beiden Seiten –
+    /// macht aus zwei Listen ein Duell.
+    private var versusBadge: some View {
+        HStack(spacing: 12) {
+            LinearGradient(
+                colors: [.clear, BeerStatsColor.accent.opacity(0.7)],
+                startPoint: .leading, endPoint: .trailing
+            )
+            .frame(height: 1)
+
+            Text("VS")
+                .font(.system(size: 17, weight: .heavy, design: .rounded))
+                .foregroundStyle(BeerStatsColor.textPrimary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .glassPanel(cornerRadius: 20)
+                .neonEdge(BeerStatsColor.textSecondary, cornerRadius: 20, intensity: 0.5)
+
+            LinearGradient(
+                colors: [BeerStatsColor.accentSecondary.opacity(0.7), .clear],
+                startPoint: .leading, endPoint: .trailing
+            )
+            .frame(height: 1)
+        }
+        .padding(.vertical, 14)
+    }
+
+    private func teamPanel(teamIndex: Int, tint: Color) -> some View {
+        let filled = viewModel.selection[teamIndex].compactMap { $0 }.count
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("TEAM \(teamIndex + 1)")
+                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .kerning(1.6)
+                    .foregroundStyle(tint)
+                Spacer()
+                Text("\(filled)/\(viewModel.playersPerTeam)")
+                    .font(BeerStatsFont.statLabel)
+                    .foregroundStyle(
+                        filled == viewModel.playersPerTeam ? tint : BeerStatsColor.textSecondary
+                    )
+            }
+
             HStack(spacing: 12) {
                 ForEach(0..<viewModel.playersPerTeam, id: \.self) { slot in
-                    slotView(teamIndex: teamIndex, slot: slot)
+                    slotView(teamIndex: teamIndex, slot: slot, tint: tint)
                 }
             }
         }
+        .padding(16)
+        .glassPanel()
+        .neonEdge(tint, intensity: filled == viewModel.playersPerTeam ? 1 : 0.35)
+        .animation(AppAnimation.standard, value: filled)
     }
 
-    private func slotView(teamIndex: Int, slot: Int) -> some View {
+    private func slotView(teamIndex: Int, slot: Int, tint: Color) -> some View {
         let profile = viewModel.profile(teamIndex: teamIndex, slot: slot)
 
         return Button {
@@ -162,19 +215,21 @@ struct NewGameView: View {
             VStack(spacing: 8) {
                 if let profile {
                     ProfileAvatarView(profile: profile, size: 56)
+                        .shadow(color: profile.color.color.opacity(0.6), radius: 12)
                     Text(profile.name)
-                        .font(BeerStatsFont.caption)
+                        .font(BeerStatsFont.headline)
                         .foregroundStyle(BeerStatsColor.textPrimary)
                         .lineLimit(1)
                 } else {
                     ZStack {
                         Circle()
                             .strokeBorder(
-                                BeerStatsColor.textSecondary.opacity(0.4),
+                                tint.opacity(0.55),
                                 style: StrokeStyle(lineWidth: 2, dash: [5, 4])
                             )
                         Image(systemName: "plus")
-                            .foregroundStyle(BeerStatsColor.textSecondary)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(tint.opacity(0.8))
                     }
                     .frame(width: 56, height: 56)
                     Text("Wählen")
@@ -183,13 +238,26 @@ struct NewGameView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
+            .padding(.vertical, 16)
             .background(
-                BeerStatsColor.surfaceElevated,
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        profile == nil
+                            ? BeerStatsColor.backgroundSecondary.opacity(0.6)
+                            : profile!.color.color.opacity(0.14)
+                    )
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        profile?.color.color.opacity(0.8) ?? Color.clear,
+                        lineWidth: 1.2
+                    )
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(PressableButtonStyle())
+        .animation(AppAnimation.tap, value: profile?.id)
         .accessibilityLabel(
             profile.map { "\($0.name), zum Entfernen antippen" } ?? "Freier Platz, Spieler wählen"
         )

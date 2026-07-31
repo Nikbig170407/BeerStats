@@ -32,6 +32,14 @@ protocol PlayerProfileRepositoryProtocol {
         profileIdsByTeam: [[String]],
         ownerId: String
     ) async throws
+
+    // MARK: - Nur für die Entwicklereinstellungen
+
+    func overwriteStatistics(profileId: String, statistics: UserStatistics, ownerId: String) async throws
+    /// Setzt die Kennzahlen aller Profile auf null. Namen, Emoji und Farbe
+    /// bleiben erhalten.
+    func resetAllStatistics(ownerId: String) async throws
+    func deleteProfile(profileId: String, ownerId: String) async throws
 }
 
 final class PlayerProfileRepository: PlayerProfileRepositoryProtocol {
@@ -141,5 +149,31 @@ final class PlayerProfileRepository: PlayerProfileRepositoryProtocol {
                 )
             }
         }
+    }
+
+    // MARK: - Entwicklereinstellungen
+
+    func overwriteStatistics(profileId: String, statistics: UserStatistics, ownerId: String) async throws {
+        try await profileService.overwriteStatistics(
+            profileId: profileId,
+            ownerId: ownerId,
+            statistics: statistics
+        )
+    }
+
+    func resetAllStatistics(ownerId: String) async throws {
+        let profiles = try await profileService.fetchProfiles(ownerId: ownerId)
+        for profile in profiles {
+            guard let profileId = profile.id else { continue }
+            try await profileService.overwriteStatistics(
+                profileId: profileId,
+                ownerId: ownerId,
+                statistics: UserStatistics()
+            )
+        }
+    }
+
+    func deleteProfile(profileId: String, ownerId: String) async throws {
+        try await profileService.deleteProfile(profileId: profileId, ownerId: ownerId)
     }
 }

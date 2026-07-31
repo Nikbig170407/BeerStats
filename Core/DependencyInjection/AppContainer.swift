@@ -160,4 +160,6 @@ private final class PreviewPlayerProfileService: PlayerProfileServiceProtocol {
         emoji: String, color: ProfileColor, isActive: Bool
     ) async throws {}
     func incrementStatistics(profileId: String, ownerId: String, deltas: ProfileStatisticsDelta) async throws {}
+    func overwriteStatistics(profileId: String, ownerId: String, statistics: UserStatistics) async throws {}
+    func deleteProfile(profileId: String, ownerId: String) async throws {}
 }

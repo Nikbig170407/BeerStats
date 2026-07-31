@@ -67,9 +67,8 @@ struct OnboardingView: View {
 
     private var header: some View {
         VStack(spacing: 8) {
-            Image(systemName: "cup.and.saucer.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(BeerStatsColor.accent)
+            BeerGlassMark(size: 58)
+                .padding(.bottom, 4)
             Text("BeerStats")
                 .font(BeerStatsFont.largeTitle)
                 .foregroundStyle(BeerStatsColor.textPrimary)
