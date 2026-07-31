@@ -14,6 +14,15 @@ final class HomeViewModel: ObservableObject {
 
     @Published private(set) var games: [Game] = []
 
+    /// Das zuletzt begonnene, noch laufende Spiel.
+    ///
+    /// Bewusst nur eines statt einer Liste: Es läuft immer höchstens eine
+    /// Partie. Der Eintrag existiert allein dafür, dass eine angefangene
+    /// Runde nach einem versehentlichen Verlassen weitergehen kann.
+    var resumableGame: Game? {
+        games.first { $0.status == .active || $0.status == .lobby }
+    }
+
     private let gameRepository: GameRepositoryProtocol
     let currentUserId: String
     private var observationTask: Task<Void, Never>?

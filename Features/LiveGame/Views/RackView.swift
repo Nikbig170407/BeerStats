@@ -37,6 +37,9 @@ struct RackView: View {
                         cupButton(at: cupIndex)
                     }
                 }
+                // Seitlicher Versatz der Reihe – macht aus zwei gleich langen
+                // Reihen den Berserker statt eines Blocks.
+                .offset(x: cupWidth * 1.1 * rack.offset(forRow: rowIndex))
                 // Später gezeichnete Reihen liegen vorn und überlappen die
                 // dahinterliegenden.
                 .zIndex(Double(position))

@@ -31,8 +31,15 @@ struct ProfileEditorView: View {
     @State private var isActive: Bool
 
     private static let emojiChoices = [
-        "🍺", "🔥", "🎯", "⚡️", "🏆", "💣", "🌀", "🏓",
-        "😎", "🤠", "👑", "🦊", "🐻", "🦅", "🐺", "🦁"
+        // Bierpong und Feiern
+        "🍺", "🍻", "🥤", "🏓", "🎯", "🏆", "🥇", "💣",
+        "🔥", "⚡️", "🌀", "💥", "🎲", "🎉", "🍾", "🥃",
+        // Gesichter und Typen
+        "😎", "🤠", "🤖", "👽", "🤡", "😈", "🥸", "🫡",
+        "👑", "💀", "🦾", "🧊", "🧨", "🎃", "🕶️", "🫶",
+        // Tiere
+        "🦊", "🐻", "🦅", "🐺", "🦁", "🐯", "🦈", "🐉",
+        "🦍", "🐸", "🦔", "🐙", "🦖", "🐴", "🦌", "🐧"
     ]
 
     init(
@@ -135,7 +142,7 @@ struct ProfileEditorView: View {
     private var emojiPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionLabel("Zeichen")
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 8), spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 8), spacing: 6) {
                 ForEach(Self.emojiChoices, id: \.self) { choice in
                     Button {
                         emoji = choice

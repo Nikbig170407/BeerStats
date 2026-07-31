@@ -31,25 +31,11 @@ struct HomeView: View {
 
                     newGameLink
 
-                    if !viewModel.games.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Deine Spiele")
-                                .font(BeerStatsFont.title)
-                                .foregroundStyle(BeerStatsColor.textPrimary)
-
-                            ForEach(viewModel.games) { game in
-                                NavigationLink {
-                                    LobbyView(
-                                        gameRepository: container.gameRepository,
-                                        gameId: game.id ?? "",
-                                        currentUserId: viewModel.currentUserId
-                                    )
-                                } label: {
-                                    gameRow(game)
-                                }
-                                .buttonStyle(PressableButtonStyle())
-                            }
-                        }
+                    // Bewusst nur das zuletzt begonnene Spiel statt einer
+                    // Liste: Es läuft immer höchstens eine Partie, und die
+                    // soll nach einem versehentlichen Verlassen weitergehen.
+                    if let running = viewModel.resumableGame {
+                        resumeLink(for: running)
                     }
                 }
                 .padding(20)
@@ -103,11 +89,7 @@ struct HomeView: View {
 
     private var newGameLink: some View {
         NavigationLink {
-            NewGameView(
-                gameRepository: container.gameRepository,
-                profileRepository: container.playerProfileRepository,
-                currentUserId: viewModel.currentUserId
-            )
+            NewGameView(container: container, currentUserId: viewModel.currentUserId)
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
@@ -122,32 +104,41 @@ struct HomeView: View {
         .buttonStyle(PressableButtonStyle())
     }
 
-    private func gameRow(_ game: Game) -> some View {
-        BeerStatsCard {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(game.teams.map { $0.playerNames.joined(separator: " & ") }.joined(separator: " vs "))
-                        .font(BeerStatsFont.headline)
-                        .foregroundStyle(BeerStatsColor.textPrimary)
-                        .lineLimit(1)
-                    Text(statusLabel(game.status))
-                        .font(BeerStatsFont.caption)
+    private func resumeLink(for game: Game) -> some View {
+        NavigationLink {
+            LiveGameView(
+                teams: game.teams,
+                format: game.format,
+                playersPerTeam: game.type == .oneVsOne ? 1 : 2,
+                perspectiveTeamIndex: 0,
+                gameId: game.id,
+                throwRepository: container.throwRepository,
+                gameRepository: container.gameRepository,
+                profileRepository: container.playerProfileRepository,
+                ownerId: viewModel.currentUserId
+            )
+        } label: {
+            BeerStatsCard {
+                HStack(spacing: 12) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 26))
+                        .foregroundStyle(BeerStatsColor.accent)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Spiel fortsetzen")
+                            .font(BeerStatsFont.headline)
+                            .foregroundStyle(BeerStatsColor.textPrimary)
+                        Text(game.teams.map { $0.playerNames.joined(separator: " & ") }.joined(separator: " vs "))
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
                         .foregroundStyle(BeerStatsColor.textSecondary)
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(BeerStatsColor.textSecondary)
             }
         }
-    }
-
-    private func statusLabel(_ status: GameStatus) -> String {
-        switch status {
-        case .lobby: return "Wartet auf Spielstart"
-        case .active: return "Läuft"
-        case .paused: return "Pausiert"
-        case .finished: return "Beendet"
-        case .cancelled: return "Abgebrochen"
-        }
+        .buttonStyle(PressableButtonStyle())
+        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 }

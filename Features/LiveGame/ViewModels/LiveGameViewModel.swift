@@ -22,6 +22,8 @@ final class LiveGameViewModel: ObservableObject {
     /// Mitlaufendes Protokoll, neuester Eintrag zuerst.
     @Published private(set) var eventLog: [String] = []
     @Published var isShowingReRackSheet = false
+    @Published private(set) var isStartingRematch = false
+    @Published var errorMessage: String?
 
     // MARK: - Unveränderliche Spieldaten
 
@@ -29,7 +31,9 @@ final class LiveGameViewModel: ObservableObject {
     let format: GameFormat
 
     private let playersPerTeam: Int
-    private let gameId: String?
+    /// Wechselt bei einer Revanche auf das neu angelegte Spiel.
+    private var gameId: String?
+    private let gameType: GameType
     private let throwRepository: ThrowRepositoryProtocol?
     private let gameRepository: GameRepositoryProtocol?
     private let profileRepository: PlayerProfileRepositoryProtocol?
@@ -68,6 +72,7 @@ final class LiveGameViewModel: ObservableObject {
         self.teams = teams
         self.format = format
         self.playersPerTeam = playersPerTeam
+        self.gameType = playersPerTeam == 1 ? .oneVsOne : .twoVsTwo
         self.gameId = gameId
         self.throwRepository = throwRepository
         self.gameRepository = gameRepository
@@ -186,6 +191,49 @@ final class LiveGameViewModel: ObservableObject {
                 }
             }
         }
+    }
+
+    /// Startet dieselbe Aufstellung nochmal.
+    ///
+    /// Legt ein neues Spiel an, statt das alte weiterzubenutzen – sonst
+    /// würden beide Partien im selben Wurf-Log landen und die Auswertung
+    /// wäre nicht mehr trennbar.
+    func startRematch() async {
+        guard let gameRepository else { return }
+        isStartingRematch = true
+        defer { isStartingRematch = false }
+
+        // Das laufende Ergebnis zuerst festschreiben, sonst ginge es verloren.
+        confirmResult()
+
+        do {
+            let newGameId = try await gameRepository.createGame(
+                type: gameType,
+                teams: teams,
+                format: format,
+                createdBy: ownerId ?? "",
+                accessUserIds: ownerId.map { [$0] }
+            )
+            try await gameRepository.startGame(gameId: newGameId)
+
+            observationTask?.cancel()
+            gameId = newGameId
+            history.removeAll()
+            eventLog.removeAll()
+            didSettleGame = false
+            hideHighlight()
+            state = GameEngine.makeInitialState(format: format, playersPerTeam: playersPerTeam)
+            observeThrows()
+            HapticManager.success()
+        } catch {
+            HapticManager.error()
+            errorMessage = AppError.from(error).errorDescription
+        }
+    }
+
+    private func hideHighlight() {
+        highlightDismissTask?.cancel()
+        highlight = nil
     }
 
     var canUndo: Bool { !history.isEmpty }
@@ -308,27 +356,36 @@ final class LiveGameViewModel: ObservableObject {
         switch event {
         case .hit(_, let bounce, let trickshot, _):
             HapticManager.mediumImpact()
-            if bounce || trickshot { show(.init(kind: .neutral, title: bounce ? "BOUNCE" : "TRICKSHOT", subtitle: "Zwei Becher – der Gegner wählt den zweiten")) }
+            if bounce || trickshot {
+                show(.init(
+                    kind: .neutral,
+                    title: bounce ? "BOUNCE" : "TRICKSHOT",
+                    subtitle: "Zwei Becher – der Gegner wählt den zweiten"
+                ))
+            }
         case .airball(let thrower, let penalised):
             HapticManager.error()
             if penalised {
-                show(.init(kind: .warning, title: "AIRBALL!", subtitle: "\(playerName(thrower)) muss shotten"))
+                show(.init(kind: .airball, title: "AIRBALL!", subtitle: "\(playerName(thrower)) muss shotten"))
             }
         case .caughtFire(let player):
             HapticManager.success()
-            show(.init(kind: .fire, title: "ON FIRE!", subtitle: "\(playerName(player)) behält den Ball bis zum ersten Fehlwurf"))
+            show(.init(kind: .onFire, title: "ON FIRE!", subtitle: "\(playerName(player)) behält den Ball bis zum ersten Fehlwurf"))
         case .ballsBack(let teamIndex):
             HapticManager.success()
-            show(.init(kind: .positive, title: "BALLS BACK!", subtitle: "\(teamName(teamIndex)) wirft nochmal"))
+            show(.init(kind: .ballsBack, title: "BALLS BACK!", subtitle: "\(teamName(teamIndex)) wirft nochmal"))
         case .bombe(let choosingTeamIndex):
             HapticManager.success()
-            show(.init(kind: .warning, title: "BOMBE!", subtitle: "\(teamName(choosingTeamIndex)) wählt 2 weitere Becher"))
+            show(.init(kind: .bombe, title: "BOMBE!", subtitle: "\(teamName(choosingTeamIndex)) wählt 2 weitere Becher"))
         case .redemptionStarted(let teamIndex):
             HapticManager.mediumImpact()
-            show(.init(kind: .warning, title: "REDEMPTION", subtitle: "\(teamName(teamIndex)) wirft nach"))
+            show(.init(kind: .redemption, title: "REDEMPTION", subtitle: "\(teamName(teamIndex)) wirft nach"))
+        case .reRacked(let teamIndex, let formation):
+            HapticManager.mediumImpact()
+            show(.init(kind: .reRack, title: "UMGESTELLT", subtitle: "\(teamName(teamIndex)) stellt auf \(formation.name) um"))
         case .finished:
             HapticManager.success()
-        case .reRacked, .cupChosen, .missed, .rebound:
+        case .cupChosen, .missed, .rebound:
             HapticManager.lightImpact()
         }
     }
@@ -339,8 +396,10 @@ final class LiveGameViewModel: ObservableObject {
 
         // Die Klasse ist @MainActor, der Task erbt diese Isolation – ein
         // zusätzliches MainActor.run wäre überflüssig.
+        // Rund 1,2 Sekunden: lang genug zum Wahrnehmen, kurz genug, dass es
+        // auch beim fünften Airball hintereinander nicht bremst.
         highlightDismissTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
             guard !Task.isCancelled else { return }
             withAnimation(AppAnimation.smoothFade) { self?.highlight = nil }
         }
@@ -385,7 +444,11 @@ final class LiveGameViewModel: ObservableObject {
     // MARK: - Overlay-Modell
 
     struct Highlight: Equatable, Identifiable {
-        enum Kind: Equatable { case positive, warning, fire, neutral }
+        /// Bestimmt Farbe **und** Animation – deshalb nach dem Ereignis
+        /// benannt und nicht nach der Stimmung.
+        enum Kind: Equatable {
+            case airball, ballsBack, bombe, onFire, reRack, redemption, neutral
+        }
 
         let id = UUID()
         let kind: Kind
@@ -394,10 +457,13 @@ final class LiveGameViewModel: ObservableObject {
 
         var tint: Color {
             switch kind {
-            case .positive: return BeerStatsColor.success
-            case .warning: return BeerStatsColor.accentSecondary
-            case .fire: return BeerStatsColor.accent
-            case .neutral: return BeerStatsColor.textPrimary
+            case .airball:    return BeerStatsColor.error
+            case .ballsBack:  return BeerStatsColor.success
+            case .bombe:      return BeerStatsColor.accentSecondary
+            case .onFire:     return BeerStatsColor.accent
+            case .reRack:     return BeerStatsColor.accent
+            case .redemption: return BeerStatsColor.accentSecondary
+            case .neutral:    return BeerStatsColor.textPrimary
             }
         }
     }

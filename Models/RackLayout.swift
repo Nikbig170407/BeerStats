@@ -23,6 +23,15 @@ struct RackLayout: Equatable {
     /// Anzahl Becher pro Reihe, Index 0 = hintere Tischkante.
     private(set) var rows: [Int]
 
+    /// Seitlicher Versatz je Reihe, gemessen in Becherbreiten.
+    ///
+    /// Normalerweise überall 0, dann sind alle Reihen mittig ausgerichtet.
+    /// Gebraucht wird das für versetzte Formationen wie den Berserker, bei
+    /// dem zwei gleich lange Reihen um eine halbe Becherbreite gegeneinander
+    /// verschoben stehen – ohne diesen Wert ließe sich das nicht von einem
+    /// gewöhnlichen Block unterscheiden.
+    private(set) var rowOffsets: [Double]
+
     /// Ein Eintrag je Becher-Platz, fortlaufend über alle Reihen hinweg
     /// (Reihe 0 zuerst). `true` = Becher steht noch.
     private(set) var cupsAlive: [Bool]
@@ -36,9 +45,15 @@ struct RackLayout: Equatable {
     }
 
     /// Aufstellung aus einer Reihenliste, alle Becher stehend.
-    init(rows: [Int]) {
+    init(rows: [Int], rowOffsets: [Double]? = nil) {
         self.rows = rows
+        self.rowOffsets = rowOffsets ?? Array(repeating: 0, count: rows.count)
         self.cupsAlive = Array(repeating: true, count: rows.reduce(0, +))
+    }
+
+    /// Versatz einer Reihe, robust gegen unpassend lange Versatz-Listen.
+    func offset(forRow row: Int) -> Double {
+        rowOffsets.indices.contains(row) ? rowOffsets[row] : 0
     }
 
     // MARK: - Abfragen
@@ -89,6 +104,7 @@ struct RackLayout: Equatable {
     mutating func reRack(to formation: RackFormation) {
         guard formation.cupCount == remainingCount else { return }
         rows = formation.rows
+        rowOffsets = formation.resolvedRowOffsets
         cupsAlive = Array(repeating: true, count: formation.cupCount)
     }
 
@@ -133,10 +149,24 @@ struct RackFormation: Identifiable, Equatable, Codable {
     let name: String
     /// Becher pro Reihe, Index 0 = hintere Tischkante.
     let rows: [Int]
+    /// Seitlicher Versatz je Reihe in Becherbreiten. `nil` bedeutet: alle
+    /// Reihen mittig. Optional, damit bereits gespeicherte Log-Einträge ohne
+    /// dieses Feld weiterhin gelesen werden können.
+    let rowOffsets: [Double]?
+
+    init(name: String, rows: [Int], rowOffsets: [Double]? = nil) {
+        self.name = name
+        self.rows = rows
+        self.rowOffsets = rowOffsets
+    }
 
     var id: String { "\(name)-\(rows.map(String.init).joined(separator: "-"))" }
 
     var cupCount: Int { rows.reduce(0, +) }
+
+    var resolvedRowOffsets: [Double] {
+        rowOffsets ?? Array(repeating: 0, count: rows.count)
+    }
 
     /// Prüft die drei mit dem Regelwerk abgestimmten Bedingungen:
     /// 1. Kein Becher darf allein stehen.
@@ -145,21 +175,24 @@ struct RackFormation: Identifiable, Equatable, Codable {
     ///    `RackLayout.reRack`).
     var isValid: Bool {
         guard !rows.isEmpty, rows.allSatisfy({ $0 >= 1 }) else { return false }
-        guard rows[0] >= 1 else { return false }                  // Regel 2
-        return !Self.hasIsolatedCup(rows: rows)                   // Regel 1
+        guard rows[0] >= 1 else { return false }                            // Regel 2
+        return !Self.hasIsolatedCup(rows: rows, offsets: resolvedRowOffsets) // Regel 1
     }
 
     /// Regel 1 auf dem Dreiecksraster geprüft: Zwei Becher gelten als
     /// benachbart, wenn sie in derselben Reihe nebeneinander liegen oder in
     /// angrenzenden Reihen höchstens eine Becherbreite versetzt sind. Die
     /// Reihen sind mittig zueinander ausgerichtet, daher der Versatz von 0,5.
-    static func hasIsolatedCup(rows: [Int]) -> Bool {
+    static func hasIsolatedCup(rows: [Int], offsets: [Double]) -> Bool {
         let total = rows.reduce(0, +)
         guard total > 1 else { return false }   // ein einzelner Becher ist unvermeidbar allein
 
-        // Mittenposition jedes Bechers, gemessen in Becherbreiten.
-        let positions: [[Double]] = rows.map { count in
-            let start = -Double(count - 1) / 2.0
+        // Mittenposition jedes Bechers, gemessen in Becherbreiten – inklusive
+        // des Reihenversatzes, sonst würde eine versetzte Formation falsch
+        // beurteilt.
+        let positions: [[Double]] = rows.enumerated().map { index, count in
+            let shift = offsets.indices.contains(index) ? offsets[index] : 0
+            let start = -Double(count - 1) / 2.0 + shift
             return (0..<count).map { start + Double($0) }
         }
 
@@ -193,21 +226,34 @@ struct RackFormation: Identifiable, Equatable, Codable {
 /// Regeln gar nicht erst verletzen.
 enum RackFormationCatalog {
 
+    /// Halbe Becherbreite Versatz – daraus entsteht die Reißverschluss-Optik
+    /// des Berserkers: zwei gleich lange Reihen parallel zur hinteren Kante,
+    /// deren Becher auf Lücke zueinander stehen.
+    private static let zipperOffsets: [Double] = [0, 0.5]
+
+    private static func berserker(_ perRow: Int) -> RackFormation {
+        RackFormation(name: "Berserker", rows: [perRow, perRow], rowOffsets: zipperOffsets)
+    }
+
     private static let presets: [Int: [RackFormation]] = [
-        10: [RackFormation(name: "Dreieck", rows: [4, 3, 2, 1])],
+        10: [RackFormation(name: "Dreieck", rows: [4, 3, 2, 1]),
+             berserker(5)],
         9:  [RackFormation(name: "Block", rows: [3, 3, 3]),
              RackFormation(name: "Pfeil", rows: [4, 3, 2])],
         8:  [RackFormation(name: "Block", rows: [4, 4]),
+             berserker(4),
              RackFormation(name: "Pfeil", rows: [3, 3, 2])],
         7:  [RackFormation(name: "Pfeil", rows: [4, 3]),
              RackFormation(name: "Turm", rows: [3, 2, 2])],
         6:  [RackFormation(name: "Dreieck", rows: [3, 2, 1]),
+             berserker(3),
              RackFormation(name: "Block", rows: [2, 2, 2]),
              RackFormation(name: "Linie", rows: [6])],
         5:  [RackFormation(name: "Dreieck", rows: [3, 2]),
              RackFormation(name: "Turm", rows: [2, 2, 1]),
              RackFormation(name: "Linie", rows: [5])],
         4:  [RackFormation(name: "Raute", rows: [1, 2, 1]),
+             berserker(2),
              RackFormation(name: "Quadrat", rows: [2, 2]),
              RackFormation(name: "Linie", rows: [4])],
         3:  [RackFormation(name: "Dreieck", rows: [2, 1]),
@@ -228,7 +274,11 @@ enum RackFormationCatalog {
     static func applicableFormations(for rack: RackLayout) -> [RackFormation] {
         let hasGaps = rack.cupsAlive.contains(false)
         return formations(forRemaining: rack.remainingCount).filter { formation in
-            hasGaps || formation.rows != rack.rows
+            // Der Versatz gehört zum Vergleich: Quadrat und Berserker haben
+            // beide zwei gleich lange Reihen und unterscheiden sich nur darin.
+            hasGaps
+                || formation.rows != rack.rows
+                || formation.resolvedRowOffsets != rack.rowOffsets
         }
     }
 }

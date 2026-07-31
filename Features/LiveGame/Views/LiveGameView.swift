@@ -22,6 +22,9 @@ struct LiveGameView: View {
     private let perspectiveTeamIndex: Int
 
     @State private var abortProgress: CGFloat = 0
+    @State private var isHoldingAbort = false
+
+    private static let abortHoldDuration: Double = 1.5
 
     init(
         teams: [Team],
@@ -80,7 +83,9 @@ struct LiveGameView: View {
             .padding(.horizontal, 16)
 
             if let highlight = viewModel.highlight {
-                highlightOverlay(highlight)
+                HighlightOverlayView(highlight: highlight)
+                    .id(highlight.id)   // erzwingt den Neustart der Animation bei Folge-Ereignissen
+                    .transition(.opacity)
             }
 
             if viewModel.state.isFinished {
@@ -89,6 +94,10 @@ struct LiveGameView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        // Während einer Partie liegt das Handy oft minutenlang unberührt auf
+        // dem Tisch – ohne das müsste man vor jedem Wurf erst entsperren.
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         .sheet(isPresented: $viewModel.isShowingReRackSheet) {
             ReRackSheet(
                 formations: viewModel.availableFormations,
@@ -127,10 +136,14 @@ struct LiveGameView: View {
         .padding(.top, 4)
     }
 
-    /// Abbrechen erfordert drei Sekunden Halten – ein versehentlicher Tipper
-    /// mitten im Spiel darf die Partie nicht beenden.
+    /// Abbrechen erfordert anderthalb Sekunden Halten – kurz genug, dass es
+    /// nicht nervt, lang genug, dass ein versehentlicher Tipper mitten im
+    /// Spiel die Partie nicht beendet. Der Knopf wächst dabei sichtbar an,
+    /// damit erkennbar ist, dass gerade etwas passiert.
     private var abortButton: some View {
         ZStack {
+            Circle()
+                .fill(BeerStatsColor.accentSecondary.opacity(isHoldingAbort ? 0.2 : 0))
             Circle()
                 .stroke(BeerStatsColor.textSecondary.opacity(0.25), lineWidth: 2)
             Circle()
@@ -139,17 +152,22 @@ struct LiveGameView: View {
                 .rotationEffect(.degrees(-90))
             Image(systemName: "xmark")
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(abortProgress > 0 ? BeerStatsColor.accentSecondary : BeerStatsColor.textSecondary)
+                .foregroundStyle(isHoldingAbort ? BeerStatsColor.accentSecondary : BeerStatsColor.textSecondary)
         }
         .frame(width: 36, height: 36)
+        .scaleEffect(isHoldingAbort ? 1.45 : 1)
         .contentShape(Circle())
         // Bewusst die `pressing:perform:`-Variante: die neuere Schreibweise
         // mit `onPressingChanged:` gibt es erst ab iOS 17, das Deployment-
         // Target dieses Projekts ist iOS 16.
         .onLongPressGesture(
-            minimumDuration: 3.0,
+            minimumDuration: Self.abortHoldDuration,
             pressing: { isPressing in
-                withAnimation(.linear(duration: isPressing ? 3.0 : 0.2)) {
+                if isPressing { HapticManager.lightImpact() }
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.6)) {
+                    isHoldingAbort = isPressing
+                }
+                withAnimation(.linear(duration: isPressing ? Self.abortHoldDuration : 0.2)) {
                     abortProgress = isPressing ? 1 : 0
                 }
             },
@@ -158,7 +176,7 @@ struct LiveGameView: View {
                 dismiss()
             }
         )
-        .accessibilityLabel("Spiel abbrechen, drei Sekunden halten")
+        .accessibilityLabel("Spiel abbrechen, anderthalb Sekunden halten")
     }
 
     private var matchTitle: String {
@@ -347,26 +365,6 @@ struct LiveGameView: View {
 
     // MARK: - Overlays
 
-    private func highlightOverlay(_ highlight: LiveGameViewModel.Highlight) -> some View {
-        VStack(spacing: 10) {
-            Text(highlight.title)
-                .font(BeerStatsFont.largeTitle)
-                .foregroundStyle(highlight.tint)
-            Text(highlight.subtitle)
-                .font(BeerStatsFont.body)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .padding(.horizontal, 32)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(BeerStatsColor.backgroundPrimary.opacity(0.94))
-        .ignoresSafeArea()
-        // Darf keine Taps abfangen: Wer schnell weitertippt, soll nicht
-        // durch die Animation ausgebremst werden.
-        .allowsHitTesting(false)
-        .transition(.opacity)
-    }
-
     private var gameOverOverlay: some View {
         let winner = viewModel.state.winnerTeamIndex
 
@@ -398,6 +396,26 @@ struct LiveGameView: View {
                     viewModel.confirmResult()
                     dismiss()
                 }
+
+                if viewModel.isStartingRematch {
+                    CupFillLoadingView(size: 44)
+                } else {
+                    Button {
+                        Task { await viewModel.startRematch() }
+                    } label: {
+                        Label("Revanche, gleiche Aufstellung", systemImage: "arrow.counterclockwise")
+                            .font(BeerStatsFont.headline)
+                            .foregroundStyle(BeerStatsColor.accent)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .strokeBorder(BeerStatsColor.accent, lineWidth: 1.5)
+                            )
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
+
                 Button("Rückgängig") { viewModel.undo() }
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
@@ -456,7 +474,7 @@ private struct ReRackSheet: View {
                         onSelect(formation)
                     } label: {
                         VStack(spacing: 8) {
-                            FormationPreview(rows: formation.rows)
+                            FormationPreview(rows: formation.rows, offsets: formation.resolvedRowOffsets)
                             Text(formation.name)
                                 .font(BeerStatsFont.caption)
                                 .foregroundStyle(BeerStatsColor.textPrimary)
@@ -481,19 +499,29 @@ private struct ReRackSheet: View {
 /// wie die Becher danach stehen.
 private struct FormationPreview: View {
     let rows: [Int]
+    let offsets: [Double]
+
+    private let dotSize: CGFloat = 9
+    private let spacing: CGFloat = 3
 
     var body: some View {
-        VStack(spacing: 3) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, count in
-                HStack(spacing: 3) {
+        VStack(spacing: spacing) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, count in
+                HStack(spacing: spacing) {
                     ForEach(0..<count, id: \.self) { _ in
                         Circle()
                             .fill(BeerStatsColor.cupBase)
-                            .frame(width: 9, height: 9)
+                            .frame(width: dotSize, height: dotSize)
                     }
                 }
+                // Ohne den Versatz sähen Quadrat und Berserker identisch aus.
+                .offset(x: (dotSize + spacing) * shift(at: index))
             }
         }
         .frame(height: 46)
+    }
+
+    private func shift(at index: Int) -> CGFloat {
+        offsets.indices.contains(index) ? CGFloat(offsets[index]) : 0
     }
 }

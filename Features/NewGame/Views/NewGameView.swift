@@ -16,23 +16,19 @@ import SwiftUI
 struct NewGameView: View {
 
     @StateObject private var viewModel: NewGameViewModel
-    private let gameRepository: GameRepositoryProtocol
+    private let container: AppContainer
     private let currentUserId: String
 
     /// Offener Platz, für den gerade ein Spieler gewählt wird.
     @State private var pickerTarget: SlotTarget?
 
-    init(
-        gameRepository: GameRepositoryProtocol,
-        profileRepository: PlayerProfileRepositoryProtocol,
-        currentUserId: String
-    ) {
-        self.gameRepository = gameRepository
+    init(container: AppContainer, currentUserId: String) {
+        self.container = container
         self.currentUserId = currentUserId
         _viewModel = StateObject(
             wrappedValue: NewGameViewModel(
-                gameRepository: gameRepository,
-                profileRepository: profileRepository,
+                gameRepository: container.gameRepository,
+                profileRepository: container.playerProfileRepository,
                 currentUserId: currentUserId
             )
         )
@@ -81,11 +77,18 @@ struct NewGameView: View {
         .sheet(item: $pickerTarget) { target in
             playerPicker(for: target)
         }
+        // Kein Zwischenschritt: Nach dem Start geht es sofort ins Tracking.
         .navigationDestination(isPresented: hasCreatedGame) {
-            LobbyView(
-                gameRepository: gameRepository,
-                gameId: viewModel.createdGameId ?? "",
-                currentUserId: currentUserId
+            LiveGameView(
+                teams: viewModel.createdTeams,
+                format: GameFormat(cupCount: viewModel.cupCount),
+                playersPerTeam: viewModel.playersPerTeam,
+                perspectiveTeamIndex: 0,
+                gameId: viewModel.createdGameId,
+                throwRepository: container.throwRepository,
+                gameRepository: container.gameRepository,
+                profileRepository: container.playerProfileRepository,
+                ownerId: currentUserId
             )
         }
     }
@@ -265,7 +268,7 @@ struct NewGameView: View {
                 CupFillLoadingView(size: 52)
                     .frame(maxWidth: .infinity)
             } else {
-                PrimaryButton(title: "Spiel erstellen", systemImage: "play.fill") {
+                PrimaryButton(title: "Spiel starten", systemImage: "play.fill") {
                     Task { await viewModel.createGame() }
                 }
                 .opacity(viewModel.canCreateGame ? 1 : 0.4)

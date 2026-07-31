@@ -33,6 +33,9 @@ final class NewGameViewModel: ObservableObject {
     @Published private(set) var isCreating = false
     @Published var errorMessage: String?
     @Published private(set) var createdGameId: String?
+    /// Die fertige Aufstellung – wird direkt an den Spielscreen
+    /// weitergereicht, damit dieser das Spiel nicht erneut laden muss.
+    @Published private(set) var createdTeams: [Team] = []
 
     private let gameRepository: GameRepositoryProtocol
     private let profileRepository: PlayerProfileRepositoryProtocol
@@ -169,7 +172,7 @@ final class NewGameViewModel: ObservableObject {
                 )
             }
 
-            createdGameId = try await gameRepository.createGame(
+            let gameId = try await gameRepository.createGame(
                 type: gameType,
                 teams: teams,
                 format: GameFormat(cupCount: cupCount),
@@ -178,6 +181,12 @@ final class NewGameViewModel: ObservableObject {
                 // Mitspieler sind Profile ohne eigenen Zugang.
                 accessUserIds: [currentUserId]
             )
+            // Direkt aktiv setzen: Eine Lobby, in der auf Mitspieler gewartet
+            // wird, ergibt keinen Sinn, wenn die App nur auf einem Gerät liegt.
+            try await gameRepository.startGame(gameId: gameId)
+
+            createdTeams = teams
+            createdGameId = gameId
             HapticManager.success()
         } catch {
             HapticManager.error()
