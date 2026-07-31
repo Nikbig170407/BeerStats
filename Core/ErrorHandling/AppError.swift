@@ -81,9 +81,12 @@ enum AppError: LocalizedError, Equatable {
         // Kommt, wenn Authentication im Firebase-Projekt nie aktiviert wurde.
         if let detail, detail.contains("CONFIGURATION_NOT_FOUND") {
             return .configuration(
+                // Bewusst ohne typografische Anführungszeichen: Das schließende
+                // Zeichen wird sonst leicht als ASCII-Quote getippt und beendet
+                // das Literal mitten im Satz.
                 "Anmeldung ist im Firebase-Projekt noch nicht eingerichtet. "
-                + "In der Firebase Console unter Authentication einmal „Get started" "
-                + "ausführen und E-Mail/Passwort aktivieren."
+                + "In der Firebase Console unter Authentication einmal auf Get started tippen "
+                + "und E-Mail/Passwort aktivieren."
             )
         }
 
