@@ -85,16 +85,23 @@ private struct ShotGlassArt: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ShotGlassShape()
-                .fill(
-                    LinearGradient(
-                        colors: [BeerStatsColor.accent, Color(red: 0.79, green: 0.46, blue: 0.11)],
-                        startPoint: .top,
-                        endPoint: .bottom
+            // Die Flüssigkeit ist ein einfaches Rechteck, das auf die
+            // Glasform beschnitten wird. Das ist deutlich robuster als eine
+            // Maske aus derselben Form über sich selbst.
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [BeerStatsColor.accent, Color(red: 0.79, green: 0.46, blue: 0.11)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
-                .frame(width: 54, height: 68 * fill)
-                .mask(ShotGlassShape().frame(width: 54, height: 68), alignment: .bottom)
+                    .frame(height: 68 * fill)
+            }
+            .frame(width: 54, height: 68)
+            .clipShape(ShotGlassShape())
 
             ShotGlassShape()
                 .stroke(BeerStatsColor.textPrimary.opacity(0.75), lineWidth: 2.5)
@@ -146,18 +153,20 @@ private struct BallsBackArt: View {
                     .frame(width: 34, height: 34)
                     .shadow(color: .black.opacity(0.45), radius: 6, y: 4)
                     .offset(y: lift)
-                    .animation(
-                        reduceMotion
-                            ? nil
-                            : .spring(response: 0.5, dampingFraction: 0.5).delay(Double(index) * 0.1),
-                        value: lift
-                    )
+                    .animation(ballAnimation(index: index), value: lift)
             }
         }
         .onAppear {
             guard !reduceMotion else { lift = 0; return }
             lift = -12
         }
+    }
+
+    /// Explizit typisiert, damit der Compiler den Rückgabetyp des ternären
+    /// Ausdrucks nicht erraten muss.
+    private func ballAnimation(index: Int) -> Animation? {
+        guard !reduceMotion else { return nil }
+        return .spring(response: 0.5, dampingFraction: 0.5).delay(Double(index) * 0.1)
     }
 }
 
@@ -221,12 +230,12 @@ private struct FlameArt: View {
             .font(.system(size: size))
             .scaleEffect(flicker ? 1.18 : 0.9)
             .offset(y: flicker ? -7 : 0)
-            .animation(
-                reduceMotion
-                    ? nil
-                    : .easeInOut(duration: 0.42).repeatForever(autoreverses: true).delay(delay),
-                value: flicker
-            )
+            .animation(flameAnimation(delay: delay), value: flicker)
+    }
+
+    private func flameAnimation(delay: Double) -> Animation? {
+        guard !reduceMotion else { return nil }
+        return .easeInOut(duration: 0.42).repeatForever(autoreverses: true).delay(delay)
     }
 }
 
