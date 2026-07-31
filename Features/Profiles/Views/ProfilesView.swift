@@ -165,6 +165,7 @@ struct ProfilesView: View {
                 profile: profile,
                 otherProfiles: viewModel.profiles.filter { $0.id != profile.id },
                 gameRepository: container.gameRepository,
+                throwRepository: container.throwRepository,
                 ownerId: ownerId
             ) {
                 editorTarget = .existing(profile)

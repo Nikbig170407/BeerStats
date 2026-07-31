@@ -30,6 +30,13 @@ final class FirebaseThrowService: ThrowServiceProtocol {
         try await throwsCollection(gameId: gameId).addDocument(data: data)
     }
 
+    func fetchThrows(gameId: String) async throws -> [Throw] {
+        let snapshot = try await throwsCollection(gameId: gameId)
+            .order(by: "sequenceNumber")
+            .getDocuments()
+        return snapshot.documents.compactMap { try? $0.data(as: Throw.self) }
+    }
+
     func observeThrows(gameId: String) -> AsyncStream<[Throw]> {
         AsyncStream { continuation in
             let listener = throwsCollection(gameId: gameId)

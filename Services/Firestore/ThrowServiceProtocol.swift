@@ -22,4 +22,8 @@ protocol ThrowServiceProtocol {
     /// `sequenceNumber`. Grundlage für das Nachspielen des Spielstands auf
     /// jedem beteiligten Gerät.
     func observeThrows(gameId: String) -> AsyncStream<[Throw]>
+
+    /// Einmaliger Abruf statt Dauerbeobachtung – für Auswertungen
+    /// abgeschlossener Partien, bei denen sich nichts mehr ändert.
+    func fetchThrows(gameId: String) async throws -> [Throw]
 }

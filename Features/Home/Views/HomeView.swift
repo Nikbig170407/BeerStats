@@ -18,6 +18,7 @@ struct HomeView: View {
     /// Spiegelt die dauerhaft gespeicherte Einstellung, damit das Symbol in
     /// der Leiste sofort umspringt.
     @State private var isSoundOn = SoundManager.isEnabled
+    @State private var isSpeechOn = SpeechAnnouncer.isEnabled
 
     init(container: AppContainer, currentUserId: String) {
         self.container = container
@@ -70,6 +71,18 @@ struct HomeView: View {
                             .foregroundStyle(isSoundOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
                     }
                     .accessibilityLabel(isSoundOn ? "Ton ausschalten" : "Ton einschalten")
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isSpeechOn.toggle()
+                        SpeechAnnouncer.isEnabled = isSpeechOn
+                        if isSpeechOn { SpeechAnnouncer.announce("Ansage ist an") }
+                        HapticManager.lightImpact()
+                    } label: {
+                        Image(systemName: isSpeechOn ? "bubble.left.and.text.bubble.right.fill" : "bubble.left.and.text.bubble.right")
+                            .foregroundStyle(isSpeechOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
+                    }
+                    .accessibilityLabel(isSpeechOn ? "Ansage ausschalten" : "Ansage einschalten")
                 }
                 // Mitspieler und Rangliste sind jetzt große Karten im Inhalt –
                 // in der Kopfzeile bleiben nur Nebensachen.
@@ -199,6 +212,21 @@ struct HomeView: View {
             .buttonStyle(PressableButtonStyle())
             .disabled(viewModel.profiles.isEmpty)
             .opacity(viewModel.profiles.isEmpty ? 0.45 : 1)
+
+            NavigationLink {
+                GameHistoryView(
+                    gameRepository: container.gameRepository,
+                    ownerId: viewModel.currentUserId
+                )
+            } label: {
+                destinationCard(
+                    title: "Spielverlauf",
+                    subtitle: "Vergangene Partien mit Ergebnis",
+                    systemImage: "clock.arrow.circlepath",
+                    tint: BeerStatsColor.success
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
         }
     }
 

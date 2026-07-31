@@ -140,6 +140,7 @@ private final class PreviewThrowService: ThrowServiceProtocol {
     func observeThrows(gameId: String) -> AsyncStream<[Throw]> {
         AsyncStream { continuation in continuation.yield([]) }
     }
+    func fetchThrows(gameId: String) async throws -> [Throw] { [] }
 }
 
 private final class PreviewPlayerProfileService: PlayerProfileServiceProtocol {

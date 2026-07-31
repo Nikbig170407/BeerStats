@@ -18,6 +18,7 @@ struct ProfileDetailView: View {
     /// Alle übrigen Mitspieler – Auswahl für den Direktvergleich.
     let otherProfiles: [PlayerProfile]
     let gameRepository: GameRepositoryProtocol
+    let throwRepository: ThrowRepositoryProtocol
     let ownerId: String
     let onEdit: () -> Void
 
@@ -35,6 +36,10 @@ struct ProfileDetailView: View {
                     resultSection
                     arsenalSection
                     streakSection
+                }
+
+                if stats.totalHits > 0 {
+                    heatmapLink
                 }
 
                 if !otherProfiles.isEmpty {
@@ -145,6 +150,42 @@ struct ProfileDetailView: View {
             BeerStatsColor.surfaceElevated,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
+    }
+
+    private var heatmapLink: some View {
+        section("Trefferbild") {
+            NavigationLink {
+                CupHeatmapView(
+                    profile: profile,
+                    gameRepository: gameRepository,
+                    throwRepository: throwRepository,
+                    ownerId: ownerId
+                )
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "target")
+                        .font(.system(size: 22))
+                        .foregroundStyle(BeerStatsColor.cupBase)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Auf welche Becher trifft \(profile.name)?")
+                            .font(BeerStatsFont.body)
+                            .foregroundStyle(BeerStatsColor.textPrimary)
+                            .lineLimit(1)
+                        Text("Verteilung aus dem Wurf-Log")
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+                .padding(14)
+                .glassPanel(cornerRadius: 14)
+                .neonEdge(BeerStatsColor.cupBase, cornerRadius: 14, intensity: 0.35)
+                .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(PressableButtonStyle())
+        }
     }
 
     /// Direktvergleich gegen jeden anderen Mitspieler.

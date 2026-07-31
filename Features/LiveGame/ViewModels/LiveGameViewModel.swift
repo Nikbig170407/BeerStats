@@ -128,8 +128,10 @@ final class LiveGameViewModel: ObservableObject {
         // Optimistisch sofort anzeigen: Am Tisch darf zwischen Tippen und
         // sichtbarer Reaktion keine Netzwerk-Latenz liegen.
         let snapshot = state
+        let previousThrower = snapshot.currentThrower
         state = result.state
         handle(result.events)
+        announceThrowerChange(from: previousThrower)
 
         guard action.isPersistable else { return }
         history.append(snapshot)
@@ -208,6 +210,29 @@ final class LiveGameViewModel: ObservableObject {
                     AppLogger.firestore.error("Statistiken konnten nicht geschrieben werden: \(error.localizedDescription)")
                 }
             }
+        }
+    }
+
+    /// Bester Spieler der Partie.
+    ///
+    /// Gewichtet bewusst Treffer vor Quote: Wer zwei von zwei trifft, hat
+    /// eine perfekte Quote, aber die Partie nicht getragen. Erst bei
+    /// gleicher Trefferzahl entscheidet die Quote, danach die längste Serie.
+    var matchMVP: (player: PlayerRef, stats: PlayerStats)? {
+        var candidates: [(PlayerRef, PlayerStats)] = []
+        for teamIndex in state.stats.indices {
+            for slot in state.stats[teamIndex].indices {
+                let stats = state.stats[teamIndex][slot]
+                guard stats.attempts > 0 else { continue }
+                candidates.append((PlayerRef(teamIndex: teamIndex, slot: slot), stats))
+            }
+        }
+
+        return candidates.max { left, right in
+            let leftStreak = state.bestStreaks[left.0.teamIndex][left.0.slot]
+            let rightStreak = state.bestStreaks[right.0.teamIndex][right.0.slot]
+            return (left.1.hits, left.1.accuracy ?? 0, leftStreak)
+                < (right.1.hits, right.1.accuracy ?? 0, rightStreak)
         }
     }
 
@@ -445,6 +470,15 @@ final class LiveGameViewModel: ObservableObject {
             HapticManager.lightImpact()
             SoundManager.play(.miss)
         }
+    }
+
+    /// Sagt den nächsten Werfer an, wenn er sich geändert hat.
+    ///
+    /// Nur bei echtem Wechsel: Bei einem Bonuswurf bleibt derselbe Spieler
+    /// am Ball, und eine Wiederholung seines Namens wäre nur lästig.
+    private func announceThrowerChange(from previous: PlayerRef) {
+        guard !state.isFinished, state.currentThrower != previous else { return }
+        SpeechAnnouncer.announceTurn(playerName: playerName(state.currentThrower))
     }
 
     /// Blendet die laufende Einblendung sofort aus – für „antippen zum

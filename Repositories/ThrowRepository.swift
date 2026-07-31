@@ -36,6 +36,37 @@ protocol ThrowRepositoryProtocol {
     ) async throws
 
     func replay(_ entries: [Throw], format: GameFormat, playersPerTeam: Int) -> LiveGameState
+
+    /// Trefferverteilung über die Becher-Positionen eines Spielers.
+    func cupHeatmap(
+        games: [Game],
+        profileId: String,
+        limit: Int
+    ) async throws -> CupHeatmap
+}
+
+/// Wie oft welche Becher-Position getroffen wurde.
+///
+/// Bewusst auf die Ausgangsaufstellung bezogen: Nach einem Umstellen
+/// bedeutet derselbe Index eine andere Stelle auf dem Tisch, ein
+/// spielübergreifender Vergleich wäre dann sinnlos. Würfe nach einem
+/// Re-Rack bleiben deshalb außen vor – `ignoredAfterReRack` sagt, wie
+/// viele das waren, damit die Zahl nicht stillschweigend fehlt.
+struct CupHeatmap: Equatable {
+    /// Treffer je Becher-Index der Startaufstellung.
+    var hitsByCupIndex: [Int: Int] = [:]
+    var cupCount: Int = 0
+    var totalHits: Int = 0
+    var consideredGames: Int = 0
+    var ignoredAfterReRack: Int = 0
+
+    var maximumHits: Int { hitsByCupIndex.values.max() ?? 0 }
+
+    /// Anteil von 0 bis 1, bezogen auf den meistgetroffenen Becher.
+    func intensity(forCup index: Int) -> Double {
+        guard maximumHits > 0 else { return 0 }
+        return Double(hitsByCupIndex[index] ?? 0) / Double(maximumHits)
+    }
 }
 
 final class ThrowRepository: ThrowRepositoryProtocol {
@@ -124,6 +155,57 @@ final class ThrowRepository: ThrowRepositoryProtocol {
             state = GameEngine.apply(action, to: state, format: format).state
         }
         return state
+    }
+
+    // MARK: - Heatmap
+
+    func cupHeatmap(
+        games: [Game],
+        profileId: String,
+        limit: Int
+    ) async throws -> CupHeatmap {
+        // Nur Partien mit derselben Becherzahl lassen sich sinnvoll
+        // übereinanderlegen. Die häufigste Zahl gewinnt, damit ein einzelnes
+        // Spiel im abweichenden Format den Rest nicht verwirft.
+        let relevant = games.filter { $0.teams.contains { $0.playerIds.contains(profileId) } }
+        let counts = Dictionary(grouping: relevant, by: { $0.format.cupCount })
+        guard let (cupCount, sameFormat) = counts.max(by: { $0.value.count < $1.value.count }) else {
+            return CupHeatmap()
+        }
+
+        var heatmap = CupHeatmap(cupCount: cupCount)
+
+        for game in sameFormat.prefix(limit) {
+            guard let gameId = game.id else { continue }
+            let entries = try await throwService.fetchThrows(gameId: gameId)
+            heatmap.consideredGames += 1
+            accumulate(entries, of: profileId, into: &heatmap)
+        }
+
+        return heatmap
+    }
+
+    private func accumulate(_ entries: [Throw], of profileId: String, into heatmap: inout CupHeatmap) {
+        var sawReRack = false
+
+        for entry in entries.sorted(by: { $0.sequenceNumber < $1.sequenceNumber }) {
+            if entry.result == .reRack {
+                sawReRack = true
+                continue
+            }
+            guard entry.playerId == profileId,
+                  entry.result == .hit,
+                  let cupId = entry.cupId,
+                  let index = Int(cupId)
+            else { continue }
+
+            if sawReRack {
+                heatmap.ignoredAfterReRack += 1
+                continue
+            }
+            heatmap.hitsByCupIndex[index, default: 0] += 1
+            heatmap.totalHits += 1
+        }
     }
 
     // MARK: - Ableitungen für die fachlichen Felder

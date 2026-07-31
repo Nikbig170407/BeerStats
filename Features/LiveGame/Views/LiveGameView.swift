@@ -444,6 +444,8 @@ struct LiveGameView: View {
                 .padding(.top, 4)
             }
 
+            mvpBadge
+
             VStack(spacing: 10) {
                 // Erst hier wird das Ergebnis festgeschrieben – vorher bleibt
                 // „Rückgängig" gefahrlos möglich.
@@ -486,6 +488,36 @@ struct LiveGameView: View {
         .background(BeerStatsColor.backgroundPrimary.opacity(0.97))
         .ignoresSafeArea()
         .transition(.opacity)
+    }
+
+    /// Der beste Werfer der Partie – auch wenn sein Team verloren hat. Gibt
+    /// dem Abend einen zweiten Gewinner neben dem Team.
+    @ViewBuilder
+    private var mvpBadge: some View {
+        if let mvp = viewModel.matchMVP {
+            VStack(spacing: 6) {
+                Text("BESTER WERFER")
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .kerning(1.6)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+
+                HStack(spacing: 10) {
+                    Text("⭐️").font(.system(size: 22))
+                    Text(viewModel.playerName(mvp.player))
+                        .font(BeerStatsFont.title)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                }
+
+                Text("\(mvp.stats.hits) Treffer aus \(mvp.stats.attempts) Würfen")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 14)
+            .glassPanel(cornerRadius: 16)
+            .neonEdge(BeerStatsColor.success, cornerRadius: 16, intensity: 0.5)
+            .padding(.top, 14)
+        }
     }
 
     private func statTile(_ value: String, label: String) -> some View {
