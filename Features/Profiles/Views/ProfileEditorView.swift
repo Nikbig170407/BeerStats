@@ -152,15 +152,17 @@ struct ProfileEditorView: View {
                             .font(.system(size: 24))
                             .frame(maxWidth: .infinity)
                             .frame(height: 44)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(emoji == choice ? color.color.opacity(0.28) : BeerStatsColor.surfaceElevated)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .strokeBorder(emoji == choice ? color.color : .clear, lineWidth: 2)
+                            )
+                            // Sonst reagiert nur das Emoji selbst, nicht die Kachel.
+                            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(emoji == choice ? color.color.opacity(0.28) : BeerStatsColor.surfaceElevated)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(emoji == choice ? color.color : .clear, lineWidth: 2)
-                    )
                     .buttonStyle(PressableButtonStyle())
                 }
             }

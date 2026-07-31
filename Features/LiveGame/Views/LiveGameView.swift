@@ -281,16 +281,24 @@ struct LiveGameView: View {
             // Während einer erzwungenen Auswahl sind alle Wurf-Buttons
             // bedeutungslos – ausblenden statt nur sperren.
             if viewModel.state.pendingChoice == nil {
+                // Hintergrund und Trefferfläche liegen INNERHALB des Labels.
+                // Läge der Hintergrund außerhalb, reagierte der Button nur
+                // auf die Schrift selbst – und die Druck-Animation würde auch
+                // nur den Text skalieren statt der ganzen Fläche.
                 Button {
                     viewModel.perform(.miss)
                 } label: {
                     Text("Daneben")
                         .font(BeerStatsFont.liveGameButton)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)
+                        .background(
+                            BeerStatsColor.surfaceElevated,
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
-                .background(BeerStatsColor.surfaceElevated, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .foregroundStyle(BeerStatsColor.textPrimary)
                 .buttonStyle(PressableButtonStyle())
                 .disabled(!viewModel.canThrow)
 
@@ -333,12 +341,13 @@ struct LiveGameView: View {
         Button(action: action) {
             Text(title)
                 .font(BeerStatsFont.caption)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .foregroundStyle(isOn ? BeerStatsColor.textOnAccent : BeerStatsColor.textSecondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(isOn ? BeerStatsColor.accent : Color.clear))
+                .overlay(Capsule().strokeBorder(BeerStatsColor.textSecondary.opacity(0.25), lineWidth: 1))
+                .contentShape(Capsule())
         }
-        .background(Capsule().fill(isOn ? BeerStatsColor.accent : Color.clear))
-        .overlay(Capsule().strokeBorder(BeerStatsColor.textSecondary.opacity(0.25), lineWidth: 1))
-        .foregroundStyle(isOn ? BeerStatsColor.textOnAccent : BeerStatsColor.textSecondary)
         .buttonStyle(PressableButtonStyle())
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.35)
@@ -353,11 +362,12 @@ struct LiveGameView: View {
         Button(action: action) {
             Text(title)
                 .font(BeerStatsFont.caption)
+                .foregroundStyle(tint)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+                .padding(.vertical, 14)
+                .background(tint.opacity(0.18), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
         }
-        .background(tint.opacity(0.18), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .foregroundStyle(tint)
         .buttonStyle(PressableButtonStyle())
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.35)
@@ -428,6 +438,9 @@ struct LiveGameView: View {
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                                     .strokeBorder(BeerStatsColor.accent, lineWidth: 1.5)
                             )
+                            // Ohne das wäre nur der gezeichnete Rahmen tastbar,
+                            // die Fläche dazwischen bleibt sonst leer.
+                            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                     .buttonStyle(PressableButtonStyle())
                 }
@@ -497,8 +510,12 @@ private struct ReRackSheet: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
+                        .background(
+                            BeerStatsColor.surfaceElevated,
+                            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
-                    .background(BeerStatsColor.surfaceElevated, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .buttonStyle(PressableButtonStyle())
                 }
             }
