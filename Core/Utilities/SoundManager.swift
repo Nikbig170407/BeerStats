@@ -2,22 +2,23 @@
 //  SoundManager.swift
 //  BeerStats
 //
-//  Kurze Klänge für die Ereignisse im Spiel.
+//  Klänge für die Ereignisse im Spiel.
 //
-//  Aufbau in zwei Stufen: Liegt im Bundle eine Datei mit dem passenden
-//  Namen, wird die abgespielt. Fehlt sie, greift ein iOS-Systemklang als
-//  Platzhalter. Dadurch klingt die App ab sofort, und eigene Sounds lassen
-//  sich später allein durch Hinzufügen der Dateien nachrüsten – ohne eine
-//  Zeile Code zu ändern.
+//  Alle Dateien liegen unter `Resources/Sounds`. Die kurzen Signale sind
+//  selbst erzeugt (siehe Skript in der Projekthistorie) und damit frei von
+//  Lizenzfragen; der Airball nutzt einen eigenen Ausschnitt.
 //
-//  Bewusst AudioToolbox statt AVAudioPlayer: Für sehr kurze Signale ist das
-//  der schlankere Weg, und es unterbricht laufende Musik nicht.
+//  Bewusst AVAudioPlayer statt der früheren Systemtöne: Nur so lassen sich
+//  eigene Dateien in beliebigem Format abspielen, die Lautstärke steuern und
+//  ein längerer Ausschnitt nach ein paar Sekunden wieder ausblenden.
 //
 
 import Foundation
-import AudioToolbox
+import AVFoundation
 
-/// Die Ereignisse, die einen Klang bekommen.
+/// Die Ereignisse, die einen Klang bekommen. Der Name entspricht exakt dem
+/// Dateinamen im Bundle – ein Klang lässt sich also allein durch Austausch
+/// der Datei ändern.
 enum GameSound: String, CaseIterable {
 
     case cupHit
@@ -30,30 +31,24 @@ enum GameSound: String, CaseIterable {
     case victory
     case tap
 
-    /// Erwarteter Dateiname im Bundle, falls eigene Klänge hinterlegt werden.
-    /// Beispiel: `bombe.caf`. Unterstützt werden caf, wav und m4a.
-    var fileName: String { rawValue }
+    /// Unterstützte Endungen, in dieser Reihenfolge gesucht.
+    static let supportedExtensions = ["wav", "mp3", "m4a", "caf"]
 
-    /// Platzhalter aus dem iOS-Systemvorrat, solange keine eigene Datei
-    /// vorliegt.
+    /// Nach dieser Zeit wird ausgeblendet. `nil` heißt: ganz abspielen.
     ///
-    /// Diese Nummern sind von Apple nicht dokumentiert und ihr Klang kann
-    /// sich zwischen iOS-Versionen ändern. Sie sind hier nur eine Notlösung,
-    /// damit die App nicht stumm ist – kein Sounddesign. Eine unbekannte
-    /// Nummer spielt schlicht nichts ab, mehr passiert im Fehlerfall nicht.
-    /// Sobald echte Dateien im Bundle liegen, werden diese Werte nie wieder
-    /// verwendet.
-    var systemSoundID: SystemSoundID {
+    /// Nur der Airball braucht das – dort liegt ein Musikausschnitt, der
+    /// ohne Begrenzung noch liefe, wenn längst weitergeworfen wird.
+    var maximumDuration: TimeInterval? {
+        self == .airball ? 3.0 : nil
+    }
+
+    /// Grundlautstärke. Der Airball ist ein Musikclip und deutlich lauter
+    /// abgemischt als die kurzen Signale.
+    var volume: Float {
         switch self {
-        case .cupHit:    return 1057
-        case .miss:      return 1104
-        case .airball:   return 1053
-        case .bombe:     return 1023
-        case .ballsBack: return 1025
-        case .onFire:    return 1016
-        case .reRack:    return 1103
-        case .victory:   return 1027
-        case .tap:       return 1104
+        case .airball: return 0.85
+        case .tap: return 0.35
+        default: return 0.7
         }
     }
 }
@@ -61,45 +56,93 @@ enum GameSound: String, CaseIterable {
 enum SoundManager {
 
     private static let preferenceKey = "beerstats.soundEnabled"
-    private static var cache: [GameSound: SystemSoundID] = [:]
+    private static var players: [GameSound: AVAudioPlayer] = [:]
+    private static var pendingStops: [GameSound: DispatchWorkItem] = [:]
+    private static var didConfigureSession = false
 
-    /// Am Tisch will man das gelegentlich abschalten, ohne das Handy
+    /// Am Tisch will man das gelegentlich abschalten, ohne das ganze Handy
     /// stumm zu stellen – deshalb eine eigene, dauerhaft gespeicherte
     /// Einstellung.
     static var isEnabled: Bool {
-        get {
-            // Ohne gespeicherten Wert soll Ton an sein, nicht aus.
-            UserDefaults.standard.object(forKey: preferenceKey) as? Bool ?? true
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: preferenceKey)
-        }
+        get { UserDefaults.standard.object(forKey: preferenceKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: preferenceKey) }
     }
 
     static func play(_ sound: GameSound) {
         guard isEnabled else { return }
-        AudioServicesPlaySystemSound(soundID(for: sound))
+        configureSessionIfNeeded()
+
+        guard let player = player(for: sound) else { return }
+
+        // Ein noch laufender Ausblend-Auftrag würde sonst den neuen
+        // Durchlauf mitten im Ton abwürgen.
+        pendingStops[sound]?.cancel()
+        pendingStops[sound] = nil
+
+        player.volume = sound.volume
+        player.currentTime = 0
+        player.play()
+
+        scheduleFadeOutIfNeeded(for: sound, player: player)
     }
 
-    /// Ermittelt die abzuspielende Kennung: eigene Datei bevorzugt,
-    /// Systemklang als Rückfall. Das Ergebnis wird gemerkt, damit nicht bei
-    /// jedem Wurf erneut im Bundle gesucht wird.
-    private static func soundID(for sound: GameSound) -> SystemSoundID {
-        if let cached = cache[sound] { return cached }
+    /// Beendet alles Laufende – etwa beim Verlassen des Spielscreens.
+    static func stopAll() {
+        pendingStops.values.forEach { $0.cancel() }
+        pendingStops.removeAll()
+        players.values.forEach { $0.stop() }
+    }
 
-        var resolved = sound.systemSoundID
-        for fileExtension in ["caf", "wav", "m4a"] {
-            guard let url = Bundle.main.url(forResource: sound.fileName, withExtension: fileExtension) else {
+    // MARK: - Intern
+
+    /// `.ambient` mit `mixWithOthers`: Eine laufende Playlist soll durch die
+    /// App nicht unterbrochen werden – auf einer Party wäre das der
+    /// sicherste Weg, sie wieder ausgeschaltet zu bekommen.
+    private static func configureSessionIfNeeded() {
+        guard !didConfigureSession else { return }
+        didConfigureSession = true
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            AppLogger.app.error("Audio-Sitzung konnte nicht gesetzt werden: \(error.localizedDescription)")
+        }
+    }
+
+    private static func player(for sound: GameSound) -> AVAudioPlayer? {
+        if let existing = players[sound] { return existing }
+
+        for fileExtension in GameSound.supportedExtensions {
+            guard let url = Bundle.main.url(forResource: sound.rawValue, withExtension: fileExtension) else {
                 continue
             }
-            var customID: SystemSoundID = 0
-            if AudioServicesCreateSystemSoundID(url as CFURL, &customID) == kAudioServicesNoError {
-                resolved = customID
-                break
+            do {
+                let player = try AVAudioPlayer(contentsOf: url)
+                player.prepareToPlay()
+                players[sound] = player
+                return player
+            } catch {
+                AppLogger.app.error("Klang \(sound.rawValue) nicht ladbar: \(error.localizedDescription)")
             }
         }
+        // Fehlt die Datei, bleibt es einfach still – lieber kein Ton als ein
+        // unpassender Systemton.
+        return nil
+    }
 
-        cache[sound] = resolved
-        return resolved
+    private static func scheduleFadeOutIfNeeded(for sound: GameSound, player: AVAudioPlayer) {
+        guard let limit = sound.maximumDuration, player.duration > limit else { return }
+
+        let fade = 0.5
+        let work = DispatchWorkItem {
+            player.setVolume(0, fadeDuration: fade)
+            DispatchQueue.main.asyncAfter(deadline: .now() + fade) {
+                player.stop()
+                player.volume = sound.volume
+            }
+            pendingStops[sound] = nil
+        }
+        pendingStops[sound] = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + limit - fade, execute: work)
     }
 }

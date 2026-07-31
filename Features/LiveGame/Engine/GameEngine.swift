@@ -99,7 +99,7 @@ enum GameEngine {
     /// Teamkollege im selben Zug regulär getroffen hat.
     static func canDeclareBombe(in state: LiveGameState) -> Bool {
         guard canThrow(in: state), state.supportsDoubleHitRules else { return false }
-        guard state.pending == .normal, state.throwerSlot == 1 else { return false }
+        guard state.pending == .normal, state.currentBallIndex == 1 else { return false }
         return state.roundHits[state.turnTeamIndex][0] == true
     }
 
@@ -144,7 +144,7 @@ enum GameEngine {
         // Nur reguläre Bälle zählen für Balls Back und Bombe – Bonuswürfe
         // sind Zusatz und dürfen den Zug nicht verlängern.
         if !wasTrickshot && !wasOnFireBonus {
-            state.roundHits[thrower.teamIndex][thrower.slot] = true
+            state.roundHits[thrower.teamIndex][state.currentBallIndex] = true
             state.lastHitCupIndex = cupIndex
         }
 
@@ -228,7 +228,7 @@ enum GameEngine {
         state.onFire[thrower.teamIndex][thrower.slot] = false
 
         if !wasTrickshot && !wasOnFireBonus {
-            state.roundHits[thrower.teamIndex][thrower.slot] = false
+            state.roundHits[thrower.teamIndex][state.currentBallIndex] = false
         }
 
         // Der Rebound gibt demselben Spieler sofort den Bonuswurf, der Zug
@@ -256,7 +256,7 @@ enum GameEngine {
         state.stats[thrower.teamIndex][thrower.slot].attempts += 1
         state.bounceArmed = false
         state.sequenceNumber += 1
-        state.roundHits[thrower.teamIndex][thrower.slot] = true
+        state.roundHits[thrower.teamIndex][state.currentBallIndex] = true
         state.doubleHitSameCup = true
 
         events.append(.hit(thrower: thrower, bounce: false, trickshot: false, cupIndex: state.lastHitCupIndex ?? -1))
@@ -305,8 +305,10 @@ enum GameEngine {
         events: inout [GameEvent],
         format: GameFormat
     ) {
-        if thrower.slot < state.playersPerTeam - 1 {
-            state.throwerSlot = thrower.slot + 1
+        // Weitergezählt wird der Ball, nicht der Spieler: Im 1 gegen 1 wirft
+        // dieselbe Person beide Bälle.
+        if state.currentBallIndex < state.ballsPerTurn - 1 {
+            state.currentBallIndex += 1
             return
         }
         resolveEndOfTurn(teamIndex: thrower.teamIndex, state: &state, events: &events, format: format)
@@ -364,10 +366,10 @@ enum GameEngine {
 
     private static func startTurn(teamIndex: Int, state: inout LiveGameState) {
         state.turnTeamIndex = teamIndex
-        state.throwerSlot = 0
+        state.currentBallIndex = 0
         state.pending = .normal
         state.bounceArmed = false
-        state.roundHits[teamIndex] = Array(repeating: nil, count: state.playersPerTeam)
+        state.roundHits[teamIndex] = Array(repeating: nil, count: state.ballsPerTurn)
         state.doubleHitSameCup = false
         state.lastHitCupIndex = nil
         state.roundNumber += 1

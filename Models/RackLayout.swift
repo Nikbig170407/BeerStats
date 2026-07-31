@@ -226,34 +226,39 @@ struct RackFormation: Identifiable, Equatable, Codable {
 /// Regeln gar nicht erst verletzen.
 enum RackFormationCatalog {
 
-    /// Halbe Becherbreite Versatz – daraus entsteht die Reißverschluss-Optik
-    /// des Berserkers: zwei gleich lange Reihen parallel zur hinteren Kante,
-    /// deren Becher auf Lücke zueinander stehen.
-    private static let zipperOffsets: [Double] = [0, 0.5]
-
-    private static func berserker(_ perRow: Int) -> RackFormation {
-        RackFormation(name: "Berserker", rows: [perRow, perRow], rowOffsets: zipperOffsets)
+    /// Der Berserker: zwei versetzte Linien, die vom Werfer weg zum Gegner
+    /// zeigen – also parallel zu den langen Tischseiten.
+    ///
+    /// Umgesetzt als Reihen zu je zwei Bechern, bei denen jede zweite Reihe
+    /// um eine halbe Becherbreite verschoben ist. Dadurch laufen die beiden
+    /// Linien in die Tiefe und greifen wie Reißverschlusszähne ineinander,
+    /// statt quer vor dem Werfer zu stehen.
+    private static func berserker(_ cupCount: Int) -> RackFormation {
+        let rowCount = cupCount / 2
+        let rows = Array(repeating: 2, count: rowCount)
+        let offsets = (0..<rowCount).map { $0.isMultiple(of: 2) ? 0.0 : 0.5 }
+        return RackFormation(name: "Berserker", rows: rows, rowOffsets: offsets)
     }
 
     private static let presets: [Int: [RackFormation]] = [
         10: [RackFormation(name: "Dreieck", rows: [4, 3, 2, 1]),
-             Self.berserker(5)],
+             Self.berserker(10)],
         9:  [RackFormation(name: "Block", rows: [3, 3, 3]),
              RackFormation(name: "Pfeil", rows: [4, 3, 2])],
         8:  [RackFormation(name: "Block", rows: [4, 4]),
-             Self.berserker(4),
+             Self.berserker(8),
              RackFormation(name: "Pfeil", rows: [3, 3, 2])],
         7:  [RackFormation(name: "Pfeil", rows: [4, 3]),
              RackFormation(name: "Turm", rows: [3, 2, 2])],
         6:  [RackFormation(name: "Dreieck", rows: [3, 2, 1]),
-             Self.berserker(3),
+             Self.berserker(6),
              RackFormation(name: "Block", rows: [2, 2, 2]),
              RackFormation(name: "Linie", rows: [6])],
         5:  [RackFormation(name: "Dreieck", rows: [3, 2]),
              RackFormation(name: "Turm", rows: [2, 2, 1]),
              RackFormation(name: "Linie", rows: [5])],
         4:  [RackFormation(name: "Raute", rows: [1, 2, 1]),
-             Self.berserker(2),
+             Self.berserker(4),
              RackFormation(name: "Quadrat", rows: [2, 2]),
              RackFormation(name: "Linie", rows: [4])],
         3:  [RackFormation(name: "Dreieck", rows: [2, 1]),

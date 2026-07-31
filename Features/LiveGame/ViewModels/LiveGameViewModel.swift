@@ -364,8 +364,10 @@ final class LiveGameViewModel: ObservableObject {
         case .trickshot:
             return "\(base) · 🌀 Trickshot"
         case .normal:
-            guard state.playersPerTeam > 1 else { return base }
-            return "\(base) · Ball \(state.throwerSlot + 1)/\(state.playersPerTeam)"
+            // Auch im 1 gegen 1 relevant: Dort wirft dieselbe Person beide
+            // Bälle, und ohne die Anzeige wüsste man nicht, der wievielte
+            // gerade dran ist.
+            return "\(base) · Ball \(state.currentBallIndex + 1)/\(state.ballsPerTurn)"
         }
     }
 

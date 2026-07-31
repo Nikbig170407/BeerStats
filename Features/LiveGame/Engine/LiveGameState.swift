@@ -80,10 +80,19 @@ struct LiveGameState: Equatable {
 
     var playersPerTeam: Int
 
+    /// Bälle, die ein Team pro Zug wirft – unabhängig davon, wie viele
+    /// Spieler es hat.
+    ///
+    /// Bewusst von `playersPerTeam` getrennt: Auch im 1 gegen 1 wirft jeder
+    /// zwei Bälle, sonst gäbe es dort weder Balls Back noch Bombe. Wer den
+    /// jeweiligen Ball wirft, bestimmt `playerSlot(forBall:)`.
+    var ballsPerTurn: Int = 2
+
     // MARK: - Zug
 
     var turnTeamIndex: Int = 0
-    var throwerSlot: Int = 0
+    /// Der wievielte Ball des laufenden Zuges geworfen wird (0-basiert).
+    var currentBallIndex: Int = 0
     var pending: PendingThrow = .normal
     var bounceArmed: Bool = false
 
@@ -98,7 +107,8 @@ struct LiveGameState: Equatable {
     var onFire: [[Bool]]
     var stats: [[PlayerStats]]
 
-    /// Treffer der regulären Bälle im laufenden Zug, je Spieler.
+    /// Treffer der regulären Bälle im laufenden Zug, je Ball – nicht je
+    /// Spieler. Im 1 gegen 1 stehen hier also beide Würfe derselben Person.
     /// `nil` = noch nicht geworfen.
     var roundHits: [[Bool?]]
     /// Zweiter Werfer hat denselben Becher getroffen wie sein Teamkollege.
@@ -118,8 +128,15 @@ struct LiveGameState: Equatable {
 
     // MARK: - Abgeleitete Werte
 
+    /// Wer den angegebenen Ball wirft. Bei zwei Spielern wirft jeder einen,
+    /// bei einem Spieler wirft dieselbe Person beide.
+    func playerSlot(forBall ballIndex: Int) -> Int {
+        guard playersPerTeam > 1 else { return 0 }
+        return min(ballIndex, playersPerTeam - 1)
+    }
+
     var currentThrower: PlayerRef {
-        PlayerRef(teamIndex: turnTeamIndex, slot: throwerSlot)
+        PlayerRef(teamIndex: turnTeamIndex, slot: playerSlot(forBall: currentBallIndex))
     }
 
     /// Rack, auf das gerade geworfen wird.
@@ -129,8 +146,9 @@ struct LiveGameState: Equatable {
 
     var isDraw: Bool { phase == .finished && winnerTeamIndex == nil }
 
-    /// Balls Back und Bombe setzen zwei Werfer pro Team voraus.
-    var supportsDoubleHitRules: Bool { playersPerTeam == 2 }
+    /// Balls Back und Bombe brauchen zwei Bälle pro Zug – die gibt es in
+    /// beiden Modi, also gelten die Regeln überall.
+    var supportsDoubleHitRules: Bool { ballsPerTurn > 1 }
 
     func opponent(of teamIndex: Int) -> Int { 1 - teamIndex }
 
@@ -156,15 +174,18 @@ struct LiveGameState: Equatable {
 
     // MARK: - Aufbau
 
-    init(cupCount: Int, playersPerTeam: Int) {
+    init(cupCount: Int, playersPerTeam: Int, ballsPerTurn: Int = 2) {
         let rack = RackLayout(cupCount: cupCount)
         self.racks = [rack, rack]
         self.playersPerTeam = playersPerTeam
+        self.ballsPerTurn = ballsPerTurn
+        // Serien und Zählwerte hängen am Spieler …
         self.streaks = Array(repeating: Array(repeating: 0, count: playersPerTeam), count: 2)
         self.bestStreaks = Array(repeating: Array(repeating: 0, count: playersPerTeam), count: 2)
         self.onFire = Array(repeating: Array(repeating: false, count: playersPerTeam), count: 2)
         self.stats = Array(repeating: Array(repeating: PlayerStats(), count: playersPerTeam), count: 2)
-        self.roundHits = Array(repeating: Array(repeating: nil, count: playersPerTeam), count: 2)
+        // … die Treffer des laufenden Zuges dagegen am Ball.
+        self.roundHits = Array(repeating: Array(repeating: nil, count: ballsPerTurn), count: 2)
         self.reRackUsed = [false, false]
     }
 }
