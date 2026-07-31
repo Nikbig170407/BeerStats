@@ -175,10 +175,17 @@ enum GameEngine {
         events: inout [GameEvent],
         format: GameFormat
     ) {
-        if handleRackCleared(attacker: thrower.teamIndex, state: &state, events: &events) { return }
-
+        // Ein Trickshot-Bonuswurf ist mit diesem Treffer erledigt.
         if wasTrickshot { state.pending = .normal }
-        if grantStreak(for: thrower, state: &state, events: &events, format: format) { return }
+
+        // Die Serie wird bewusst VOR der Rack-Prüfung fortgeschrieben. Sonst
+        // fiele ausgerechnet der Treffer, der das Rack leert, aus der
+        // Bestserie heraus – der spektakulärste Wurf des Spiels würde nicht
+        // mitgezählt.
+        let keepsBall = grantStreak(for: thrower, state: &state, events: &events, format: format)
+
+        if handleRackCleared(attacker: thrower.teamIndex, state: &state, events: &events) { return }
+        if keepsBall { return }
 
         advanceAfterThrow(thrower: thrower, state: &state, events: &events, format: format)
     }

@@ -132,6 +132,9 @@ private final class PreviewGameService: GameServiceProtocol {
     func fetchFinishedGames(userId: String) async throws -> [Game] { [] }
 }
 
+// `cancelGame` liegt im Repository und nutzt `updateGameStatus` – am
+// Service-Protokoll ändert sich dadurch nichts.
+
 private final class PreviewThrowService: ThrowServiceProtocol {
     func appendThrow(_ throwEvent: Throw, gameId: String) async throws {}
     func observeThrows(gameId: String) -> AsyncStream<[Throw]> {

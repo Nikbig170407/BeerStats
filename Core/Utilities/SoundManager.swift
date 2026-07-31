@@ -35,20 +35,25 @@ enum GameSound: String, CaseIterable {
     var fileName: String { rawValue }
 
     /// Platzhalter aus dem iOS-Systemvorrat, solange keine eigene Datei
-    /// vorliegt. Die Nummern sind bewusst so gewählt, dass sich die
-    /// Ereignisse hörbar unterscheiden – ein hoher Klick für den Treffer,
-    /// ein dumpferer für den Fehlwurf, Fanfaren für die großen Momente.
+    /// vorliegt.
+    ///
+    /// Diese Nummern sind von Apple nicht dokumentiert und ihr Klang kann
+    /// sich zwischen iOS-Versionen ändern. Sie sind hier nur eine Notlösung,
+    /// damit die App nicht stumm ist – kein Sounddesign. Eine unbekannte
+    /// Nummer spielt schlicht nichts ab, mehr passiert im Fehlerfall nicht.
+    /// Sobald echte Dateien im Bundle liegen, werden diese Werte nie wieder
+    /// verwendet.
     var systemSoundID: SystemSoundID {
         switch self {
-        case .cupHit:    return 1057   // heller, kurzer Anschlag
-        case .miss:      return 1104   // dumpfer Tastenklick
-        case .airball:   return 1053   // absteigender Ton
-        case .bombe:     return 1023   // kräftiger Impuls
-        case .ballsBack: return 1025   // aufsteigende Folge
-        case .onFire:    return 1016   // heller Signalton
-        case .reRack:    return 1103   // kurzer Doppelklick
-        case .victory:   return 1027   // Fanfare
-        case .tap:       return 1104   // wie miss, nur leiser wahrgenommen
+        case .cupHit:    return 1057
+        case .miss:      return 1104
+        case .airball:   return 1053
+        case .bombe:     return 1023
+        case .ballsBack: return 1025
+        case .onFire:    return 1016
+        case .reRack:    return 1103
+        case .victory:   return 1027
+        case .tap:       return 1104
         }
     }
 }

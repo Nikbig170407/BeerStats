@@ -173,6 +173,7 @@ struct LiveGameView: View {
             },
             perform: {
                 HapticManager.error()
+                viewModel.abandonGame()
                 dismiss()
             }
         )

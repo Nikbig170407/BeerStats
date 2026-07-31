@@ -95,11 +95,18 @@ final class LiveGameViewModel: ObservableObject {
         observationTask = Task { [weak self] in
             guard let self else { return }
             for await entries in throwRepository.observeThrows(gameId: gameId) {
-                let rebuilt = throwRepository.replay(
+                var rebuilt = throwRepository.replay(
                     entries,
                     format: self.format,
                     playersPerTeam: self.playersPerTeam
                 )
+                // Der Bounce-Schalter ist reine Bedienung und steht bewusst
+                // nicht im Log. Ohne diese Zeile würde er von jeder
+                // Listener-Rückmeldung stillschweigend zurückgesetzt – man
+                // schaltet scharf, Firestore bestätigt einen älteren
+                // Schreibvorgang, und der Aufsetzer zählt plötzlich einfach.
+                rebuilt.bounceArmed = self.state.bounceArmed
+
                 // Firestore liefert eigene Schreibvorgänge sofort aus dem
                 // lokalen Cache mit. Ein Unterschied zum aktuellen Zustand
                 // bedeutet hier also: Ein Mitspieler hat etwas eingegeben.
@@ -200,6 +207,25 @@ final class LiveGameViewModel: ObservableObject {
                 } catch {
                     AppLogger.firestore.error("Statistiken konnten nicht geschrieben werden: \(error.localizedDescription)")
                 }
+            }
+        }
+    }
+
+    /// Bricht die laufende Partie ohne Wertung ab.
+    ///
+    /// Ohne das bliebe ein abgebrochenes Spiel dauerhaft als
+    /// „Spiel fortsetzen" im Hauptmenü stehen – es gäbe keinen Weg, es
+    /// wieder loszuwerden.
+    func abandonGame() {
+        guard let gameId, let gameRepository else { return }
+        // Kein Ergebnis festschreiben: Die Partie wurde nicht zu Ende
+        // gespielt und darf keine Statistik erzeugen.
+        didSettleGame = true
+        Task {
+            do {
+                try await gameRepository.cancelGame(gameId: gameId)
+            } catch {
+                AppLogger.firestore.error("Abbruch konnte nicht gespeichert werden: \(error.localizedDescription)")
             }
         }
     }
