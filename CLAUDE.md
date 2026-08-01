@@ -131,18 +131,32 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 
 - Login (E-Mail/Passwort), Mitspieler-Profile mit Emoji und Farbe
 - Neues Spiel aus Profilen → direkt ins Live-Tracking (keine Lobby)
+- Glücksrad, das die Teams aus allen aktiven Profilen auslost
 - Live-Tracking mit vollständigem Regelwerk, Undo, Re-Rack, Abbruch
-- Statistiken auf Profile, Rangliste, Direktvergleich, Spielverlauf,
-  Becher-Heatmap, MVP der Partie
+- Statistiken auf Profile, umschaltbar zwischen Gesamt und letztem Monat
+- Rangliste, Direktvergleich, Spielverlauf, Becher-Heatmap, MVP der Partie
 - Sounds (selbst synthetisiert), Sprachansage, App-Icon
 - Entwicklereinstellungen, passwortgeschützt (`ClaudeMinion67`)
+- Partyspiele auf dem Handy: Bombe weitergeben, Ich hab noch nie
+
+**Zwei Dinge, die man beim Weiterbauen wissen muss:**
+
+- **Zeitraum-Statistiken werden gerechnet, nicht gespeichert.** Die Werte am
+  Profil sind Lebenszeit-Summen. Für „letzter Monat" spielt
+  `ThrowRepository.aggregateStatistics` die Wurf-Logs der betroffenen
+  Partien neu durch. Das gilt dadurch rückwirkend und rechnet Undos korrekt
+  heraus – kostet aber Lesezugriffe, deshalb nur auf Anforderung.
+- **Partyspiele zahlen nicht auf die Beerpong-Statistiken ein.** Eine Runde
+  Bombe hat keine Trefferquote. Wer dort eine Wertung will, braucht einen
+  eigenen Zähler, nicht `UserStatistics`.
 
 **Bewusst dormant:** Das Freundesystem (`Features/Friends/`) und
 `LobbyView` sind gebaut, aber nicht verlinkt. Sie sind der Weg für später,
 wenn die App auf mehreren Geräten läuft. Nicht löschen.
 
-**Offen / denkbar:** Cloud Functions (bräuchte Blaze), Turniermodus,
-Elo-System, Widgets, Apple Watch.
+**Offen / denkbar:** Cloud Functions (bräuchte Blaze), Live Activity für
+den Sperrbildschirm, faire Teams nach Statistik, Ergebnis als Bild teilen,
+Auszeichnungen, weitere Partyspiele (Reaktionsduell, Mäxchen).
 
 ---
 
