@@ -93,6 +93,11 @@ struct LiveGameView: View {
 
             if viewModel.state.isFinished {
                 gameOverOverlay
+                    // Muss über den Einblendungen liegen: Seit diese Eingaben
+                    // abfangen, würde eine noch laufende Animation sonst den
+                    // Sieger-Screen verdecken und „Ergebnis übernehmen"
+                    // blockieren.
+                    .zIndex(2)
             }
         }
         .navigationBarBackButtonHidden(true)

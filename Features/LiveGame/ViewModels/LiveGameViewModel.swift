@@ -414,6 +414,9 @@ final class LiveGameViewModel: ObservableObject {
             appendLog(logText(for: event))
             applyFeedback(for: event)
         }
+        // Ist die Partie vorbei, hat der Sieger-Screen Vorrang. Eine noch
+        // laufende Einblendung würde ihn sonst überdecken.
+        if state.isFinished { dismissHighlight() }
     }
 
     private func applyFeedback(for event: GameEvent) {
