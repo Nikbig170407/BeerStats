@@ -53,6 +53,7 @@ struct NewGameView: View {
                 } else if !viewModel.hasEnoughProfiles {
                     notEnoughProfiles
                 } else {
+                    wheelLink
                     lineup
                 }
 
@@ -137,6 +138,39 @@ struct NewGameView: View {
     }
 
     // MARK: - Aufstellung
+
+    /// Einstieg ins Glücksrad. Steht bewusst über der Aufstellung: Wer
+    /// auslosen will, soll nicht erst von Hand wählen müssen.
+    private var wheelLink: some View {
+        NavigationLink {
+            TeamWheelView(
+                profiles: viewModel.selectableProfiles,
+                playersPerTeam: viewModel.playersPerTeam
+            ) { teams in
+                viewModel.applyDrawnLineup(teams)
+            }
+        } label: {
+            HStack(spacing: 14) {
+                Text("🎡").font(.system(size: 30))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Teams auslosen")
+                        .font(BeerStatsFont.headline)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                    Text("Glücksrad entscheidet, wer mit wem spielt")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .padding(16)
+            .glassPanel()
+            .neonEdge(BeerStatsColor.success, intensity: 0.45)
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
+    }
 
     private var lineup: some View {
         VStack(spacing: 0) {

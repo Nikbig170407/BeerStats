@@ -22,12 +22,23 @@ struct ProfileDetailView: View {
     let ownerId: String
     let onEdit: () -> Void
 
-    private var stats: UserStatistics { profile.statistics }
+    @State private var period: StatisticsPeriod = .allTime
+    @State private var periodStats: UserStatistics?
+    @State private var isLoadingPeriod = false
+
+    /// Bei „Gesamt" die am Profil gespeicherten Summen, sonst die aus dem
+    /// Wurf-Log neu gerechneten Werte. Die gespeicherten Summen sind
+    /// Lebenszeit-Werte und lassen sich nicht nachträglich zerlegen –
+    /// deshalb der Umweg über den Log, der dafür rückwirkend gilt.
+    private var stats: UserStatistics {
+        period == .allTime ? profile.statistics : (periodStats ?? UserStatistics())
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 header
+                periodPicker
                 hitRateGauge
 
                 if stats.gamesPlayed == 0 {
@@ -75,6 +86,47 @@ struct ProfileDetailView: View {
             }
         }
         .padding(.top, 8)
+    }
+
+    private var periodPicker: some View {
+        VStack(spacing: 8) {
+            Picker("Zeitraum", selection: $period) {
+                ForEach(StatisticsPeriod.allCases) { option in
+                    Text(option.title).tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            if isLoadingPeriod {
+                Text("Werte werden aus dem Spielverlauf gerechnet…")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+        }
+        .onChange(of: period) { newValue in
+            guard newValue != .allTime else { return }
+            Task { await loadPeriodStatistics() }
+        }
+    }
+
+    /// Rechnet die Werte für den gewählten Zeitraum aus den Partien.
+    ///
+    /// Absichtlich erst bei Bedarf und nicht beim Öffnen: Für „Gesamt"
+    /// liegen die Zahlen schon am Profil, und der Log muss dafür gar nicht
+    /// angefasst werden.
+    private func loadPeriodStatistics() async {
+        guard let profileId = profile.id else { return }
+        isLoadingPeriod = true
+        defer { isLoadingPeriod = false }
+        do {
+            let games = try await gameRepository.fetchFinishedGames(userId: ownerId)
+            periodStats = try await throwRepository.aggregateStatistics(
+                profileId: profileId,
+                games: period.filter(games)
+            )
+        } catch {
+            AppLogger.firestore.error("Zeitraum-Werte nicht ladbar: \(error.localizedDescription)")
+        }
     }
 
     private var hitRateGauge: some View {

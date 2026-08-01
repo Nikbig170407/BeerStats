@@ -43,6 +43,47 @@ protocol ThrowRepositoryProtocol {
         profileId: String,
         limit: Int
     ) async throws -> CupHeatmap
+
+    /// Rechnet die Kennzahlen eines Spielers aus einer Menge von Partien neu.
+    ///
+    /// Grundlage für den Zeitraum-Filter: Die Werte am Profil sind
+    /// Lebenszeit-Summen und lassen sich nicht nachträglich zerlegen. Aus dem
+    /// Wurf-Log dagegen ergibt sich jeder beliebige Zeitraum – und weil dabei
+    /// nachgespielt statt roh gezählt wird, sind zurückgenommene Würfe
+    /// automatisch heraus.
+    func aggregateStatistics(
+        profileId: String,
+        games: [Game]
+    ) async throws -> UserStatistics
+}
+
+/// Zeitraum, über den Statistiken betrachtet werden.
+enum StatisticsPeriod: String, CaseIterable, Identifiable {
+    case allTime
+    case lastMonth
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .allTime: return "Gesamt"
+        case .lastMonth: return "Letzter Monat"
+        }
+    }
+
+    /// Grenzt eine Liste von Partien auf den Zeitraum ein.
+    func filter(_ games: [Game]) -> [Game] {
+        guard case .lastMonth = self else { return games }
+        guard let cutoff = Calendar.current.date(byAdding: .month, value: -1, to: Date()) else {
+            return games
+        }
+        // Partien ohne Endzeitpunkt fallen bewusst heraus: Sie stammen aus
+        // einer Zeit vor dem Feld und lassen sich keinem Monat zuordnen.
+        return games.filter { game in
+            guard let endedAt = game.endedAt else { return false }
+            return endedAt >= cutoff
+        }
+    }
 }
 
 /// Wie oft welche Becher-Position getroffen wurde.
@@ -206,6 +247,66 @@ final class ThrowRepository: ThrowRepositoryProtocol {
             heatmap.hitsByCupIndex[index, default: 0] += 1
             heatmap.totalHits += 1
         }
+    }
+
+    // MARK: - Kennzahlen für einen Zeitraum
+
+    func aggregateStatistics(
+        profileId: String,
+        games: [Game]
+    ) async throws -> UserStatistics {
+        var result = UserStatistics()
+        // Siegesserien ergeben sich aus der zeitlichen Reihenfolge, deshalb
+        // von der ältesten zur jüngsten Partie durchgehen.
+        let ordered = games
+            .filter { $0.teams.contains { $0.playerIds.contains(profileId) } }
+            .sorted { ($0.endedAt ?? .distantPast) < ($1.endedAt ?? .distantPast) }
+
+        for game in ordered {
+            guard let gameId = game.id,
+                  let teamIndex = game.teams.firstIndex(where: { $0.playerIds.contains(profileId) }),
+                  let slot = game.teams[teamIndex].playerIds.firstIndex(of: profileId)
+            else { continue }
+
+            result.gamesPlayed += 1
+
+            let didWin = game.winnerTeamId == game.teams[teamIndex].id
+            if didWin {
+                result.gamesWon += 1
+                result.currentWinStreak += 1
+                result.longestWinStreak = max(result.longestWinStreak, result.currentWinStreak)
+            } else {
+                result.currentWinStreak = 0
+            }
+
+            // Der Wurf-Log liefert die Detailwerte. Fehlt er – etwa weil die
+            // Partie vor dieser Funktion entstand –, zählt sie trotzdem als
+            // gespieltes Spiel, nur ohne Wurfdaten.
+            let entries = try await throwService.fetchThrows(gameId: gameId)
+            guard !entries.isEmpty else { continue }
+
+            let finalState = replay(
+                entries,
+                format: game.format,
+                playersPerTeam: game.type == .oneVsOne ? 1 : 2
+            )
+            guard finalState.stats.indices.contains(teamIndex),
+                  finalState.stats[teamIndex].indices.contains(slot)
+            else { continue }
+
+            let playerStats = finalState.stats[teamIndex][slot]
+            result.totalThrows += playerStats.attempts
+            result.totalHits += playerStats.hits
+            result.totalAirballs += playerStats.airballs
+            result.totalBounceShotsMade += playerStats.bounces
+            result.totalTrickshotsMade += playerStats.trickshots
+            result.longestOnFireStreak = max(
+                result.longestOnFireStreak,
+                finalState.bestStreaks[teamIndex][slot]
+            )
+        }
+
+        return result
     }
 
     // MARK: - Ableitungen für die fachlichen Felder

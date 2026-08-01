@@ -130,6 +130,18 @@ final class NewGameViewModel: ObservableObject {
         createdGameId = nil
     }
 
+    /// Übernimmt eine ausgeloste Aufstellung aus dem Glücksrad.
+    func applyDrawnLineup(_ teams: [[String]]) {
+        resetSelection()
+        for teamIndex in teams.indices where selection.indices.contains(teamIndex) {
+            for (slot, profileId) in teams[teamIndex].enumerated()
+            where selection[teamIndex].indices.contains(slot) {
+                selection[teamIndex][slot] = profileId
+            }
+        }
+        HapticManager.success()
+    }
+
     private func resetSelection() {
         selection = Array(
             repeating: Array(repeating: nil, count: playersPerTeam),
