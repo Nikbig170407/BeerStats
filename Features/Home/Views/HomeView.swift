@@ -214,6 +214,18 @@ struct HomeView: View {
             .opacity(viewModel.profiles.isEmpty ? 0.45 : 1)
 
             NavigationLink {
+                PartyGamesView()
+            } label: {
+                destinationCard(
+                    title: "Partyspiele",
+                    subtitle: "Bombe weitergeben, Ich hab noch nie",
+                    systemImage: "gamecontroller.fill",
+                    tint: BeerStatsColor.success
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
+
+            NavigationLink {
                 GameHistoryView(
                     gameRepository: container.gameRepository,
                     ownerId: viewModel.currentUserId
