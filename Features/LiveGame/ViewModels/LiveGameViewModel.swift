@@ -372,7 +372,11 @@ final class LiveGameViewModel: ObservableObject {
     }
 
     func handleCupTap(teamIndex: Int, cupIndex: Int) {
-        if state.pendingChoice != nil {
+        if let choice = state.pendingChoice {
+            // Nur aus dem Rack, um das es geht. Ohne die Prüfung würde ein
+            // Tipp auf das andere Rack denselben Index hier entfernen – die
+            // Engine kennt nur den Index, nicht das angetippte Rack.
+            guard choice.rackTeamIndex == teamIndex else { return }
             perform(.chooseCup(index: cupIndex))
         } else if teamIndex == state.targetRackIndex {
             perform(.hitCup(index: cupIndex))

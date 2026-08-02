@@ -261,7 +261,14 @@ enum GameEngine {
 
         events.append(.hit(thrower: thrower, bounce: false, trickshot: false, cupIndex: state.lastHitCupIndex ?? -1))
 
-        if grantStreak(for: thrower, state: &state, events: &events, format: format) { return }
+        // Die Serie zählt weiter, der Ball bleibt aber bewusst NICHT beim
+        // Werfer: Die Bombe ist immer der zweite Ball des Zuges, und alles
+        // Weitere – die Auswahl der zwei Zusatzbecher und das anschließende
+        // Balls Back – hängt am Zugabschluss. Würde ein gleichzeitig
+        // ausgelöstes On Fire hier den Ball behalten, fiele die ganze Bombe
+        // aus: keine Auswahl, kein Balls Back.
+        _ = grantStreak(for: thrower, state: &state, events: &events, format: format)
+        state.pending = .normal
         advanceAfterThrow(thrower: thrower, state: &state, events: &events, format: format)
     }
 

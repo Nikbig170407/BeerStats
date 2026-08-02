@@ -179,21 +179,32 @@ final class ThrowRepository: ThrowRepositoryProtocol {
     // MARK: - Nachspielen
 
     func replay(_ entries: [Throw], format: GameFormat, playersPerTeam: Int) -> LiveGameState {
-        // Erst die Undo-Einträge auflösen: Jeder von ihnen streicht den
-        // zuletzt noch gültigen Eintrag.
-        var effective: [GameAction] = []
+        // Ein Eintrag kann mehr als eine Aktion bedeuten: Das Scharfschalten
+        // des Aufsetzers ist reine Bedienung und steht deshalb nicht als
+        // eigene Aktion im Log, sondern als Kennzeichen am Wurf. Wird es hier
+        // nicht wieder vorangestellt, kommt ein Bounce Shot beim Nachspielen
+        // als gewöhnlicher Treffer heraus – der zweite Becher und die ganze
+        // Auswahl fallen weg, und ab da weicht der nachgespielte Stand
+        // dauerhaft vom echten ab.
+        //
+        // Die Aktionen bleiben dabei je Eintrag gruppiert, damit ein Undo den
+        // Wurf samt seinem Scharfschalten streicht. Andernfalls bliebe ein
+        // aktiver Bounce für den nächsten Wurf zurück.
+        var steps: [[GameAction]] = []
         for entry in entries.sorted(by: { $0.sequenceNumber < $1.sequenceNumber }) {
             if entry.result == .undo {
-                if !effective.isEmpty { effective.removeLast() }
+                if !steps.isEmpty { steps.removeLast() }
                 continue
             }
             guard let action = entry.action else { continue }
-            effective.append(action)
+            steps.append(entry.isBounce ? [.toggleBounce, action] : [action])
         }
 
         var state = GameEngine.makeInitialState(format: format, playersPerTeam: playersPerTeam)
-        for action in effective {
-            state = GameEngine.apply(action, to: state, format: format).state
+        for step in steps {
+            for action in step {
+                state = GameEngine.apply(action, to: state, format: format).state
+            }
         }
         return state
     }
