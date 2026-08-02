@@ -245,6 +245,12 @@ final class ThrowRepository: ThrowRepositoryProtocol {
                 sawReRack = true
                 continue
             }
+            // Zusatzbecher aus Bounce, Trickshot oder Bombe wählt der Gegner
+            // aus – geworfen hat auf sie niemand. Sie stehen im Log unter dem
+            // Werfer und mit Ergebnis "hit", würden die Trefferkarte also an
+            // Stellen einfärben, auf die nie jemand gezielt hat.
+            if case .chooseCup = entry.action { continue }
+
             guard entry.playerId == profileId,
                   entry.result == .hit,
                   let cupId = entry.cupId,

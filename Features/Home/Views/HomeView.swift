@@ -2,11 +2,13 @@
 //  HomeView.swift
 //  BeerStats
 //
-//  Erster echter Einstiegspunkt nach dem Login. Führt die bisher gebauten
-//  Features zusammen: neues Spiel erstellen, Freunde verwalten, laufende
-//  Spiele fortsetzen. Statistiken/Ranglisten (Schritt 8/9) und ein
-//  eigener Settings-Screen (Schritt 10) folgen später – "Abmelden" lebt
-//  bis dahin übergangsweise hier.
+//  Das Hauptmenue: die Auswahl, was gespielt wird.
+//
+//  Bewusst nur Spiele, keine Verwaltung. Beerpong hat mit Mitspielern,
+//  Rangliste und Verlauf genug eigene Unterpunkte, um eine eigene Ebene zu
+//  rechtfertigen – die lagen vorher gleichrangig neben den Partyspielen und
+//  liessen das Menue wie eine Einstellungsliste wirken statt wie eine
+//  Spielauswahl.
 //
 
 import SwiftUI
@@ -34,73 +36,19 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 24) {
                     header
-
-                    // Bewusst nur das zuletzt begonnene Spiel statt einer
-                    // Liste: Es läuft immer höchstens eine Partie, und die
-                    // soll nach einem versehentlichen Verlassen weitergehen.
-                    if let running = viewModel.resumableGame {
-                        resumeLink(for: running)
-                    }
-
-                    newGameLink
-                    overviewStrip
-                    destinationCards
+                    beerpongCard
+                    partySection
                 }
                 .padding(20)
             }
             .background(GridBackdrop())
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        try? container.authRepository.signOut()
-                    } label: {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundStyle(BeerStatsColor.textSecondary)
-                    }
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isSoundOn.toggle()
-                        SoundManager.isEnabled = isSoundOn
-                        if isSoundOn { SoundManager.play(.tap) }
-                        HapticManager.lightImpact()
-                    } label: {
-                        Image(systemName: isSoundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                            .foregroundStyle(isSoundOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
-                    }
-                    .accessibilityLabel(isSoundOn ? "Ton ausschalten" : "Ton einschalten")
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isSpeechOn.toggle()
-                        SpeechAnnouncer.isEnabled = isSpeechOn
-                        if isSpeechOn { SpeechAnnouncer.announce("Ansage ist an") }
-                        HapticManager.lightImpact()
-                    } label: {
-                        Image(systemName: isSpeechOn ? "bubble.left.and.text.bubble.right.fill" : "bubble.left.and.text.bubble.right")
-                            .foregroundStyle(isSpeechOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
-                    }
-                    .accessibilityLabel(isSpeechOn ? "Ansage ausschalten" : "Ansage einschalten")
-                }
-                // Mitspieler und Rangliste sind jetzt große Karten im Inhalt –
-                // in der Kopfzeile bleiben nur Nebensachen.
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        DeveloperSettingsView(
-                            repository: container.playerProfileRepository,
-                            ownerId: viewModel.currentUserId
-                        )
-                    } label: {
-                        Image(systemName: "wrench.and.screwdriver.fill")
-                            .foregroundStyle(BeerStatsColor.textSecondary)
-                    }
-                    .accessibilityLabel("Entwicklereinstellungen")
-                }
-            }
+            .toolbar { toolbarContent }
         }
     }
+
+    // MARK: - Kopf
 
     private var header: some View {
         HStack(spacing: 14) {
@@ -115,7 +63,7 @@ struct HomeView: View {
                             endPoint: .trailing
                         )
                     )
-                Text("Bereit für die nächste Runde?")
+                Text("Was wird gespielt?")
                     .font(BeerStatsFont.body)
                     .foregroundStyle(BeerStatsColor.textSecondary)
             }
@@ -124,50 +72,112 @@ struct HomeView: View {
         .padding(.top, 8)
     }
 
-    private var newGameLink: some View {
-        NavigationLink {
-            NewGameView(container: container, currentUserId: viewModel.currentUserId)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "plus")
-                Text("Neues Spiel")
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                try? container.authRepository.signOut()
+            } label: {
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                    .foregroundStyle(BeerStatsColor.textSecondary)
             }
-            .font(BeerStatsFont.headline)
-            .foregroundStyle(BeerStatsColor.textOnAccent)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(BeerStatsColor.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .accessibilityLabel("Abmelden")
+        }
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                isSoundOn.toggle()
+                SoundManager.isEnabled = isSoundOn
+                if isSoundOn { SoundManager.play(.tap) }
+                HapticManager.lightImpact()
+            } label: {
+                Image(systemName: isSoundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    .foregroundStyle(isSoundOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
+            }
+            .accessibilityLabel(isSoundOn ? "Ton ausschalten" : "Ton einschalten")
+        }
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                isSpeechOn.toggle()
+                SpeechAnnouncer.isEnabled = isSpeechOn
+                if isSpeechOn { SpeechAnnouncer.announce("Ansage ist an") }
+                HapticManager.lightImpact()
+            } label: {
+                Image(systemName: isSpeechOn ? "bubble.left.and.text.bubble.right.fill" : "bubble.left.and.text.bubble.right")
+                    .foregroundStyle(isSpeechOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
+            }
+            .accessibilityLabel(isSpeechOn ? "Ansage ausschalten" : "Ansage einschalten")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            NavigationLink {
+                DeveloperSettingsView(
+                    repository: container.playerProfileRepository,
+                    ownerId: viewModel.currentUserId
+                )
+            } label: {
+                Image(systemName: "wrench.and.screwdriver.fill")
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .accessibilityLabel("Entwicklereinstellungen")
+        }
+    }
+
+    // MARK: - Beerpong
+
+    /// Steht bewusst allein und groesser als die uebrigen Spiele: Es ist das
+    /// Spiel, um das herum die App gebaut ist, und das einzige mit Statistik.
+    private var beerpongCard: some View {
+        NavigationLink {
+            BeerpongMenuView(container: container, viewModel: viewModel)
+        } label: {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 14) {
+                    Text("🍺").font(.system(size: 40))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Beerpong")
+                            .font(BeerStatsFont.title)
+                            .foregroundStyle(BeerStatsColor.textPrimary)
+                        Text(beerpongSubtitle)
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(
+                                viewModel.resumableGame == nil
+                                    ? BeerStatsColor.textSecondary
+                                    : BeerStatsColor.accent
+                            )
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+
+                HStack(spacing: 10) {
+                    miniStat("\(viewModel.activeProfiles.count)", "Mitspieler")
+                    miniStat("\(viewModel.totalGamesTracked)", "Partien")
+                    miniStat(
+                        viewModel.leadingProfile?.emoji ?? "–",
+                        viewModel.leadingProfile?.name ?? "Noch offen"
+                    )
+                }
+            }
+            .padding(18)
+            .glassPanel()
+            .neonEdge(BeerStatsColor.accent, intensity: 0.55)
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(PressableButtonStyle())
     }
 
-    /// Kennzahlen-Streifen: Gibt dem Startbildschirm Inhalt und zeigt auf
-    /// einen Blick, ob überhaupt schon gespielt wurde.
-    private var overviewStrip: some View {
-        HStack(spacing: 12) {
-            overviewTile(
-                value: "\(viewModel.activeProfiles.count)",
-                label: "Mitspieler",
-                tint: BeerStatsColor.accent
-            )
-            overviewTile(
-                value: "\(viewModel.totalGamesTracked)",
-                label: "Partien",
-                tint: BeerStatsColor.accentSecondary
-            )
-            overviewTile(
-                value: viewModel.leadingProfile?.emoji ?? "–",
-                label: viewModel.leadingProfile?.name ?? "Noch offen",
-                tint: BeerStatsColor.success
-            )
-        }
+    private var beerpongSubtitle: String {
+        viewModel.resumableGame == nil
+            ? "Tracken, Statistiken, Rangliste"
+            : "Eine Partie läuft noch – fortsetzen"
     }
 
-    private func overviewTile(value: String, label: String, tint: Color) -> some View {
-        VStack(spacing: 5) {
+    private func miniStat(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 2) {
             Text(value)
-                .font(.system(size: 25, weight: .heavy, design: .rounded))
-                .foregroundStyle(tint)
+                .font(.system(size: 19, weight: .heavy, design: .rounded))
+                .foregroundStyle(BeerStatsColor.accent)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(label)
@@ -177,86 +187,80 @@ struct HomeView: View {
                 .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .glassPanel(cornerRadius: 16)
-        .neonEdge(tint, cornerRadius: 16, intensity: 0.35)
+        .padding(.vertical, 9)
+        .background(
+            BeerStatsColor.surfaceElevated.opacity(0.6),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
     }
 
-    /// Große Einstiege statt kleiner Symbole in der Kopfzeile – die Statistik
-    /// ist der zweitwichtigste Ort der App und war vorher nur ein Icon.
-    private var destinationCards: some View {
-        VStack(spacing: 12) {
-            NavigationLink {
-                ProfilesView(container: container, ownerId: viewModel.currentUserId)
-            } label: {
-                destinationCard(
-                    title: "Mitspieler & Statistiken",
-                    subtitle: "Profile anlegen, Werte ansehen, vergleichen",
-                    systemImage: "chart.bar.xaxis",
+    // MARK: - Spiele auf dem Handy
+
+    private var partySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("AUF DEM HANDY")
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .kerning(1.8)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            NavigationLink { BombPassView() } label: {
+                gameCard(
+                    emoji: "💣",
+                    title: "Bombe weitergeben",
+                    subtitle: "Zünden, herumreichen, nicht drauf sitzen bleiben",
+                    tint: BeerStatsColor.accentSecondary
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
+
+            NavigationLink { NeverHaveIEverView() } label: {
+                gameCard(
+                    emoji: "🍻",
+                    title: "Ich hab noch nie",
+                    subtitle: "150 Fragen in drei Stufen, dazu Strafen",
+                    tint: BeerStatsColor.success
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
+
+            NavigationLink { MostLikelyView() } label: {
+                gameCard(
+                    emoji: "👉",
+                    title: "Wer von uns?",
+                    subtitle: "Alle zeigen gleichzeitig – die meisten Finger trinken",
+                    tint: BeerStatsColor.warning
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
+
+            NavigationLink { ReactionDuelView() } label: {
+                gameCard(
+                    emoji: "⚡️",
+                    title: "Reaktionsduell",
+                    subtitle: "Zwei Daumen, ein Signal – wer zu früh tippt, verliert",
                     tint: BeerStatsColor.accent
                 )
             }
             .buttonStyle(PressableButtonStyle())
 
-            NavigationLink {
-                LeaderboardView(profiles: viewModel.profiles)
-            } label: {
-                destinationCard(
-                    title: "Rangliste",
-                    subtitle: viewModel.leadingProfile.map { "Aktuell vorn: \($0.name)" }
-                        ?? "Noch keine Wertung",
-                    systemImage: "trophy.fill",
-                    tint: BeerStatsColor.warning
-                )
-            }
-            .buttonStyle(PressableButtonStyle())
-            .disabled(viewModel.profiles.isEmpty)
-            .opacity(viewModel.profiles.isEmpty ? 0.45 : 1)
-
-            NavigationLink {
-                PartyGamesView()
-            } label: {
-                destinationCard(
-                    title: "Partyspiele",
-                    subtitle: "Bombe weitergeben, Ich hab noch nie",
-                    systemImage: "gamecontroller.fill",
-                    tint: BeerStatsColor.success
-                )
-            }
-            .buttonStyle(PressableButtonStyle())
-
-            NavigationLink {
-                GameHistoryView(
-                    gameRepository: container.gameRepository,
-                    ownerId: viewModel.currentUserId
-                )
-            } label: {
-                destinationCard(
-                    title: "Spielverlauf",
-                    subtitle: "Vergangene Partien mit Ergebnis",
-                    systemImage: "clock.arrow.circlepath",
-                    tint: BeerStatsColor.success
+            NavigationLink { DrinkRouletteView() } label: {
+                gameCard(
+                    emoji: "🎯",
+                    title: "Trink-Roulette",
+                    subtitle: "Namen eintragen, drehen, austrinken",
+                    tint: BeerStatsColor.error
                 )
             }
             .buttonStyle(PressableButtonStyle())
         }
     }
 
-    private func destinationCard(
-        title: String,
-        subtitle: String,
-        systemImage: String,
-        tint: Color
-    ) -> some View {
+    private func gameCard(emoji: String, title: String, subtitle: String, tint: Color) -> some View {
         HStack(spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(tint.opacity(0.18))
-                Image(systemName: systemImage)
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(tint)
-            }
-            .frame(width: 56, height: 56)
+            Text(emoji)
+                .font(.system(size: 32))
+                .frame(width: 54, height: 54)
+                .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
@@ -265,7 +269,7 @@ struct HomeView: View {
                 Text(subtitle)
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
             }
 
             Spacer()
@@ -277,43 +281,5 @@ struct HomeView: View {
         .glassPanel()
         .neonEdge(tint, intensity: 0.4)
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private func resumeLink(for game: Game) -> some View {
-        NavigationLink {
-            LiveGameView(
-                teams: game.teams,
-                format: game.format,
-                playersPerTeam: game.type == .oneVsOne ? 1 : 2,
-                perspectiveTeamIndex: 0,
-                gameId: game.id,
-                throwRepository: container.throwRepository,
-                gameRepository: container.gameRepository,
-                profileRepository: container.playerProfileRepository,
-                ownerId: viewModel.currentUserId
-            )
-        } label: {
-            BeerStatsCard {
-                HStack(spacing: 12) {
-                    Image(systemName: "play.circle.fill")
-                        .font(.system(size: 26))
-                        .foregroundStyle(BeerStatsColor.accent)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Spiel fortsetzen")
-                            .font(BeerStatsFont.headline)
-                            .foregroundStyle(BeerStatsColor.textPrimary)
-                        Text(game.teams.map { $0.playerNames.joined(separator: " & ") }.joined(separator: " vs "))
-                            .font(BeerStatsFont.caption)
-                            .foregroundStyle(BeerStatsColor.textSecondary)
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                }
-            }
-        }
-        .buttonStyle(PressableButtonStyle())
-        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 }

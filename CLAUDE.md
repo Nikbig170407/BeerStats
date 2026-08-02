@@ -130,6 +130,11 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 **Läuft auf dem iPhone.** Alle Kernfunktionen sind gebaut:
 
 - Login (E-Mail/Passwort), Mitspieler-Profile mit Emoji und Farbe
+- **Hauptmenü als Spielauswahl.** `HomeView` zeigt nur Spiele. Alles rund um
+  Beerpong – Neues Spiel, Fortsetzen, Mitspieler & Statistiken, Rangliste,
+  Spielverlauf – liegt eine Ebene tiefer in `BeerpongMenuView`. Das
+  `HomeViewModel` wird dorthin durchgereicht, nicht neu gebaut, sonst liefe
+  ein zweiter Listener auf dieselben Daten.
 - Neues Spiel aus Profilen → direkt ins Live-Tracking (keine Lobby)
 - Glücksrad, das die Teams aus allen aktiven Profilen auslost
 - Live-Tracking mit vollständigem Regelwerk, Undo, Re-Rack, Abbruch
@@ -137,9 +142,14 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 - Rangliste, Direktvergleich, Spielverlauf, Becher-Heatmap, MVP der Partie
 - Sounds (selbst synthetisiert), Sprachansage, App-Icon
 - Entwicklereinstellungen, passwortgeschützt (`ClaudeMinion67`)
-- Partyspiele auf dem Handy: Bombe weitergeben, Ich hab noch nie
+- Partyspiele auf dem Handy: Bombe weitergeben, Ich hab noch nie,
+  Wer von uns?, Reaktionsduell, Trink-Roulette
 
-**Zwei Dinge, die man beim Weiterbauen wissen muss:**
+**Drei Dinge, die man beim Weiterbauen wissen muss:**
+
+- **Kartenspiele tragen den ganzen Satz auf der Karte**, nicht nur den
+  Nachsatz. Ein fester Vorspann („Ich hab noch nie …") kann grammatisch
+  nicht aufgehen: Es gibt „Ich bin noch nie …" und „Ich hatte noch nie …".
 
 - **Zeitraum-Statistiken werden gerechnet, nicht gespeichert.** Die Werte am
   Profil sind Lebenszeit-Summen. Für „letzter Monat" spielt

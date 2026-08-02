@@ -500,12 +500,19 @@ final class LiveGameViewModel: ObservableObject {
         highlightDismissTask?.cancel()
         withAnimation(AppAnimation.standard) { highlight = newHighlight }
 
+        // Steht direkt danach eine erzwungene Becher-Auswahl an (Bombe,
+        // Bounce, Trickshot), wird deutlich kürzer eingeblendet. Die
+        // Einblendung liegt über dem Raster und fängt Tipper ab – wer gerade
+        // wählen soll, tippt sonst ins Leere und hält das Spiel für kaputt.
+        //
+        // Sonst rund 1,2 Sekunden: lang genug zum Wahrnehmen, kurz genug,
+        // dass es auch beim fünften Airball hintereinander nicht bremst.
+        let duration: UInt64 = state.pendingChoice == nil ? 1_200_000_000 : 650_000_000
+
         // Die Klasse ist @MainActor, der Task erbt diese Isolation – ein
         // zusätzliches MainActor.run wäre überflüssig.
-        // Rund 1,2 Sekunden: lang genug zum Wahrnehmen, kurz genug, dass es
-        // auch beim fünften Airball hintereinander nicht bremst.
         highlightDismissTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            try? await Task.sleep(nanoseconds: duration)
             guard !Task.isCancelled else { return }
             withAnimation(AppAnimation.smoothFade) { self?.highlight = nil }
         }

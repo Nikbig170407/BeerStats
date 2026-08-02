@@ -212,15 +212,16 @@ struct NeverHaveIEverView: View {
             Text(isPenalty ? "🥃" : (card.level?.emoji ?? "🍻"))
                 .font(.system(size: 34))
 
-            Text(isPenalty ? "STRAFE" : "Ich hab noch nie…")
-                .font(isPenalty
-                    ? Font.system(size: 12, weight: .heavy, design: .rounded)
-                    : BeerStatsFont.caption)
-                .kerning(isPenalty ? 2.4 : 0)
+            // Kein fester Vorspann mehr: Der ganze Satz steht auf der Karte,
+            // weil "Ich bin noch nie" und "Ich hatte noch nie" sonst nicht
+            // gehen. Hier steht deshalb nur noch die Stufe.
+            Text(isPenalty ? "STRAFE" : (card.level?.title.uppercased() ?? ""))
+                .font(Font.system(size: 12, weight: .heavy, design: .rounded))
+                .kerning(2.4)
                 .foregroundStyle(isPenalty ? tint : BeerStatsColor.textSecondary)
 
             Text(card.text)
-                .font(.system(size: isPenalty ? 30 : 26, weight: .bold, design: .rounded))
+                .font(.system(size: isPenalty ? 30 : 24, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
