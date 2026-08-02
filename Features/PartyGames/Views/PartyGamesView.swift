@@ -44,7 +44,7 @@ struct PartyGamesView: View {
                         gameCard(
                             emoji: "🍻",
                             title: "Ich hab noch nie",
-                            subtitle: "60 Karten in drei Stufen",
+                            subtitle: "67 Fragen, dazu Strafen zwischendurch",
                             tint: BeerStatsColor.success
                         )
                     }

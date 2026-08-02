@@ -2,130 +2,214 @@
 //  NeverHaveIEverDeck.swift
 //  BeerStats
 //
-//  Karteninhalt für „Ich hab noch nie".
+//  Karteninhalt fuer Ich hab noch nie.
 //
 //  Bewusst als eigene Datei getrennt von der Ansicht: Der Inhalt ist das,
-//  was sich am häufigsten ändert. Neue Karten hinzuzufügen soll heißen,
+//  was sich am haeufigsten aendert. Eine Karte zu ergaenzen soll heissen,
 //  eine Zeile in eine Liste zu schreiben – nicht eine View anzufassen.
 //
-//  Die Stufen sind absichtlich harmlos gehalten. Es ist ein Spiel für den
-//  Abend unter Freunden, kein Beichtstuhl; Karten, die jemanden blossstellen
-//  oder zu Unvernunft anstacheln, gehören hier nicht rein.
+//  Strafen sind keine dritte Stufe, sondern Zwischenkarten. Als eigener
+//  Block waeren sie berechenbar; alle fuenf bis sechs Fragen eingestreut
+//  unterbrechen sie den Rhythmus genau dann, wenn er sich einspielt.
 //
 
 import Foundation
 
+/// Stufe einer Frage. Strafen tauchen hier bewusst nicht auf – sie sind
+/// keine Frage und werden nicht gewaehlt, sondern eingestreut.
 enum NeverHaveIEverLevel: String, CaseIterable, Identifiable, Codable {
-    case harmless
-    case medium
+    case kids
     case spicy
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .harmless: return "Harmlos"
-        case .medium: return "Mittel"
-        case .spicy: return "Frech"
+        case .kids: return "Kinder"
+        case .spicy: return "Spicy"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .kids: return "Jugendfrei, geht mit jedem"
+        case .spicy: return "Fuer spaeter am Abend"
         }
     }
 
     var emoji: String {
         switch self {
-        case .harmless: return "🙂"
-        case .medium: return "😏"
+        case .kids: return "🧒"
         case .spicy: return "🔥"
         }
     }
 }
 
 struct NeverHaveIEverCard: Identifiable, Equatable {
+
+    enum Kind: Equatable {
+        case statement(NeverHaveIEverLevel)
+        case penalty
+    }
+
     let id = UUID()
     let text: String
-    let level: NeverHaveIEverLevel
+    let kind: Kind
+
+    var isPenalty: Bool {
+        if case .penalty = kind { return true }
+        return false
+    }
+
+    var level: NeverHaveIEverLevel? {
+        if case .statement(let level) = kind { return level }
+        return nil
+    }
 }
 
 enum NeverHaveIEverDeck {
 
-    /// Liefert einen gemischten Stapel für die gewählten Stufen.
-    static func shuffled(levels: Set<NeverHaveIEverLevel>) -> [NeverHaveIEverCard] {
-        all.filter { levels.contains($0.level) }.shuffled()
+    /// Abstand zwischen zwei Strafen, in Fragen gemessen. Als Spanne und
+    /// nicht als feste Zahl – sonst zaehlt die Runde nach zwei Strafen mit
+    /// und weiss, wann die naechste kommt.
+    private static let penaltyGap = 5...6
+
+    static let statements: [NeverHaveIEverCard] = kids + spicy
+
+    /// Baut den Stapel fuer eine Runde: Fragen der gewaehlten Stufen,
+    /// gemischt, mit eingestreuten Strafen.
+    static func shuffled(
+        levels: Set<NeverHaveIEverLevel>,
+        includePenalties: Bool
+    ) -> [NeverHaveIEverCard] {
+
+        let questions = statements
+            .filter { card in card.level.map { levels.contains($0) } ?? false }
+            .shuffled()
+
+        guard includePenalties, !penalties.isEmpty else { return questions }
+
+        // Aus einem gemischten Vorrat ziehen statt jedes Mal frei zu greifen:
+        // So kommt keine Strafe ein zweites Mal, bevor die anderen dran
+        // waren. Ist der Vorrat leer, wird neu gemischt.
+        var pool = penalties.shuffled()
+        var deck: [NeverHaveIEverCard] = []
+        var untilNextPenalty = Int.random(in: penaltyGap)
+
+        for question in questions {
+            deck.append(question)
+            untilNextPenalty -= 1
+            guard untilNextPenalty <= 0 else { continue }
+
+            if pool.isEmpty { pool = penalties.shuffled() }
+            deck.append(pool.removeLast())
+            untilNextPenalty = Int.random(in: penaltyGap)
+        }
+
+        return deck
     }
 
-    static let all: [NeverHaveIEverCard] = harmless + medium + spicy
+    static func questionCount(for level: NeverHaveIEverLevel) -> Int {
+        statements.filter { $0.level == level }.count
+    }
 
-    // MARK: - Harmlos
+    // MARK: - Kinder
 
-    private static let harmless: [NeverHaveIEverCard] = [
+    private static let kids: [NeverHaveIEverCard] = [
         "einen ganzen Tag im Schlafanzug verbracht",
         "beim Karaoke gesungen",
         "eine Serie an einem Tag durchgeschaut",
-        "mich beim Kochen so verschnitten, dass ich aufgeben musste",
         "auf einer Beerdigung gelacht",
         "meinen eigenen Namen gegoogelt",
         "einen Tanz vor dem Spiegel geübt",
         "ein Buch gekauft und nie gelesen",
-        "im Supermarkt aus Versehen jemanden geduzt, den ich nicht kannte",
         "eine Woche lang dieselbe Hose getragen",
-        "beim Wandern die Karte falsch gelesen und mich verlaufen",
         "meinem Haustier eine ganze Geschichte erzählt",
         "einen Film geschaut, nur weil das Plakat gut aussah",
-        "an einem Feiertag gearbeitet, obwohl ich frei hatte",
         "eine Pflanze zu Tode gepflegt",
         "die Fernbedienung im Kühlschrank gefunden",
-        "beim Puzzeln ein Teil versteckt, um es zuletzt zu legen",
-        "so getan, als hätte ich einen Podcast gehört",
         "im Zug in der falschen Richtung gesessen",
-        "einen Wecker gestellt und trotzdem verschlafen"
-    ].map { NeverHaveIEverCard(text: $0, level: .harmless) }
+        "einen Wecker gestellt und trotzdem verschlafen",
+        "beim Puzzeln ein Teil versteckt, um es zuletzt zu legen",
+        "mich beim Kochen so verschnitten, dass ich aufgeben musste",
+        "im Supermarkt jemanden gegrüßt, den ich gar nicht kannte",
+        "beim Wandern die Karte falsch gelesen und mich verlaufen",
+        "so getan, als hätte ich einen Podcast gehört",
+        "an einem Feiertag gearbeitet, obwohl ich frei hatte",
+        "eine Achterbahn mit geschlossenen Augen gefahren",
+        "mich vor einem Gewitter unter der Decke versteckt",
+        "beim Monopoly heimlich Geld aus der Bank genommen",
+        "ein Lied mitgesungen, obwohl ich den Text nicht kann",
+        "einen Schneemann gebaut und ihm einen Namen gegeben",
+        "mich im eigenen Zuhause ausgesperrt",
+        "ein Selfie mehr als zehnmal wiederholt",
+        "beim Zahnarzt so getan, als würde es nicht wehtun",
+        "einen Regenschirm irgendwo liegen lassen",
+        "mit vollem Mund geredet und dabei etwas verschüttet",
+        "eine Türklingel gedrückt und bin weggerannt",
+        "Hausaufgaben in der Pause abgeschrieben",
+        "behauptet, ich hätte das Buch gelesen, obwohl ich nur den Film kenne",
+        "mich beim Fangenspielen absichtlich fangen lassen",
+        "auf einer Rolltreppe gegen die Laufrichtung gelaufen"
+    ].map { NeverHaveIEverCard(text: $0, kind: .statement(.kids)) }
 
-    // MARK: - Mittel
-
-    private static let medium: [NeverHaveIEverCard] = [
-        "so getan, als würde ich telefonieren, um jemandem auszuweichen",
-        "eine Verabredung in letzter Minute erfunden abgesagt",
-        "heimlich die Bewertungen von jemandem gelesen, den ich kenne",
-        "beim Wichteln mein eigenes Geschenk zurückbekommen und mich gefreut",
-        "jemandem gesagt, sein Essen sei gut, und es heimlich stehen lassen",
-        "eine ganze Nacht durchgemacht und danach gearbeitet",
-        "mich für ein Foto irgendwo hingestellt, wo ich nicht hindurfte",
-        "einen Streit angefangen, obwohl ich wusste, dass ich unrecht habe",
-        "die Playlist auf einer Party heimlich übernommen",
-        "jemandem eine Nachricht geschickt, die für jemand anderen war",
-        "in der Umkleide etwas anprobiert und ohne Kauf wieder aufgehängt",
-        "beim Brettspiel geschummelt und gewonnen",
-        "im Urlaub etwas gegessen, ohne zu wissen, was es war",
-        "eine Rede gehalten, ohne mich vorbereitet zu haben",
-        "auf der Autobahn die Ausfahrt verpasst, weil ich mitgesungen habe",
-        "einen ganzen Abend lang so getan, als kenne ich eine Band",
-        "mich in einem Restaurant über den falschen Tisch beschwert",
-        "meine Wohnung nur für Besuch aufgeräumt",
-        "beim Sport aufgegeben und behauptet, ich hätte Krämpfe",
-        "jemandem zum Geburtstag gratuliert, weil das Handy mich erinnert hat"
-    ].map { NeverHaveIEverCard(text: $0, level: .medium) }
-
-    // MARK: - Frech
+    // MARK: - Spicy
 
     private static let spicy: [NeverHaveIEverCard] = [
-        "jemanden im Raum schon mal heimlich beneidet",
-        "über einen Anwesenden gelästert, bevor ich ihn kannte",
-        "bei einem Date so getan, als hätte ich Zeitdruck",
-        "eine Nachricht gelesen und absichtlich nicht geantwortet",
-        "die Rechnung geteilt, obwohl ich deutlich mehr bestellt hatte",
-        "jemanden angeschrieben, nur weil mir langweilig war",
-        "so getan, als hätte ich ein Geschenk selbst gemacht",
-        "einen Fehler bei der Arbeit jemand anderem überlassen",
-        "mich aus einer Runde geschlichen, ohne mich zu verabschieden",
-        "das letzte Stück genommen und behauptet, es sei noch da",
-        "einen Namen vergessen und ihn den ganzen Abend umschifft",
-        "auf einer Party in einem Zimmer geschlafen, das nicht meines war",
-        "jemandem gesagt, ich sei schon unterwegs, während ich noch duschte",
-        "eine Geschichte erzählt, die eigentlich jemand anderem passiert ist",
-        "beim Fotografieren jemanden absichtlich schlecht getroffen",
-        "so getan, als wäre mir ein Geschenk zu schade zum Benutzen",
-        "einen Wettkampf verloren und behauptet, ich hätte nicht ernst gespielt",
-        "mich in eine Diskussion eingemischt, von der ich nichts verstand",
-        "jemandem zugestimmt, nur damit das Gespräch endet",
-        "an diesem Abend schon jemanden angeflunkert"
-    ].map { NeverHaveIEverCard(text: $0, level: .spicy) }
+        "jemanden geküsst, den ich am selben Abend erst kennengelernt habe",
+        "in einem fremden Bett aufgewacht",
+        "mit jemandem aus dieser Runde geflirtet",
+        "ein Date mit nach Hause genommen",
+        "geküsst, während jemand anderes zugeschaut hat",
+        "an einem sehr öffentlichen Ort rumgemacht",
+        "im Auto rumgemacht",
+        "jemanden geküsst, der vergeben war",
+        "mit jemandem geschlafen und danach nie wieder geschrieben",
+        "jemanden aus dieser Runde attraktiv gefunden",
+        "mit zwei Leuten gleichzeitig geschrieben",
+        "behauptet, ich sei vergeben, um jemanden loszuwerden",
+        "ein Foto verschickt, das ich am nächsten Tag bereut habe",
+        "mit jemandem geflirtet, um etwas zu bekommen",
+        "ein Dating-Profil geschönt",
+        "jemanden geküsst, dessen Namen ich nicht wusste",
+        "jemandem einen Korb gegeben und es später bereut",
+        "beim ersten Date schon geküsst",
+        "mit jemandem aus dem Freundeskreis etwas gehabt",
+        "eine Affäre für mich behalten",
+        "morgens heimlich gegangen, bevor der andere wach war",
+        "jemanden nach einer Nacht wieder heimgeschickt",
+        "beim Sex lachen müssen",
+        "so getan, als wäre es gut gewesen",
+        "etwas im Nachttisch, das ich niemandem zeigen würde",
+        "jemanden geküsst und danach so getan, als wäre nichts",
+        "beim Rummachen den falschen Namen gesagt",
+        "ein Date abgebrochen, weil es zu peinlich wurde",
+        "jemandem hinterhergeschaut, während mein Date sprach",
+        "mich in jemanden aus dieser Runde mal verguckt",
+        "fast erwischt worden",
+        "jemanden zurückgeschrieben, den ich eigentlich gelöscht hatte"
+    ].map { NeverHaveIEverCard(text: $0, kind: .statement(.spicy)) }
+
+    // MARK: - Strafen
+
+    private static let penalties: [NeverHaveIEverCard] = [
+        "Trink einen Shot",
+        "Trink 5 Schlücke",
+        "Trink 3 Schlücke",
+        "Verteile 5 Schlücke",
+        "Alle trinken 2 Schlücke",
+        "Bestimme jemanden, der einen Shot trinkt",
+        "Dein linker Nachbar trinkt 3 Schlücke",
+        "Dein rechter Nachbar trinkt einen Shot",
+        "Trink so viele Schlücke, wie du Geschwister hast",
+        "Der Jüngste in der Runde trinkt 3 Schlücke",
+        "Der Älteste in der Runde trinkt 3 Schlücke",
+        "Wer zuletzt gelacht hat, trinkt 2 Schlücke",
+        "Wer als Letztes die Hand hebt, trinkt einen Shot",
+        "Trink 4 Schlücke und verteile 4",
+        "Wer heute am weitesten angereist ist, trinkt 3 Schlücke",
+        "Der Gastgeber trinkt 2 Schlücke",
+        "Alle, die gerade stehen, trinken 3 Schlücke",
+        "Reihum ein Schluck, bis jemand lacht"
+    ].map { NeverHaveIEverCard(text: $0, kind: .penalty) }
 }

@@ -2,19 +2,24 @@
 //  NeverHaveIEverView.swift
 //  BeerStats
 //
-//  „Ich hab noch nie" als Kartenstapel.
+//  Ich hab noch nie als Kartenstapel.
 //
 //  Der Stapel wird einmal gemischt und dann durchgegangen, statt jedes Mal
-//  zufällig zu ziehen. Der Unterschied ist wichtig: Beim zufälligen Ziehen
-//  kämen Karten doppelt, bevor der Satz durch ist – und nichts bremst einen
-//  Abend so zuverlässig wie eine Frage, die schon dran war.
+//  zufaellig zu ziehen. Der Unterschied ist wichtig: Beim zufaelligen Ziehen
+//  kaemen Karten doppelt, bevor der Satz durch ist – und nichts bremst einen
+//  Abend so zuverlaessig wie eine Frage, die schon dran war.
+//
+//  Strafkarten sehen bewusst voellig anders aus als Fragen. Wer vorliest,
+//  greift sonst zur gewohnten Formel und macht aus einer Anweisung wieder
+//  eine Frage.
 //
 
 import SwiftUI
 
 struct NeverHaveIEverView: View {
 
-    @State private var levels: Set<NeverHaveIEverLevel> = [.harmless, .medium]
+    @State private var levels: Set<NeverHaveIEverLevel> = [.kids, .spicy]
+    @State private var includePenalties = true
     @State private var deck: [NeverHaveIEverCard] = []
     @State private var index = 0
     @State private var hasStarted = false
@@ -23,11 +28,11 @@ struct NeverHaveIEverView: View {
         deck.indices.contains(index) ? deck[index] : nil
     }
 
-    private var isFinished: Bool { hasStarted && currentCard == nil }
-
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.success)
+            GridBackdrop(glow: currentCard?.isPenalty == true
+                ? BeerStatsColor.accentSecondary
+                : BeerStatsColor.success)
 
             VStack(spacing: 22) {
                 if !hasStarted {
@@ -36,7 +41,7 @@ struct NeverHaveIEverView: View {
                     progressLine
                     cardView(card)
                     Spacer(minLength: 0)
-                    nextButton
+                    nextButton(for: card)
                 } else {
                     finishedView
                 }
@@ -50,9 +55,9 @@ struct NeverHaveIEverView: View {
     // MARK: - Vorbereitung
 
     private var setup: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 18) {
             Text("🍻")
-                .font(.system(size: 60))
+                .font(.system(size: 56))
 
             Text("Reihum vorlesen. Wer es schon gemacht hat, trinkt.")
                 .font(BeerStatsFont.body)
@@ -63,6 +68,7 @@ struct NeverHaveIEverView: View {
                 ForEach(NeverHaveIEverLevel.allCases) { level in
                     levelToggle(level)
                 }
+                penaltyToggle
             }
 
             Spacer(minLength: 0)
@@ -75,35 +81,65 @@ struct NeverHaveIEverView: View {
 
     private func levelToggle(_ level: NeverHaveIEverLevel) -> some View {
         let isOn = levels.contains(level)
-        let count = NeverHaveIEverDeck.all.filter { $0.level == level }.count
 
-        return Button {
-            // Mindestens eine Stufe muss bleiben, sonst wäre der Stapel leer.
+        return optionRow(
+            emoji: level.emoji,
+            title: level.title,
+            subtitle: "\(NeverHaveIEverDeck.questionCount(for: level)) Fragen · \(level.subtitle)",
+            isOn: isOn,
+            tint: BeerStatsColor.success
+        ) {
+            // Mindestens eine Stufe muss bleiben, sonst waere der Stapel leer.
             if isOn, levels.count > 1 {
                 levels.remove(level)
             } else if !isOn {
                 levels.insert(level)
             }
             HapticManager.lightImpact()
-        } label: {
+        }
+    }
+
+    private var penaltyToggle: some View {
+        optionRow(
+            emoji: "🥃",
+            title: "Strafen",
+            subtitle: "Alle 5 bis 6 Karten eine Trinkstrafe",
+            isOn: includePenalties,
+            tint: BeerStatsColor.accentSecondary
+        ) {
+            includePenalties.toggle()
+            HapticManager.lightImpact()
+        }
+    }
+
+    private func optionRow(
+        emoji: String,
+        title: String,
+        subtitle: String,
+        isOn: Bool,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
             HStack(spacing: 14) {
-                Text(level.emoji).font(.system(size: 26))
+                Text(emoji).font(.system(size: 26))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(level.title)
+                    Text(title)
                         .font(BeerStatsFont.headline)
                         .foregroundStyle(BeerStatsColor.textPrimary)
-                    Text("\(count) Karten")
+                    Text(subtitle)
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.textSecondary)
+                        .lineLimit(2)
                 }
                 Spacer()
                 Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(isOn ? BeerStatsColor.success : BeerStatsColor.textSecondary)
+                    .foregroundStyle(isOn ? tint : BeerStatsColor.textSecondary)
             }
             .padding(16)
             .glassPanel()
-            .neonEdge(BeerStatsColor.success, intensity: isOn ? 0.6 : 0.15)
+            .neonEdge(tint, intensity: isOn ? 0.6 : 0.15)
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(PressableButtonStyle())
@@ -124,16 +160,22 @@ struct NeverHaveIEverView: View {
     }
 
     private func cardView(_ card: NeverHaveIEverCard) -> some View {
-        VStack(spacing: 18) {
-            Text(card.level.emoji)
+        let isPenalty = card.isPenalty
+        let tint = isPenalty ? BeerStatsColor.accentSecondary : BeerStatsColor.success
+
+        return VStack(spacing: 16) {
+            Text(isPenalty ? "🥃" : (card.level?.emoji ?? "🍻"))
                 .font(.system(size: 34))
 
-            Text("Ich hab noch nie…")
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            Text(isPenalty ? "STRAFE" : "Ich hab noch nie…")
+                .font(isPenalty
+                    ? Font.system(size: 12, weight: .heavy, design: .rounded)
+                    : BeerStatsFont.caption)
+                .kerning(isPenalty ? 2.4 : 0)
+                .foregroundStyle(isPenalty ? tint : BeerStatsColor.textSecondary)
 
             Text(card.text)
-                .font(.system(size: 26, weight: .bold, design: .rounded))
+                .font(.system(size: isPenalty ? 30 : 26, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -141,7 +183,7 @@ struct NeverHaveIEverView: View {
         .frame(maxWidth: .infinity)
         .padding(28)
         .glassPanel(cornerRadius: 24)
-        .neonEdge(BeerStatsColor.success, cornerRadius: 24, intensity: 0.6)
+        .neonEdge(tint, cornerRadius: 24, intensity: isPenalty ? 0.9 : 0.6)
         // Der Kartenwechsel schiebt seitlich – so wirkt es wie ein Stapel
         // und nicht wie ein Text, der sich austauscht.
         .id(card.id)
@@ -152,11 +194,17 @@ struct NeverHaveIEverView: View {
         .animation(AppAnimation.standard, value: card.id)
     }
 
-    private var nextButton: some View {
-        PrimaryButton(title: "Nächste Karte", systemImage: "arrow.right") {
+    private func nextButton(for card: NeverHaveIEverCard) -> some View {
+        PrimaryButton(
+            title: card.isPenalty ? "Erledigt" : "Nächste Karte",
+            systemImage: "arrow.right"
+        ) {
+            let upcoming = deck.indices.contains(index + 1) ? deck[index + 1] : nil
             withAnimation(AppAnimation.standard) { index += 1 }
             HapticManager.lightImpact()
-            SoundManager.play(.tap)
+            // Den Ton gibt die Karte vor, die gleich kommt – so kuendigt sich
+            // eine Strafe hoerbar an, statt sie nur zu bebildern.
+            SoundManager.play(upcoming?.isPenalty == true ? .bombe : .tap)
         }
     }
 
@@ -174,14 +222,14 @@ struct NeverHaveIEverView: View {
             Spacer(minLength: 0)
 
             PrimaryButton(title: "Neu mischen", systemImage: "shuffle") { start() }
-            Button("Stufen ändern") { hasStarted = false }
+            Button("Einstellungen ändern") { hasStarted = false }
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
 
     private func start() {
-        deck = NeverHaveIEverDeck.shuffled(levels: levels)
+        deck = NeverHaveIEverDeck.shuffled(levels: levels, includePenalties: includePenalties)
         index = 0
         hasStarted = true
         HapticManager.success()
