@@ -24,6 +24,10 @@ struct NeverHaveIEverView: View {
     @State private var index = 0
     @State private var hasStarted = false
 
+    @State private var isFlashingPenalty = false
+    @State private var flashPulse = false
+    @State private var flashTask: Task<Void, Never>?
+
     private var currentCard: NeverHaveIEverCard? {
         deck.indices.contains(index) ? deck[index] : nil
     }
@@ -47,9 +51,50 @@ struct NeverHaveIEverView: View {
                 }
             }
             .padding(24)
+
+            if isFlashingPenalty {
+                penaltyFlash
+                    // Liegt bewusst ueber allem und faengt Tipper ab: Ohne das
+                    // klickt jemand die Strafe mit dem naechsten Antippen weg,
+                    // bevor die Runde sie ueberhaupt gelesen hat.
+                    .zIndex(2)
+            }
         }
         .navigationTitle("Ich hab noch nie")
         .navigationBarTitleDisplayMode(.inline)
+        .onDisappear { flashTask?.cancel() }
+    }
+
+    /// Kurze Einblendung, wenn eine Strafkarte kommt.
+    private var penaltyFlash: some View {
+        ZStack {
+            BeerStatsColor.backgroundPrimary.opacity(0.93)
+
+            RadialGradient(
+                colors: [BeerStatsColor.accentSecondary.opacity(0.45), .clear],
+                center: .center,
+                startRadius: 20,
+                endRadius: 280
+            )
+
+            VStack(spacing: 16) {
+                Text("🥃")
+                    .font(.system(size: 96))
+                    .scaleEffect(flashPulse ? 1 : 0.4)
+                    .rotationEffect(.degrees(flashPulse ? 0 : -25))
+
+                Text("STRAFE")
+                    .font(.system(size: 40, weight: .heavy, design: .rounded))
+                    .kerning(5)
+                    .foregroundStyle(BeerStatsColor.accentSecondary)
+                    .shadow(color: BeerStatsColor.accentSecondary.opacity(0.6), radius: 14)
+                    .opacity(flashPulse ? 1 : 0)
+            }
+        }
+        .ignoresSafeArea()
+        .contentShape(Rectangle())
+        .onTapGesture { endPenaltyFlash() }
+        .transition(.opacity)
     }
 
     // MARK: - Vorbereitung
@@ -199,13 +244,43 @@ struct NeverHaveIEverView: View {
             title: card.isPenalty ? "Erledigt" : "Nächste Karte",
             systemImage: "arrow.right"
         ) {
+            // Was gleich kommt, entscheidet ueber Ton und Einblendung – nicht
+            // die Karte, die gerade weggeht.
             let upcoming = deck.indices.contains(index + 1) ? deck[index + 1] : nil
             withAnimation(AppAnimation.standard) { index += 1 }
-            HapticManager.lightImpact()
-            // Den Ton gibt die Karte vor, die gleich kommt – so kuendigt sich
-            // eine Strafe hoerbar an, statt sie nur zu bebildern.
-            SoundManager.play(upcoming?.isPenalty == true ? .bombe : .tap)
+
+            if upcoming?.isPenalty == true {
+                startPenaltyFlash()
+            } else {
+                HapticManager.lightImpact()
+                SoundManager.play(.tap)
+            }
         }
+    }
+
+    private func startPenaltyFlash() {
+        flashTask?.cancel()
+        HapticManager.error()
+        SoundManager.play(.bombe)
+
+        // Der Ausgangswert wird ohne Animation gesetzt, sonst faengt das
+        // Aufziehen beim zweiten Mal schon in der Endlage an.
+        flashPulse = false
+        withAnimation(AppAnimation.standard) { isFlashingPenalty = true }
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.55).delay(0.04)) {
+            flashPulse = true
+        }
+
+        flashTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            guard !Task.isCancelled else { return }
+            endPenaltyFlash()
+        }
+    }
+
+    private func endPenaltyFlash() {
+        flashTask?.cancel()
+        withAnimation(AppAnimation.smoothFade) { isFlashingPenalty = false }
     }
 
     private var finishedView: some View {
