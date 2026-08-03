@@ -178,6 +178,32 @@ final class ThrowRepository: ThrowRepositoryProtocol {
 
     // MARK: - Nachspielen
 
+    /// Bringt die Einträge in eine eindeutige Reihenfolge.
+    ///
+    /// `sorted(by:)` ist in Swift **nicht stabil**: Bei gleicher laufender
+    /// Nummer ist die Reihenfolge unbestimmt und kann sich zwischen zwei
+    /// Durchläufen unterscheiden. Genau das ist passiert, solange Auswahl und
+    /// Umstellen die Nummer nicht hochgezählt haben – eine `chooseCup` konnte
+    /// vor der Aktion landen, die sie erzeugt hat, und ging verloren.
+    ///
+    /// Die Engine zählt inzwischen überall hoch. Für die Partien, die schon
+    /// mit doppelten Nummern in Firestore liegen, entscheidet hier zusätzlich
+    /// der Zeitstempel und zuletzt die gelieferte Reihenfolge.
+    private func ordered(_ entries: [Throw]) -> [Throw] {
+        entries.enumerated().sorted { left, right in
+            if left.element.sequenceNumber != right.element.sequenceNumber {
+                return left.element.sequenceNumber < right.element.sequenceNumber
+            }
+            if let leftDate = left.element.timestamp,
+               let rightDate = right.element.timestamp,
+               leftDate != rightDate {
+                return leftDate < rightDate
+            }
+            return left.offset < right.offset
+        }
+        .map(\.element)
+    }
+
     func replay(_ entries: [Throw], format: GameFormat, playersPerTeam: Int) -> LiveGameState {
         // Ein Eintrag kann mehr als eine Aktion bedeuten: Das Scharfschalten
         // des Aufsetzers ist reine Bedienung und steht deshalb nicht als
@@ -191,7 +217,7 @@ final class ThrowRepository: ThrowRepositoryProtocol {
         // Wurf samt seinem Scharfschalten streicht. Andernfalls bliebe ein
         // aktiver Bounce für den nächsten Wurf zurück.
         var steps: [[GameAction]] = []
-        for entry in entries.sorted(by: { $0.sequenceNumber < $1.sequenceNumber }) {
+        for entry in ordered(entries) {
             if entry.result == .undo {
                 if !steps.isEmpty { steps.removeLast() }
                 continue
@@ -240,7 +266,7 @@ final class ThrowRepository: ThrowRepositoryProtocol {
     private func accumulate(_ entries: [Throw], of profileId: String, into heatmap: inout CupHeatmap) {
         var sawReRack = false
 
-        for entry in entries.sorted(by: { $0.sequenceNumber < $1.sequenceNumber }) {
+        for entry in ordered(entries) {
             if entry.result == .reRack {
                 sawReRack = true
                 continue

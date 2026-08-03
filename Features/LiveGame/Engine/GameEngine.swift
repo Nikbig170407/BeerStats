@@ -456,6 +456,12 @@ enum GameEngine {
         guard state.racks[choice.rackTeamIndex].isAlive(at: cupIndex) else { return }
 
         state.racks[choice.rackTeamIndex].removeCup(at: cupIndex)
+        // Muss hochzählen, obwohl es kein Wurf ist: Die laufende Nummer ist
+        // die einzige Ordnung des Logs. Teilte sich die Auswahl ihre Nummer
+        // mit dem Wurf davor, könnte sie beim Nachspielen VOR der Aktion
+        // landen, die sie erzeugt hat – dann verpufft sie, und die Auswahl
+        // wird nie fertig.
+        state.sequenceNumber += 1
         events.append(.cupChosen(byTeamIndex: choice.choosingTeamIndex, cupIndex: cupIndex))
 
         choice.remaining -= 1
@@ -505,6 +511,10 @@ enum GameEngine {
 
         state.racks[rackIndex].reRack(to: formation)
         state.reRackUsed[state.turnTeamIndex] = true
+        // Wie bei der Becher-Auswahl: eigene laufende Nummer, sonst kann das
+        // Umstellen beim Nachspielen an die falsche Stelle rutschen. Danach
+        // stimmten sämtliche Becher-Indizes nicht mehr.
+        state.sequenceNumber += 1
         // Nach dem Umstellen sind die Becher-Indizes neu vergeben, die
         // Markierung des zuletzt getroffenen Bechers wäre falsch.
         state.lastHitCupIndex = nil
