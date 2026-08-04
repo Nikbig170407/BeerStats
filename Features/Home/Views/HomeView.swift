@@ -248,6 +248,36 @@ struct HomeView: View {
             }
 
             gameGroup("RATEN & REDEN") {
+                NavigationLink { SpyView() } label: {
+                    gameCard(
+                        emoji: "🕵️",
+                        title: "Der Spion",
+                        subtitle: "Alle kennen das Wort – einer nicht, und der muss es überspielen",
+                        tint: BeerStatsColor.accentSecondary
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { HeadsUpView() } label: {
+                    gameCard(
+                        emoji: "🙈",
+                        title: "Wer bin ich?",
+                        subtitle: "Handy an die Stirn – jeder verpasste Begriff kostet einen Schluck",
+                        tint: BeerStatsColor.accent
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { CountTo21View() } label: {
+                    gameCard(
+                        emoji: "🔢",
+                        title: "21",
+                        subtitle: "Reihum zählen – wer 21 sagt, macht eine neue Regel",
+                        tint: BeerStatsColor.error
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
                 NavigationLink { EstimationView() } label: {
                     gameCard(
                         emoji: "🤔",
@@ -306,6 +336,22 @@ struct HomeView: View {
                         title: "Trink-Roulette",
                         subtitle: "Acht Felder, ein Zeiger – keine Einrichtung nötig",
                         tint: BeerStatsColor.error
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+
+            // Eigene Gruppe, obwohl nur ein Eintrag drin steht: Dieses Spiel
+            // startet man einmal und legt das Handy dann weg. Zwischen den
+            // anderen stehend würde niemand verstehen, warum es keine Runde
+            // hat.
+            gameGroup("LÄUFT NEBENHER") {
+                NavigationLink { ForbiddenWordsView() } label: {
+                    gameCard(
+                        emoji: "🤐",
+                        title: "Verbotene Wörter",
+                        subtitle: "Jeder zieht ein Wort, das er den Abend über nicht sagen darf",
+                        tint: BeerStatsColor.warning
                     )
                 }
                 .buttonStyle(PressableButtonStyle())
