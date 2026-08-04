@@ -143,7 +143,7 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 - Sounds (selbst synthetisiert), Sprachansage, App-Icon
 - Entwicklereinstellungen, passwortgeschützt (`ClaudeMinion67`)
 - Zehn Partyspiele auf dem Handy, in drei Gruppen im Hauptmenü:
-  Königsbecher, Bussfahrer, Wahrheit oder Pflicht, Ich hab noch nie /
+  Ring of Fire, Bussfahrer, Wahrheit oder Pflicht, Ich hab noch nie /
   Schätzmeister, Kategorien, Wer von uns? / Bombe, Reaktionsduell,
   Trink-Roulette
 

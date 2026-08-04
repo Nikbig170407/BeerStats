@@ -206,12 +206,12 @@ struct HomeView: View {
             // was man am Tisch tut – Karten ziehen, reden, oder schnell
             // etwas entscheiden.
             gameGroup("MIT KARTEN") {
-                NavigationLink { KingsCupView() } label: {
+                NavigationLink { RingOfFireView() } label: {
                     gameCard(
-                        emoji: "👑",
-                        title: "Königsbecher",
-                        subtitle: "Jede Karte eine Regel – der vierte König trinkt den Becher",
-                        tint: BeerStatsColor.warning
+                        emoji: "🔥",
+                        title: "Ring of Fire",
+                        subtitle: "52 Karten im Kreis um die Flasche – jede bedeutet etwas anderes",
+                        tint: BeerStatsColor.error
                     )
                 }
                 .buttonStyle(PressableButtonStyle())
