@@ -32,37 +32,37 @@ enum KingsCupRules {
         case 2:
             return KingsCupRule(
                 title: "Du",
-                text: "Bestimme jemanden. Diese Person trinkt 2 Schlücke.",
+                text: "Bestimme jemanden. Diese Person trinkt \(DrinkAmount.sips(2).text).",
                 emoji: "👉"
             )
         case 3:
             return KingsCupRule(
                 title: "Ich",
-                text: "Pech gehabt: Du trinkst 3 Schlücke.",
+                text: "Pech gehabt: Du trinkst \(DrinkAmount.sips(3).text).",
                 emoji: "🙋"
             )
         case 4:
             return KingsCupRule(
                 title: "Boden",
-                text: "Alle fassen den Boden an. Wer als Letzter unten ist, trinkt 3 Schlücke.",
+                text: "Alle fassen den Boden an. Wer als Letzter unten ist, trinkt \(DrinkAmount.sips(3).text).",
                 emoji: "⬇️"
             )
         case 5:
             return KingsCupRule(
                 title: "Himmel",
-                text: "Alle Hände hoch. Wer als Letzter oben ist, trinkt 3 Schlücke.",
+                text: "Alle Hände hoch. Wer als Letzter oben ist, trinkt \(DrinkAmount.sips(3).text).",
                 emoji: "☝️"
             )
         case 6:
             return KingsCupRule(
                 title: "Deine Linke",
-                text: "Dein linker Nachbar trinkt 3 Schlücke.",
+                text: "Dein linker Nachbar trinkt \(DrinkAmount.sips(3).text).",
                 emoji: "⬅️"
             )
         case 7:
             return KingsCupRule(
                 title: "Deine Rechte",
-                text: "Dein rechter Nachbar trinkt 3 Schlücke.",
+                text: "Dein rechter Nachbar trinkt \(DrinkAmount.sips(3).text).",
                 emoji: "➡️"
             )
         case 8:
@@ -74,25 +74,25 @@ enum KingsCupRules {
         case 9:
             return KingsCupRule(
                 title: "Reim",
-                text: "Sag ein Wort. Reihum wird darauf gereimt. Wer nichts mehr findet, trinkt 3 Schlücke.",
+                text: "Sag ein Wort. Reihum wird darauf gereimt. Wer nichts mehr findet, trinkt \(DrinkAmount.sips(3).text).",
                 emoji: "🎤"
             )
         case 10:
             return KingsCupRule(
                 title: "Kategorie",
-                text: "Nenne eine Kategorie. Reihum nennt jeder einen Begriff. Wer patzt, trinkt 3 Schlücke.",
+                text: "Nenne eine Kategorie. Reihum nennt jeder einen Begriff. Wer patzt, trinkt \(DrinkAmount.sips(3).text).",
                 emoji: "📚"
             )
         case 11:
             return KingsCupRule(
                 title: "Regel",
-                text: "Erfinde eine Regel für den Rest des Spiels. Wer sie bricht, trinkt 2 Schlücke.",
+                text: "Erfinde eine Regel für den Rest des Spiels. Wer sie bricht, trinkt \(DrinkAmount.sips(2).text).",
                 emoji: "📜"
             )
         case 12:
             return KingsCupRule(
                 title: "Fragenmeister",
-                text: "Bis die nächste Dame kommt, trinkt jeder 2 Schlücke, der dir auf eine Frage antwortet.",
+                text: "Bis die nächste Dame kommt, trinkt jeder \(DrinkAmount.sips(2).text), der dir auf eine Frage antwortet.",
                 emoji: "❓"
             )
         case 13:

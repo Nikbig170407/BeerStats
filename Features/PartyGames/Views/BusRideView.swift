@@ -93,7 +93,7 @@ struct BusRideView: View {
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .multilineTextAlignment(.center)
 
-                Text("Falsch kostet \(round + 1) \(round == 0 ? "Schluck" : "Schlücke")")
+                Text("Falsch kostet \(DrinkAmount.sips(round + 1).text)")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.accentSecondary)
             }
@@ -106,7 +106,7 @@ struct BusRideView: View {
             resultPanel(
                 emoji: "🍺",
                 title: "DANEBEN",
-                message: "Trink \(sips) \(sips == 1 ? "Schluck" : "Schlücke") und fang von vorne an.",
+                message: "Trink \(DrinkAmount.sips(sips).text) und fang von vorne an.",
                 tint: BeerStatsColor.error
             )
 

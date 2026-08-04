@@ -46,13 +46,21 @@ enum TruthOrDareDeck {
 
     /// Was Verweigern kostet. An einer Stelle, damit die Regel in der
     /// Ansicht und im Kartentext nicht auseinanderlaufen kann.
-    static let refusalSips = 4
+    static let refusal = DrinkAmount.sips(4)
 
     static func shuffled(_ kind: TruthOrDareKind) -> [TruthOrDareCard] {
-        switch kind {
-        case .truth: return truths.shuffled()
-        case .dare: return dares.shuffled()
-        }
+        let source = kind == .truth ? truths : dares
+        // Erst hier ausformuliert, weil erst hier feststeht, welche Härte
+        // gewählt ist. Die Platzhalter tragen die Grundmenge im Namen.
+        return source
+            .map { TruthOrDareCard(text: resolve($0.text), kind: $0.kind) }
+            .shuffled()
+    }
+
+    private static func resolve(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "{3}", with: DrinkAmount.sips(3).text)
+            .replacingOccurrences(of: "{4}", with: DrinkAmount.sips(4).text)
     }
 
     static func count(_ kind: TruthOrDareKind) -> Int {
@@ -122,7 +130,7 @@ enum TruthOrDareDeck {
         "Sprich die nächsten drei Runden nur im Flüsterton",
         "Lass deinen rechten Nachbarn dir die Haare machen",
         "Tanz 20 Sekunden lang ohne Musik",
-        "Erzähl einen Witz – lacht niemand, trink 3 Schlücke",
+        "Erzähl einen Witz – lacht niemand, trink {3}",
         "Sag jedem in der Runde etwas Nettes",
         "Lass jemanden deinen nächsten Satz vorgeben",
         "Halte 30 Sekunden die Planke",
@@ -130,8 +138,8 @@ enum TruthOrDareDeck {
         "Tausche für zwei Runden ein Kleidungsstück mit deinem Nachbarn",
         "Sprich bis zur nächsten Pflicht nur in der dritten Person",
         "Mach das hässlichste Gesicht, das du kannst, und halte es 20 Sekunden",
-        "Buchstabiere deinen Namen rückwärts – sonst 3 Schlücke",
-        "Lass deinen linken Nachbarn 3 Schlücke verteilen",
+        "Buchstabiere deinen Namen rückwärts – sonst {3}",
+        "Lass deinen linken Nachbarn {3} verteilen",
         "Rede eine Minute lang über ein Thema, das die Runde vorgibt",
         "Setz dich für zwei Runden auf den Boden",
         "Umarme jeden in der Runde",
@@ -143,7 +151,7 @@ enum TruthOrDareDeck {
         "Trink deinen nächsten Schluck ohne Hände",
         "Halte 20 Sekunden lang die Luft an",
         "Sprich bis zur nächsten Karte mit Akzent",
-        "Küss die Person rechts von dir auf die Wange – nur wenn beide wollen, sonst 4 Schlücke",
+        "Küss die Person rechts von dir auf die Wange – nur wenn beide wollen, sonst {4}",
         "Lass jemanden dir etwas ins Gesicht malen",
         "Sag das Alphabet rückwärts bis zum M",
         "Mach 20 Kniebeugen",

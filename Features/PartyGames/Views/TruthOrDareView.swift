@@ -17,7 +17,7 @@ struct TruthOrDareView: View {
     @State private var truths: [TruthOrDareCard] = TruthOrDareDeck.shuffled(.truth)
     @State private var dares: [TruthOrDareCard] = TruthOrDareDeck.shuffled(.dare)
     @State private var current: TruthOrDareCard?
-    @State private var refusal: Int?
+    @State private var isRefusing = false
     @State private var refusalTask: Task<Void, Never>?
 
     private var tint: Color {
@@ -39,8 +39,8 @@ struct TruthOrDareView: View {
             }
             .padding(24)
 
-            if let sips = refusal {
-                refusalOverlay(sips: sips)
+            if isRefusing {
+                refusalOverlay
                     .zIndex(2)
             }
         }
@@ -59,7 +59,7 @@ struct TruthOrDareView: View {
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Verweigern ist erlaubt und kostet \(TruthOrDareDeck.refusalSips) Schlücke.")
+            Text("Verweigern ist erlaubt und kostet \(TruthOrDareDeck.refusal.text).")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -136,7 +136,7 @@ struct TruthOrDareView: View {
             Button {
                 refuse()
             } label: {
-                Text("Verweigern – \(TruthOrDareDeck.refusalSips) Schlücke")
+                Text("Verweigern – \(TruthOrDareDeck.refusal.text)")
                     .font(BeerStatsFont.headline)
                     .foregroundStyle(BeerStatsColor.error)
                     .frame(maxWidth: .infinity)
@@ -153,7 +153,7 @@ struct TruthOrDareView: View {
 
     // MARK: - Verweigert
 
-    private func refusalOverlay(sips: Int) -> some View {
+    private var refusalOverlay: some View {
         ZStack {
             BeerStatsColor.backgroundPrimary.opacity(0.93)
             RadialGradient(
@@ -164,9 +164,10 @@ struct TruthOrDareView: View {
             )
             VStack(spacing: 14) {
                 Text("🍺").font(.system(size: 90))
-                Text("\(sips) SCHLÜCKE")
-                    .font(.system(size: 38, weight: .heavy, design: .rounded))
-                    .kerning(3)
+                Text(TruthOrDareDeck.refusal.text.uppercased())
+                    .font(.system(size: 34, weight: .heavy, design: .rounded))
+                    .kerning(2)
+                    .multilineTextAlignment(.center)
                     .foregroundStyle(BeerStatsColor.error)
             }
         }
@@ -197,7 +198,7 @@ struct TruthOrDareView: View {
         refusalTask?.cancel()
         HapticManager.error()
         SoundManager.play(.bombe)
-        withAnimation(AppAnimation.standard) { refusal = TruthOrDareDeck.refusalSips }
+        withAnimation(AppAnimation.standard) { isRefusing = true }
 
         refusalTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_300_000_000)
@@ -209,7 +210,7 @@ struct TruthOrDareView: View {
     private func endRefusal() {
         refusalTask?.cancel()
         withAnimation(AppAnimation.smoothFade) {
-            refusal = nil
+            isRefusing = false
             current = nil
         }
     }

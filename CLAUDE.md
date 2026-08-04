@@ -142,8 +142,10 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 - Rangliste, Direktvergleich, Spielverlauf, Becher-Heatmap, MVP der Partie
 - Sounds (selbst synthetisiert), Sprachansage, App-Icon
 - Entwicklereinstellungen, passwortgeschützt (`ClaudeMinion67`)
-- Partyspiele auf dem Handy: Bombe weitergeben, Ich hab noch nie,
-  Wer von uns?, Reaktionsduell, Trink-Roulette
+- Zehn Partyspiele auf dem Handy, in drei Gruppen im Hauptmenü:
+  Königsbecher, Bussfahrer, Wahrheit oder Pflicht, Ich hab noch nie /
+  Schätzmeister, Kategorien, Wer von uns? / Bombe, Reaktionsduell,
+  Trink-Roulette
 
 **Drei Dinge, die man beim Weiterbauen wissen muss:**
 
@@ -159,6 +161,12 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 - **Partyspiele zahlen nicht auf die Beerpong-Statistiken ein.** Eine Runde
   Bombe hat keine Trefferquote. Wer dort eine Wertung will, braucht einen
   eigenen Zähler, nicht `UserStatistics`.
+- **Trinkmengen niemals als Zahl in den Text schreiben.** Sie laufen über
+  `DrinkAmount` (`.sips(3)`, `.shot`) und werden erst beim Anzeigen in der
+  gewählten Härte ausformuliert (`DrinkIntensity`, gespeichert in
+  UserDefaults, gilt für alle Partyspiele). Eine fest eingetippte Menge
+  ignoriert die Einstellung stillschweigend – und genau so etwas fällt erst
+  am Tisch auf.
 
 **Bewusst dormant:** Das Freundesystem (`Features/Friends/`) und
 `LobbyView` sind gebaut, aber nicht verlinkt. Sie sind der Weg für später,

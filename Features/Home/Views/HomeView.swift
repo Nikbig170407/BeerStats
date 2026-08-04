@@ -39,6 +39,9 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     header
                     beerpongCard
+                    // Die Härte steht über den Partyspielen, weil sie nur für
+                    // die gilt – Beerpong hat keine Trinkregeln in der App.
+                    DrinkIntensityPicker()
                     partySection
                 }
                 .padding(20)
@@ -198,11 +201,11 @@ struct HomeView: View {
 
     private var partySection: some View {
         VStack(alignment: .leading, spacing: 22) {
-            // Zwei Gruppen statt einer langen Liste: Die einen tragen einen
-            // ganzen Abend und haben ein eigenes Regelwerk, die anderen sind
-            // in zwei Minuten durch. Nach acht Einträgen ohne Trennung findet
-            // niemand mehr, was er sucht.
-            gameGroup("TRINKSPIELE MIT REGELN") {
+            // Gruppen statt einer langen Liste: Nach zehn Einträgen ohne
+            // Trennung findet niemand mehr, was er sucht. Sortiert danach,
+            // was man am Tisch tut – Karten ziehen, reden, oder schnell
+            // etwas entscheiden.
+            gameGroup("MIT KARTEN") {
                 NavigationLink { KingsCupView() } label: {
                     gameCard(
                         emoji: "👑",
@@ -244,13 +247,23 @@ struct HomeView: View {
                 .buttonStyle(PressableButtonStyle())
             }
 
-            gameGroup("SCHNELL ZWISCHENDURCH") {
-                NavigationLink { BombPassView() } label: {
+            gameGroup("RATEN & REDEN") {
+                NavigationLink { EstimationView() } label: {
                     gameCard(
-                        emoji: "💣",
-                        title: "Bombe weitergeben",
-                        subtitle: "Zünden, herumreichen, nicht drauf sitzen bleiben",
-                        tint: BeerStatsColor.accentSecondary
+                        emoji: "🤔",
+                        title: "Schätzmeister",
+                        subtitle: "50 Fragen mit einer Zahl – wer am weitesten daneben liegt, trinkt",
+                        tint: BeerStatsColor.success
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { CategoriesView() } label: {
+                    gameCard(
+                        emoji: "⏱️",
+                        title: "Kategorien",
+                        subtitle: "Reihum ein Begriff – die Bedenkzeit wird jede Runde knapper",
+                        tint: BeerStatsColor.warning
                     )
                 }
                 .buttonStyle(PressableButtonStyle())
@@ -260,7 +273,19 @@ struct HomeView: View {
                         emoji: "👉",
                         title: "Wer von uns?",
                         subtitle: "Alle zeigen gleichzeitig – die meisten Finger trinken",
-                        tint: BeerStatsColor.warning
+                        tint: BeerStatsColor.accent
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+
+            gameGroup("SCHNELL ZWISCHENDURCH") {
+                NavigationLink { BombPassView() } label: {
+                    gameCard(
+                        emoji: "💣",
+                        title: "Bombe weitergeben",
+                        subtitle: "Zünden, herumreichen, nicht drauf sitzen bleiben",
+                        tint: BeerStatsColor.accentSecondary
                     )
                 }
                 .buttonStyle(PressableButtonStyle())
@@ -279,7 +304,7 @@ struct HomeView: View {
                     gameCard(
                         emoji: "🎯",
                         title: "Trink-Roulette",
-                        subtitle: "Namen eintragen, drehen, austrinken",
+                        subtitle: "Acht Felder, ein Zeiger – keine Einrichtung nötig",
                         tint: BeerStatsColor.error
                     )
                 }

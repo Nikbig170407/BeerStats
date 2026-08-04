@@ -92,7 +92,12 @@ enum NeverHaveIEverDeck {
             .filter { card in card.level.map { levels.contains($0) } ?? false }
             .shuffled()
 
-        guard includePenalties, !penalties.isEmpty, questions.count > 2 else { return questions }
+        guard includePenalties, !penaltyTemplates.isEmpty, questions.count > 2 else { return questions }
+
+        // Die Strafen werden erst hier ausformuliert, weil erst hier
+        // feststeht, welche Härte gewählt ist. Wer sie mitten im Stapel
+        // umstellt, ändert damit bewusst nur die nächste Runde.
+        let penalties = penaltyCards()
 
         // Der Anteil bezieht sich auf den fertigen Stapel, in dem die Strafen
         // ja mitzaehlen. Auf 100 Karten sollen 20 Strafen kommen, also 20 auf
@@ -305,36 +310,57 @@ enum NeverHaveIEverDeck {
 
     // MARK: - Strafen
 
-    private static let penalties: [NeverHaveIEverCard] = [
-        "Trink einen Shot",
-        "Trink 5 Schlücke",
-        "Trink 3 Schlücke",
-        "Verteile 5 Schlücke",
-        "Alle trinken 2 Schlücke",
-        "Bestimme jemanden, der einen Shot trinkt",
-        "Dein linker Nachbar trinkt 3 Schlücke",
-        "Dein rechter Nachbar trinkt einen Shot",
-        "Trink so viele Schlücke, wie du Geschwister hast",
-        "Der Jüngste in der Runde trinkt 3 Schlücke",
-        "Der Älteste in der Runde trinkt 3 Schlücke",
-        "Wer zuletzt gelacht hat, trinkt 2 Schlücke",
-        "Wer als Letztes die Hand hebt, trinkt einen Shot",
-        "Trink 4 Schlücke und verteile 4",
-        "Wer heute am weitesten angereist ist, trinkt 3 Schlücke",
-        "Der Gastgeber trinkt 2 Schlücke",
-        "Alle, die gerade stehen, trinken 3 Schlücke",
-        "Reihum ein Schluck, bis jemand lacht",
-        "Alle Singles trinken 3 Schlücke",
-        "Alle Vergebenen trinken 3 Schlücke",
-        "Trink einen Shot mit deinem linken Nachbarn",
-        "Wer zuletzt auf Toilette war, trinkt 4 Schlücke",
-        "Verteile 3 Schlücke an eine Person",
-        "Alle trinken einen Shot",
-        "Trink 6 Schlücke",
-        "Wer als Erstes lacht, trinkt einen Shot",
-        "Wer vorliest, trinkt 3 Schlücke",
-        "Wer gerade am lautesten ist, trinkt 3 Schlücke",
-        "Trink so viele Schlücke, wie du heute Kaffee getrunken hast",
-        "Wer das älteste Handy hat, trinkt 3 Schlücke"
-    ].map { NeverHaveIEverCard(text: $0, kind: .penalty) }
+    /// Eine Strafe als Vorlage: Der Text traegt eine Luecke, die Menge wird
+    /// erst beim Mischen in der gewaehlten Haerte eingesetzt.
+    ///
+    /// Ohne diese Trennung braeuchte jede Strafe drei Fassungen, und die
+    /// drei liefen mit der Zeit auseinander.
+    private struct PenaltyTemplate {
+        let format: String
+        var amount: DrinkAmount?
+
+        var resolved: String {
+            guard let amount else { return format }
+            return format.replacingOccurrences(of: "{}", with: amount.text)
+        }
+    }
+
+    private static func penaltyCards() -> [NeverHaveIEverCard] {
+        penaltyTemplates.map { NeverHaveIEverCard(text: $0.resolved, kind: .penalty) }
+    }
+
+    private static let penaltyTemplates: [PenaltyTemplate] = [
+        PenaltyTemplate(format: "Trink {}", amount: .shot),
+        PenaltyTemplate(format: "Trink {}", amount: .sips(5)),
+        PenaltyTemplate(format: "Trink {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Trink {}", amount: .sips(6)),
+        PenaltyTemplate(format: "Verteile {}", amount: .sips(5)),
+        PenaltyTemplate(format: "Verteile {} an eine Person", amount: .sips(3)),
+        PenaltyTemplate(format: "Alle trinken {}", amount: .sips(2)),
+        PenaltyTemplate(format: "Alle trinken {}", amount: .shot),
+        PenaltyTemplate(format: "Bestimme jemanden, der {} trinkt", amount: .shot),
+        PenaltyTemplate(format: "Dein linker Nachbar trinkt {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Dein rechter Nachbar trinkt {}", amount: .shot),
+        PenaltyTemplate(format: "Trink {} mit deinem linken Nachbarn", amount: .shot),
+        PenaltyTemplate(format: "Trink {} und verteile genauso viele", amount: .sips(4)),
+        PenaltyTemplate(format: "Der Jüngste in der Runde trinkt {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Der Älteste in der Runde trinkt {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Wer zuletzt gelacht hat, trinkt {}", amount: .sips(2)),
+        PenaltyTemplate(format: "Wer als Letztes die Hand hebt, trinkt {}", amount: .shot),
+        PenaltyTemplate(format: "Wer als Erstes lacht, trinkt {}", amount: .shot),
+        PenaltyTemplate(format: "Wer heute am weitesten angereist ist, trinkt {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Der Gastgeber trinkt {}", amount: .sips(2)),
+        PenaltyTemplate(format: "Alle, die gerade stehen, trinken {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Alle Singles trinken {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Alle Vergebenen trinken {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Wer zuletzt auf Toilette war, trinkt {}", amount: .sips(4)),
+        PenaltyTemplate(format: "Wer vorliest, trinkt {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Wer gerade am lautesten ist, trinkt {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Wer das älteste Handy hat, trinkt {}", amount: .sips(3)),
+        // Ohne Lücke: Die Menge steht hier nicht fest, sondern ergibt sich
+        // aus der Runde selbst.
+        PenaltyTemplate(format: "Trink so viele Schlücke, wie du Geschwister hast"),
+        PenaltyTemplate(format: "Trink so viele Schlücke, wie du heute Kaffee getrunken hast"),
+        PenaltyTemplate(format: "Reihum ein Schluck, bis jemand lacht")
+    ]
 }
