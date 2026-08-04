@@ -26,7 +26,7 @@ struct PlayingCardView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: width * 0.1, style: .continuous)
-                .fill(card == nil ? backSurface : faceSurface)
+                .fill(surface)
 
             RoundedRectangle(cornerRadius: width * 0.1, style: .continuous)
                 .strokeBorder(
@@ -46,15 +46,27 @@ struct PlayingCardView: View {
         .shadow(color: .black.opacity(0.45), radius: 12, y: 6)
     }
 
-    // MARK: - Vorderseite
-
-    private var faceSurface: some ShapeStyle {
-        LinearGradient(
-            colors: [Color(white: 0.97), Color(white: 0.88)],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+    /// Vorder- und Rückseite in EINER Eigenschaft mit konkretem Typ.
+    ///
+    /// Vorher waren es zwei Eigenschaften mit `some ShapeStyle`. Das sieht
+    /// gleich aus, ist für den Compiler aber zweierlei: Jedes `some` erzeugt
+    /// einen eigenen opaken Typ, und ein Ternär braucht in beiden Zweigen
+    /// denselben.
+    private var surface: LinearGradient {
+        card == nil
+            ? LinearGradient(
+                colors: [BeerStatsColor.surfaceElevated, BeerStatsColor.backgroundPrimary],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+              )
+            : LinearGradient(
+                colors: [Color(white: 0.97), Color(white: 0.88)],
+                startPoint: .top,
+                endPoint: .bottom
+              )
     }
+
+    // MARK: - Vorderseite
 
     private func face(for card: PlayingCard) -> some View {
         VStack(spacing: 0) {
@@ -88,14 +100,6 @@ struct PlayingCardView: View {
     }
 
     // MARK: - Rueckseite
-
-    private var backSurface: some ShapeStyle {
-        LinearGradient(
-            colors: [BeerStatsColor.surfaceElevated, BeerStatsColor.backgroundPrimary],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
 
     private var back: some View {
         ZStack {

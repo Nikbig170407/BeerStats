@@ -145,25 +145,33 @@ struct BusRideView: View {
     private var controls: some View {
         switch phase {
         case .asking:
-            let options = Self.questions[round].options
-            VStack(spacing: 10) {
-                // Zwei Antworten nebeneinander, vier in zwei Reihen – so
-                // bleiben die Flaechen in jeder Runde gleich gross.
-                ForEach(Array(stride(from: 0, to: options.count, by: 2)), id: \.self) { start in
-                    HStack(spacing: 10) {
-                        // Als Array und nicht als Bereich: Ein ForEach über
-                        // einen berechneten Range erwartet konstante Daten,
-                        // und die Antwortzahl wechselt zwischen 2 und 4.
-                        ForEach(Array(start..<min(start + 2, options.count)), id: \.self) { index in
-                            answerButton(options[index], index: index)
-                        }
-                    }
-                }
-            }
-
+            answerGrid
         case .wrong, .survived:
             PrimaryButton(title: "Nächster Versuch", systemImage: "arrow.counterclockwise") {
                 restartHand()
+            }
+        }
+    }
+
+    private var currentOptions: [String] { Self.questions[round].options }
+
+    /// Zwei Antworten nebeneinander, vier in zwei Reihen – so bleiben die
+    /// Flaechen in jeder Runde gleich gross.
+    ///
+    /// Als eigene Eigenschaft und nicht als `let` im ViewBuilder: Variablen
+    /// in einem Result Builder gibt es erst ab Swift 5.9, und hier braucht
+    /// es sie nicht.
+    private var answerGrid: some View {
+        VStack(spacing: 10) {
+            ForEach(Array(stride(from: 0, to: currentOptions.count, by: 2)), id: \.self) { start in
+                HStack(spacing: 10) {
+                    // Als Array und nicht als Bereich: Ein ForEach über einen
+                    // berechneten Range erwartet konstante Daten, und die
+                    // Antwortzahl wechselt zwischen 2 und 4.
+                    ForEach(Array(start..<min(start + 2, currentOptions.count)), id: \.self) { index in
+                        answerButton(currentOptions[index], index: index)
+                    }
+                }
             }
         }
     }
