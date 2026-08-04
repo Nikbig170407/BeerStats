@@ -197,61 +197,107 @@ struct HomeView: View {
     // MARK: - Spiele auf dem Handy
 
     private var partySection: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            // Zwei Gruppen statt einer langen Liste: Die einen tragen einen
+            // ganzen Abend und haben ein eigenes Regelwerk, die anderen sind
+            // in zwei Minuten durch. Nach acht Einträgen ohne Trennung findet
+            // niemand mehr, was er sucht.
+            gameGroup("TRINKSPIELE MIT REGELN") {
+                NavigationLink { KingsCupView() } label: {
+                    gameCard(
+                        emoji: "👑",
+                        title: "Königsbecher",
+                        subtitle: "Jede Karte eine Regel – der vierte König trinkt den Becher",
+                        tint: BeerStatsColor.warning
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { BusRideView() } label: {
+                    gameCard(
+                        emoji: "🚌",
+                        title: "Bussfahrer",
+                        subtitle: "Vier Fragen, jede teurer – ein Fehler und zurück auf Anfang",
+                        tint: BeerStatsColor.accentSecondary
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { TruthOrDareView() } label: {
+                    gameCard(
+                        emoji: "🎭",
+                        title: "Wahrheit oder Pflicht",
+                        subtitle: "90 Karten – verweigern kostet vier Schlücke",
+                        tint: BeerStatsColor.accent
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { NeverHaveIEverView() } label: {
+                    gameCard(
+                        emoji: "🍻",
+                        title: "Ich hab noch nie",
+                        subtitle: "150 Fragen in drei Stufen, dazu Strafen",
+                        tint: BeerStatsColor.success
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+
+            gameGroup("SCHNELL ZWISCHENDURCH") {
+                NavigationLink { BombPassView() } label: {
+                    gameCard(
+                        emoji: "💣",
+                        title: "Bombe weitergeben",
+                        subtitle: "Zünden, herumreichen, nicht drauf sitzen bleiben",
+                        tint: BeerStatsColor.accentSecondary
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { MostLikelyView() } label: {
+                    gameCard(
+                        emoji: "👉",
+                        title: "Wer von uns?",
+                        subtitle: "Alle zeigen gleichzeitig – die meisten Finger trinken",
+                        tint: BeerStatsColor.warning
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { ReactionDuelView() } label: {
+                    gameCard(
+                        emoji: "⚡️",
+                        title: "Reaktionsduell",
+                        subtitle: "Zwei Daumen, ein Signal – wer zu früh tippt, verliert",
+                        tint: BeerStatsColor.accent
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { DrinkRouletteView() } label: {
+                    gameCard(
+                        emoji: "🎯",
+                        title: "Trink-Roulette",
+                        subtitle: "Namen eintragen, drehen, austrinken",
+                        tint: BeerStatsColor.error
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+        }
+    }
+
+    private func gameGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("AUF DEM HANDY")
+            Text(title)
                 .font(.system(size: 11, weight: .heavy, design: .rounded))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
-
-            NavigationLink { BombPassView() } label: {
-                gameCard(
-                    emoji: "💣",
-                    title: "Bombe weitergeben",
-                    subtitle: "Zünden, herumreichen, nicht drauf sitzen bleiben",
-                    tint: BeerStatsColor.accentSecondary
-                )
-            }
-            .buttonStyle(PressableButtonStyle())
-
-            NavigationLink { NeverHaveIEverView() } label: {
-                gameCard(
-                    emoji: "🍻",
-                    title: "Ich hab noch nie",
-                    subtitle: "150 Fragen in drei Stufen, dazu Strafen",
-                    tint: BeerStatsColor.success
-                )
-            }
-            .buttonStyle(PressableButtonStyle())
-
-            NavigationLink { MostLikelyView() } label: {
-                gameCard(
-                    emoji: "👉",
-                    title: "Wer von uns?",
-                    subtitle: "Alle zeigen gleichzeitig – die meisten Finger trinken",
-                    tint: BeerStatsColor.warning
-                )
-            }
-            .buttonStyle(PressableButtonStyle())
-
-            NavigationLink { ReactionDuelView() } label: {
-                gameCard(
-                    emoji: "⚡️",
-                    title: "Reaktionsduell",
-                    subtitle: "Zwei Daumen, ein Signal – wer zu früh tippt, verliert",
-                    tint: BeerStatsColor.accent
-                )
-            }
-            .buttonStyle(PressableButtonStyle())
-
-            NavigationLink { DrinkRouletteView() } label: {
-                gameCard(
-                    emoji: "🎯",
-                    title: "Trink-Roulette",
-                    subtitle: "Namen eintragen, drehen, austrinken",
-                    tint: BeerStatsColor.error
-                )
-            }
-            .buttonStyle(PressableButtonStyle())
+            content()
         }
     }
 
