@@ -248,6 +248,16 @@ struct HomeView: View {
             }
 
             gameGroup("RATEN & REDEN") {
+                NavigationLink { SchockenView() } label: {
+                    gameCard(
+                        emoji: "🎲",
+                        title: "Schocken",
+                        subtitle: "Drei Würfel, drei Würfe – der schlechteste Wurf trinkt",
+                        tint: BeerStatsColor.warning
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
                 NavigationLink { MaexchenView() } label: {
                     gameCard(
                         emoji: "🎲",
