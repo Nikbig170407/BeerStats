@@ -248,6 +248,26 @@ struct HomeView: View {
             }
 
             gameGroup("RATEN & REDEN") {
+                NavigationLink { MaexchenView() } label: {
+                    gameCard(
+                        emoji: "🎲",
+                        title: "Mäxchen",
+                        subtitle: "Verdeckt würfeln und lügen – die App weiß, wer geflunkert hat",
+                        tint: BeerStatsColor.accentSecondary
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { TwoTruthsView() } label: {
+                    gameCard(
+                        emoji: "🎭",
+                        title: "Zwei Wahrheiten",
+                        subtitle: "Drei Sätze, einer erfunden – wer danebenliegt, trinkt",
+                        tint: BeerStatsColor.accent
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
                 NavigationLink { SpyView() } label: {
                     gameCard(
                         emoji: "🕵️",
@@ -352,6 +372,16 @@ struct HomeView: View {
                         title: "Verbotene Wörter",
                         subtitle: "Jeder zieht ein Wort, das er den Abend über nicht sagen darf",
                         tint: BeerStatsColor.warning
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                NavigationLink { DrinkBingoView() } label: {
+                    gameCard(
+                        emoji: "🎉",
+                        title: "Trinkbingo",
+                        subtitle: "Sechzehn Felder, die von selbst passieren – wer eine Reihe vollmacht, verteilt",
+                        tint: BeerStatsColor.success
                     )
                 }
                 .buttonStyle(PressableButtonStyle())

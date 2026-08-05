@@ -142,10 +142,12 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 - Rangliste, Direktvergleich, Spielverlauf, Becher-Heatmap, MVP der Partie
 - Sounds (selbst synthetisiert), Sprachansage, App-Icon
 - Entwicklereinstellungen, passwortgeschützt (`ClaudeMinion67`)
-- Zehn Partyspiele auf dem Handy, in drei Gruppen im Hauptmenü:
-  Ring of Fire, Bussfahrer, Wahrheit oder Pflicht, Ich hab noch nie /
-  Schätzmeister, Kategorien, Wer von uns? / Bombe, Reaktionsduell,
-  Trink-Roulette
+- Siebzehn Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
+  *Mit Karten* – Ring of Fire, Bussfahrer, Wahrheit oder Pflicht,
+  Ich hab noch nie. *Raten & reden* – Mäxchen, Zwei Wahrheiten, Der Spion,
+  Wer bin ich?, 21, Schätzmeister, Kategorien, Wer von uns?.
+  *Schnell zwischendurch* – Bombe, Reaktionsduell, Trink-Roulette.
+  *Läuft nebenher* – Verbotene Wörter, Trinkbingo.
 
 **Drei Dinge, die man beim Weiterbauen wissen muss:**
 
