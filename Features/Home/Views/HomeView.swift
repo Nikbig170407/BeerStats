@@ -216,6 +216,16 @@ struct HomeView: View {
                 }
                 .buttonStyle(PressableButtonStyle())
 
+                NavigationLink { HorseRaceView() } label: {
+                    gameCard(
+                        emoji: "🐎",
+                        title: "Pferderennen",
+                        subtitle: "Vier Asse, sechs Seitenkarten – setz auf eine Farbe",
+                        tint: BeerStatsColor.success
+                    )
+                }
+                .buttonStyle(PressableButtonStyle())
+
                 NavigationLink { BusRideView() } label: {
                     gameCard(
                         emoji: "🚌",
