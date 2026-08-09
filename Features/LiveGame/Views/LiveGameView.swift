@@ -456,6 +456,7 @@ struct LiveGameView: View {
             }
 
             mvpBadge
+            matchAchievements
 
             VStack(spacing: 10) {
                 // Erst hier wird das Ergebnis festgeschrieben – vorher bleibt
@@ -499,6 +500,21 @@ struct LiveGameView: View {
         .background(BeerStatsColor.backgroundPrimary.opacity(0.97))
         .ignoresSafeArea()
         .transition(.opacity)
+    }
+
+    /// Was in dieser Partie gelungen ist – berechnet, nicht gespeichert.
+    /// Gezeigt wird nur der beste Werfer, sonst waere der Sieger-Screen bei
+    /// vier Spielern eine Liste statt eines Moments.
+    @ViewBuilder
+    private var matchAchievements: some View {
+        if let mvp = viewModel.matchMVP {
+            let earned = Achievements.match(for: mvp.player, in: viewModel.state)
+            if !earned.isEmpty {
+                AchievementRow(achievements: earned, tint: BeerStatsColor.accent)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 10)
+            }
+        }
     }
 
     /// Der beste Werfer der Partie – auch wenn sein Team verloren hat. Gibt

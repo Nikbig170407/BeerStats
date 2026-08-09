@@ -47,6 +47,7 @@ struct ProfileDetailView: View {
                     resultSection
                     arsenalSection
                     streakSection
+                    achievementSection
                 }
 
                 if stats.totalHits > 0 {
@@ -127,6 +128,37 @@ struct ProfileDetailView: View {
         } catch {
             AppLogger.firestore.error("Zeitraum-Werte nicht ladbar: \(error.localizedDescription)")
         }
+    }
+
+    /// Auszeichnungen werden nicht gespeichert, sondern aus den Zahlen
+    /// abgeleitet. Sie gelten deshalb immer fuer den gewaehlten Zeitraum –
+    /// im Monatsfilter steht hier, was in diesem Monat gelungen ist.
+    private var achievementSection: some View {
+        let earned = Achievements.lifetime(for: stats)
+
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("AUSZEICHNUNGEN")
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .kerning(1.8)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            if earned.isEmpty {
+                Text(Achievements.next(for: stats) ?? "Noch nichts freigespielt.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                AchievementRow(achievements: earned, tint: profile.color.color)
+
+                if let next = Achievements.next(for: stats) {
+                    Text(next)
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var hitRateGauge: some View {
