@@ -114,17 +114,29 @@ final class GameEngineTests: XCTestCase {
     /// aus, behielt der Werfer den Ball und der Zugabschluss wurde
     /// uebersprungen – damit fiel die ganze Bombe aus, samt Auswahl.
     func testBombeSurvivesSimultaneousOnFire() {
-        // Zwei volle Durchgaenge bringen beide Spieler auf Serie 2 …
-        var state = play(
-            [.hitCup(index: 0), .hitCup(index: 1),
-             .hitCup(index: 2), .hitCup(index: 3)],
+        // Der Fall ist enger, als er aussieht: Der ZWEITE Werfer muss die
+        // Serie haben, nicht der erste. Wäre der erste auf zwei Treffern,
+        // ginge er beim dritten selbst On Fire, behielte den Ball – und es
+        // käme nie zu einem zweiten Ball, auf dem eine Bombe möglich wäre.
+        let state = play(
+            [
+                .hitCup(index: 0),      // Spieler 1 trifft
+                .hitCup(index: 1),      // Spieler 2 trifft → Balls Back, beide Serie 1
+                .miss,                  // Spieler 1 daneben, seine Serie fällt auf 0
+                .hitCup(index: 2),      // Spieler 2 trifft → Serie 2, Zug endet
+                .miss, .miss,           // Team 2 verfehlt zweimal
+                .hitCup(index: 3)       // Spieler 1 trifft, jetzt ist Ball 2 dran
+            ],
             from: newGame()
         )
-        // … der naechste Treffer und die Bombe sind dann jeweils der dritte.
-        state = play([.hitCup(index: 4), .bombe], from: state)
+        XCTAssertTrue(GameEngine.canDeclareBombe(in: state), "Aufbau stimmt nicht")
 
-        XCTAssertNotNil(state.pendingChoice, "die Bombe darf nicht von On Fire verschluckt werden")
-        XCTAssertEqual(state.pendingChoice?.remaining, 2)
+        // Dieser Wurf ist gleichzeitig Bombe UND dritter Treffer in Folge.
+        let after = play([.bombe], from: state)
+
+        XCTAssertNotNil(after.pendingChoice, "die Bombe darf nicht von On Fire verschluckt werden")
+        XCTAssertEqual(after.pendingChoice?.remaining, 2)
+        XCTAssertTrue(after.onFire[0][1], "die Serie zählt trotzdem weiter")
     }
 
     func testBombeNeedsAHitFromTheFirstBall() {
@@ -159,21 +171,30 @@ final class GameEngineTests: XCTestCase {
     func testEveryLoggedActionIncrementsTheSequenceNumber() {
         var state = newGame()
 
+        // Die Reihenfolge ist kein Zufall: Nach zwei Fehlwürfen wechselt der
+        // Zug, und eine Bombe wäre dann gar nicht erlaubt – sie bliebe
+        // wirkungslos, und die Nummer dürfte zu Recht nicht steigen.
         let actions: [GameAction] = [
-            .toggleBounce,               // wird bewusst NICHT gezaehlt
-            .hitCup(index: 0),
+            .toggleBounce,          // reine Bedienung, gehört nicht in den Log
+            .hitCup(index: 0),      // Bounce-Treffer, Auswahl steht an
             .chooseCup(index: 1),
-            .miss,
+            .miss,                  // Zug endet, Team 2 ist dran
             .airball,
-            .hitCup(index: 2),
-            .bombe,
+            .miss,                  // Zug endet, Team 1 ist wieder dran
+            .hitCup(index: 2),      // erster Ball trifft
+            .bombe,                 // zweiter Ball, jetzt erlaubt
             .chooseCup(index: 3),
             .chooseCup(index: 4)
         ]
 
         for action in actions {
             let before = state.sequenceNumber
-            state = GameEngine.apply(action, to: state, format: format).state
+            let next = GameEngine.apply(action, to: state, format: format).state
+
+            // Eine Aktion, die nichts bewirkt, darf auch nichts hochzählen –
+            // sonst prüft der Test nur, dass irgendetwas passiert ist.
+            XCTAssertNotEqual(next, state, "\(action) war im Aufbau nicht erlaubt")
+            state = next
 
             if action.isPersistable {
                 XCTAssertEqual(
