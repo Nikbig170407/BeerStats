@@ -1,10 +1,20 @@
 // firestore.rules
 //
-// Zentrale Zugriffsregel (siehe Architektur-Dokument 9.3): Clients dürfen
-// NIE Statistiken oder Ranglisten schreiben – das passiert ausschließlich
-// über Cloud Functions mit Admin-Rechten, die diese Regeln umgehen.
-// Clients dürfen bei Spielen nur `throws`-Dokumente ERSTELLEN (nie ändern
-// oder löschen), damit das Append-Only-Log manipulationssicher bleibt.
+// Zugriffsregeln.
+//
+// ACHTUNG, hier stand lange etwas Falsches: Die Rede war von Cloud
+// Functions, die Statistiken und Ranglisten mit Admin-Rechten schreiben.
+// Cloud Functions brauchen den Blaze-Tarif und gibt es in diesem Projekt
+// nicht. Die Blöcke für `users/{id}/stats`, `games/{id}/statistics` und
+// `leaderboards` stehen deshalb auf `write: false` und bewachen
+// Sammlungen, in die niemand schreibt. Sie bleiben trotzdem stehen: Falls
+// die Statistik je auf den Server wandert, ist es genau diese Regel.
+//
+// Was der Client tatsächlich schreibt, sind die Spieler-Profile unter
+// `users/{uid}/players` – dort rechnet das iPhone die Zahlen am Spielende.
+//
+// Bei Spielen dürfen Clients `throws` nur ERSTELLEN, nie ändern oder
+// löschen. Das hält den Append-Only-Log manipulationssicher.
 
 rules_version = '2';
 
@@ -22,12 +32,16 @@ service cloud.firestore {
     // MARK: - users
 
     match /users/{userId} {
-      // Profile sind für alle angemeldeten Nutzer lesbar (Suche, Freundes-
-      // vorschläge). Feingranularere Sichtbarkeit (privacySettings) wird
-      // clientseitig respektiert, nicht über Rules erzwungen – echte
-      // Geheimhaltung einzelner Felder bräuchte separate Dokumente, was für
-      // Statistik-Sichtbarkeit hier bewusst nicht nötig ist.
-      allow read: if isSignedIn();
+      // Nur der Besitzer. Vorher durfte jeder Angemeldete jedes
+      // Nutzerdokument lesen – gedacht war das für die Freundessuche, die
+      // aber gar nicht verlinkt ist. Damit lag unter anderem der
+      // `fcmToken` jedes Nutzers für jeden lesbar herum, also eine
+      // Gerätekennung ohne jeden Grund.
+      //
+      // Wird das Freundesystem aktiviert, braucht es hier KEIN pauschales
+      // Lesen zurück, sondern eine öffentliche Teilmenge: Name und Bild in
+      // einem eigenen Dokument, alles Übrige bleibt privat.
+      allow read: if isOwner(userId);
       allow create: if isOwner(userId);
       // `stats` darf NICHT vom Client geschrieben werden, auch nicht vom
       // Owner selbst – nur über eine Cloud Function. Wird über die
@@ -97,14 +111,24 @@ service cloud.firestore {
                     && request.auth.uid == request.resource.data.createdBy
                     && request.auth.uid in request.resource.data.allPlayerIds;
 
-      // Teilnehmer dürfen den Live-Zustand aktualisieren (Score, cupsRemaining,
-      // Status etc.) – die feingranulare Wurf-für-Wurf-Konsistenz stellt die
-      // Cloud Function sicher, die auf neue throws-Dokumente reagiert.
-      allow update: if isSignedIn() && request.auth.uid in resource.data.allPlayerIds;
+      // Teilnehmer dürfen den Live-Zustand aktualisieren (Ergebnis, Status,
+      // Endzeitpunkt). Die Zugriffsliste und der Ersteller sind davon
+      // ausgenommen: Sonst könnte ein Teilnehmer die anderen aussperren
+      // oder Fremde hineinschreiben. Wichtig wird das, sobald tatsächlich
+      // zwei Geräte an derselben Partie hängen.
+      allow update: if isSignedIn()
+                    && request.auth.uid in resource.data.allPlayerIds
+                    && request.resource.data.allPlayerIds == resource.data.allPlayerIds
+                    && request.resource.data.createdBy == resource.data.createdBy;
 
       allow delete: if false;
 
       // Append-Only-Log: nur Erstellung erlaubt, niemals Änderung/Löschung.
+      //
+      // Das `get()` auf das Spiel kostet pro Prüfung einen Lesezugriff –
+      // bei sechzig Würfen also sechzig zusätzliche. Im kostenlosen Tarif
+      // ist das unkritisch, aber es ist der erste Ort, an dem es eng wird,
+      // wenn die App je viele Partien gleichzeitig hat.
       match /throws/{throwId} {
         allow read: if isSignedIn()
                     && request.auth.uid in get(/databases/$(database)/documents/games/$(gameId)).data.allPlayerIds;
