@@ -216,12 +216,49 @@ struct HomeView: View {
                 }
             }
 
+            tournamentCard
+
             ForEach(PartyGame.Group.allCases) { group in
                 gameGroup(group.title) {
                     ForEach(PartyGame.allCases.filter { $0.group == group }) { gameLink($0) }
                 }
             }
         }
+    }
+
+    /// Steht ueber den Gruppen, weil es kein zwanzigstes Spiel ist, sondern
+    /// eine Klammer um die neunzehn vorhandenen.
+    private var tournamentCard: some View {
+        NavigationLink {
+            TournamentView()
+        } label: {
+            HStack(spacing: 14) {
+                Text("🏆")
+                    .font(.system(size: 30))
+                    .frame(width: 54, height: 54)
+                    .background(
+                        BeerStatsColor.warning.opacity(0.18),
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    )
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Turnier")
+                        .font(BeerStatsFont.headline)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                    Text("Mehrere Spiele hintereinander – jede Runde kostet mehr")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .lineLimit(2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .padding(16)
+            .glassPanel()
+            .neonEdge(BeerStatsColor.warning, intensity: 0.55)
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 
     private func gameLink(_ game: PartyGame) -> some View {

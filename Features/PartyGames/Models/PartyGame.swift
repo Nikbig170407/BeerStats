@@ -167,6 +167,28 @@ enum PartyGame: String, CaseIterable, Identifiable {
         }
     }
 
+    // MARK: - Turnier
+
+    /// Taugt dieses Spiel fuer eine Turnierrunde?
+    ///
+    /// Voraussetzung ist genau eine Sache: Am Ende muss feststehen, wer
+    /// verloren hat. Ring of Fire, Ich hab noch nie oder Trinkbingo haben
+    /// keinen Verlierer – sie verteilen Schluecke, kueren aber niemanden.
+    /// Trink-Roulette faellt aus einem anderen Grund raus: Dort entscheidet
+    /// nur der Zufall, und ein Turnier, in dem Koennen nichts zaehlt, ist
+    /// kein Turnier.
+    var isTournamentReady: Bool {
+        switch self {
+        case .busRide, .schocken, .maexchen, .headsUp, .countTo21,
+             .estimation, .categories, .bombPass, .reactionDuel:
+            return true
+        case .ringOfFire, .horseRace, .truthOrDare, .neverHaveIEver,
+             .twoTruths, .spy, .mostLikely, .drinkRoulette,
+             .forbiddenWords, .drinkBingo:
+            return false
+        }
+    }
+
     // MARK: - Ziel
 
     /// Bewusst `AnyView` statt `@ViewBuilder`.
