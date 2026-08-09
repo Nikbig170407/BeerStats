@@ -25,6 +25,7 @@ struct ProfileDetailView: View {
     @State private var period: StatisticsPeriod = .allTime
     @State private var periodStats: UserStatistics?
     @State private var isLoadingPeriod = false
+    @State private var trend: [TrendPoint] = []
 
     /// Bei „Gesamt" die am Profil gespeicherten Summen, sonst die aus dem
     /// Wurf-Log neu gerechneten Werte. Die gespeicherten Summen sind
@@ -45,6 +46,7 @@ struct ProfileDetailView: View {
                     emptyState
                 } else {
                     resultSection
+                    trendSection
                     arsenalSection
                     streakSection
                     achievementSection
@@ -63,6 +65,7 @@ struct ProfileDetailView: View {
         .background(BeerStatsColor.backgroundPrimary.ignoresSafeArea())
         .navigationTitle(profile.name)
         .navigationBarTitleDisplayMode(.inline)
+        .task { await loadTrend() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Bearbeiten", action: onEdit)
@@ -159,6 +162,55 @@ struct ProfileDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Der Verlauf der letzten Partien.
+    ///
+    /// Erst ab drei Punkten: Zwei Werte ergeben eine Gerade, und eine Gerade
+    /// zeigt keinen Verlauf, sondern nur zwei Zahlen mit einem Strich dazwischen.
+    @ViewBuilder
+    private var trendSection: some View {
+        if trend.count >= 3 {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("VERLAUF")
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .kerning(1.8)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                    Spacer()
+                    Text("letzte \(trend.count) Partien")
+                        .font(BeerStatsFont.statLabel)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+
+                HitRateTrendChart(points: trend, tint: profile.color.color)
+                    .padding(.vertical, 4)
+
+                Text("Gefüllt heißt gewonnen. Die gestrichelte Linie ist die Hälfte.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .glassPanel(cornerRadius: 18)
+        }
+    }
+
+    /// Laeuft einmal beim Oeffnen und liest pro Partie den Wurf-Log – das
+    /// kostet Lesezugriffe, deshalb gedeckelt auf fuenfzehn.
+    private func loadTrend() async {
+        guard let profileId = profile.id, trend.isEmpty else { return }
+        do {
+            let games = try await gameRepository.fetchFinishedGames(userId: ownerId)
+            trend = try await throwRepository.hitRateTrend(
+                profileId: profileId,
+                games: games,
+                limit: 15
+            )
+        } catch {
+            AppLogger.firestore.error("Verlauf nicht ladbar: \(error.localizedDescription)")
+        }
     }
 
     private var hitRateGauge: some View {

@@ -44,6 +44,13 @@ protocol ThrowRepositoryProtocol {
         limit: Int
     ) async throws -> CupHeatmap
 
+    /// Trefferquote der letzten Partien, aelteste zuerst.
+    func hitRateTrend(
+        profileId: String,
+        games: [Game],
+        limit: Int
+    ) async throws -> [TrendPoint]
+
     /// Rechnet die Kennzahlen eines Spielers aus einer Menge von Partien neu.
     ///
     /// Grundlage für den Zeitraum-Filter: Die Werte am Profil sind
@@ -83,6 +90,23 @@ enum StatisticsPeriod: String, CaseIterable, Identifiable {
             guard let endedAt = game.endedAt else { return false }
             return endedAt >= cutoff
         }
+    }
+}
+
+/// Eine einzelne Partie im Verlauf.
+///
+/// Bewusst mit Sieg-Kennzeichen: Eine Trefferquote allein sagt wenig – erst
+/// zusammen mit dem Ausgang sieht man, ob ein guter Abend auch einer war,
+/// an dem man gewonnen hat.
+struct TrendPoint: Equatable, Identifiable {
+    let id: Int
+    let endedAt: Date?
+    let hits: Int
+    let attempts: Int
+    let won: Bool
+
+    var hitRate: Double {
+        attempts > 0 ? Double(hits) / Double(attempts) : 0
     }
 }
 
@@ -290,6 +314,57 @@ final class ThrowRepository: ThrowRepositoryProtocol {
             heatmap.hitsByCupIndex[index, default: 0] += 1
             heatmap.totalHits += 1
         }
+    }
+
+    // MARK: - Verlauf
+
+    func hitRateTrend(
+        profileId: String,
+        games: [Game],
+        limit: Int
+    ) async throws -> [TrendPoint] {
+        // Die JUENGSTEN `limit` Partien, aber aufsteigend dargestellt: Eine
+        // Kurve, die rechts endet, liest man von links nach rechts.
+        let relevant = games
+            .filter { $0.teams.contains { $0.playerIds.contains(profileId) } }
+            .sorted { ($0.endedAt ?? .distantPast) < ($1.endedAt ?? .distantPast) }
+            .suffix(limit)
+
+        var points: [TrendPoint] = []
+
+        for game in relevant {
+            guard let gameId = game.id,
+                  let teamIndex = game.teams.firstIndex(where: { $0.playerIds.contains(profileId) }),
+                  let slot = game.teams[teamIndex].playerIds.firstIndex(of: profileId)
+            else { continue }
+
+            let entries = try await throwService.fetchThrows(gameId: gameId)
+            guard !entries.isEmpty else { continue }
+
+            let finalState = replay(
+                entries,
+                format: game.format,
+                playersPerTeam: game.type == .oneVsOne ? 1 : 2
+            )
+            guard finalState.stats.indices.contains(teamIndex),
+                  finalState.stats[teamIndex].indices.contains(slot)
+            else { continue }
+
+            let playerStats = finalState.stats[teamIndex][slot]
+            // Partien ohne einen einzigen Wurf ergaeben eine Quote von null
+            // und wuerden die Kurve grundlos nach unten ziehen.
+            guard playerStats.attempts > 0 else { continue }
+
+            points.append(TrendPoint(
+                id: points.count,
+                endedAt: game.endedAt,
+                hits: playerStats.hits,
+                attempts: playerStats.attempts,
+                won: game.winnerTeamId == game.teams[teamIndex].id
+            ))
+        }
+
+        return points
     }
 
     // MARK: - Kennzahlen für einen Zeitraum
