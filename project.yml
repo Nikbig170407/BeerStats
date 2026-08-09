@@ -44,6 +44,7 @@ targets:
         product: FirebaseMessaging
       - package: Firebase
         product: FirebaseStorage
+      - target: BeerStatsWidgets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.beerstats.app
@@ -56,6 +57,7 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UIBackgroundModes: "remote-notification"
+        INFOPLIST_KEY_NSSupportsLiveActivities: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Signierung passiert bewusst NICHT hier, sondern lokal bei dir durch
         # Sideloadly beim Installieren auf dein iPhone (siehe README.md).
@@ -82,6 +84,38 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGNING_REQUIRED: "NO"
         CODE_SIGNING_ALLOWED: "NO"
+
+  # Zeichnet die Live-Anzeige der laufenden Partie auf dem Sperrbildschirm.
+  #
+  # Eigenes Deployment-Target: ActivityKit gibt es erst ab 16.1, die App
+  # laeuft weiter ab 16.0 und prueft zur Laufzeit. Waere hier auch 16.0
+  # eingestellt, muesste jede Zeile im Widget eine Verfuegbarkeitsangabe
+  # tragen.
+  BeerStatsWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.1"
+    sources:
+      - path: Widgets
+      # Nur die geteilten Daten, nicht der ganze Ordner: Die Steuerung
+      # daneben gehoert in die App.
+      - path: Features/LiveGame/LiveActivity/BeerpongActivityAttributes.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.beerstats.app.widgets
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: BeerStats
+        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGN_IDENTITY: ""
+        DEVELOPMENT_TEAM: ""
 
 schemes:
   BeerStats:

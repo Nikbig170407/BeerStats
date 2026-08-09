@@ -104,8 +104,14 @@ struct LiveGameView: View {
         .navigationBarTitleDisplayMode(.inline)
         // Während einer Partie liegt das Handy oft minutenlang unberührt auf
         // dem Tisch – ohne das müsste man vor jedem Wurf erst entsperren.
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        .onAppear {
+            UIApplication.shared.isIdleTimerDisabled = true
+            viewModel.startLiveActivity()
+        }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false
+            viewModel.stopLiveActivity()
+        }
         .sheet(isPresented: $viewModel.isShowingReRackSheet) {
             ReRackSheet(
                 formations: viewModel.availableFormations,

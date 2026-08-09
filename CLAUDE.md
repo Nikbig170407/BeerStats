@@ -43,8 +43,12 @@ Lösungen. Diesen Anspruch bitte beibehalten.
 - **Kein Blaze-Tarif.** Cloud Functions sind damit ausgeschlossen. Firestore
   selbst ist im kostenlosen Spark-Tarif nutzbar, inklusive Offline-Cache.
 - **Repo-Struktur ist flach**: `App/`, `Core/`, `DesignSystem/`,
-  `Features/`, `Models/`, `Repositories/`, `Services/`, `Resources/` liegen
-  direkt im Root. `project.yml` verweist darauf.
+  `Features/`, `Models/`, `Repositories/`, `Services/`, `Resources/`,
+  `Tests/`, `Widgets/` liegen direkt im Root. `project.yml` verweist darauf.
+- **Drei Ziele**: die App, `BeerStatsTests` (Regelwerk, eigener CI-Job) und
+  `BeerStatsWidgets` (Live-Anzeige auf dem Sperrbildschirm, baut gegen
+  iOS 16.1). Die Extension hängt am App-Ziel und landet in der `.ipa` –
+  wenn Sideloadly plötzlich zickt, ist sie der erste Verdächtige.
 
 ---
 

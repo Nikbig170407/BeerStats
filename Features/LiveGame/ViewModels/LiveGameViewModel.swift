@@ -112,6 +112,7 @@ final class LiveGameViewModel: ObservableObject {
                 // bedeutet hier also: Ein Mitspieler hat etwas eingegeben.
                 if rebuilt != self.state {
                     withAnimation(AppAnimation.standard) { self.state = rebuilt }
+                    self.refreshLiveActivity()
                 }
             }
         }
@@ -132,6 +133,7 @@ final class LiveGameViewModel: ObservableObject {
         state = result.state
         handle(result.events)
         announceThrowerChange(from: previousThrower)
+        refreshLiveActivity()
 
         guard action.isPersistable else { return }
         history.append(snapshot)
@@ -329,6 +331,36 @@ final class LiveGameViewModel: ObservableObject {
                 AppLogger.firestore.error("Undo konnte nicht gespeichert werden: \(error.localizedDescription)")
             }
         }
+    }
+
+    // MARK: - Sperrbildschirm
+
+    /// Die Anzeige lebt genau so lange wie der Spielscreen. Das Handy liegt
+    /// in dieser Zeit auf dem Tisch – gesperrt oder in einer anderen App ist
+    /// dann trotzdem zu sehen, wer wirft.
+    func startLiveActivity() {
+        LiveGameActivity.start(
+            teamOne: teamName(0),
+            teamTwo: teamName(1),
+            cupsTeamOne: state.racks[0].remainingCount,
+            cupsTeamTwo: state.racks[1].remainingCount,
+            thrower: currentThrowerName,
+            detail: turnDescription
+        )
+    }
+
+    func stopLiveActivity() {
+        LiveGameActivity.end()
+    }
+
+    private func refreshLiveActivity() {
+        guard !state.isFinished else { return LiveGameActivity.end() }
+        LiveGameActivity.update(
+            cupsTeamOne: state.racks[0].remainingCount,
+            cupsTeamTwo: state.racks[1].remainingCount,
+            thrower: currentThrowerName,
+            detail: turnDescription
+        )
     }
 
     // MARK: - Abfragen für die View
