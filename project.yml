@@ -65,12 +65,35 @@ targets:
         CODE_SIGN_IDENTITY: ""
         DEVELOPMENT_TEAM: ""
 
+  # Testziel für das Regelwerk. Die Engine ist bewusst eine reine Funktion,
+  # damit sie ohne Firebase prüfbar ist – bis hierher fehlte nur der Ort,
+  # an dem das auch tatsächlich passiert.
+  BeerStatsTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: BeerStats
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.beerstats.app.tests
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGNING_ALLOWED: "NO"
+
 schemes:
   BeerStats:
     build:
       targets:
         BeerStats: all
+        BeerStatsTests: [test]
     run:
       config: Release
+    test:
+      config: Debug
+      targets:
+        - BeerStatsTests
     archive:
       config: Release

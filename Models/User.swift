@@ -2,12 +2,14 @@
 //  User.swift
 //  BeerStats
 //
-//  Repräsentiert einen Nutzer. `stats` enthält bewusst nur eine schlanke,
-//  denormalisierte Momentaufnahme der wichtigsten Kennzahlen (siehe
-//  Architektur-Dokument 3.1) – die vollständige, laufend fortgeschriebene
-//  Statistik liegt in der Subcollection `users/{id}/stats/summary`
-//  (siehe UserStatistics.swift). So können Profil-Vorschauen und Ranglisten
-//  ohne zusätzliche Query direkt aus dem User-Dokument lesen.
+//  Repräsentiert das Konto, mit dem man sich anmeldet – nicht den Spieler.
+//  Wer am Tisch mitspielt, steht als `PlayerProfile` unter
+//  `users/{uid}/players`, und dort hängen auch die Statistiken.
+//
+//  Das `stats`-Feld hier ist ein Überbleibsel aus der ursprünglichen
+//  Planung mit einer Subcollection `users/{id}/stats/summary`, die eine
+//  Cloud Function fortschreiben sollte. Ohne Blaze-Tarif gibt es diese
+//  Function nicht, und beschrieben wird das Feld nirgends.
 //
 
 import Foundation

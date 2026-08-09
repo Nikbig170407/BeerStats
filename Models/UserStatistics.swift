@@ -2,13 +2,17 @@
 //  UserStatistics.swift
 //  BeerStats
 //
-//  Kanonische Lifetime-Statistik eines Nutzers, abgelegt unter
-//  `users/{userId}/stats/summary` (siehe Architektur-Dokument 3.7).
-//  Wird NIE komplett neu berechnet, sondern von einer Cloud Function bei
-//  jedem relevanten Throw-Ereignis inkrementell fortgeschrieben
-//  (FieldValue.increment). Ein Auszug dieser Werte wird zusätzlich in
-//  User.stats gespiegelt, damit Profil-Vorschauen ohne Zusatz-Query
-//  auskommen.
+//  Lifetime-Kennzahlen eines Spielers.
+//
+//  ACHTUNG, der Ort hat sich geändert: Ursprünglich war ein Dokument unter
+//  `users/{userId}/stats/summary` geplant, das eine Cloud Function bei jedem
+//  Wurf fortschreibt. Cloud Functions brauchen den Blaze-Tarif und fallen
+//  damit aus – dorthin schreibt niemand, und das Dokument existiert nicht.
+//
+//  Tatsächlich hängen die Werte am `PlayerProfile` und werden vom iPhone
+//  geschrieben, wenn im Sieger-Screen „Ergebnis übernehmen" gedrückt wird
+//  (siehe PlayerProfileRepository.applyFinishedGame). Zeitraum-Werte
+//  entstehen davon unabhängig durch Nachspielen der Wurf-Logs.
 //
 
 import Foundation

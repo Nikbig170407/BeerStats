@@ -17,6 +17,51 @@ on:
   workflow_dispatch: # erlaubt manuelles Starten über den "Run workflow"-Button
 
 jobs:
+  # Läuft bewusst als EIGENER Job, nicht als Schritt vor dem Bauen: Wenn ein
+  # Test rot wird, sollst du trotzdem eine .ipa bekommen. Das Regelwerk ist
+  # wichtig, aber eine App, die sich nicht installieren lässt, hilft am Tisch
+  # niemandem.
+  test:
+    runs-on: macos-15
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: XcodeGen installieren
+        run: brew install xcodegen
+
+      - name: Xcode-Projekt generieren
+        run: xcodegen generate
+
+      - name: Simulator aussuchen
+        id: sim
+        run: |
+          # Nicht auf einen festen Gerätenamen setzen – welche Simulatoren
+          # der Runner mitbringt, ändert sich mit jeder Xcode-Version.
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          devices = json.load(sys.stdin)['devices']
+          for runtime in sorted(devices, reverse=True):
+              for device in devices[runtime]:
+                  if device['name'].startswith('iPhone'):
+                      print(device['udid']); sys.exit(0)
+          sys.exit('kein iPhone-Simulator gefunden')
+          ")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "Simulator: $UDID"
+
+      - name: Regelwerk testen
+        run: |
+          # Ohne Pipe: Ein "| tail" würde den Rückgabewert von xcodebuild
+          # durch den von tail ersetzen – ein fehlgeschlagener Test liefe
+          # dann grün durch.
+          xcodebuild test \
+            -project BeerStats.xcodeproj \
+            -scheme BeerStats \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            CODE_SIGNING_ALLOWED=NO
+
   build:
     runs-on: macos-15
 
