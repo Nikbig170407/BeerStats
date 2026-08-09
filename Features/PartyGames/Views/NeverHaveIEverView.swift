@@ -254,7 +254,7 @@ struct NeverHaveIEverView: View {
                 startPenaltyFlash()
             } else {
                 HapticManager.lightImpact()
-                SoundManager.play(.tap)
+                SoundManager.play(.cardFlip)
             }
         }
     }

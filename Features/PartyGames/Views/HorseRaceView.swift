@@ -284,7 +284,7 @@ struct HorseRaceView: View {
         lastCard = card
         message = nil
         HapticManager.mediumImpact()
-        SoundManager.play(.tap)
+        SoundManager.play(.cardFlip)
 
         guard let lane = suits.firstIndex(of: card.suit) else { return }
         withAnimation(AppAnimation.standard) {

@@ -347,7 +347,7 @@ struct RingOfFireView: View {
             // Ton, alles andere bleibt der leise Kartenklang. Am Rang und
             // nicht am Emoji festgemacht, damit eine Umbenennung den Klang
             // nicht stillschweigend mitnimmt.
-            SoundManager.play(rank == 14 ? .bombe : .cupHit)
+            SoundManager.play(rank == 14 ? .bombe : .cardFlip)
         }
     }
 

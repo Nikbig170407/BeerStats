@@ -4,9 +4,14 @@
 //
 //  Klänge für die Ereignisse im Spiel.
 //
-//  Alle Dateien liegen unter `Resources/Sounds`. Die kurzen Signale sind
-//  selbst erzeugt (siehe Skript in der Projekthistorie) und damit frei von
-//  Lizenzfragen; der Airball nutzt einen eigenen Ausschnitt.
+//  Alle Dateien liegen unter `Resources/Sounds`. Die Signale stammen von
+//  Mixkit (freie Lizenz, private wie kommerzielle Nutzung, keine
+//  Namensnennung nötig); der Airball ist ein eigener Ausschnitt, die Bombe
+//  ist weiterhin selbst erzeugt, weil dort nichts Passendes zu finden war.
+//
+//  Zum Austauschen reicht die Datei: Der Name entspricht dem Fall im Enum,
+//  gesucht wird in der Reihenfolge wav, mp3, m4a, caf. Eine alte .wav neben
+//  einer neuen .mp3 gewinnt also – die muss weg.
 //
 //  Bewusst AVAudioPlayer statt der früheren Systemtöne: Nur so lassen sich
 //  eigene Dateien in beliebigem Format abspielen, die Lautstärke steuern und
@@ -30,16 +35,29 @@ enum GameSound: String, CaseIterable {
     case reRack
     case victory
     case tap
+    /// Kartenumschlag – die Kartenspiele klangen vorher wie ein Ball im
+    /// Becher, weil sie sich `cupHit` geliehen haben.
+    case cardFlip
 
     /// Unterstützte Endungen, in dieser Reihenfolge gesucht.
     static let supportedExtensions = ["wav", "mp3", "m4a", "caf"]
 
     /// Nach dieser Zeit wird ausgeblendet. `nil` heißt: ganz abspielen.
     ///
-    /// Nur der Airball braucht das – dort liegt ein Musikausschnitt, der
-    /// ohne Begrenzung noch liefe, wenn längst weitergeworfen wird.
+    /// Die eingekauften Klänge sind länger, als das Spiel sie braucht: Der
+    /// Fehlwurf bringt über vier Sekunden mit, On Fire über sechs. Beides
+    /// passiert im Minutentakt – ungekürzt läge dauernd ein Klang über dem
+    /// nächsten. Gekappt wird jeweils dort, wo das Kennzeichnende vorbei ist.
     var maximumDuration: TimeInterval? {
-        self == .airball ? 3.0 : nil
+        switch self {
+        case .miss: return 0.8       // nur der Aufprall
+        case .cardFlip: return 1.0   // ein Blatt, kein ganzes Mischen
+        case .ballsBack: return 2.0
+        case .onFire: return 2.5
+        case .airball: return 3.0
+        case .victory: return 5.0
+        case .cupHit, .bombe, .reRack, .tap: return nil
+        }
     }
 
     /// Grundlautstärke. Der Airball ist ein Musikclip und deutlich lauter

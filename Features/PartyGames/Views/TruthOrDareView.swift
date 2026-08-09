@@ -191,7 +191,7 @@ struct TruthOrDareView: View {
             current = dares.popLast()
         }
         HapticManager.lightImpact()
-        SoundManager.play(.tap)
+        SoundManager.play(.cardFlip)
     }
 
     private func refuse() {
