@@ -100,6 +100,17 @@ targets:
       # Nur die geteilten Daten, nicht der ganze Ordner: Die Steuerung
       # daneben gehoert in die App.
       - path: Features/LiveGame/LiveActivity/BeerpongActivityAttributes.swift
+    # Echte Info.plist statt GENERATE_INFOPLIST_FILE. Eine Extension braucht
+    # ein NSExtension-Verzeichnis, und dafuer gibt es keinen
+    # INFOPLIST_KEY_-Schalter: Der Mechanismus kennt nur flache Schluessel
+    # aus einer festen Liste. Ohne das Verzeichnis verweigert schon der
+    # Simulator die Installation ("extensionDictionary must be set").
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: BeerStats
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.beerstats.app.widgets
@@ -107,9 +118,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: BeerStats
-        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
         CODE_SIGN_STYLE: Manual
         CODE_SIGNING_REQUIRED: "NO"
