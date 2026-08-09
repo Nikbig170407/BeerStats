@@ -128,7 +128,7 @@ struct DrinkRouletteView: View {
     private var resultPanel: some View {
         if let result, !isSpinning {
             Text(result.resolved)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.scaled(24, weight: .bold, design: .rounded))
                 .foregroundStyle(result.color)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

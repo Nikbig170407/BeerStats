@@ -59,12 +59,12 @@ struct CategoriesView: View {
     private var categoryCard: some View {
         VStack(spacing: 10) {
             Text("KATEGORIE")
-                .font(.system(size: 12, weight: .heavy, design: .rounded))
+                .font(.scaled(12, weight: .heavy, design: .rounded))
                 .kerning(2.6)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
             Text(category)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.scaled(28, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

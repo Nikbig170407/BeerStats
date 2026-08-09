@@ -184,7 +184,7 @@ struct CountTo21View: View {
             ForEach(rules.keys.sorted(), id: \.self) { number in
                 HStack(alignment: .top, spacing: 10) {
                     Text("\(number)")
-                        .font(.system(size: 16, weight: .heavy, design: .rounded))
+                        .font(.scaled(16, weight: .heavy, design: .rounded))
                         .foregroundStyle(BeerStatsColor.accent)
                         .frame(minWidth: 26, alignment: .leading)
                     Text(rules[number] ?? "")

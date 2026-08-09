@@ -108,7 +108,7 @@ struct TruthOrDareView: View {
                 .foregroundStyle(tint)
 
             Text(card.text)
-                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .font(.scaled(25, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

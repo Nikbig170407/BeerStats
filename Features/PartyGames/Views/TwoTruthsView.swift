@@ -56,11 +56,11 @@ struct TwoTruthsView: View {
         VStack(spacing: 10) {
             Text("🎭").font(.system(size: 34))
             Text("THEMA")
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(2.4)
                 .foregroundStyle(BeerStatsColor.textSecondary)
             Text(theme)
-                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                .font(.scaled(28, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -134,7 +134,7 @@ struct TwoTruthsView: View {
         VStack(spacing: 8) {
             Text(emoji(for: value)).font(.system(size: 48))
             Text(text(for: value))
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.scaled(22, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.error)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

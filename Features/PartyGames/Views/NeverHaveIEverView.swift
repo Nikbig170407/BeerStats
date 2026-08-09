@@ -221,7 +221,7 @@ struct NeverHaveIEverView: View {
                 .foregroundStyle(isPenalty ? tint : BeerStatsColor.textSecondary)
 
             Text(card.text)
-                .font(.system(size: isPenalty ? 30 : 24, weight: .bold, design: .rounded))
+                .font(.scaled(isPenalty ? 30 : 24, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

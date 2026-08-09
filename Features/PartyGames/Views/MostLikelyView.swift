@@ -63,7 +63,7 @@ struct MostLikelyView: View {
             Text("👉").font(.system(size: 34))
 
             Text(card.text)
-                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .font(.scaled(25, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

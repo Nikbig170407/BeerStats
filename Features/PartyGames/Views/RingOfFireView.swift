@@ -147,7 +147,7 @@ struct RingOfFireView: View {
                 HStack(spacing: 8) {
                     Text(rule.emoji).font(.system(size: 26))
                     Text(rule.title)
-                        .font(.system(size: 26, weight: .heavy, design: .rounded))
+                        .font(.scaled(26, weight: .heavy, design: .rounded))
                         .foregroundStyle(tint(for: rule))
                 }
 

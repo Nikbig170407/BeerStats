@@ -254,7 +254,7 @@ struct SpyView: View {
                 .foregroundStyle(BeerStatsColor.accentSecondary)
 
             Text(penaltyText(for: outcome))
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.scaled(22, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.error)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
