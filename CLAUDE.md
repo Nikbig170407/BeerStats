@@ -149,7 +149,13 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
   *Schnell zwischendurch* – Bombe, Reaktionsduell, Trink-Roulette.
   *Läuft nebenher* – Verbotene Wörter, Trinkbingo.
 
-**Drei Dinge, die man beim Weiterbauen wissen muss:**
+**Was man beim Weiterbauen wissen muss:**
+
+- **Partyspiele stehen im Katalog `PartyGame`, nicht im Hauptmenü.**
+  Titel, Emoji, Untertitel, Farbe, Gruppe und Ziel-Ansicht liegen dort
+  beisammen; `HomeView` baut die Liste daraus. Ein neues Spiel ist ein
+  neuer Fall in der Aufzählung – wer es stattdessen in die View schreibt,
+  taucht in „Zuletzt gespielt" nicht auf.
 
 - **Kartenspiele tragen den ganzen Satz auf der Karte**, nicht nur den
   Nachsatz. Ein fester Vorspann („Ich hab noch nie …") kann grammatisch

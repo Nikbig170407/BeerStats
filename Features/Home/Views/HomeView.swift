@@ -21,6 +21,9 @@ struct HomeView: View {
     /// der Leiste sofort umspringt.
     @State private var isSoundOn = SoundManager.isEnabled
     @State private var isSpeechOn = SpeechAnnouncer.isEnabled
+    /// Wird beim Zurueckkehren neu gelesen – UserDefaults meldet sich
+    /// nicht von selbst bei SwiftUI.
+    @State private var recentGames = RecentPartyGames.games
 
     init(container: AppContainer, currentUserId: String) {
         self.container = container
@@ -48,6 +51,7 @@ struct HomeView: View {
             }
             .background(GridBackdrop())
             .toolbar { toolbarContent }
+            .onAppear { recentGames = RecentPartyGames.games }
         }
     }
 
@@ -199,214 +203,42 @@ struct HomeView: View {
 
     // MARK: - Spiele auf dem Handy
 
+    /// Die Liste kommt aus `PartyGame`, nicht aus dieser Datei. Neunzehn
+    /// Einträge von Hand zu pflegen war der sichere Weg, bei jedem neuen
+    /// Spiel eine der fünf Angaben zu vergessen.
     private var partySection: some View {
         VStack(alignment: .leading, spacing: 22) {
-            // Gruppen statt einer langen Liste: Nach zehn Einträgen ohne
-            // Trennung findet niemand mehr, was er sucht. Sortiert danach,
-            // was man am Tisch tut – Karten ziehen, reden, oder schnell
-            // etwas entscheiden.
-            gameGroup("MIT KARTEN") {
-                NavigationLink { RingOfFireView() } label: {
-                    gameCard(
-                        emoji: "🔥",
-                        title: "Ring of Fire",
-                        subtitle: "52 Karten im Kreis um die Flasche – jede bedeutet etwas anderes",
-                        tint: BeerStatsColor.error
-                    )
+            // Ein Abend spielt zwei bis drei Spiele und scrollt sonst an
+            // neunzehn vorbei. Die stehen deshalb oben.
+            if !recentGames.isEmpty {
+                gameGroup("ZULETZT GESPIELT") {
+                    ForEach(recentGames) { gameLink($0) }
                 }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { HorseRaceView() } label: {
-                    gameCard(
-                        emoji: "🐎",
-                        title: "Pferderennen",
-                        subtitle: "Vier Asse, sechs Seitenkarten – setz auf eine Farbe",
-                        tint: BeerStatsColor.success
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { BusRideView() } label: {
-                    gameCard(
-                        emoji: "🚌",
-                        title: "Bussfahrer",
-                        subtitle: "Vier Fragen, jede teurer – ein Fehler und zurück auf Anfang",
-                        tint: BeerStatsColor.accentSecondary
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { TruthOrDareView() } label: {
-                    gameCard(
-                        emoji: "🎭",
-                        title: "Wahrheit oder Pflicht",
-                        subtitle: "90 Karten – verweigern kostet vier Schlücke",
-                        tint: BeerStatsColor.accent
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { NeverHaveIEverView() } label: {
-                    gameCard(
-                        emoji: "🍻",
-                        title: "Ich hab noch nie",
-                        subtitle: "150 Fragen in drei Stufen, dazu Strafen",
-                        tint: BeerStatsColor.success
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
             }
 
-            gameGroup("RATEN & REDEN") {
-                NavigationLink { SchockenView() } label: {
-                    gameCard(
-                        emoji: "🎲",
-                        title: "Schocken",
-                        subtitle: "Drei Würfel, drei Würfe – der schlechteste Wurf trinkt",
-                        tint: BeerStatsColor.warning
-                    )
+            ForEach(PartyGame.Group.allCases) { group in
+                gameGroup(group.title) {
+                    ForEach(PartyGame.allCases.filter { $0.group == group }) { gameLink($0) }
                 }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { MaexchenView() } label: {
-                    gameCard(
-                        emoji: "🎲",
-                        title: "Mäxchen",
-                        subtitle: "Verdeckt würfeln und lügen – die App weiß, wer geflunkert hat",
-                        tint: BeerStatsColor.accentSecondary
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { TwoTruthsView() } label: {
-                    gameCard(
-                        emoji: "🎭",
-                        title: "Zwei Wahrheiten",
-                        subtitle: "Drei Sätze, einer erfunden – wer danebenliegt, trinkt",
-                        tint: BeerStatsColor.accent
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { SpyView() } label: {
-                    gameCard(
-                        emoji: "🕵️",
-                        title: "Der Spion",
-                        subtitle: "Alle kennen das Wort – einer nicht, und der muss es überspielen",
-                        tint: BeerStatsColor.accentSecondary
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { HeadsUpView() } label: {
-                    gameCard(
-                        emoji: "🙈",
-                        title: "Wer bin ich?",
-                        subtitle: "Handy an die Stirn – jeder verpasste Begriff kostet einen Schluck",
-                        tint: BeerStatsColor.accent
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { CountTo21View() } label: {
-                    gameCard(
-                        emoji: "🔢",
-                        title: "21",
-                        subtitle: "Reihum zählen – wer 21 sagt, macht eine neue Regel",
-                        tint: BeerStatsColor.error
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { EstimationView() } label: {
-                    gameCard(
-                        emoji: "🤔",
-                        title: "Schätzmeister",
-                        subtitle: "50 Fragen mit einer Zahl – wer am weitesten daneben liegt, trinkt",
-                        tint: BeerStatsColor.success
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { CategoriesView() } label: {
-                    gameCard(
-                        emoji: "⏱️",
-                        title: "Kategorien",
-                        subtitle: "Reihum ein Begriff – die Bedenkzeit wird jede Runde knapper",
-                        tint: BeerStatsColor.warning
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { MostLikelyView() } label: {
-                    gameCard(
-                        emoji: "👉",
-                        title: "Wer von uns?",
-                        subtitle: "Alle zeigen gleichzeitig – die meisten Finger trinken",
-                        tint: BeerStatsColor.accent
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-            }
-
-            gameGroup("SCHNELL ZWISCHENDURCH") {
-                NavigationLink { BombPassView() } label: {
-                    gameCard(
-                        emoji: "💣",
-                        title: "Bombe weitergeben",
-                        subtitle: "Zünden, herumreichen, nicht drauf sitzen bleiben",
-                        tint: BeerStatsColor.accentSecondary
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { ReactionDuelView() } label: {
-                    gameCard(
-                        emoji: "⚡️",
-                        title: "Reaktionsduell",
-                        subtitle: "Zwei Daumen, ein Signal – wer zu früh tippt, verliert",
-                        tint: BeerStatsColor.accent
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { DrinkRouletteView() } label: {
-                    gameCard(
-                        emoji: "🎯",
-                        title: "Trink-Roulette",
-                        subtitle: "Acht Felder, ein Zeiger – keine Einrichtung nötig",
-                        tint: BeerStatsColor.error
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-            }
-
-            // Eigene Gruppe, obwohl nur ein Eintrag drin steht: Dieses Spiel
-            // startet man einmal und legt das Handy dann weg. Zwischen den
-            // anderen stehend würde niemand verstehen, warum es keine Runde
-            // hat.
-            gameGroup("LÄUFT NEBENHER") {
-                NavigationLink { ForbiddenWordsView() } label: {
-                    gameCard(
-                        emoji: "🤐",
-                        title: "Verbotene Wörter",
-                        subtitle: "Jeder zieht ein Wort, das er den Abend über nicht sagen darf",
-                        tint: BeerStatsColor.warning
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                NavigationLink { DrinkBingoView() } label: {
-                    gameCard(
-                        emoji: "🎉",
-                        title: "Trinkbingo",
-                        subtitle: "Sechzehn Felder, die von selbst passieren – wer eine Reihe vollmacht, verteilt",
-                        tint: BeerStatsColor.success
-                    )
-                }
-                .buttonStyle(PressableButtonStyle())
             }
         }
+    }
+
+    private func gameLink(_ game: PartyGame) -> some View {
+        NavigationLink {
+            // Vermerkt wird beim Erscheinen, nicht beim Antippen: Wer sich
+            // vertippt und sofort zurückgeht, hat nicht gespielt.
+            game.destination
+                .onAppear { RecentPartyGames.record(game) }
+        } label: {
+            gameCard(
+                emoji: game.emoji,
+                title: game.title,
+                subtitle: game.subtitle,
+                tint: game.tint
+            )
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 
     private func gameGroup<Content: View>(
