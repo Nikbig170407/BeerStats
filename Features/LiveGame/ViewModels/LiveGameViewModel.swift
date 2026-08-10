@@ -25,6 +25,15 @@ final class LiveGameViewModel: ObservableObject {
     @Published private(set) var isStartingRematch = false
     @Published var errorMessage: String?
 
+    /// Ein Schreibvorgang im laufenden Spiel ist gescheitert. Bleibt sichtbar,
+    /// bis jemand ihn wegtippt – ein Hinweis, der von selbst verschwindet,
+    /// wird am Tisch garantiert übersehen.
+    @Published private(set) var syncWarning: String?
+
+    /// Läuft, während das Ergebnis geschrieben wird.
+    @Published private(set) var isSettling = false
+    @Published private(set) var settleError: String?
+
     // MARK: - Unveränderliche Spieldaten
 
     let teams: [Team]
@@ -161,6 +170,10 @@ final class LiveGameViewModel: ObservableObject {
                 )
             } catch {
                 AppLogger.firestore.error("Wurf konnte nicht gespeichert werden: \(error.localizedDescription)")
+                // Der Wurf steht lokal schon auf dem Schirm, im Log aber
+                // nicht. Spätestens beim nächsten Nachspielen verschwindet er
+                // wieder – das darf nicht unbemerkt passieren.
+                self.syncWarning = "Ein Wurf wurde nicht gespeichert. Prüft die Verbindung."
             }
         }
     }
@@ -175,44 +188,54 @@ final class LiveGameViewModel: ObservableObject {
     /// herausgerechnet. Und sie passiert erst auf ausdrückliche Bestätigung
     /// im Sieger-Screen, damit „Rückgängig" bis dahin nutzbar bleibt, ohne
     /// dass bereits geschriebene Zahlen wieder falsch würden.
-    func confirmResult() {
-        guard state.isFinished, !didSettleGame else { return }
-        didSettleGame = true
+    /// Gibt zurueck, ob wirklich alles geschrieben wurde.
+    ///
+    /// Vorher lief das in einem losgeloesten Task, waehrend sich die Ansicht
+    /// bereits schloss. Scheiterte das Schreiben, waren die Zahlen des Abends
+    /// weg und niemand erfuhr davon – bei einer App, deren einziger Zweck das
+    /// Mitschreiben ist, die falsche Fehlerkultur.
+    ///
+    /// `didSettleGame` wird erst bei Erfolg gesetzt, sonst waere ein zweiter
+    /// Versuch gesperrt.
+    @discardableResult
+    func confirmResult() async -> Bool {
+        guard state.isFinished else { return true }
+        guard !didSettleGame else { return true }
+
+        isSettling = true
+        settleError = nil
+        defer { isSettling = false }
 
         let finishedState = state
         let winningTeamId = finishedState.winnerTeamIndex.flatMap { index -> String? in
             teams.indices.contains(index) ? teams[index].id : nil
         }
         let profileIdsByTeam = teams.map(\.playerIds)
-        // Die Kennung JETZT festhalten, nicht erst im Task lesen: Eine
-        // Revanche schreibt `gameId` unmittelbar danach um, und dann würde
-        // das falsche – nämlich das gerade erst begonnene – Spiel als beendet
-        // markiert.
+        // Die Kennung JETZT festhalten, nicht erst spaeter lesen: Eine
+        // Revanche schreibt `gameId` unmittelbar danach um, und dann wuerde
+        // das falsche Spiel als beendet markiert.
         let settledGameId = gameId
 
-        Task { [weak self] in
-            guard let self else { return }
-
+        do {
             if let settledGameId, let gameRepository {
-                do {
-                    try await gameRepository.finishGame(gameId: settledGameId, winnerTeamId: winningTeamId)
-                } catch {
-                    AppLogger.firestore.error("Spielende konnte nicht gespeichert werden: \(error.localizedDescription)")
-                }
+                try await gameRepository.finishGame(gameId: settledGameId, winnerTeamId: winningTeamId)
             }
-
             if let ownerId, let profileRepository {
-                do {
-                    try await profileRepository.applyFinishedGame(
-                        state: finishedState,
-                        profileIdsByTeam: profileIdsByTeam,
-                        ownerId: ownerId
-                    )
-                } catch {
-                    AppLogger.firestore.error("Statistiken konnten nicht geschrieben werden: \(error.localizedDescription)")
-                }
+                try await profileRepository.applyFinishedGame(
+                    state: finishedState,
+                    profileIdsByTeam: profileIdsByTeam,
+                    ownerId: ownerId
+                )
             }
+        } catch {
+            AppLogger.firestore.error("Ergebnis nicht gespeichert: \(error.localizedDescription)")
+            settleError = AppError.from(error).errorDescription
+                ?? "Das Ergebnis konnte nicht gespeichert werden."
+            return false
         }
+
+        didSettleGame = true
+        return true
     }
 
     /// Bester Spieler der Partie.
@@ -268,7 +291,9 @@ final class LiveGameViewModel: ObservableObject {
         defer { isStartingRematch = false }
 
         // Das laufende Ergebnis zuerst festschreiben, sonst ginge es verloren.
-        confirmResult()
+        // Scheitert das, geht die Revanche trotzdem los – der Hinweis dazu
+        // steht im Sieger-Screen, den man dafuer verlassen hat.
+        await confirmResult()
 
         do {
             let newGameId = try await gameRepository.createGame(
@@ -300,6 +325,10 @@ final class LiveGameViewModel: ObservableObject {
         highlight = nil
     }
 
+    func dismissSyncWarning() {
+        syncWarning = nil
+    }
+
     var canUndo: Bool { !history.isEmpty }
 
     /// Rückgängig heißt: lokal sofort zurückspringen und zusätzlich einen
@@ -329,6 +358,7 @@ final class LiveGameViewModel: ObservableObject {
                 )
             } catch {
                 AppLogger.firestore.error("Undo konnte nicht gespeichert werden: \(error.localizedDescription)")
+                self.syncWarning = "Das Rückgängigmachen wurde nicht gespeichert."
             }
         }
     }

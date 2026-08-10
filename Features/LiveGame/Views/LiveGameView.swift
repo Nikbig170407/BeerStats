@@ -310,6 +310,38 @@ struct LiveGameView: View {
 
     private var actionArea: some View {
         VStack(spacing: 10) {
+            // Steht ueber allem anderen und bleibt, bis jemand es wegtippt:
+            // Ein Hinweis, der von selbst verschwindet, wird am Tisch
+            // garantiert uebersehen.
+            if let warning = viewModel.syncWarning {
+                Button {
+                    viewModel.dismissSyncWarning()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                        Text(warning)
+                            .font(BeerStatsFont.caption)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundStyle(BeerStatsColor.error)
+                    .padding(10)
+                    .background(
+                        BeerStatsColor.error.opacity(0.16),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(BeerStatsColor.error, lineWidth: 1)
+                    )
+                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+
             if let prompt = viewModel.choicePrompt {
                 banner(prompt, tint: BeerStatsColor.accent)
             } else if let hint = viewModel.trickshotHint {
@@ -461,9 +493,36 @@ struct LiveGameView: View {
             VStack(spacing: 10) {
                 // Erst hier wird das Ergebnis festgeschrieben – vorher bleibt
                 // „Rückgängig" gefahrlos möglich.
-                PrimaryButton(title: "Ergebnis übernehmen", systemImage: "checkmark") {
-                    viewModel.confirmResult()
-                    dismiss()
+                // Erst schliessen, wenn wirklich geschrieben wurde. Vorher
+                // ging die Ansicht sofort zu, und ein gescheiterter
+                // Schreibvorgang war unsichtbar – samt der Zahlen des Abends.
+                if viewModel.isSettling {
+                    CupFillLoadingView(size: 44)
+                } else {
+                    PrimaryButton(title: "Ergebnis übernehmen", systemImage: "checkmark") {
+                        Task {
+                            if await viewModel.confirmResult() { dismiss() }
+                        }
+                    }
+                }
+
+                if let settleError = viewModel.settleError {
+                    VStack(spacing: 4) {
+                        Text(settleError)
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(BeerStatsColor.error)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("Nichts ist verloren – die Partie bleibt offen, versuch es nochmal.")
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(12)
+                    .background(
+                        BeerStatsColor.error.opacity(0.14),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    )
                 }
 
                 if viewModel.isStartingRematch {
