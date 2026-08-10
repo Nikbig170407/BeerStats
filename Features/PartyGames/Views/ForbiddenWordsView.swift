@@ -68,29 +68,10 @@ struct ForbiddenWordsView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
 
-            HStack(spacing: 14) {
-                countButton("−") { if playerCount > 2 { playerCount -= 1 } }
-                Text("\(playerCount)")
-                    .font(.system(size: 46, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BeerStatsColor.warning)
-                    .frame(minWidth: 80)
-                countButton("+") { if playerCount < 12 { playerCount += 1 } }
-            }
+            PlayerCountStepper(count: $playerCount, range: 2...12, tint: BeerStatsColor.warning)
 
             PrimaryButton(title: "Wörter verteilen", systemImage: "square.and.pencil") { startDealing() }
         }
-    }
-
-    private func countButton(_ label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(.system(size: 30, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .frame(width: 62, height: 62)
-                .glassPanel(cornerRadius: 18)
-                .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        }
-        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Verteilen

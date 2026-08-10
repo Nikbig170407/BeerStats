@@ -75,29 +75,10 @@ struct MaexchenView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
 
-            HStack(spacing: 14) {
-                stepButton("−") { if playerCount > 2 { playerCount -= 1 } }
-                Text("\(playerCount)")
-                    .font(.system(size: 46, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BeerStatsColor.accentSecondary)
-                    .frame(minWidth: 80)
-                stepButton("+") { if playerCount < 12 { playerCount += 1 } }
-            }
+            PlayerCountStepper(count: $playerCount, range: 2...12, tint: BeerStatsColor.accentSecondary)
 
             PrimaryButton(title: "Los geht's", systemImage: "play.fill") { startRound(firstPlayer: 0) }
         }
-    }
-
-    private func stepButton(_ label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(.system(size: 30, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .frame(width: 62, height: 62)
-                .glassPanel(cornerRadius: 18)
-                .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        }
-        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Übergabe

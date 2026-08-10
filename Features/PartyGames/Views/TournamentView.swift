@@ -82,14 +82,7 @@ struct TournamentView: View {
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
-                HStack(spacing: 14) {
-                    stepButton("−") { if playerCount > 2 { playerCount -= 1 } }
-                    Text("\(playerCount)")
-                        .font(.system(size: 42, weight: .heavy, design: .rounded))
-                        .foregroundStyle(BeerStatsColor.warning)
-                        .frame(minWidth: 70)
-                    stepButton("+") { if playerCount < 12 { playerCount += 1 } }
-                }
+                PlayerCountStepper(count: $playerCount, range: 2...12, tint: BeerStatsColor.warning)
 
                 Text("RUNDEN")
                     .font(.system(size: 11, weight: .heavy, design: .rounded))
@@ -127,18 +120,6 @@ struct TournamentView: View {
 
             PrimaryButton(title: "Spiele auslosen", systemImage: "shuffle") { start() }
         }
-    }
-
-    private func stepButton(_ label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(.system(size: 28, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .frame(width: 58, height: 58)
-                .glassPanel(cornerRadius: 17)
-                .contentShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
-        }
-        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Runde ankündigen
