@@ -34,6 +34,20 @@ jobs:
       - name: Xcode-Projekt generieren
         run: xcodegen generate
 
+      # Denselben Cache wie der Build-Job. Ohne ihn uebersetzt dieser Job
+      # Firebase bei jedem Lauf komplett neu – der teuerste Einzelposten,
+      # und auf macOS-Runnern zaehlt jede Minute zehnfach. Eigener
+      # Schluessel, damit sich beide Jobs beim Speichern nicht ins Gehege
+      # kommen; ueber restore-keys greifen sie trotzdem auf denselben
+      # Bestand zu.
+      - name: Swift-Package-Abhängigkeiten cachen
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-test-${{ hashFiles('project.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
       - name: Simulator aussuchen
         id: sim
         run: |
