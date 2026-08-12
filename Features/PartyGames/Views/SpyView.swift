@@ -90,51 +90,31 @@ struct SpyView: View {
     // MARK: - Rollen verteilen
 
     private func dealingView(index: Int, isRevealed: Bool) -> some View {
-        VStack(spacing: 20) {
-            Text("Spieler \(index + 1)")
-                .font(BeerStatsFont.title)
-                .foregroundStyle(BeerStatsColor.textPrimary)
+        let isSpy = index == spyIndex
 
-            if isRevealed {
-                VStack(spacing: 12) {
-                    Text(index == spyIndex ? "🕵️" : "📍").font(.system(size: 54))
+        return HandoffPanel(
+            player: index,
+            isRevealed: isRevealed,
+            tint: isSpy ? BeerStatsColor.error : BeerStatsColor.success,
+            continueTitle: "Gesehen – weitergeben",
+            onReveal: {
+                withAnimation(AppAnimation.standard) { phase = .dealing(index: index, isRevealed: true) }
+            },
+            onContinue: { nextPlayer(after: index) }
+        ) {
+            Text(isSpy ? "🕵️" : "📍").font(.system(size: 54))
 
-                    Text(index == spyIndex ? "Du bist der Spion" : word)
-                        .font(.system(size: 30, weight: .heavy, design: .rounded))
-                        .foregroundStyle(index == spyIndex ? BeerStatsColor.error : BeerStatsColor.success)
-                        .multilineTextAlignment(.center)
+            Text(isSpy ? "Du bist der Spion" : word)
+                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .foregroundStyle(isSpy ? BeerStatsColor.error : BeerStatsColor.success)
+                .multilineTextAlignment(.center)
 
-                    Text(index == spyIndex
-                         ? "Du kennst das Wort nicht. Tu so, als wüsstest du es."
-                         : "Beschreibe es mit einem Satz, ohne es zu nennen.")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(26)
-                .glassPanel(cornerRadius: 22)
-                .neonEdge(index == spyIndex ? BeerStatsColor.error : BeerStatsColor.success, cornerRadius: 22, intensity: 0.8)
-
-                PrimaryButton(title: "Gesehen – weitergeben", systemImage: "arrow.right") { nextPlayer(after: index) }
-            } else {
-                VStack(spacing: 10) {
-                    Text("🤫").font(.system(size: 54))
-                    Text("Handy übernehmen, dann aufdecken.")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(40)
-                .glassPanel(cornerRadius: 22)
-
-                PrimaryButton(title: "Aufdecken", systemImage: "eye.fill") {
-                    withAnimation(AppAnimation.standard) { phase = .dealing(index: index, isRevealed: true) }
-                    HapticManager.mediumImpact()
-                    SoundManager.play(.tap)
-                }
-            }
+            Text(isSpy
+                 ? "Du kennst das Wort nicht. Tu so, als wüsstest du es."
+                 : "Beschreibe es mit einem Satz, ohne es zu nennen.")
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .multilineTextAlignment(.center)
         }
     }
 

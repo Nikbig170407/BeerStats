@@ -77,50 +77,34 @@ struct ForbiddenWordsView: View {
     // MARK: - Verteilen
 
     private func dealingView(index: Int, isRevealed: Bool) -> some View {
-        VStack(spacing: 20) {
-            Text("Spieler \(index + 1)")
-                .font(BeerStatsFont.title)
-                .foregroundStyle(BeerStatsColor.textPrimary)
+        HandoffPanel(
+            player: index,
+            isRevealed: isRevealed,
+            tint: BeerStatsColor.warning,
+            continueTitle: "Gemerkt – weitergeben",
+            onReveal: {
+                withAnimation(AppAnimation.standard) { phase = .dealing(index: index, isRevealed: true) }
+            },
+            onContinue: { nextPlayer(after: index) }
+        ) {
+            Text("🤐").font(.system(size: 48))
 
-            if isRevealed {
-                VStack(spacing: 12) {
-                    Text("🤐").font(.system(size: 48))
-                    Text("Dein verbotenes Wort")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                    Text(words.indices.contains(index) ? words[index] : "–")
-                        .font(.system(size: 40, weight: .heavy, design: .rounded))
-                        .foregroundStyle(BeerStatsColor.warning)
-                        .minimumScaleFactor(0.5)
-                        .lineLimit(1)
-                    Text("Merk es dir. Niemand sonst darf es sehen.")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(26)
-                .glassPanel(cornerRadius: 22)
-                .neonEdge(BeerStatsColor.warning, cornerRadius: 22, intensity: 0.8)
+            Text("Dein verbotenes Wort")
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textSecondary)
 
-                PrimaryButton(title: "Gemerkt – weitergeben", systemImage: "arrow.right") { nextPlayer(after: index) }
-            } else {
-                VStack(spacing: 10) {
-                    Text("🤫").font(.system(size: 54))
-                    Text("Handy übernehmen, dann aufdecken.")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(40)
-                .glassPanel(cornerRadius: 22)
+            // Der Bereich hat bis zu zwoelf Woerter, und manche sind lang –
+            // lieber kleiner setzen als umbrechen.
+            Text(words.indices.contains(index) ? words[index] : "–")
+                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                .foregroundStyle(BeerStatsColor.warning)
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
 
-                PrimaryButton(title: "Aufdecken", systemImage: "eye.fill") {
-                    withAnimation(AppAnimation.standard) { phase = .dealing(index: index, isRevealed: true) }
-                    HapticManager.mediumImpact()
-                    SoundManager.play(.tap)
-                }
-            }
+            Text("Merk es dir. Niemand sonst darf es sehen.")
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .multilineTextAlignment(.center)
         }
     }
 
