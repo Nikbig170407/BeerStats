@@ -37,6 +37,13 @@ protocol ThrowRepositoryProtocol {
 
     func replay(_ entries: [Throw], format: GameFormat, playersPerTeam: Int) -> LiveGameState
 
+    /// Roher Wurf-Log einer Partie, unveraendert wie gespeichert.
+    ///
+    /// Die Auswertungen unten spielen den Log nach und geben Kennzahlen
+    /// zurueck. Fuer eine Sicherung waere genau das falsch – dort zaehlt der
+    /// unveraenderte Log, weil nur aus ihm der Rest wieder entsteht.
+    func fetchThrows(gameId: String) async throws -> [Throw]
+
     /// Trefferverteilung über die Becher-Positionen eines Spielers.
     func cupHeatmap(
         games: [Game],
@@ -144,6 +151,10 @@ final class ThrowRepository: ThrowRepositoryProtocol {
 
     func observeThrows(gameId: String) -> AsyncStream<[Throw]> {
         throwService.observeThrows(gameId: gameId)
+    }
+
+    func fetchThrows(gameId: String) async throws -> [Throw] {
+        try await throwService.fetchThrows(gameId: gameId)
     }
 
     // MARK: - Schreiben

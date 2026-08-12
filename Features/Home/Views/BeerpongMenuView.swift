@@ -32,6 +32,7 @@ struct BeerpongMenuView: View {
 
                 newGameLink
                 destinationCards
+                backupCard
             }
             .padding(20)
         }
@@ -148,6 +149,34 @@ struct BeerpongMenuView: View {
                     subtitle: "Vergangene Partien mit Ergebnis",
                     systemImage: "clock.arrow.circlepath",
                     tint: BeerStatsColor.success
+                )
+            }
+            .buttonStyle(PressableButtonStyle())
+        }
+    }
+
+    // MARK: - Sicherung
+
+    /// Eigener Abschnitt, nicht bei der Auswertung: Das hier wertet nichts
+    /// aus, es holt die Daten heraus. Und es steht bewusst im Hauptweg statt
+    /// bei den Entwicklereinstellungen – hinter dem Passwort wuerde es
+    /// niemand finden, der es braucht.
+    private var backupCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("SICHERUNG")
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .kerning(1.8)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .padding(.top, 4)
+
+            NavigationLink {
+                DataExportView(container: container, ownerId: viewModel.currentUserId)
+            } label: {
+                destinationCard(
+                    title: "Daten sichern",
+                    subtitle: "Profile, Partien und Wurf-Logs als Datei",
+                    systemImage: "arrow.down.doc.fill",
+                    tint: BeerStatsColor.accentSecondary
                 )
             }
             .buttonStyle(PressableButtonStyle())
