@@ -16,6 +16,12 @@
 //  die Datei aufruft – das ist eine andere Größenordnung als "wer die App
 //  zerlegt". Der Hash kostet nichts und nimmt genau diesen Weg weg.
 //
+//  Was der Hash NICHT leistet: Er ist ungesalzen und schnell. Ein kurzes
+//  Passwort ist damit in Sekunden zu erraten, erst recht eines, das dem
+//  alten ähnelt – und das alte steht als Klartext für immer in der
+//  Historie. Für den Zweck hier reicht das; wer mehr braucht, prüft
+//  serverseitig statt hier nachzubessern.
+//
 //  Passwort ändern: neuen Hash bilden und unten einsetzen.
 //    python -c "import hashlib;print(hashlib.sha256(b'NEUESPASSWORT').hexdigest())"
 //
@@ -55,7 +61,7 @@ struct DeveloperSettingsView: View {
     @State private var isWorking = false
 
     /// SHA-256 des Passworts. Siehe Kopf der Datei, wie man es austauscht.
-    private static let passwordHash = "14c4a874cbff164d97e704ac7094b1c84cd31998f970bc37552c66032aaf51c9"
+    private static let passwordHash = "26de13be81fb2b99647c4a9c13be33024f1282b178f1f9e039a2c3ac9cf511b2"
 
     private static func matches(_ input: String) -> Bool {
         let digest = SHA256.hash(data: Data(input.utf8))
