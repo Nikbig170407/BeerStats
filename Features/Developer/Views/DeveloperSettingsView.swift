@@ -5,13 +5,22 @@
 //  Werkzeuge zum Geradeziehen der Daten: Kennzahlen von Hand korrigieren,
 //  alles zurücksetzen, ein Profil endgültig entfernen.
 //
-//  Wichtige Einordnung zum Passwort: Es liegt im Quelltext der App und ist
-//  damit kein echter Schutz – wer die Datei in die Hand bekommt, kann es
-//  auslesen. Es verhindert genau das, wofür es gedacht ist: dass jemand am
-//  Tisch aus Versehen oder aus Spaß alle Statistiken löscht. Für mehr wäre
-//  eine serverseitige Prüfung nötig.
+//  Wichtige Einordnung zum Passwort: Es ist kein echter Schutz. Wer die
+//  App auseinandernimmt, kommt an diesem Screen vorbei, und daran ändert
+//  auch der Hash unten nichts. Es verhindert genau das, wofür es gedacht
+//  ist: dass jemand am Tisch aus Versehen oder aus Spaß alle Statistiken
+//  löscht. Für mehr wäre eine serverseitige Prüfung nötig.
+//
+//  Warum trotzdem ein Hash und nicht der Klartext: Das Repository ist
+//  öffentlich. Ein Klartext-Passwort wäre damit für jeden nachlesbar, der
+//  die Datei aufruft – das ist eine andere Größenordnung als "wer die App
+//  zerlegt". Der Hash kostet nichts und nimmt genau diesen Weg weg.
+//
+//  Passwort ändern: neuen Hash bilden und unten einsetzen.
+//    python -c "import hashlib;print(hashlib.sha256(b'NEUESPASSWORT').hexdigest())"
 //
 
+import CryptoKit
 import SwiftUI
 
 struct DeveloperSettingsView: View {
@@ -45,7 +54,13 @@ struct DeveloperSettingsView: View {
     @State private var statusMessage: String?
     @State private var isWorking = false
 
-    private static let password = "ClaudeMinion67"
+    /// SHA-256 des Passworts. Siehe Kopf der Datei, wie man es austauscht.
+    private static let passwordHash = "14c4a874cbff164d97e704ac7094b1c84cd31998f970bc37552c66032aaf51c9"
+
+    private static func matches(_ input: String) -> Bool {
+        let digest = SHA256.hash(data: Data(input.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined() == passwordHash
+    }
 
     var body: some View {
         Group {
@@ -118,7 +133,7 @@ struct DeveloperSettingsView: View {
             }
 
             PrimaryButton(title: "Entsperren", systemImage: "lock.open.fill") {
-                if passwordInput == Self.password {
+                if Self.matches(passwordInput) {
                     withAnimation(AppAnimation.standard) { isUnlocked = true }
                     HapticManager.success()
                 } else {

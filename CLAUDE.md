@@ -36,6 +36,15 @@ Lösungen. Diesen Anspruch bitte beibehalten.
 - **Pushen ist erwünscht.** Push auf `main` löst den Build aus. Der Nutzer
   meldet dann grün oder rot; bei rot braucht es die Zeilen ab dem ersten
   `error:` aus dem Actions-Log.
+- **Das Repository ist öffentlich – und zwar aus Kostengründen.** macOS-Runner
+  zählen bei GitHub zehnfach; die 2000 Freiminuten eines privaten Repos sind
+  in Wahrheit 200 macOS-Minuten im Monat, und die waren aufgebraucht. Für
+  öffentliche Repos sind Actions unbegrenzt frei. Daraus folgt eine Regel:
+  **Keine Geheimnisse in den Quelltext.** Öffentlich ist auch die ganze
+  Historie, ein nachträglich gelöschtes Passwort ist also trotzdem draußen.
+  Die `GoogleService-Info.plist` ist bewusst dabei – Firebase dokumentiert
+  sie als nicht geheim, und sie steckt ohnehin in jeder `.ipa`. Die echte
+  Absicherung sind die Firestore-Regeln.
 - **Firebase CLI ist eingerichtet.** `firebase deploy --only firestore:rules`
   läuft direkt aus dem Repo (`.firebaserc` zeigt auf `beerstats-c84d8`).
   Regeländerungen müssen **nicht** mehr von Hand in die Konsole kopiert
@@ -145,7 +154,8 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 - Statistiken auf Profile, umschaltbar zwischen Gesamt und letztem Monat
 - Rangliste, Direktvergleich, Spielverlauf, Becher-Heatmap, MVP der Partie
 - Sounds (selbst synthetisiert), Sprachansage, App-Icon
-- Entwicklereinstellungen, passwortgeschützt (`ClaudeMinion67`)
+- Entwicklereinstellungen, passwortgeschützt (im Quelltext steht nur der
+  SHA-256; das Passwort selbst kennt der Nutzer)
 - Turniermodus: lost geeignete Spiele aus, Strafe steigt je Runde
 - Neunzehn Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Bussfahrer, Wahrheit oder Pflicht,
