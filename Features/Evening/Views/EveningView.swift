@@ -289,6 +289,8 @@ struct EveningView: View {
                 }
             }
 
+            auszeichnungen(abend)
+
             // Kein erhobener Zeigefinger, aber auch kein Weggucken: Die Zahl
             // steht ohnehin da, und wer sie liest, weiss selbst Bescheid.
             Text("Trinkt Wasser und kommt gut heim.")
@@ -300,6 +302,42 @@ struct EveningView: View {
                 summary = nil
                 chosen = []
             }
+        }
+    }
+
+    /// Plaketten fuer den Abend und fuer jeden, der eine bekommen hat.
+    ///
+    /// Personen ohne Auszeichnung tauchen gar nicht auf. Eine Ueberschrift
+    /// mit "keine" darunter liest sich wie ein Vorwurf, und der Endstand
+    /// darueber sagt ohnehin schon alles.
+    @ViewBuilder
+    private func auszeichnungen(_ abend: Evening) -> some View {
+        let fuerDenAbend = EveningAchievements.forEvening(abend)
+        let proPerson = abend.participants
+            .map { ($0, EveningAchievements.forParticipant($0, in: abend)) }
+            .filter { !$0.1.isEmpty }
+
+        if !fuerDenAbend.isEmpty || !proPerson.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("AUSZEICHNUNGEN")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .kerning(1.8)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+
+                if !fuerDenAbend.isEmpty {
+                    AchievementRow(achievements: fuerDenAbend, tint: BeerStatsColor.accentSecondary)
+                }
+
+                ForEach(proPerson, id: \.0.id) { person, plaketten in
+                    Text("\(person.emoji) \(person.name)")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .padding(.top, 4)
+
+                    AchievementRow(achievements: plaketten, tint: BeerStatsColor.warning)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
