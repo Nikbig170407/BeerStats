@@ -88,12 +88,28 @@ struct Game: Codable, Identifiable, Equatable {
         self.createdBy = createdBy
         self.teams = teams
         self.format = format
-        self.cupsRemaining = Dictionary(uniqueKeysWithValues: teams.map { ($0.id, format.cupCount) })
+        // Beide Wörterbücher bewusst mit `uniquingKeysWith` statt
+        // `uniqueKeysWithValues`: Letzteres bricht mit einem Laufzeitfehler
+        // ab, sobald ein Schlüssel doppelt vorkommt. Bei den Spieler-IDs ist
+        // das erreichbar – sie kommen aus beiden Teams zusammen, und dass
+        // dieselbe Profil-ID nicht in beiden steht, stellt heute allein die
+        // Auswahl-Oberfläche sicher. Jeder weitere Weg, ein Spiel zu bauen
+        // (Glücksrad, Turnier, Wiederherstellen aus einer Sicherung, Lobby),
+        // müsste dieselbe Regel von sich aus einhalten; die Absicherung
+        // gehört deshalb hierher. Der erste Wert gewinnt, im Normalfall
+        // ändert sich damit nichts.
+        self.cupsRemaining = Dictionary(
+            teams.map { ($0.id, format.cupCount) },
+            uniquingKeysWith: { first, _ in first }
+        )
         // Standardmäßig sind die Spieler auch die Zugriffsberechtigten – das
         // gilt, solange alle Beteiligten ein eigenes Konto haben. Bei
         // Profil-Spielen übergibt der Aufrufer stattdessen die Konten.
         self.allPlayerIds = accessUserIds ?? teams.flatMap(\.playerIds)
-        self.playerStreaks = Dictionary(uniqueKeysWithValues: teams.flatMap(\.playerIds).map { ($0, 0) })
+        self.playerStreaks = Dictionary(
+            teams.flatMap(\.playerIds).map { ($0, 0) },
+            uniquingKeysWith: { first, _ in first }
+        )
         self.currentTurnTeamId = currentTurnTeamId
         self.isPublic = isPublic
     }
