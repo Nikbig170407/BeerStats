@@ -61,6 +61,14 @@ final class LiveGameViewModel: ObservableObject {
     private var highlightDismissTask: Task<Void, Never>?
     private var observationTask: Task<Void, Never>?
 
+    // MARK: - Beerpong Extreme
+
+    private let extreme: ExtremeSettings
+    /// Geladene Becher je Team, ausgelost beim Start.
+    private var loadedCups: [Set<Int>] = [[], []]
+    /// Die Karte, die gerade auf dem Bildschirm liegt.
+    @Published private(set) var extremeCard: ExtremeCard?
+
     private static let maxHistory = 60
     private static let maxLogEntries = 30
 
@@ -76,7 +84,8 @@ final class LiveGameViewModel: ObservableObject {
         throwRepository: ThrowRepositoryProtocol? = nil,
         gameRepository: GameRepositoryProtocol? = nil,
         profileRepository: PlayerProfileRepositoryProtocol? = nil,
-        ownerId: String? = nil
+        ownerId: String? = nil,
+        extreme: ExtremeSettings = .off
     ) {
         self.teams = teams
         self.format = format
@@ -87,7 +96,25 @@ final class LiveGameViewModel: ObservableObject {
         self.gameRepository = gameRepository
         self.profileRepository = profileRepository
         self.ownerId = ownerId
+        self.extreme = extreme
         self.state = GameEngine.makeInitialState(format: format, playersPerTeam: playersPerTeam)
+
+        // Welche Becher geladen sind, wird EINMAL zu Beginn ausgelost und
+        // nicht bei jedem Treffer neu gewuerfelt. Sonst waere es keine
+        // Eigenschaft des Bechers mehr, sondern nur eine Wahrscheinlichkeit
+        // pro Wurf – und der Reiz des Modus ist gerade, dass ein bestimmter
+        // Becher geladen IST und niemand weiss, welcher.
+        //
+        // Jedes Team hat eigene geladene Becher: Beide Racks stehen sich
+        // gegenueber, und ein gemeinsamer Satz haette bedeutet, dass ein
+        // Treffer auf Position 3 immer auf beiden Seiten ausloest.
+        if extreme.isEnabled {
+            let indices = Array(0..<format.cupCount)
+            loadedCups = (0..<2).map { _ in
+                Set(indices.shuffled().prefix(min(extreme.loadedCups, format.cupCount)))
+            }
+        }
+
         observeThrows()
     }
 
@@ -220,7 +247,13 @@ final class LiveGameViewModel: ObservableObject {
             if let settledGameId, let gameRepository {
                 try await gameRepository.finishGame(gameId: settledGameId, winnerTeamId: winningTeamId)
             }
-            if let ownerId, let profileRepository {
+            // Beerpong Extreme zahlt bewusst NICHT auf die Statistiken ein.
+            // Karten wie "wirf blind" oder "auf einem Bein" verschlechtern
+            // die Würfe künstlich – eine Trefferquote daraus wäre mit einer
+            // normalen Partie nicht vergleichbar und würde die Rangliste
+            // still verfälschen. Die Partie selbst wird trotzdem beendet und
+            // bleibt im Spielverlauf stehen.
+            if let ownerId, let profileRepository, !extreme.isEnabled {
                 try await profileRepository.applyFinishedGame(
                     state: finishedState,
                     profileIdsByTeam: profileIdsByTeam,
@@ -479,10 +512,57 @@ final class LiveGameViewModel: ObservableObject {
         for event in events {
             appendLog(logText(for: event))
             applyFeedback(for: event)
+            drawExtremeCardIfLoaded(for: event)
         }
         // Ist die Partie vorbei, hat der Sieger-Screen Vorrang. Eine noch
         // laufende Einblendung würde ihn sonst überdecken.
         if state.isFinished { dismissHighlight() }
+    }
+
+    // MARK: - Beerpong Extreme
+
+    /// Zieht eine Karte, wenn der getroffene Becher geladen war.
+    ///
+    /// Ein Becher loest nur EINMAL aus: Die Kennung wird beim Ziehen aus der
+    /// Menge entfernt. Sonst wuerde dieselbe Position nach einem Umstellen
+    /// oder in der Redemption erneut feuern, obwohl der Becher laengst weg ist.
+    private func drawExtremeCardIfLoaded(for event: GameEvent) {
+        guard extreme.isEnabled, !state.isFinished else { return }
+
+        let hitTeam: Int
+        let cupIndex: Int
+
+        switch event {
+        case .hit(let thrower, _, _, let index):
+            // Getroffen wird immer das Rack des Gegners.
+            hitTeam = 1 - thrower.teamIndex
+            cupIndex = index
+        case .cupChosen(let byTeamIndex, let index):
+            // Bombe und Bounce: Die Zusatzbecher waehlt das Team, dem sie
+            // gehoeren – hier ist der Waehlende also der Betroffene.
+            hitTeam = byTeamIndex
+            cupIndex = index
+        default:
+            return
+        }
+
+        guard loadedCups.indices.contains(hitTeam),
+              loadedCups[hitTeam].contains(cupIndex) else { return }
+
+        loadedCups[hitTeam].remove(cupIndex)
+
+        guard let card = ExtremeDeck.draw(mode: extreme.mode) else { return }
+
+        // Die Karte verdeckt den Tisch. Eine gleichzeitig laufende
+        // Einblendung darunter waere nur Unruhe.
+        dismissHighlight()
+        extremeCard = card
+        HapticManager.success()
+        SoundManager.play(.victory)
+    }
+
+    func dismissExtremeCard() {
+        extremeCard = nil
     }
 
     private func applyFeedback(for event: GameEvent) {

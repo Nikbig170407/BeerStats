@@ -35,7 +35,8 @@ struct LiveGameView: View {
         throwRepository: ThrowRepositoryProtocol? = nil,
         gameRepository: GameRepositoryProtocol? = nil,
         profileRepository: PlayerProfileRepositoryProtocol? = nil,
-        ownerId: String? = nil
+        ownerId: String? = nil,
+        extreme: ExtremeSettings = .off
     ) {
         _viewModel = StateObject(
             wrappedValue: LiveGameViewModel(
@@ -46,7 +47,8 @@ struct LiveGameView: View {
                 throwRepository: throwRepository,
                 gameRepository: gameRepository,
                 profileRepository: profileRepository,
-                ownerId: ownerId
+                ownerId: ownerId,
+                extreme: extreme
             )
         )
         self.perspectiveTeamIndex = perspectiveTeamIndex
@@ -102,6 +104,17 @@ struct LiveGameView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        // Über allem, auch über dem Sieger-Screen: Die Karte gehört zu dem
+        // Becher, der gerade gefallen ist, und muss gelesen werden, bevor es
+        // weitergeht.
+        .overlay {
+            if let card = viewModel.extremeCard {
+                ExtremeCardOverlay(card: card) {
+                    viewModel.dismissExtremeCard()
+                }
+                .zIndex(3)
+            }
+        }
         // Während einer Partie liegt das Handy oft minutenlang unberührt auf
         // dem Tisch – ohne das müsste man vor jedem Wurf erst entsperren.
         .onAppear {

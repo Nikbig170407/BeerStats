@@ -21,6 +21,8 @@ struct NewGameView: View {
 
     /// Offener Platz, für den gerade ein Spieler gewählt wird.
     @State private var pickerTarget: SlotTarget?
+    @State private var extremeCups: Double = 0
+    @State private var extremeMode: ExtremeMode = .normal
 
     init(container: AppContainer, currentUserId: String) {
         self.container = container
@@ -45,6 +47,7 @@ struct NewGameView: View {
             VStack(alignment: .leading, spacing: 24) {
                 modePicker
                 cupPicker
+                extremeSection
 
                 if viewModel.isLoading {
                     CupFillLoadingView(size: 64)
@@ -101,8 +104,83 @@ struct NewGameView: View {
                 throwRepository: container.throwRepository,
                 gameRepository: container.gameRepository,
                 profileRepository: container.playerProfileRepository,
-                ownerId: currentUserId
+                ownerId: currentUserId,
+                extreme: ExtremeSettings(loadedCups: Int(extremeCups), mode: extremeMode)
             )
+        }
+    }
+
+    // MARK: - Beerpong Extreme
+
+    /// Kein eigener Modus im Menü, sondern ein Regler in der normalen
+    /// Spielvorbereitung. Bei null ist es gewöhnliches Beerpong, bei zehn
+    /// löst jeder Becher aus – das ist dieselbe Partie mit einem Regler
+    /// dazwischen, und deshalb gehört es hierher und nicht in ein zweites
+    /// Menü mit doppeltem Aufbau.
+    private var extremeSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionLabel("Beerpong Extreme")
+
+            HStack {
+                // Gedeckelt auf die tatsächliche Becherzahl: Der Regler geht
+                // bis zehn, gespielt wird aber vielleicht mit sechs.
+                Text(extremeCups == 0
+                     ? "Aus – normales Beerpong"
+                     : "\(min(Int(extremeCups), viewModel.cupCount)) von \(viewModel.cupCount) Bechern geladen")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(
+                        extremeCups == 0 ? BeerStatsColor.textSecondary : BeerStatsColor.error
+                    )
+                Spacer()
+            }
+
+            Slider(value: $extremeCups, in: 0...10, step: 1)
+                .tint(BeerStatsColor.error)
+
+            if extremeCups > 0 {
+                Text("Wer einen geladenen Becher trifft, zieht eine Ereigniskarte. Welche geladen sind, weiß niemand.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    ForEach(ExtremeMode.allCases, id: \.self) { mode in
+                        Button {
+                            extremeMode = mode
+                            HapticManager.lightImpact()
+                        } label: {
+                            VStack(spacing: 2) {
+                                Text(mode.title)
+                                    .font(BeerStatsFont.headline)
+                                Text(mode.detail)
+                                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                                    .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .foregroundStyle(
+                                extremeMode == mode
+                                    ? BeerStatsColor.textOnAccent
+                                    : BeerStatsColor.textSecondary
+                            )
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                extremeMode == mode
+                                    ? BeerStatsColor.error
+                                    : BeerStatsColor.surfaceElevated.opacity(0.6),
+                                in: RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            )
+                            .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                        }
+                        .buttonStyle(PressableButtonStyle())
+                    }
+                }
+
+                Text("Zählt nicht in die Statistiken – die Karten verfälschen jede Trefferquote.")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
