@@ -25,6 +25,55 @@ final class NewGameViewModel: ObservableObject {
     }
     @Published var cupCount: Int = AppConstants.GameDefaults.standardCupCount
 
+    /// Angenommener Vorsprung, `nil` wenn ohne gespielt wird.
+    @Published var handicapByTeam: [Int]?
+
+    /// Das Regelwerk dieser Partie – an genau EINER Stelle.
+    ///
+    /// Vorher wurde es zweimal gebaut: hier fuer Firestore und noch einmal in
+    /// der View fuer den Live-Screen. Solange beide nur `cupCount` setzten,
+    /// fiel das nicht auf. Beim ersten Wert, der nur an einer der beiden
+    /// Stellen ankommt, laufen gespielte Partie und nachgespielte Historie
+    /// auseinander - und zwar lautlos, weil beide fuer sich stimmig aussehen.
+    var format: GameFormat {
+        GameFormat(cupCount: cupCount, handicapByTeam: handicapByTeam)
+    }
+
+    /// Durchschnittliche Trefferquote eines Teams, sofern belastbar.
+    ///
+    /// Profile mit zu wenigen Wuerfen bleiben aussen vor: Wer dreimal
+    /// geworfen und zweimal getroffen hat, steht mit 67 Prozent da und wuerde
+    /// jeden Vorschlag verzerren.
+    func teamHitRate(_ teamIndex: Int) -> Double? {
+        guard selection.indices.contains(teamIndex) else { return nil }
+
+        let rates = selection[teamIndex]
+            .compactMap { $0 }
+            .compactMap { id in profiles.first { $0.id == id } }
+            .filter { $0.statistics.totalThrows >= AppConstants.GameDefaults.minimumThrowsForHandicap }
+            .map(\.statistics.hitRate)
+
+        guard !rates.isEmpty else { return nil }
+        return rates.reduce(0, +) / Double(rates.count)
+    }
+
+    /// Welches Team wie viele Becher abgeben sollte – oder `nil`.
+    ///
+    /// Fuenf Prozentpunkte Unterschied entsprechen einem Becher, gedeckelt
+    /// bei dreien. Der Deckel ist wichtiger als die Formel: Ein Vorsprung von
+    /// der halben Rackgroesse waere kein Ausgleich mehr, sondern ein anderes
+    /// Spiel.
+    var suggestedHandicap: (teamIndex: Int, cups: Int)? {
+        guard let first = teamHitRate(0), let second = teamHitRate(1) else { return nil }
+
+        let unterschied = first - second
+        let becher = min(3, Int(abs(unterschied) / 0.05))
+        guard becher > 0 else { return nil }
+
+        // Abgeben muss das staerkere Team.
+        return (unterschied > 0 ? 0 : 1, becher)
+    }
+
     @Published private(set) var profiles: [PlayerProfile] = []
     /// Gewählte Profil-IDs, `selection[teamIndex][slot]`.
     @Published private(set) var selection: [[String?]] = []
@@ -187,7 +236,7 @@ final class NewGameViewModel: ObservableObject {
             let gameId = try await gameRepository.createGame(
                 type: gameType,
                 teams: teams,
-                format: GameFormat(cupCount: cupCount),
+                format: format,
                 createdBy: currentUserId,
                 // Nur mein Konto darf das Spiel lesen und schreiben – die
                 // Mitspieler sind Profile ohne eigenen Zugang.

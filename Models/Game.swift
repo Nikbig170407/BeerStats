@@ -128,4 +128,24 @@ struct GameFormat: Codable, Equatable {
     var onFireEnabled: Bool = true
     var onFireStreakThreshold: Int = AppConstants.GameDefaults.onFireStreakThreshold
     var airballPenaltyEnabled: Bool = true
+
+    /// Vorsprung: So viele Becher fehlen dem jeweiligen Team schon zu Beginn.
+    ///
+    /// Steht bewusst HIER und nicht als Parameter neben dem Format. Der
+    /// Wurf-Log ist die Wahrheit, und der nachgespielte Anfangszustand
+    /// entsteht allein aus diesem Format. Läge der Vorsprung woanders,
+    /// startete die nachgespielte Partie mit vollen Racks – Live-Stand und
+    /// Historie liefen auseinander, ohne dass es jemandem auffiele.
+    ///
+    /// `nil` heißt: beide Teams starten vollständig.
+    var handicapByTeam: [Int]?
+
+    /// Wie viele Becher dem Team zu Beginn fehlen, abgesichert gegen Unsinn.
+    ///
+    /// Nach oben begrenzt auf `cupCount - 1`: Ein Team mit null Bechern hätte
+    /// die Partie verloren, bevor der erste Ball fliegt.
+    func startingHandicap(for teamIndex: Int) -> Int {
+        guard let handicapByTeam, handicapByTeam.indices.contains(teamIndex) else { return 0 }
+        return max(0, min(handicapByTeam[teamIndex], cupCount - 1))
+    }
 }

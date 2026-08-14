@@ -33,6 +33,10 @@ enum AppConstants {
         static let standardCupCount = 10
         static let minPlayersPerTeam = 1
         static let maxPlayersPerTeam = 2
+        /// Ab so vielen Würfen zählt die Trefferquote eines Profils für den
+        /// Vorschlag zum Ausgleich. Darunter ist sie Zufall: Wer dreimal
+        /// geworfen und zweimal getroffen hat, steht mit 67 Prozent da.
+        static let minimumThrowsForHandicap = 30
         /// Anzahl Treffer in Folge (durchgangsübergreifend), ab der ein
         /// Spieler "on Fire" ist und bei jedem weiteren Treffer einen
         /// Bonus-Wurf erhält.

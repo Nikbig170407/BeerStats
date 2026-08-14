@@ -39,7 +39,11 @@ enum GameEngine {
     // MARK: - Öffentliche Schnittstelle
 
     static func makeInitialState(format: GameFormat, playersPerTeam: Int) -> LiveGameState {
-        LiveGameState(cupCount: format.cupCount, playersPerTeam: playersPerTeam)
+        LiveGameState(
+            cupCount: format.cupCount,
+            playersPerTeam: playersPerTeam,
+            handicap: [format.startingHandicap(for: 0), format.startingHandicap(for: 1)]
+        )
     }
 
     /// Wendet eine Aktion an. Ist die Aktion im aktuellen Zustand nicht

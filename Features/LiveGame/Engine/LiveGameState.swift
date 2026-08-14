@@ -174,9 +174,24 @@ struct LiveGameState: Equatable {
 
     // MARK: - Aufbau
 
-    init(cupCount: Int, playersPerTeam: Int, ballsPerTurn: Int = 2) {
-        let rack = RackLayout(cupCount: cupCount)
-        self.racks = [rack, rack]
+    init(cupCount: Int, playersPerTeam: Int, ballsPerTurn: Int = 2, handicap: [Int] = []) {
+        // Ein Vorsprung nimmt Becher aus dem fertigen Rack, statt ein
+        // kleineres aufzubauen. Das ist nicht nur naeher am echten Tisch – ein
+        // Dreieck aus neun Bechern gibt es dort auch nicht –, es sieht auch
+        // richtig aus: `triangleRows` wuerde aus neun ein [6,2,1] machen, also
+        // einen Klotz statt einer Pyramide mit Luecke.
+        self.racks = (0..<2).map { team in
+            var rack = RackLayout(cupCount: cupCount)
+            let fehlend = handicap.indices.contains(team)
+                ? max(0, min(handicap[team], cupCount - 1))
+                : 0
+            // Von der Spitze her, also von hinten: Dort faellt eine Luecke am
+            // wenigsten auf, und die breite Grundreihe bleibt erhalten.
+            for schritt in 0..<fehlend {
+                _ = rack.removeCup(at: rack.totalSlots - 1 - schritt)
+            }
+            return rack
+        }
         self.playersPerTeam = playersPerTeam
         self.ballsPerTurn = ballsPerTurn
         // Serien und Zählwerte hängen am Spieler …

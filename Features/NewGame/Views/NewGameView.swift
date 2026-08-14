@@ -64,6 +64,7 @@ struct NewGameView: View {
                 } else {
                     wheelLink
                     lineup
+                    handicapSection
                 }
 
                 if let errorMessage = viewModel.errorMessage {
@@ -103,7 +104,7 @@ struct NewGameView: View {
         .navigationDestination(isPresented: hasCreatedGame) {
             LiveGameView(
                 teams: viewModel.createdTeams,
-                format: GameFormat(cupCount: viewModel.cupCount),
+                format: viewModel.format,
                 playersPerTeam: viewModel.playersPerTeam,
                 perspectiveTeamIndex: 0,
                 gameId: viewModel.createdGameId,
@@ -114,6 +115,72 @@ struct NewGameView: View {
                 extreme: ExtremeSettings(loadedCups: Int(extremeCups), mode: extremeMode)
             )
         }
+    }
+
+    // MARK: - Fairer Anwurf
+
+    /// Schlägt einen Ausgleich vor, wenn die Trefferquoten weit auseinander
+    /// liegen.
+    ///
+    /// Bewusst ein Vorschlag und keine Vorgabe. "Faire Teams" waere der
+    /// naheliegendere Gedanke gewesen, greift aber am Tisch daneben: Man will
+    /// meistens gar nicht die Teams gestellt bekommen, man will mit seinen
+    /// Leuten spielen. Der Ausgleich laesst die Aufstellung, wie sie ist, und
+    /// macht sie trotzdem spannend.
+    ///
+    /// Erscheint gar nicht erst, wenn die Datenlage zu duenn ist – ein
+    /// Vorschlag aus drei Wuerfen waere geraten, und geraten mit einer Zahl
+    /// darauf ist schlimmer als gar nichts.
+    @ViewBuilder
+    private var handicapSection: some View {
+        if let vorschlag = viewModel.suggestedHandicap {
+            let angenommen = viewModel.handicapByTeam != nil
+
+            VStack(alignment: .leading, spacing: 10) {
+                sectionLabel("Fairer Anwurf")
+
+                Text("Team \(vorschlag.teamIndex + 1) trifft deutlich besser. Zum Ausgleich könnte es mit \(viewModel.cupCount - vorschlag.cups) statt \(viewModel.cupCount) Bechern starten.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    withAnimation(AppAnimation.standard) {
+                        viewModel.handicapByTeam = angenommen
+                            ? nil
+                            : handicapArray(for: vorschlag)
+                    }
+                    HapticManager.lightImpact()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: angenommen ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 20))
+                        Text(angenommen ? "Ausgleich aktiv" : "Ausgleich übernehmen")
+                            .font(BeerStatsFont.headline)
+                        Spacer()
+                    }
+                    .foregroundStyle(
+                        angenommen ? BeerStatsColor.success : BeerStatsColor.textSecondary
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .glassPanel(cornerRadius: 15)
+                    .neonEdge(
+                        angenommen ? BeerStatsColor.success : BeerStatsColor.textSecondary,
+                        cornerRadius: 15,
+                        intensity: angenommen ? 0.6 : 0.15
+                    )
+                    .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+        }
+    }
+
+    private func handicapArray(for vorschlag: (teamIndex: Int, cups: Int)) -> [Int] {
+        var werte = [0, 0]
+        werte[vorschlag.teamIndex] = vorschlag.cups
+        return werte
     }
 
     // MARK: - Beerpong Extreme
