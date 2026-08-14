@@ -14,6 +14,16 @@ name: Build BeerStats (unsigned IPA)
 on:
   push:
     branches: [main]
+    # Ein macOS-Runner braucht für einen Durchlauf gut zehn Minuten. Dafür
+    # muss sich am Code etwas geändert haben – eine Zeile in CLAUDE.md oder
+    # ein Hilfsskript landen nie in der .ipa. In einer einzigen Sitzung waren
+    # drei von zwölf Läufen aus genau diesem Grund umsonst.
+    paths-ignore:
+      - '**.md'
+      - 'scripts/**'
+      - '.gitignore'
+      - 'firestore.rules'
+      - '.firebaserc'
   workflow_dispatch: # erlaubt manuelles Starten über den "Run workflow"-Button
 
 jobs:

@@ -29,10 +29,18 @@ Lösungen. Diesen Anspruch bitte beibehalten.
 - **Kein Mac.** Nur iPhone + Windows-PC. Gebaut wird über GitHub Actions
   (macOS-Runner) → unsignierte `.ipa` → der Nutzer signiert lokal mit
   **Sideloadly** und seiner kostenlosen Apple-ID. Anleitung: `README.md`.
-- **Swift lässt sich hier nicht kompilieren.** Die einzige Prüfung ist der
-  Actions-Lauf. Vor jedem Push lohnt sich eine Durchsicht auf
-  Klammerbilanz, ungerade Anführungszeichen und iOS-17-only-APIs
-  (Deployment-Target ist **iOS 16**).
+- **Swift lässt sich hier nicht kompilieren.** Die einzige echte Prüfung ist
+  der Actions-Lauf, und der dauert zehn Minuten. Was in Sekunden auffallen
+  kann, soll nicht dort auffallen — deshalb **vor jedem Push**:
+
+  ```
+  python scripts/check.py
+  ```
+
+  Findet Klammerfehler, mitten im Satz endende Literale, iOS-17-only-APIs
+  (Deployment-Target ist **iOS 16**) und Swift-Dateien, die in keinem
+  Quellordner aus `project.yml` liegen und deshalb stillschweigend gar
+  nicht übersetzt werden. Es ist kein Compiler und ersetzt den Lauf nicht.
 - **Pushen ist erwünscht.** Push auf `main` löst den Build aus.
 - **Das Ergebnis kann Claude selbst nachlesen** – das Repo ist öffentlich,
   damit ist die Actions-API ohne Anmeldung zugänglich. `gh` ist nicht

@@ -238,7 +238,7 @@ enum ExtremeDeck {
             card(.challenge, "Stehplatz", "Bis zum Ende der Partie darfst du dich nicht mehr hinsetzen."),
 
             // Strafe
-            card(.penalty, "Doppelter Kurzer", "Zwei Shots. Such dir aus, wer den zweiten übernimmt."),
+            card(.penalty, "Doppelter Kurzer", "Trink \(shot.text). Dann such dir jemanden, der dasselbe tut."),
             card(.penalty, "Kettenreaktion", "Du trinkst \(medium.text) – und darfst dasselbe zweimal weitergeben."),
             card(.penalty, "Kopf an Kopf", "Du und ein Gegner deiner Wahl: beide \(shot.text), gleichzeitig."),
 
