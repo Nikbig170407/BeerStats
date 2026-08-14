@@ -32,6 +32,11 @@ struct TruthOrDareView: View {
                 if let card = current {
                     cardView(card)
                     Spacer(minLength: 0)
+                    // Karten ohne Kennung sind selbst eingetippt – die
+                    // loescht man unter "Eigene Karten", nicht hier.
+                    if !card.key.isEmpty {
+                        HideCardButton(cardKey: card.key, deck: .truthOrDare)
+                    }
                     resolveControls
                 } else {
                     chooser

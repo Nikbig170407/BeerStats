@@ -240,7 +240,16 @@ struct NeverHaveIEverView: View {
         .animation(AppAnimation.standard, value: card.id)
     }
 
+    @ViewBuilder
     private func nextButton(for card: NeverHaveIEverCard) -> some View {
+        // Nur Aussagen lassen sich ausblenden, keine Strafen: Deren Text
+        // entsteht erst beim Anzeigen aus der eingestellten Haerte, es gibt
+        // also keinen stabilen Schluessel dafuer. Gebraucht wird es auch
+        // nicht – "Trink einen Shot" ist keine Karte, die am Tisch nervt.
+        if !card.isPenalty {
+            HideCardButton(cardKey: card.text, deck: .neverHaveIEver)
+        }
+
         PrimaryButton(
             title: card.isPenalty ? "Erledigt" : "Nächste Karte",
             systemImage: "arrow.right"

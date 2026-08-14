@@ -79,6 +79,14 @@ struct ExtremeCardOverlay: View {
                 }
                 .buttonStyle(PressableButtonStyle())
                 .padding(.top, 22)
+
+                // Eigene Karten haben keine feste Kennung im Stapel – sie
+                // stehen ohnehin unter "Eigene Karten" und lassen sich dort
+                // loeschen.
+                if !card.id.hasPrefix("custom-") {
+                    HideCardButton(cardKey: card.id, deck: .extremeChallenge)
+                        .padding(.top, 2)
+                }
             }
             .padding(26)
             .frame(maxWidth: 340)

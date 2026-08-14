@@ -101,8 +101,16 @@ enum NeverHaveIEverDeck {
         let eigene = CustomCards.cards(for: .neverHaveIEver)
             .map { NeverHaveIEverCard(text: $0, kind: .custom) }
 
+        // Weggedaumte Aussagen fallen raus. Der Text der Aussagen ist roh,
+        // also stabil – anders als bei den Strafen, die ihre Menge erst beim
+        // Anzeigen bekommen. Strafen lassen sich deshalb nicht ausblenden,
+        // was auch niemand braucht: "Trink einen Shot" ist keine Karte, die
+        // am Tisch nervt.
+        let versteckt = HiddenCards.keys(for: .neverHaveIEver)
+
         let questions = (statements
             .filter { card in card.level.map { levels.contains($0) } ?? false } + eigene)
+            .filter { !versteckt.contains($0.text) }
             .shuffled()
 
         guard includePenalties, !penaltyTemplates.isEmpty, questions.count > 2 else { return questions }

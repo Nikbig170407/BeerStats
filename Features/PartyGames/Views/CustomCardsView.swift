@@ -21,6 +21,7 @@ struct CustomCardsView: View {
     @State private var deck: CustomCardDeck = .neverHaveIEver
     @State private var entwurf = ""
     @State private var karten: [String] = []
+    @State private var versteckteAnzahl = 0
 
     var body: some View {
         ZStack {
@@ -31,6 +32,8 @@ struct CustomCardsView: View {
                     header
                     deckPicker
                     eingabe
+
+                    versteckte
 
                     if karten.isEmpty {
                         Text("Noch keine eigenen Karten in diesem Stapel.")
@@ -46,7 +49,10 @@ struct CustomCardsView: View {
         }
         .navigationTitle("Eigene Karten")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { karten = CustomCards.cards(for: deck) }
+        .onAppear {
+            karten = CustomCards.cards(for: deck)
+            versteckteAnzahl = HiddenCards.count(for: deck)
+        }
     }
 
     // MARK: - Bausteine
@@ -73,6 +79,7 @@ struct CustomCardsView: View {
                 Button {
                     deck = kandidat
                     karten = CustomCards.cards(for: kandidat)
+                    versteckteAnzahl = HiddenCards.count(for: kandidat)
                     entwurf = ""
                     HapticManager.lightImpact()
                 } label: {
@@ -124,6 +131,35 @@ struct CustomCardsView: View {
             }
             .disabled(entwurf.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .opacity(entwurf.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1)
+        }
+    }
+
+    /// Der Weg zurueck aus dem Ausblenden.
+    ///
+    /// Ohne den waere der Daumen nach unten endgueltig, und eine
+    /// unumkehrbare Entscheidung tippt man am Tisch nicht gern – schon gar
+    /// nicht versehentlich. Einzeln zurueckholen geht bewusst nicht: Dafuer
+    /// muesste hier stehen, was weggedaumt wurde, und das waere genau die
+    /// Karte, die niemand mehr sehen wollte.
+    @ViewBuilder
+    private var versteckte: some View {
+        if versteckteAnzahl > 0 {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("\(versteckteAnzahl) \(versteckteAnzahl == 1 ? "Karte ist" : "Karten sind") ausgeblendet")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+
+                Button("Alle wieder anzeigen") {
+                    HiddenCards.showAll(in: deck)
+                    versteckteAnzahl = 0
+                    HapticManager.lightImpact()
+                }
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.accentSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .glassPanel(cornerRadius: 15)
         }
     }
 

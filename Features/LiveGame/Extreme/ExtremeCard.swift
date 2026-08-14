@@ -155,10 +155,22 @@ enum ExtremeDeck {
             )
         }
 
+        let stapel: [ExtremeCard]
         switch mode {
-        case .normal: return mildCards + coreCards + eigene
-        case .hard: return coreCards + hardCards + eigene
+        case .normal: stapel = mildCards + coreCards + eigene
+        case .hard: stapel = coreCards + hardCards + eigene
         }
+
+        // Was der Tisch weggedaumt hat, kommt nicht wieder. Ueber die Kennung
+        // und nicht ueber den Text: Der traegt bei vielen Karten eine
+        // Trinkmenge, die sich mit der Haerte aendert.
+        let versteckt = HiddenCards.keys(for: .extremeChallenge)
+        guard !versteckt.isEmpty else { return stapel }
+
+        let uebrig = stapel.filter { !versteckt.contains($0.id) }
+        // Ein leerer Stapel waere schlimmer als eine unbeliebte Karte: Der
+        // Modus liefe dann stumm ohne Ereignisse weiter.
+        return uebrig.isEmpty ? stapel : uebrig
     }
 
     // MARK: Zahm – nur im Normal-Modus

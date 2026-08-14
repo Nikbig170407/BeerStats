@@ -40,6 +40,11 @@ struct TruthOrDareCard: Identifiable, Equatable {
     let id = UUID()
     let text: String
     let kind: TruthOrDareKind
+
+    /// Stabile Kennung zum Ausblenden: der Text VOR dem Einsetzen der
+    /// Trinkmenge. Der angezeigte Text taugt nicht dafuer, weil aus "{3}" je
+    /// nach Haerte zwei, drei oder fuenf Schluecke werden.
+    var key: String = ""
 }
 
 enum TruthOrDareDeck {
@@ -57,10 +62,19 @@ enum TruthOrDareDeck {
             ? CustomCards.cards(for: .truthOrDare).map { TruthOrDareCard(text: $0, kind: .dare) }
             : []
 
+        let versteckt = HiddenCards.keys(for: .truthOrDare)
+
         // Erst hier ausformuliert, weil erst hier feststeht, welche Härte
-        // gewählt ist. Die Platzhalter tragen die Grundmenge im Namen.
-        return (source.map { TruthOrDareCard(text: resolve($0.text), kind: $0.kind) } + eigene)
-            .shuffled()
+        // gewählt ist. Die Platzhalter tragen die Grundmenge im Namen – und
+        // genau der rohe Text wird als Kennung mitgegeben, damit sich eine
+        // Karte ausblenden laesst, ohne dass die Haerte daran etwas aendert.
+        let alle = source.map {
+            TruthOrDareCard(text: resolve($0.text), kind: $0.kind, key: $0.text)
+        } + eigene.map {
+            TruthOrDareCard(text: $0.text, kind: $0.kind, key: $0.text)
+        }
+
+        return alle.filter { !versteckt.contains($0.key) }.shuffled()
     }
 
     private static func resolve(_ text: String) -> String {
