@@ -56,8 +56,16 @@ final class ExtremeDeckTests: XCTestCase {
         }
     }
 
+    /// Jede Karte genau einmal, ueber beide Modi hinweg.
+    ///
+    /// Ohne das Entdoppeln stuende jede Kern-Karte zweimal drin – sie kommt
+    /// ja in beiden Modi vor. Das ist nicht nur unsauber, es bringt
+    /// `Dictionary(uniqueKeysWithValues:)` weiter unten zum Absturz, und ein
+    /// abgestuerzter Testlauf sagt nichts darueber aus, was kaputt ist.
     private var allCards: [ExtremeCard] {
-        ExtremeDeck.cards(for: .normal) + ExtremeDeck.cards(for: .hard)
+        var gesehen = Set<String>()
+        return (ExtremeDeck.cards(for: .normal) + ExtremeDeck.cards(for: .hard))
+            .filter { gesehen.insert($0.id).inserted }
     }
 
     // MARK: - Aufbau des Decks
