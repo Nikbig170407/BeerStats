@@ -33,9 +33,20 @@ Lösungen. Diesen Anspruch bitte beibehalten.
   Actions-Lauf. Vor jedem Push lohnt sich eine Durchsicht auf
   Klammerbilanz, ungerade Anführungszeichen und iOS-17-only-APIs
   (Deployment-Target ist **iOS 16**).
-- **Pushen ist erwünscht.** Push auf `main` löst den Build aus. Der Nutzer
-  meldet dann grün oder rot; bei rot braucht es die Zeilen ab dem ersten
-  `error:` aus dem Actions-Log.
+- **Pushen ist erwünscht.** Push auf `main` löst den Build aus.
+- **Das Ergebnis kann Claude selbst nachlesen** – das Repo ist öffentlich,
+  damit ist die Actions-API ohne Anmeldung zugänglich. `gh` ist nicht
+  installiert und wird nicht gebraucht:
+
+  ```
+  python scripts/watch_build.py          # wartet auf den neuesten Lauf
+  ```
+
+  Das Skript nennt bei einem Fehlschlag den **Schritt**, der gestolpert
+  ist. Meist grenzt das die Ursache schon ein; erst wenn es „App bauen"
+  oder „Regelwerk testen" ist, braucht es die Zeilen ab dem ersten
+  `error:`. Den Nutzer danach zu fragen ist der zweite Schritt, nicht der
+  erste.
 - **Das Repository ist öffentlich – und zwar aus Kostengründen.** macOS-Runner
   zählen bei GitHub zehnfach; die 2000 Freiminuten eines privaten Repos sind
   in Wahrheit 200 macOS-Minuten im Monat, und die waren aufgebraucht. Für
@@ -156,6 +167,11 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 - Sounds (selbst synthetisiert), Sprachansage, App-Icon
 - Entwicklereinstellungen, passwortgeschützt (im Quelltext steht nur der
   SHA-256; das Passwort selbst kennt der Nutzer)
+- **Datensicherung**: „Daten sichern" im Beerpong-Menü schreibt Profile,
+  abgeschlossene Partien und den vollständigen Wurf-Log als JSON und gibt
+  sie ans Teilen-Blatt. Bewusst **nicht** hinter dem Entwickler-Passwort –
+  eine Sicherung, an die man nur kommt, wenn ohnehin alles läuft, ist
+  keine. Ein Wiederherstellen gibt es noch nicht.
 - Turniermodus: lost geeignete Spiele aus, Strafe steigt je Runde
 - Neunzehn Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Bussfahrer, Wahrheit oder Pflicht,
@@ -175,6 +191,21 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 - **Kartenspiele tragen den ganzen Satz auf der Karte**, nicht nur den
   Nachsatz. Ein fester Vorspann („Ich hab noch nie …") kann grammatisch
   nicht aufgehen: Es gibt „Ich bin noch nie …" und „Ich hatte noch nie …".
+
+- **Geteilte Bausteine benutzen, nicht neu tippen.** Zwei Sachen standen
+  mehrfach fast gleich im Projekt und sind inzwischen je eine Komponente:
+  `PlayerCountStepper` (die Spielerzahl einstellen, stand fünfmal da) und
+  `HandoffPanel` (Handy übernehmen → aufdecken → weitergeben, stand
+  zweimal da). Beide waren bereits auseinandergelaufen, bevor sie
+  zusammengelegt wurden – unterschiedliche Größen, Radien, Ausrichtungen.
+  Wer ein Spiel baut, das eines von beidem braucht, nimmt die Komponente.
+
+- **Die Sicherungsdatei hat ein eigenes Format**, absichtlich getrennt von
+  den Firestore-Modellen (`Services/DataExportService.swift`). Technisch,
+  weil `@DocumentID` und `@ServerTimestamp` sich nicht mit einem normalen
+  `JSONEncoder` schreiben lassen – vor allem aber, damit eine Umbenennung
+  im Modell nicht die Sicherungen von letztem Jahr entwertet. Das Format
+  trägt eine `formatVersion` und darf sich langsamer ändern als der Code.
 
 - **Zeitraum-Statistiken werden gerechnet, nicht gespeichert.** Die Werte am
   Profil sind Lebenszeit-Summen. Für „letzter Monat" spielt
@@ -221,6 +252,13 @@ Auszeichnungen, weitere Partyspiele (Reaktionsduell, Mäxchen).
    im Repo passt dazu.
 6. **7-Tage-Signatur.** Mit kostenloser Apple-ID läuft die Installation
    nach einer Woche ab, dann in Sideloadly erneut „Start".
+7. **Rot heißt nicht immer kaputt.** Vier Läufe hintereinander waren rot,
+   und der Fehler steckte nicht im Code: GitHub hatte die Jobs wegen des
+   Abrechnungslimits gar nicht erst gestartet. Das Erkennungszeichen ist
+   eindeutig – **beide** Jobs enden nach wenigen Sekunden mit **null**
+   aufgezeichneten Schritten. Ein Compiler-Fehler sieht nie so aus. Bevor
+   der Swift-Code durchsucht wird, gehört deshalb der Blick auf die
+   Schritte; `scripts/watch_build.py` schreibt genau das hin.
 
 ---
 
