@@ -24,6 +24,12 @@ struct NewGameView: View {
     @State private var extremeCups: Double = 0
     @State private var extremeMode: ExtremeMode = .normal
 
+    // Direkt auf denselben Schluesseln wie die Partyspiele: Was hier
+    // umgestellt wird, gilt dort auch. Zwei getrennte Einstellungen fuer
+    // dieselbe Frage waeren nur eine Quelle fuer Verwirrung am Tisch.
+    @AppStorage(DrinkIntensity.storageKey) private var intensity = DrinkIntensity.normal.rawValue
+    @AppStorage(DrinkRules.shotsStorageKey) private var shotsEnabled = true
+
     init(container: AppContainer, currentUserId: String) {
         self.container = container
         self.currentUserId = currentUserId
@@ -176,11 +182,74 @@ struct NewGameView: View {
                     }
                 }
 
+                drinkRules
+
                 Text("Zählt nicht in die Statistiken – die Karten verfälschen jede Trefferquote.")
                     .font(.system(size: 10, weight: .medium, design: .rounded))
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
+
+    /// Härte und Shots stehen hier, obwohl sie für ALLE Spiele gelten.
+    ///
+    /// Sie hier zu wiederholen ist Absicht: Beides entscheidet sich am Tisch,
+    /// kurz bevor es losgeht, und wer erst in ein Einstellungsmenü abbiegen
+    /// muss, lässt es. Geschrieben wird derselbe Wert, den auch die
+    /// Partyspiele lesen – es gibt keine zweite Wahrheit.
+    private var drinkRules: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("HÄRTE")
+                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .kerning(1.4)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .padding(.top, 4)
+
+            HStack(spacing: 8) {
+                ForEach(DrinkIntensity.allCases, id: \.self) { level in
+                    Button {
+                        intensity = level.rawValue
+                        HapticManager.lightImpact()
+                    } label: {
+                        VStack(spacing: 1) {
+                            Text(level.emoji).font(.system(size: 17))
+                            Text(level.title)
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                        }
+                        .foregroundStyle(
+                            intensity == level.rawValue
+                                ? BeerStatsColor.textOnAccent
+                                : BeerStatsColor.textSecondary
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            intensity == level.rawValue
+                                ? BeerStatsColor.accent
+                                : BeerStatsColor.surfaceElevated.opacity(0.6),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
+            }
+
+            Toggle(isOn: $shotsEnabled) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Mit Shots")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                    Text(shotsEnabled
+                         ? "Karten dürfen Shots verlangen"
+                         : "Shots werden in Schlücke umgerechnet")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+            }
+            .tint(BeerStatsColor.accent)
+            .padding(.top, 2)
         }
     }
 

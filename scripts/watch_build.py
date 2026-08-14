@@ -15,6 +15,7 @@ Lauf unbeobachtet zu Ende gehen lassen. Ein Beobachter, der bei der ersten
 Stoerung aufgibt, ist genau dann nutzlos, wenn es darauf ankommt.
 """
 
+import http.client
 import json
 import sys
 import time
@@ -47,7 +48,13 @@ def api_with_retry(path):
     for _ in range(MAX_CONSECUTIVE_ERRORS):
         try:
             return api(path)
-        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+        # Bewusst breit gefasst. Drei verschiedene Netzfehler haben dieses
+        # Skript nacheinander umgebracht - DNS, SSL, und ein abgerissener
+        # Verbindungsaufbau -, und nur der erste kam als URLError an. Welche
+        # Ausnahme genau geflogen ist, aendert hier ohnehin nichts: Es wird
+        # neu versucht. Nur ein Tippfehler im Skript soll durchschlagen, und
+        # der waere kein OSError.
+        except (OSError, http.client.HTTPException, json.JSONDecodeError) as error:
             print(f"  (Abfrage fehlgeschlagen: {error} - neuer Versuch in {delay}s)")
             time.sleep(delay)
             # Langsam laenger warten: Bei einer laengeren Stoerung bringt

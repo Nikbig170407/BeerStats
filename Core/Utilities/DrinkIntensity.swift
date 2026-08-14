@@ -42,9 +42,11 @@ enum DrinkIntensity: String, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .mild: return "Kleine Mengen, Shots werden zu Schlücken"
+        // Ob Shots vorkommen, steht hier bewusst nicht mehr: Das entscheidet
+        // seit der Trennung ein eigener Schalter, nicht die Härte.
+        case .mild: return "Kleine Mengen"
         case .normal: return "Wie gedacht"
-        case .hard: return "Deutlich mehr, Shots öfter"
+        case .hard: return "Deutlich mehr"
         }
     }
 
@@ -66,7 +68,7 @@ enum DrinkIntensity: String, CaseIterable, Identifiable {
 
     // MARK: - Persistenz
 
-    private static let storageKey = "partyGames.drinkIntensity"
+    static let storageKey = "partyGames.drinkIntensity"
 
     static var current: DrinkIntensity {
         get {
@@ -81,6 +83,25 @@ enum DrinkIntensity: String, CaseIterable, Identifiable {
     }
 }
 
+/// Regeln, die fuer alle Trinkmengen gelten – unabhaengig von der Haerte.
+enum DrinkRules {
+
+    static let shotsStorageKey = "partyGames.shotsEnabled"
+
+    /// Ist das aus, werden Shots in Schlucke umgerechnet. Fuer Runden, die
+    /// schlicht nichts zum Shotten dastehen haben.
+    static var shotsEnabled: Bool {
+        get {
+            // Ohne gesetzten Wert an: Shots sind der Normalfall, und ein
+            // frisch installiertes Spiel soll nicht stillschweigend zahmer
+            // sein als gedacht.
+            guard UserDefaults.standard.object(forKey: shotsStorageKey) != nil else { return true }
+            return UserDefaults.standard.bool(forKey: shotsStorageKey)
+        }
+        set { UserDefaults.standard.set(newValue, forKey: shotsStorageKey) }
+    }
+}
+
 /// Eine Trinkmenge, bevor die Haerte darauf angewendet wurde.
 ///
 /// Als eigener Typ und nicht als fertiger Text, damit dieselbe Karte in
@@ -88,6 +109,11 @@ enum DrinkIntensity: String, CaseIterable, Identifiable {
 enum DrinkAmount: Equatable {
     case sips(Int)
     case shot
+
+    /// Wie viele Schlucke ein Shot ersetzt, wenn ohne Shots gespielt wird.
+    /// Die Haerte wird darauf noch angewendet – aus fuenf werden mild drei
+    /// und hart acht.
+    private static let shotInSips = 5
 
     /// Der ausgeschriebene Text in der aktuell gewaehlten Haerte.
     var text: String {
@@ -99,9 +125,12 @@ enum DrinkAmount: Equatable {
             return count == 1 ? "1 Schluck" : "\(count) Schlücke"
 
         case .shot:
-            // In der milden Stufe gibt es keine Shots. Das ist der ganze
-            // Unterschied zwischen "weniger trinken" und "anders trinken".
-            guard intensity != .mild else { return "5 Schlücke" }
+            // Ob ueberhaupt Shots vorkommen, haengt nicht mehr an der Haerte,
+            // sondern an einem eigenen Schalter. Die beiden Fragen sind
+            // verschieden: "Wie viel wird getrunken" und "Habt ihr etwas zum
+            // Shotten da". Frueher war das eins, und wer hart spielen wollte,
+            // brauchte zwingend Kurze im Haus.
+            guard DrinkRules.shotsEnabled else { return DrinkAmount.sips(Self.shotInSips).text }
             return "einen Shot"
         }
     }

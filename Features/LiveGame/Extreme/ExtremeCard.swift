@@ -235,7 +235,6 @@ enum ExtremeDeck {
             card(.challenge, "Ex-Geschichte", "Erzähl, warum deine letzte Beziehung zu Ende ging – oder zieh ein Kleidungsstück aus."),
 
             // Körper
-            card(.challenge, "Eiswürfel", "Ein Eiswürfel in den Nacken. Du hältst still, bis er geschmolzen ist."),
             card(.challenge, "Stehplatz", "Bis zum Ende der Partie darfst du dich nicht mehr hinsetzen."),
 
             // Strafe
