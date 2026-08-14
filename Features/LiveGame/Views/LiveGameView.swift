@@ -23,6 +23,7 @@ struct LiveGameView: View {
 
     @State private var abortProgress: CGFloat = 0
     @State private var isHoldingAbort = false
+    @State private var isOpponentViewOn = false
 
     private static let abortHoldDuration: Double = 1.5
 
@@ -65,6 +66,7 @@ struct LiveGameView: View {
                 header
                 Spacer(minLength: 8)
                 teamBar(topTeam)
+                    .rotationEffect(.degrees(isOpponentViewOn ? 180 : 0))
                 RackView(
                     rack: viewModel.state.racks[topTeam],
                     isOpponentRack: true,
@@ -157,10 +159,35 @@ struct LiveGameView: View {
             }
             .frame(maxWidth: .infinity)
 
-            // Platzhalter gleicher Breite, damit der Titel mittig bleibt.
-            Color.clear.frame(width: 36, height: 36)
+            opponentViewButton
         }
         .padding(.top, 4)
+    }
+
+    /// Dreht die Anzeige des oberen Teams um 180 Grad.
+    ///
+    /// Das Handy liegt beim Beerpong zwischen den Teams, und eine Seite liest
+    /// deshalb alles auf dem Kopf. Das ist keine Kleinigkeit, sondern die
+    /// tatsaechliche Sitzordnung bei jeder Partie.
+    ///
+    /// Gedreht wird bewusst NUR die Leiste mit Name und Becherzahl, nicht das
+    /// Rack darunter. Ein gedrehtes Rack wuerde die Becher raeumlich
+    /// vertauschen – wer tippt, sitzt aber weiter auf dieser Seite und traefe
+    /// dann den falschen. Lesbar muss die Zahl sein, nicht die Trefferflaeche.
+    private var opponentViewButton: some View {
+        Button {
+            withAnimation(AppAnimation.standard) { isOpponentViewOn.toggle() }
+            HapticManager.lightImpact()
+        } label: {
+            Image(systemName: isOpponentViewOn ? "arrow.up.arrow.down.circle.fill" : "arrow.up.arrow.down.circle")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(
+                    isOpponentViewOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary
+                )
+                .frame(width: 36, height: 36)
+                .contentShape(Circle())
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 
     /// Abbrechen erfordert anderthalb Sekunden Halten – kurz genug, dass es
