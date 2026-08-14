@@ -18,12 +18,20 @@ Eine Ausnahme davon ist die Ratengrenze: Ohne Anmeldung erlaubt GitHub nur
 60 Anfragen pro Stunde und IP. Die loest sich zur vollen Stunde und nicht
 durch Nachfragen - dort wird deshalb sofort aufgegeben, mit Uhrzeit.
 
-Ist die Umgebungsvariable BEERSTATS_GH_TOKEN gesetzt, wird sie benutzt:
-5000 Anfragen pro Stunde statt 60. Ohne sie laeuft alles weiter, nur
-knapper. Der Token gehoert NICHT ins Repo - es ist oeffentlich.
+Ist die Umgebungsvariable BEERSTATS_GH_TOKEN gesetzt, wird sie benutzt. Das
+bringt zweierlei: 5000 Anfragen pro Stunde statt 60, und - wichtiger - die
+echten Fehlerzeilen. Das Log-Archiv ist auch bei einem oeffentlichen
+Repository nur angemeldet zu holen; ohne Token bleibt es beim Schrittnamen.
+
+Aus 23.000 Zeilen Protokoll werden dabei drei. Der erste Ernstfall lieferte
+"Fatal error: Duplicate values for key: 'penalty-Ex'" - die vollstaendige
+Diagnose in einer Zeile, statt sie sich aus dem Schrittnamen zu erschliessen.
+
+Der Token gehoert NICHT ins Repo - es ist oeffentlich.
 """
 
 import http.client
+import io
 import json
 import os
 import pathlib
@@ -32,6 +40,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import zipfile
 
 # Das Repository liegt eine Ebene ueber diesem Skript. Ohne diesen Bezug
 # muesste man vorher ins Projekt wechseln - und der erste Versuch aus einer
@@ -54,7 +63,7 @@ class RateLimited(Exception):
     """Kontingent erschoepft. Neu versuchen hilft hier nicht."""
 
 
-def api(path):
+def api(path, raw=False):
     url = f"https://api.github.com/repos/{REPO}/{path}"
     headers = {"User-Agent": "beerstats-watch"}
 
@@ -66,8 +75,8 @@ def api(path):
 
     request = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return json.load(response)
+        with urllib.request.urlopen(request, timeout=120 if raw else 30) as response:
+            return response.read() if raw else json.load(response)
     except urllib.error.HTTPError as error:
         # 403 mit aufgebrauchtem Kontingent ist kein Netzfehler, sondern eine
         # Grenze mit Uhrzeit. Wiederholen verbraucht nur weitere Anfragen.
@@ -150,6 +159,64 @@ def run_id_for_head():
     )
 
 
+# Zeilen, die bei einem Fehlschlag wirklich weiterhelfen. "error:" faengt
+# Compilerfehler UND fehlgeschlagene XCTAsserts, die in derselben Form
+# gemeldet werden.
+INTERESSANT = ("error:", "Fatal error", "** TEST FAILED **", "** BUILD FAILED **")
+# Der Simulator schreibt das bei jedem Start, auch wenn alles gut geht.
+RAUSCHEN = ("CA Event", "Failed to send")
+
+
+def print_error_lines(run_id):
+    """Holt die echten Fehlerzeilen aus dem Protokoll.
+
+    Braucht einen Token - das Log-Archiv ist auch bei oeffentlichen
+    Repositories nur angemeldet zu holen. Ohne Token bleibt es beim
+    Schrittnamen, und der grenzt die Ursache immerhin ein.
+    """
+    if not os.environ.get("BEERSTATS_GH_TOKEN"):
+        print("\n(Fuer die Fehlerzeilen fehlt BEERSTATS_GH_TOKEN.)")
+        return
+
+    print("\n--- Fehlerzeilen aus dem Protokoll ---")
+    daten = api_with_retry_raw(f"actions/runs/{run_id}/logs")
+    if daten is None:
+        print("(Protokoll nicht abrufbar)")
+        return
+
+    gesehen = []
+    with zipfile.ZipFile(io.BytesIO(daten)) as archiv:
+        for name in archiv.namelist():
+            for zeile in archiv.read(name).decode("utf-8", "replace").splitlines():
+                if not any(marker in zeile for marker in INTERESSANT):
+                    continue
+                if any(marker in zeile for marker in RAUSCHEN):
+                    continue
+                # Der Zeitstempel vorne unterscheidet sonst zwei Ausgaben
+                # derselben Zeile: Das Archiv enthaelt jedes Protokoll
+                # doppelt, einmal je Job und einmal gesammelt.
+                kern = zeile.split("Z ", 1)[-1].strip()
+                if kern and kern not in gesehen:
+                    gesehen.append(kern)
+
+    if not gesehen:
+        print("(nichts Auffaelliges gefunden - der Fehler steckt woanders)")
+    for zeile in gesehen[:25]:
+        print("  " + zeile[:200])
+
+
+def api_with_retry_raw(path):
+    for _ in range(3):
+        try:
+            return api(path, raw=True)
+        except RateLimited as grenze:
+            sys.exit(str(grenze))
+        except (OSError, http.client.HTTPException) as fehler:
+            print(f"  (Protokoll nicht geladen: {fehler})")
+            time.sleep(5)
+    return None
+
+
 def main():
     run_id = sys.argv[1] if len(sys.argv) > 1 else run_id_for_head()
     deadline = time.time() + MAX_MINUTES * 60
@@ -184,6 +251,9 @@ def main():
         for step in steps:
             mark = "ok " if step["conclusion"] == "success" else ">> "
             print(f"  {mark}{str(step['conclusion']):<12} {step['name']}")
+
+    if run["conclusion"] != "success":
+        print_error_lines(run_id)
 
 
 if __name__ == "__main__":
