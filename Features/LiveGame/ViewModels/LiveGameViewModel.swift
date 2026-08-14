@@ -108,14 +108,33 @@ final class LiveGameViewModel: ObservableObject {
         // Jedes Team hat eigene geladene Becher: Beide Racks stehen sich
         // gegenueber, und ein gemeinsamer Satz haette bedeutet, dass ein
         // Treffer auf Position 3 immer auf beiden Seiten ausloest.
-        if extreme.isEnabled {
-            let indices = Array(0..<format.cupCount)
-            loadedCups = (0..<2).map { _ in
-                Set(indices.shuffled().prefix(min(extreme.loadedCups, format.cupCount)))
-            }
+        resetLoadedCups()
+        observeThrows()
+    }
+
+    /// Lost die geladenen Becher neu aus.
+    ///
+    /// Muss bei JEDEM neuen Rack laufen, nicht nur beim ersten. Ein geladener
+    /// Becher wird beim Ausloesen aus der Menge entfernt; ohne dieses
+    /// Zuruecksetzen liefe eine Revanche mit den Resten der Vorpartie – im
+    /// schlechtesten Fall mit gar keinen Karten, waehrend die App weiter
+    /// "Beerpong Extreme" anzeigt.
+    private func resetLoadedCups() {
+        guard extreme.isEnabled else {
+            loadedCups = [[], []]
+            return
         }
 
-        observeThrows()
+        // Aus den LEBENDEN Positionen ziehen, nicht aus 0..<cupCount: Beim
+        // fairen Anwurf fehlen einem Team schon zu Beginn Becher, und eine
+        // geladene Position an einer leeren Stelle koennte nie ausloesen. Das
+        // schwaechere Team haette sonst ausgerechnet weniger Karten.
+        loadedCups = (0..<2).map { team in
+            let lebende = state.racks.indices.contains(team)
+                ? state.racks[team].aliveCupIndices
+                : Array(0..<format.cupCount)
+            return Set(lebende.shuffled().prefix(min(extreme.loadedCups, lebende.count)))
+        }
     }
 
     deinit {
@@ -253,15 +272,6 @@ final class LiveGameViewModel: ObservableObject {
             // normalen Partie nicht vergleichbar und würde die Rangliste
             // still verfälschen. Die Partie selbst wird trotzdem beendet und
             // bleibt im Spielverlauf stehen.
-            // In den Abend geht die Partie IMMER ein, auch Extreme: Dort
-            // zaehlt, was gespielt wurde, nicht ob es die Trefferquote
-            // verfaelscht. Die Statistiken darunter bleiben getrennt.
-            EveningLog.record(
-                title: extreme.isEnabled ? "Beerpong Extreme" : "Beerpong",
-                emoji: "🍺",
-                winner: finishedState.winnerTeamIndex.map { teamName($0) }
-            )
-
             if let ownerId, let profileRepository, !extreme.isEnabled {
                 try await profileRepository.applyFinishedGame(
                     state: finishedState,
@@ -269,6 +279,28 @@ final class LiveGameViewModel: ObservableObject {
                     ownerId: ownerId
                 )
             }
+
+            // Ganz zum Schluss, nach allem, was scheitern kann. Der Eintrag
+            // ist ein reines Anhaengen ohne Kennung – schlaegt eine der
+            // Schreiboperationen darueber fehl, bleibt `didSettleGame` false,
+            // der Sieger-Screen bietet "nochmal versuchen" an, und beim
+            // zweiten Anlauf stuende die Partie zweimal im Abend.
+            //
+            // In den Abend geht die Partie IMMER ein, auch Extreme: Dort
+            // zaehlt, was gespielt wurde, nicht ob es die Trefferquote
+            // verfaelscht. Die Statistiken darueber bleiben getrennt.
+            EveningLog.record(
+                title: extreme.isEnabled ? "Beerpong Extreme" : "Beerpong",
+                emoji: "🍺",
+                // Die Namen der Gewinner, nicht "Team 1". Die Aufstellung
+                // wechselt zwischen den Partien eines Abends, ein Platzhalter
+                // wuerde also zaehlen, wie oft der linke Platz gewonnen hat.
+                winner: finishedState.winnerTeamIndex.flatMap { index in
+                    teams.indices.contains(index)
+                        ? teams[index].playerNames.joined(separator: " & ")
+                        : nil
+                }
+            )
         } catch {
             AppLogger.firestore.error("Ergebnis nicht gespeichert: \(error.localizedDescription)")
             settleError = AppError.from(error).errorDescription
@@ -354,6 +386,9 @@ final class LiveGameViewModel: ObservableObject {
             didSettleGame = false
             hideHighlight()
             state = GameEngine.makeInitialState(format: format, playersPerTeam: playersPerTeam)
+            // Nach dem neuen Rack, weil die Auslosung die lebenden Becher
+            // daraus liest.
+            resetLoadedCups()
             observeThrows()
             HapticManager.success()
         } catch {

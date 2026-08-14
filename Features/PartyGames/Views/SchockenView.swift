@@ -27,7 +27,7 @@ struct SchockenView: View {
         case roundOver
     }
 
-    @State private var playerCount = PlayerNames.suggestedCount ?? 4
+    @State private var playerCount = PlayerNames.suggestedCount() ?? 4
     @State private var phase: Phase = .setup
 
     @State private var dice = [1, 1, 1]

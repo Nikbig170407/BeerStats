@@ -33,7 +33,7 @@ struct TournamentView: View {
         case finished
     }
 
-    @State private var playerCount = PlayerNames.suggestedCount ?? 4
+    @State private var playerCount = PlayerNames.suggestedCount() ?? 4
     @State private var roundCount = 5
     @State private var games: [PartyGame] = []
     @State private var strikes: [Int] = []

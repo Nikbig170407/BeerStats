@@ -38,10 +38,17 @@ enum PlayerNames {
     /// Wie viele Leute der laufende Abend kennt. Spiele koennen ihre
     /// Spielerzahl damit vorbelegen, statt sie jedes Mal neu einstellen zu
     /// lassen.
-    static var suggestedCount: Int? {
+    ///
+    /// `minimum` ist kein Beiwerk: Nicht jedes Spiel geht ab zwei Leuten. Der
+    /// Spion braucht drei, sonst gibt es keine Gruppe, die der Spion
+    /// taeuschen koennte. Ohne diesen Boden startete er bei einem Abend zu
+    /// zweit mit einer Spielerzahl unterhalb seines eigenen Mindestwerts -
+    /// der Zaehler zeigt sie an, weil er nur seine eigenen Knoepfe begrenzt,
+    /// nicht den Wert, der hereingereicht wird.
+    static func suggestedCount(atLeast minimum: Int = 2) -> Int? {
         guard let abend = EveningLog.current, abend.isRunning else { return nil }
         let anzahl = abend.participants.count
-        return anzahl >= 2 ? anzahl : nil
+        return anzahl >= minimum ? anzahl : nil
     }
 
     private static func participant(at index: Int) -> EveningParticipant? {

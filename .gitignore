@@ -1,3 +1,7 @@
 
 # Von XcodeGen erzeugt
 Widgets/Info.plist
+
+# Python-Bytecode aus scripts/
+__pycache__/
+*.pyc

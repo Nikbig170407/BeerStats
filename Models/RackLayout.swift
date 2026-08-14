@@ -62,6 +62,11 @@ struct RackLayout: Equatable {
 
     var remainingCount: Int { cupsAlive.filter { $0 }.count }
 
+    /// Positionen, an denen noch ein Becher steht.
+    var aliveCupIndices: [Int] {
+        cupsAlive.indices.filter { cupsAlive[$0] }
+    }
+
     var isCleared: Bool { remainingCount == 0 }
 
     func isAlive(at index: Int) -> Bool {

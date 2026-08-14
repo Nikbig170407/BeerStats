@@ -27,7 +27,7 @@ struct ForbiddenWordsView: View {
         case revealed
     }
 
-    @State private var playerCount = PlayerNames.suggestedCount ?? 5
+    @State private var playerCount = PlayerNames.suggestedCount() ?? 5
     @State private var words: [String] = []
     @State private var phase: Phase = .setup
 

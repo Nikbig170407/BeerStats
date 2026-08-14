@@ -25,8 +25,16 @@ final class NewGameViewModel: ObservableObject {
     }
     @Published var cupCount: Int = AppConstants.GameDefaults.standardCupCount
 
-    /// Angenommener Vorsprung, `nil` wenn ohne gespielt wird.
-    @Published var handicapByTeam: [Int]?
+    /// Ob der vorgeschlagene Ausgleich angenommen wurde.
+    ///
+    /// Bewusst ein Ja/Nein und nicht der fertige Vorsprung. Wuerde hier
+    /// `[2, 0]` stehen, ueberlebte dieser Wert jede Aenderung an der
+    /// Aufstellung: Wechselt man auf 1 gegen 1 oder setzt jemanden ohne
+    /// belastbare Quote ein, verschwindet der Vorschlag aus der Ansicht - der
+    /// angenommene Vorsprung bliebe aber gesetzt, und die Partie startete mit
+    /// einem Handicap, das nirgends mehr steht. So kann das nicht passieren:
+    /// Gibt es keinen Vorschlag, gibt es auch keinen Vorsprung.
+    @Published var isHandicapAccepted = false
 
     /// Das Regelwerk dieser Partie – an genau EINER Stelle.
     ///
@@ -36,7 +44,16 @@ final class NewGameViewModel: ObservableObject {
     /// Stellen ankommt, laufen gespielte Partie und nachgespielte Historie
     /// auseinander - und zwar lautlos, weil beide fuer sich stimmig aussehen.
     var format: GameFormat {
-        GameFormat(cupCount: cupCount, handicapByTeam: handicapByTeam)
+        GameFormat(cupCount: cupCount, handicapByTeam: acceptedHandicap)
+    }
+
+    /// Der tatsaechlich geltende Vorsprung – nur, wenn der Vorschlag noch
+    /// steht UND angenommen wurde.
+    var acceptedHandicap: [Int]? {
+        guard isHandicapAccepted, let vorschlag = suggestedHandicap else { return nil }
+        var werte = [0, 0]
+        werte[vorschlag.teamIndex] = vorschlag.cups
+        return werte
     }
 
     /// Durchschnittliche Trefferquote eines Teams, sofern belastbar.

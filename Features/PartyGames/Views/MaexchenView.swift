@@ -27,7 +27,7 @@ struct MaexchenView: View {
         case revealed(doubter: Int, liar: Bool)
     }
 
-    @State private var playerCount = PlayerNames.suggestedCount ?? 4
+    @State private var playerCount = PlayerNames.suggestedCount() ?? 4
     @State private var phase: Phase = .setup
 
     /// Wurf des Spielers, der die aktuelle Ansage gemacht hat.

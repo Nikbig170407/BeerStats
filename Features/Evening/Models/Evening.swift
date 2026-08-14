@@ -174,10 +174,11 @@ enum EveningLog {
     /// glaubt nach einer Stunde niemand mehr.
     static func undoLastDrink(for participantId: String) {
         change(participantId) { teilnehmer in
-            if teilnehmer.shots > 0 && teilnehmer.sips == 0 {
-                teilnehmer.shots -= 1
-            } else if teilnehmer.sips > 0 {
-                teilnehmer.sips = max(0, teilnehmer.sips - 1)
+            // Zwei Faelle reichen: Sind Schluecke da, geht einer davon weg -
+            // sonst ein Shot. Ein dritter Zweig fuer "nur Shots" waere nicht
+            // erreichbar, weil genau das schon der erste Fall ist.
+            if teilnehmer.sips > 0 {
+                teilnehmer.sips -= 1
             } else if teilnehmer.shots > 0 {
                 teilnehmer.shots -= 1
             }

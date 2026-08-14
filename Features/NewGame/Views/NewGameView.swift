@@ -134,7 +134,7 @@ struct NewGameView: View {
     @ViewBuilder
     private var handicapSection: some View {
         if let vorschlag = viewModel.suggestedHandicap {
-            let angenommen = viewModel.handicapByTeam != nil
+            let angenommen = viewModel.isHandicapAccepted
 
             VStack(alignment: .leading, spacing: 10) {
                 sectionLabel("Fairer Anwurf")
@@ -146,9 +146,7 @@ struct NewGameView: View {
 
                 Button {
                     withAnimation(AppAnimation.standard) {
-                        viewModel.handicapByTeam = angenommen
-                            ? nil
-                            : handicapArray(for: vorschlag)
+                        viewModel.isHandicapAccepted.toggle()
                     }
                     HapticManager.lightImpact()
                 } label: {
@@ -175,12 +173,6 @@ struct NewGameView: View {
                 .buttonStyle(PressableButtonStyle())
             }
         }
-    }
-
-    private func handicapArray(for vorschlag: (teamIndex: Int, cups: Int)) -> [Int] {
-        var werte = [0, 0]
-        werte[vorschlag.teamIndex] = vorschlag.cups
-        return werte
     }
 
     // MARK: - Beerpong Extreme

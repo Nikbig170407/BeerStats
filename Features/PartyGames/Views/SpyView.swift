@@ -38,7 +38,7 @@ struct SpyView: View {
         case spyGuessedWord
     }
 
-    @State private var playerCount = PlayerNames.suggestedCount ?? 5
+    @State private var playerCount = PlayerNames.suggestedCount(atLeast: 3) ?? 5
     @State private var phase: Phase = .setup
     @State private var word = SpyDeck.randomWord()
     @State private var spyIndex = 0
