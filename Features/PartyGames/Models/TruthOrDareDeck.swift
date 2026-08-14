@@ -50,10 +50,16 @@ enum TruthOrDareDeck {
 
     static func shuffled(_ kind: TruthOrDareKind) -> [TruthOrDareCard] {
         let source = kind == .truth ? truths : dares
+
+        // Eigene Karten landen bei den Pflichten: Wer selbst etwas eintippt,
+        // schreibt fast immer eine Aufgabe und keine Frage.
+        let eigene = kind == .dare
+            ? CustomCards.cards(for: .truthOrDare).map { TruthOrDareCard(text: $0, kind: .dare) }
+            : []
+
         // Erst hier ausformuliert, weil erst hier feststeht, welche Härte
         // gewählt ist. Die Platzhalter tragen die Grundmenge im Namen.
-        return source
-            .map { TruthOrDareCard(text: resolve($0.text), kind: $0.kind) }
+        return (source.map { TruthOrDareCard(text: resolve($0.text), kind: $0.kind) } + eigene)
             .shuffled()
     }
 

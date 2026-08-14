@@ -142,9 +142,22 @@ enum ExtremeDeck {
     /// das, wofuer man ihn einschaltet. Die harmlosen Karten verschwinden
     /// deshalb, statt sich nur zu verduennen.
     static func cards(for mode: ExtremeMode) -> [ExtremeCard] {
+        // Eigene Karten gelten in beiden Modi. Sie nach zahm und hart zu
+        // sortieren waere eine Frage, die beim Eintippen niemand beantworten
+        // will - und wer sie selbst geschrieben hat, weiss ohnehin, was
+        // drinsteht.
+        let eigene = CustomCards.cards(for: .extremeChallenge).enumerated().map { index, text in
+            ExtremeCard(
+                id: "custom-\(index)",
+                category: .challenge,
+                title: "Eure Karte",
+                text: text
+            )
+        }
+
         switch mode {
-        case .normal: return mildCards + coreCards
-        case .hard: return coreCards + hardCards
+        case .normal: return mildCards + coreCards + eigene
+        case .hard: return coreCards + hardCards + eigene
         }
     }
 

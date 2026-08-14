@@ -57,6 +57,12 @@ struct NeverHaveIEverCard: Identifiable, Equatable {
     enum Kind: Equatable {
         case statement(NeverHaveIEverLevel)
         case penalty
+        /// Selbst eingetippt. Bewusst ein eigener Fall statt einer erfundenen
+        /// Stufe: `level` bleibt damit `nil`, und die Ansicht zeigt ohnehin
+        /// schon "🍻" ohne Beschriftung, wenn keine Stufe da ist. Eine
+        /// zugewiesene Stufe wuerde dagegen behaupten, die Karte sei zahm
+        /// oder extrem – eine Einordnung, die niemand getroffen hat.
+        case custom
     }
 
     let id = UUID()
@@ -88,8 +94,15 @@ enum NeverHaveIEverDeck {
         includePenalties: Bool
     ) -> [NeverHaveIEverCard] {
 
-        let questions = statements
-            .filter { card in card.level.map { levels.contains($0) } ?? false }
+        // Eigene Karten kommen ohne Stufe dazu und gelten deshalb in jeder
+        // Auswahl. Wer sie eintippt, hat sich fuer seine Runde schon
+        // entschieden - eine Einordnung in Kinder, Spicy oder Extrem waere
+        // eine Frage, die niemand beantworten will.
+        let eigene = CustomCards.cards(for: .neverHaveIEver)
+            .map { NeverHaveIEverCard(text: $0, kind: .custom) }
+
+        let questions = (statements
+            .filter { card in card.level.map { levels.contains($0) } ?? false } + eigene)
             .shuffled()
 
         guard includePenalties, !penaltyTemplates.isEmpty, questions.count > 2 else { return questions }

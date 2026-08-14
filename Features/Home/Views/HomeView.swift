@@ -48,6 +48,7 @@ struct HomeView: View {
                     // die gilt – Beerpong hat keine Trinkregeln in der App.
                     DrinkIntensityPicker()
                     partySection
+                    customCardsLink
                 }
                 .padding(20)
             }
@@ -58,6 +59,41 @@ struct HomeView: View {
                 runningEvening = EveningLog.current
             }
         }
+    }
+
+    // MARK: - Eigene Karten
+
+    /// Steht unter den Spielen, nicht darueber: Man kommt darauf, nachdem man
+    /// ein paar Runden gespielt hat und die eigene Geschichte vermisst – nicht
+    /// vorher.
+    private var customCardsLink: some View {
+        NavigationLink {
+            CustomCardsView()
+        } label: {
+            HStack(spacing: 12) {
+                Text("✍️").font(.system(size: 24))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Eigene Karten")
+                        .font(BeerStatsFont.headline)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                    Text("Eure Sprüche in die Stapel mischen")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .padding(.horizontal, 15)
+            .padding(.vertical, 13)
+            .glassPanel(cornerRadius: 16)
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Abend
