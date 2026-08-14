@@ -28,6 +28,14 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
+# Verzeichnisse, die zwar Swift enthalten, aber nicht zu diesem Projektstand
+# gehoeren. `.claude/worktrees` ist der wichtigste Fall: Dort liegt eine
+# vollstaendige Kopie des Projekts, wenn eine Aufgabe nebenher in einem
+# eigenen Arbeitsbaum laeuft. Ohne diese Liste meldet der Pruefer jede Datei
+# darin als "liegt in keinem Quellordner" - 135 Fehlalarme auf einmal, und
+# der echte Befund geht darin unter.
+IGNORIERT = {".claude", ".git", ".build", "DerivedData", "Pods", "build", "Payload"}
+
 # Muss zu den `sources`-Eintraegen in project.yml passen.
 SOURCE_DIRS = [
     "App", "Core", "DesignSystem", "Features", "Models",
@@ -155,7 +163,7 @@ def main():
     # Build bleibt gruen und die Aenderung wirkt trotzdem nicht.
     bekannt = {p.resolve() for p in swift_files()}
     for path in ROOT.rglob("*.swift"):
-        if ".build" in path.parts or "DerivedData" in path.parts:
+        if IGNORIERT & set(path.parts):
             continue
         if path.resolve() not in bekannt:
             funde.append(f"{path.relative_to(ROOT)}  liegt in keinem Quellordner aus project.yml")

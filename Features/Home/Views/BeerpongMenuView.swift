@@ -31,6 +31,7 @@ struct BeerpongMenuView: View {
                 }
 
                 newGameLink
+                rulesCard
                 destinationCards
                 backupCard
             }
@@ -153,6 +154,25 @@ struct BeerpongMenuView: View {
             }
             .buttonStyle(PressableButtonStyle())
         }
+    }
+
+    // MARK: - Nachschlagen
+
+    /// Steht bewusst weit oben und nicht bei der Auswertung: Gebraucht wird
+    /// das, BEVOR gespielt wird – meistens von jemandem, der zum ersten Mal
+    /// mit am Tisch steht.
+    private var rulesCard: some View {
+        NavigationLink {
+            RulesView()
+        } label: {
+            destinationCard(
+                title: "Regeln",
+                subtitle: "Balls Back, Bombe, On Fire – alles zum Nachlesen",
+                systemImage: "book.fill",
+                tint: BeerStatsColor.textSecondary
+            )
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Sicherung
