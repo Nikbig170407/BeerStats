@@ -1,6 +1,6 @@
 """Wartet auf das Ende eines GitHub-Actions-Laufs und berichtet das Ergebnis.
 
-    python scripts/watch_build.py            # neuester Lauf auf main
+    python scripts/watch_build.py             # der Lauf zum aktuellen HEAD
     python scripts/watch_build.py 31577161733 # ein bestimmter Lauf
 
 Warum es das gibt: Das Repository ist oeffentlich, damit sind Laeufe ueber
@@ -26,6 +26,7 @@ knapper. Der Token gehoert NICHT ins Repo - es ist oeffentlich.
 import http.client
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.error
@@ -105,15 +106,45 @@ def api_with_retry(path):
     return None
 
 
-def latest_run_id():
-    data = api_with_retry("actions/runs?per_page=1")
-    if not data or not data.get("workflow_runs"):
-        sys.exit("kein Lauf gefunden")
-    return str(data["workflow_runs"][0]["id"])
+def head_sha():
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+
+def run_id_for_head():
+    """Sucht den Lauf zum aktuellen Commit – nicht einfach den neuesten.
+
+    "Der neueste Lauf" war der falsche Ansatz: Die Liste kommt bei GitHub aus
+    mehreren Repliken, und kurz nach einem Push liefert sie manchmal noch den
+    Stand von davor. Das Skript hat dann den vorherigen Lauf beobachtet und
+    dessen Ergebnis gemeldet - im schlimmsten Fall ein rotes, das laengst
+    repariert war.
+
+    Ueber die Commit-Kennung kann das nicht passieren: Entweder der Lauf ist
+    da, oder es wird gewartet.
+    """
+    sha = head_sha()
+
+    # Nach einem Push dauert es einen Moment, bis der Lauf angelegt ist.
+    for _ in range(10):
+        data = api_with_retry("actions/runs?per_page=15")
+        if data:
+            for run in data.get("workflow_runs", []):
+                if run["head_sha"] == sha:
+                    return str(run["id"])
+        print(f"  (noch kein Lauf für {sha[:7]} – warte)")
+        time.sleep(15)
+
+    sys.exit(
+        f"Kein Lauf für {sha[:7]} gefunden. Wurde gepusht? "
+        "Änderungen nur an Markdown oder scripts/ lösen absichtlich keinen aus."
+    )
 
 
 def main():
-    run_id = sys.argv[1] if len(sys.argv) > 1 else latest_run_id()
+    run_id = sys.argv[1] if len(sys.argv) > 1 else run_id_for_head()
     deadline = time.time() + MAX_MINUTES * 60
 
     run = None
