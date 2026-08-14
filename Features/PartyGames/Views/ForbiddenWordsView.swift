@@ -27,7 +27,7 @@ struct ForbiddenWordsView: View {
         case revealed
     }
 
-    @State private var playerCount = 5
+    @State private var playerCount = PlayerNames.suggestedCount ?? 5
     @State private var words: [String] = []
     @State private var phase: Phase = .setup
 
@@ -173,7 +173,7 @@ struct ForbiddenWordsView: View {
             VStack(spacing: 8) {
                 ForEach(Array(words.enumerated()), id: \.offset) { index, word in
                     HStack {
-                        Text("Spieler \(index + 1)")
+                        Text("\(PlayerNames.name(for: index))")
                             .font(BeerStatsFont.caption)
                             .foregroundStyle(BeerStatsColor.textSecondary)
                         Spacer()

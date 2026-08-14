@@ -27,7 +27,7 @@ struct SchockenView: View {
         case roundOver
     }
 
-    @State private var playerCount = 4
+    @State private var playerCount = PlayerNames.suggestedCount ?? 4
     @State private var phase: Phase = .setup
 
     @State private var dice = [1, 1, 1]
@@ -107,7 +107,7 @@ struct SchockenView: View {
 
     private func handoffView(_ player: Int) -> some View {
         VStack(spacing: 18) {
-            Text("Spieler \(player + 1)")
+            Text("\(PlayerNames.name(for: player))")
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
@@ -132,7 +132,7 @@ struct SchockenView: View {
 
     private func rollingView(_ player: Int) -> some View {
         VStack(spacing: 20) {
-            Text("Spieler \(player + 1) · Wurf \(throwsUsed) von \(throwLimit ?? 3)")
+            Text("\(PlayerNames.name(for: player)) · Wurf \(throwsUsed) von \(throwLimit ?? 3)")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -196,7 +196,7 @@ struct SchockenView: View {
             ForEach(results.indices, id: \.self) { index in
                 if let result = results[index] {
                     HStack {
-                        Text("Spieler \(index + 1)")
+                        Text("\(PlayerNames.name(for: index))")
                             .font(BeerStatsFont.caption)
                             .foregroundStyle(BeerStatsColor.textSecondary)
                         Spacer()
@@ -224,7 +224,7 @@ struct SchockenView: View {
             standings
 
             if let loser {
-                Text("Spieler \(loser + 1) trinkt \(amount.text)")
+                Text("\(PlayerNames.name(for: loser)) trinkt \(amount.text)")
                     .font(.system(size: 22, weight: .bold, design: .rounded))
                     .foregroundStyle(BeerStatsColor.error)
                     .multilineTextAlignment(.center)
@@ -301,6 +301,14 @@ struct SchockenView: View {
             phase = player + 1 < playerCount ? .handoff(player: player + 1) : .roundOver
         }
 
-        if player + 1 >= playerCount { SoundManager.play(.bombe) }
+        if player + 1 >= playerCount {
+            SoundManager.play(.bombe)
+            // Das Spiel rechnet ohnehin aus, wer verloren hat – die Bilanz
+            // erfaehrt es jetzt auch. Ohne laufenden Abend passiert nichts.
+            if let verlierer = worstPlayer() {
+                let hadSchockAus = results.compactMap { $0 }.contains { $0.kind == .schockAus }
+                EveningLog.record(hadSchockAus ? schockAusPenalty : penalty, forPlayer: verlierer)
+            }
+        }
     }
 }

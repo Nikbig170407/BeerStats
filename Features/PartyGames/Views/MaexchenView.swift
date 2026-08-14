@@ -27,7 +27,7 @@ struct MaexchenView: View {
         case revealed(doubter: Int, liar: Bool)
     }
 
-    @State private var playerCount = 4
+    @State private var playerCount = PlayerNames.suggestedCount ?? 4
     @State private var phase: Phase = .setup
 
     /// Wurf des Spielers, der die aktuelle Ansage gemacht hat.
@@ -85,13 +85,13 @@ struct MaexchenView: View {
 
     private func handoffView(_ player: Int) -> some View {
         VStack(spacing: 18) {
-            Text("Spieler \(player + 1)")
+            Text("\(PlayerNames.name(for: player))")
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             if let claim {
                 VStack(spacing: 6) {
-                    Text("Spieler \(claimant + 1) sagt")
+                    Text("\(PlayerNames.name(for: claimant)) sagt")
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.textSecondary)
                     Text(MaexchenRanking.label(claim))
@@ -146,7 +146,7 @@ struct MaexchenView: View {
 
     private func rolledView(_ player: Int) -> some View {
         VStack(spacing: 18) {
-            Text("Nur für Spieler \(player + 1)")
+            Text("Nur für \(PlayerNames.name(for: player))")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -230,7 +230,7 @@ struct MaexchenView: View {
             Text(liar ? "🤥" : "😬").font(.system(size: 56))
 
             VStack(spacing: 6) {
-                Text("Spieler \(claimant + 1) sagte")
+                Text("\(PlayerNames.name(for: claimant)) sagte")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                 Text(claim.map { MaexchenRanking.label($0) } ?? "–")
@@ -249,7 +249,7 @@ struct MaexchenView: View {
             .padding(22)
             .glassPanel(cornerRadius: 22)
 
-            Text("Spieler \(loser + 1) trinkt \(amount.text)")
+            Text("\(PlayerNames.name(for: loser)) trinkt \(amount.text)")
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.error)
                 .multilineTextAlignment(.center)
@@ -313,6 +313,12 @@ struct MaexchenView: View {
         } else {
             liar = false
         }
+
+        // Wer trinkt, steht hier schon fest – dieselbe Rechnung wie in der
+        // Auflösung darunter. Die Bilanz bekommt es direkt mit.
+        let loser = liar ? claimant : doubter
+        let wasMia = lastRoll?.isMia == true
+        EveningLog.record(wasMia && !liar ? miaPenalty : normalPenalty, forPlayer: loser)
 
         withAnimation(AppAnimation.standard) { phase = .revealed(doubter: doubter, liar: liar) }
         HapticManager.error()

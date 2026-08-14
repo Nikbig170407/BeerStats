@@ -13,9 +13,10 @@
 //  die zweite Haelfte waere Schweigen die beste Strategie – niemand haette
 //  einen Grund, sich festzulegen.
 //
-//  Spielernummern statt Namen: Die Reihenfolge der Weitergabe nummeriert die
-//  Runde von selbst. Damit laesst sich am Ende sagen, WER der Spion war,
-//  ohne dass jemand Namen eintippen muss.
+//  Die Reihenfolge der Weitergabe nummeriert die Runde von selbst – damit
+//  laesst sich am Ende sagen, WER der Spion war. Laeuft ein Abend, stehen
+//  statt der Nummern die Namen der Teilnehmer da; ohne ihn bleibt es bei
+//  "Spieler 3", und das Spiel funktioniert trotzdem allein.
 //
 
 import SwiftUI
@@ -37,7 +38,7 @@ struct SpyView: View {
         case spyGuessedWord
     }
 
-    @State private var playerCount = 5
+    @State private var playerCount = PlayerNames.suggestedCount ?? 5
     @State private var phase: Phase = .setup
     @State private var word = SpyDeck.randomWord()
     @State private var spyIndex = 0
@@ -178,6 +179,7 @@ struct SpyView: View {
 
     private func outcomeButton(_ title: String, detail: String, tint: Color, outcome: Outcome) -> some View {
         Button {
+            recordDrinks(for: outcome)
             withAnimation(AppAnimation.standard) { phase = .result(outcome) }
             HapticManager.success()
             SoundManager.play(outcome == .spyCaught ? .victory : .bombe)
@@ -205,7 +207,7 @@ struct SpyView: View {
         VStack(spacing: 16) {
             Text(outcome == .spyCaught ? "🎉" : "🕵️").font(.system(size: 56))
 
-            Text("Spieler \(spyIndex + 1) war der Spion")
+            Text("\(PlayerNames.name(for: spyIndex)) war der Spion")
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
@@ -237,11 +239,26 @@ struct SpyView: View {
     private func penaltyText(for outcome: Outcome) -> String {
         switch outcome {
         case .spyCaught:
-            return "Spieler \(spyIndex + 1) trinkt \(spyPenalty.text)."
+            return "\(PlayerNames.name(for: spyIndex)) trinkt \(spyPenalty.text)."
         case .spyEscaped:
-            return "Alle außer Spieler \(spyIndex + 1) trinken \(groupPenalty.text)."
+            return "Alle außer \(PlayerNames.name(for: spyIndex)) trinken \(groupPenalty.text)."
         case .spyGuessedWord:
-            return "Doppelt erwischt: Alle außer Spieler \(spyIndex + 1) trinken \(spyPenalty.text)."
+            return "Doppelt erwischt: Alle außer \(PlayerNames.name(for: spyIndex)) trinken \(spyPenalty.text)."
+        }
+    }
+
+    /// Traegt die Strafe der Bilanz ein – in beide Richtungen, so wie das
+    /// Spiel es auch ansagt.
+    private func recordDrinks(for outcome: Outcome) {
+        let andere = (0..<playerCount).filter { $0 != spyIndex }
+
+        switch outcome {
+        case .spyCaught:
+            EveningLog.record(spyPenalty, forPlayer: spyIndex)
+        case .spyEscaped:
+            EveningLog.record(groupPenalty, forPlayers: andere)
+        case .spyGuessedWord:
+            EveningLog.record(spyPenalty, forPlayers: andere)
         }
     }
 

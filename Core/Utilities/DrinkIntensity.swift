@@ -134,4 +134,23 @@ enum DrinkAmount: Equatable {
             return "einen Shot"
         }
     }
+
+    /// Dieselbe Menge in Zaehleinheiten fuer die Trinkbilanz.
+    ///
+    /// Bewusst hier und nicht in der Bilanz: `text` und `tally` muessen
+    /// dasselbe aussagen. Waere die Umrechnung an zwei Stellen gepflegt,
+    /// koennte auf der Karte "einen Shot" stehen, waehrend die Bilanz
+    /// Schluecke mitschreibt – und niemand wuesste, welche der beiden Zahlen
+    /// stimmt.
+    var tally: (sips: Int, shots: Int) {
+        switch self {
+        case .sips(let base):
+            return (DrinkIntensity.current.sips(base), 0)
+        case .shot:
+            guard DrinkRules.shotsEnabled else {
+                return (DrinkIntensity.current.sips(Self.shotInSips), 0)
+            }
+            return (0, 1)
+        }
+    }
 }

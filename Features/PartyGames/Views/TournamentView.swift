@@ -14,9 +14,10 @@
 //  steigt gedanklich aus. Bei gleichbleibender Strafe waere nach der
 //  dritten Runde klar, wie es ausgeht.
 //
-//  Gezaehlt wird mit Spielernummern, wie ueberall sonst auch. Die
-//  Reihenfolge am Tisch nummeriert die Runde von selbst, und niemand muss
-//  Namen eintippen.
+//  Gezaehlt wird ueber Positionen, wie ueberall sonst auch: Die Reihenfolge
+//  am Tisch nummeriert die Runde von selbst, und niemand muss Namen
+//  eintippen. Laeuft ein Abend, tragen dieselben Positionen dessen Namen –
+//  und jede Runde landet in der Trinkbilanz.
 //
 
 import SwiftUI
@@ -32,7 +33,7 @@ struct TournamentView: View {
         case finished
     }
 
-    @State private var playerCount = 4
+    @State private var playerCount = PlayerNames.suggestedCount ?? 4
     @State private var roundCount = 5
     @State private var games: [PartyGame] = []
     @State private var strikes: [Int] = []
@@ -205,7 +206,7 @@ struct TournamentView: View {
                         record(loser: player, round: index)
                     } label: {
                         HStack {
-                            Text("Spieler \(player + 1)")
+                            Text("\(PlayerNames.name(for: player))")
                                 .font(BeerStatsFont.headline)
                                 .foregroundStyle(BeerStatsColor.textPrimary)
                             Spacer()
@@ -258,8 +259,8 @@ struct TournamentView: View {
                     .multilineTextAlignment(.center)
             } else {
                 Text(losers.count == 1
-                     ? "Spieler \(losers[0] + 1) hat am häufigsten verloren"
-                     : "Gleichstand: \(losers.map { "Spieler \($0 + 1)" }.joined(separator: ", "))")
+                     ? "\(PlayerNames.name(for: losers[0])) hat am häufigsten verloren"
+                     : "Gleichstand: \(losers.map { "\(PlayerNames.name(for: $0))" }.joined(separator: ", "))")
                     .font(BeerStatsFont.headline)
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .multilineTextAlignment(.center)
@@ -284,7 +285,7 @@ struct TournamentView: View {
         VStack(spacing: 6) {
             ForEach(0..<playerCount, id: \.self) { player in
                 HStack {
-                    Text("Spieler \(player + 1)")
+                    Text("\(PlayerNames.name(for: player))")
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.textSecondary)
                     Spacer()
@@ -326,6 +327,7 @@ struct TournamentView: View {
 
     private func record(loser: Int, round: Int) {
         strikes[loser] += 1
+        EveningLog.record(penalty(for: round), forPlayer: loser)
         HapticManager.error()
         SoundManager.play(.bombe)
         advance(after: round)
