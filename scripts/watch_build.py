@@ -26,11 +26,17 @@ knapper. Der Token gehoert NICHT ins Repo - es ist oeffentlich.
 import http.client
 import json
 import os
+import pathlib
 import subprocess
 import sys
 import time
 import urllib.error
 import urllib.request
+
+# Das Repository liegt eine Ebene ueber diesem Skript. Ohne diesen Bezug
+# muesste man vorher ins Projekt wechseln - und der erste Versuch aus einer
+# frisch geoeffneten PowerShell landet in C:\Windows\System32.
+REPO_DIR = pathlib.Path(__file__).resolve().parent.parent
 
 REPO = "Nikbig170407/BeerStats"
 # Anfragen sind knapp: ohne Anmeldung erlaubt GitHub 60 pro Stunde und IP.
@@ -109,6 +115,7 @@ def api_with_retry(path):
 def head_sha():
     return subprocess.run(
         ["git", "rev-parse", "HEAD"],
+        cwd=REPO_DIR,
         capture_output=True, text=True, check=True,
     ).stdout.strip()
 
