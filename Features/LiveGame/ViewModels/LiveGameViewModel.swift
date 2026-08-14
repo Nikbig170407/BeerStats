@@ -253,6 +253,15 @@ final class LiveGameViewModel: ObservableObject {
             // normalen Partie nicht vergleichbar und würde die Rangliste
             // still verfälschen. Die Partie selbst wird trotzdem beendet und
             // bleibt im Spielverlauf stehen.
+            // In den Abend geht die Partie IMMER ein, auch Extreme: Dort
+            // zaehlt, was gespielt wurde, nicht ob es die Trefferquote
+            // verfaelscht. Die Statistiken darunter bleiben getrennt.
+            EveningLog.record(
+                title: extreme.isEnabled ? "Beerpong Extreme" : "Beerpong",
+                emoji: "🍺",
+                winner: finishedState.winnerTeamIndex.map { teamName($0) }
+            )
+
             if let ownerId, let profileRepository, !extreme.isEnabled {
                 try await profileRepository.applyFinishedGame(
                     state: finishedState,

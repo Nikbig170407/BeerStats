@@ -24,6 +24,7 @@ struct HomeView: View {
     /// Wird beim Zurueckkehren neu gelesen – UserDefaults meldet sich
     /// nicht von selbst bei SwiftUI.
     @State private var recentGames = RecentPartyGames.games
+    @State private var runningEvening = EveningLog.current
 
     init(container: AppContainer, currentUserId: String) {
         self.container = container
@@ -41,6 +42,7 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     header
+                    eveningCard
                     beerpongCard
                     // Die Härte steht über den Partyspielen, weil sie nur für
                     // die gilt – Beerpong hat keine Trinkregeln in der App.
@@ -51,8 +53,63 @@ struct HomeView: View {
             }
             .background(GridBackdrop())
             .toolbar { toolbarContent }
-            .onAppear { recentGames = RecentPartyGames.games }
+            .onAppear {
+                recentGames = RecentPartyGames.games
+                runningEvening = EveningLog.current
+            }
         }
+    }
+
+    // MARK: - Abend
+
+    /// Steht ganz oben, weil der Abend alles darunter klammert.
+    ///
+    /// Zeigt im laufenden Zustand die Dauer und die Zahl der Spiele – das
+    /// reicht als Beleg, dass mitgezaehlt wird, ohne den Bildschirm mit einer
+    /// zweiten Bilanz zu fuellen.
+    private var eveningCard: some View {
+        NavigationLink {
+            EveningView(profiles: viewModel.profiles.filter(\.isActive))
+        } label: {
+            HStack(spacing: 14) {
+                Text(runningEvening?.isRunning == true ? "🌙" : "🌑")
+                    .font(.system(size: 30))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(runningEvening?.isRunning == true ? "Abend läuft" : "Abend starten")
+                        .font(BeerStatsFont.headline)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+
+                    Text(eveningSubtitle)
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .glassPanel(cornerRadius: 18)
+            .neonEdge(
+                BeerStatsColor.accentSecondary,
+                cornerRadius: 18,
+                intensity: runningEvening?.isRunning == true ? 0.7 : 0.2
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
+    }
+
+    private var eveningSubtitle: String {
+        guard let abend = runningEvening, abend.isRunning else {
+            return "Spiele und Trinkbilanz eines Abends sammeln"
+        }
+        let spiele = abend.entries.count
+        return "\(abend.readableDuration) · \(spiele) \(spiele == 1 ? "Spiel" : "Spiele")"
     }
 
     // MARK: - Kopf
@@ -266,7 +323,12 @@ struct HomeView: View {
             // Vermerkt wird beim Erscheinen, nicht beim Antippen: Wer sich
             // vertippt und sofort zurückgeht, hat nicht gespielt.
             game.destination
-                .onAppear { RecentPartyGames.record(game) }
+                .onAppear {
+                    RecentPartyGames.record(game)
+                    // Tut nichts, wenn kein Abend laeuft – deshalb steht der
+                    // Aufruf hier ohne Abfrage.
+                    EveningLog.record(partyGame: game)
+                }
         } label: {
             gameCard(
                 emoji: game.emoji,
