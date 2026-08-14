@@ -152,8 +152,12 @@ enum ExtremeDeck {
             card(.penalty, "Reihum", "Das ganze gegnerische Team trinkt \(small.text)."),
             card(.penalty, "Doppelt", "Dieser Becher zählt doppelt – \(medium.text) obendrauf."),
             card(.penalty, "Zuletzt gelacht", "Wer als Letztes gelacht hat, trinkt \(medium.text)."),
-            card(.penalty, "Kurzer Prozess", "\(shot.text) – ohne Diskussion."),
-            card(.penalty, "Nachbarschaft", "Links und rechts von dir wird \(small.text) getrunken."),
+            card(.penalty, "Kurzer Prozess", "Trink \(shot.text) – ohne Diskussion."),
+            // "Links und rechts wird X getrunken" bricht bei einem einzelnen
+            // Schluck grammatisch weg. Der Satz muss mit jeder Menge aufgehen,
+            // die DrinkAmount einsetzen kann – deshalb der Umbau auf ein
+            // Subjekt im Plural.
+            card(.penalty, "Nachbarschaft", "Deine beiden Nachbarn trinken \(small.text)."),
             card(.penalty, "Handysperre", "Wer als Letztes am Handy war, trinkt \(medium.text)."),
 
             // Challenge
