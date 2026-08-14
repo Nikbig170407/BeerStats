@@ -13,17 +13,29 @@ Die Wiederholversuche sind kein Beiwerk. Das Skript laeuft ueber eine
 Viertelstunde, und ein einzelner DNS-Aussetzer hat schon einen kompletten
 Lauf unbeobachtet zu Ende gehen lassen. Ein Beobachter, der bei der ersten
 Stoerung aufgibt, ist genau dann nutzlos, wenn es darauf ankommt.
+
+Eine Ausnahme davon ist die Ratengrenze: Ohne Anmeldung erlaubt GitHub nur
+60 Anfragen pro Stunde und IP. Die loest sich zur vollen Stunde und nicht
+durch Nachfragen - dort wird deshalb sofort aufgegeben, mit Uhrzeit.
+
+Ist die Umgebungsvariable BEERSTATS_GH_TOKEN gesetzt, wird sie benutzt:
+5000 Anfragen pro Stunde statt 60. Ohne sie laeuft alles weiter, nur
+knapper. Der Token gehoert NICHT ins Repo - es ist oeffentlich.
 """
 
 import http.client
 import json
+import os
 import sys
 import time
 import urllib.error
 import urllib.request
 
 REPO = "Nikbig170407/BeerStats"
-POLL_SECONDS = 30
+# Anfragen sind knapp: ohne Anmeldung erlaubt GitHub 60 pro Stunde und IP.
+# Ein Build dauert fuenf bis vierzehn Minuten - alle 30 Sekunden zu fragen
+# hat das Kontingent verbrannt, ohne die Antwort frueher zu bekommen.
+POLL_SECONDS = 90
 MAX_MINUTES = 45
 # Nach so vielen Fehlversuchen HINTEREINANDER wird aufgegeben. Zwischendurch
 # geglueckte Abfragen setzen den Zaehler zurueck: Ein Netz, das mal kurz
@@ -31,11 +43,37 @@ MAX_MINUTES = 45
 MAX_CONSECUTIVE_ERRORS = 8
 
 
+class RateLimited(Exception):
+    """Kontingent erschoepft. Neu versuchen hilft hier nicht."""
+
+
 def api(path):
     url = f"https://api.github.com/repos/{REPO}/{path}"
-    request = urllib.request.Request(url, headers={"User-Agent": "beerstats-watch"})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.load(response)
+    headers = {"User-Agent": "beerstats-watch"}
+
+    # Optional. Ohne Token geht alles weiter, nur mit 60 Anfragen pro Stunde
+    # statt 5000 - und nur die Schrittnamen statt der echten Fehlerzeilen.
+    token = os.environ.get("BEERSTATS_GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    request = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as error:
+        # 403 mit aufgebrauchtem Kontingent ist kein Netzfehler, sondern eine
+        # Grenze mit Uhrzeit. Wiederholen verbraucht nur weitere Anfragen.
+        if error.code in (403, 429) and error.headers.get("X-RateLimit-Remaining") == "0":
+            reset = error.headers.get("X-RateLimit-Reset")
+            wann = ""
+            if reset and reset.isdigit():
+                wann = time.strftime(" (frei ab %H:%M)", time.localtime(int(reset)))
+            raise RateLimited(
+                f"GitHub-Kontingent aufgebraucht{wann}. "
+                "Mit gesetztem BEERSTATS_GH_TOKEN waeren es 5000 statt 60 Anfragen pro Stunde."
+            ) from error
+        raise
 
 
 def api_with_retry(path):
@@ -48,6 +86,10 @@ def api_with_retry(path):
     for _ in range(MAX_CONSECUTIVE_ERRORS):
         try:
             return api(path)
+        except RateLimited as grenze:
+            # Bewusst nicht wiederholen: Die Grenze loest sich zur vollen
+            # Stunde, nicht durch Nachfragen.
+            sys.exit(str(grenze))
         # Bewusst breit gefasst. Drei verschiedene Netzfehler haben dieses
         # Skript nacheinander umgebracht - DNS, SSL, und ein abgerissener
         # Verbindungsaufbau -, und nur der erste kam als URLError an. Welche
