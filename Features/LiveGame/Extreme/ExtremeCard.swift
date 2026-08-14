@@ -106,7 +106,9 @@ enum ExtremeMode: String, CaseIterable {
     var detail: String {
         switch self {
         case .normal: return "Trinken, Aufgaben, Vor- und Nachteile"
-        case .hard: return "Zusätzlich Kleidung und deutlich derbere Aufgaben"
+        // Nicht "zusätzlich": Die zahmen Karten fallen weg, statt sich nur
+        // zu verdünnen. Das soll vorher klar sein.
+        case .hard: return "Kleidung und derbe Aufgaben statt der zahmen Karten"
         }
     }
 }
@@ -132,15 +134,42 @@ enum ExtremeDeck {
         cards(for: mode).randomElement()
     }
 
+    /// Drei Toepfe statt zwei.
+    ///
+    /// Naheliegend waere "normal + zusaetzliche harte Karten". Dann bliebe im
+    /// Hard-Modus aber alles Zahme drin, und zwischen zwei derben Karten
+    /// stuende weiter "sag jedem etwas Nettes". Das nimmt dem Modus genau
+    /// das, wofuer man ihn einschaltet. Die harmlosen Karten verschwinden
+    /// deshalb, statt sich nur zu verduennen.
     static func cards(for mode: ExtremeMode) -> [ExtremeCard] {
-        var deck = normalCards
-        if mode == .hard { deck += hardCards }
-        return deck
+        switch mode {
+        case .normal: return mildCards + coreCards
+        case .hard: return coreCards + hardCards
+        }
     }
 
-    // MARK: Normal
+    // MARK: Zahm – nur im Normal-Modus
 
-    private static var normalCards: [ExtremeCard] {
+    /// Karten, die im Hard-Modus bewusst NICHT mehr auftauchen.
+    private static var mildCards: [ExtremeCard] {
+        let small = DrinkAmount.sips(2)
+
+        return [
+            card(.penalty, "Nachbarschaft", "Deine beiden Nachbarn trinken \(small.text)."),
+            card(.challenge, "Neuer Name", "Bis zum Ende der Runde hörst du nur auf einen Spitznamen, den der Gegner aussucht."),
+            card(.challenge, "Stumm", "Bis zu deinem nächsten Wurf sagst du kein Wort."),
+            card(.challenge, "Standbild", "Halte bis zum nächsten Treffer die Pose, die du gerade hast."),
+            card(.challenge, "Komplimentzwang", "Sag jedem Gegner etwas Nettes. Zögern kostet \(small.text)."),
+            card(.chaos, "Alle", "Der ganze Tisch trinkt \(small.text)."),
+            // Die einzige Karte, die nichts tut – und deshalb wertvoll: Ohne
+            // sie wäre jeder geladene Becher garantiert ein Ereignis.
+            card(.chaos, "Rückkehr", "Der Becher bleibt stehen. Nichts passiert.")
+        ]
+    }
+
+    // MARK: Kern – in beiden Modi
+
+    private static var coreCards: [ExtremeCard] {
         let small = DrinkAmount.sips(2)
         let medium = DrinkAmount.sips(4)
         let shot = DrinkAmount.shot
@@ -151,24 +180,8 @@ enum ExtremeDeck {
             card(.penalty, "Verteiler", "Du bestimmst, wer \(medium.text) trinkt."),
             card(.penalty, "Reihum", "Das ganze gegnerische Team trinkt \(small.text)."),
             card(.penalty, "Doppelt", "Dieser Becher zählt doppelt – \(medium.text) obendrauf."),
-            card(.penalty, "Zuletzt gelacht", "Wer als Letztes gelacht hat, trinkt \(medium.text)."),
             card(.penalty, "Kurzer Prozess", "Trink \(shot.text) – ohne Diskussion."),
-            // "Links und rechts wird X getrunken" bricht bei einem einzelnen
-            // Schluck grammatisch weg. Der Satz muss mit jeder Menge aufgehen,
-            // die DrinkAmount einsetzen kann – deshalb der Umbau auf ein
-            // Subjekt im Plural.
-            card(.penalty, "Nachbarschaft", "Deine beiden Nachbarn trinken \(small.text)."),
             card(.penalty, "Handysperre", "Wer als Letztes am Handy war, trinkt \(medium.text)."),
-
-            // Challenge
-            card(.challenge, "Falsett", "Bis zum nächsten Treffer redest du nur mit hoher Stimme."),
-            card(.challenge, "Fünf Liegestütze", "Fünf Stück – oder \(shot.text)."),
-            card(.challenge, "Nachgemacht", "Der ganze Tisch macht deine Siegerpose nach."),
-            card(.challenge, "Neuer Name", "Bis zum Ende der Runde hörst du nur auf einen Spitznamen, den der Gegner aussucht."),
-            card(.challenge, "Stumm", "Bis zu deinem nächsten Wurf sagst du kein Wort."),
-            card(.challenge, "Standbild", "Halte bis zum nächsten Treffer die Pose, die du gerade hast."),
-            card(.challenge, "Komplimentzwang", "Sag jedem Gegner etwas Nettes. Zögern kostet \(small.text)."),
-            card(.challenge, "Akzent", "Bis zum nächsten Treffer sprichst du mit Akzent. Welchem, sagt der Gegner."),
 
             // Vorteil
             card(.boon, "Nachschlag", "Du wirfst sofort noch einen Ball."),
@@ -176,48 +189,63 @@ enum ExtremeDeck {
             card(.boon, "Griff", "Ein Becher deiner Wahl kommt zusätzlich weg."),
             card(.boon, "Freies Umstellen", "Ihr dürft sofort umstellen – zählt nicht gegen euer Kontingent."),
             card(.boon, "Geschenkt", "Balls Back, auch ohne beide getroffen zu haben."),
-            card(.boon, "Immunität", "Die nächste Karte, die euch trifft, dürft ihr weitergeben."),
-            card(.boon, "Ansage", "Du bestimmst, aus welcher Entfernung der Gegner als Nächstes wirft."),
+            card(.boon, "Ansage", "Der Gegner wirft den nächsten Ball aus doppelter Entfernung."),
 
             // Handicap
             card(.handicap, "Blind", "Der Gegner wirft die nächsten zwei Bälle mit geschlossenen Augen."),
             card(.handicap, "Schwache Hand", "Nächster Wurf des Gegners mit der anderen Hand."),
             card(.handicap, "Einbeinig", "Der Gegner wirft den nächsten Ball auf einem Bein."),
-            card(.handicap, "Kreisel", "Der Gegner dreht sich vor jedem Wurf einmal um sich selbst."),
             card(.handicap, "Schweigen", "Kein Wort im nächsten Zug des Gegners. Wer redet, trinkt \(small.text)."),
             card(.handicap, "Rückhand", "Der Gegner wirft den nächsten Ball über die Schulter, mit dem Rücken zum Tisch."),
-            card(.handicap, "Publikum", "Alle anderen dürfen den Gegner beim nächsten Wurf ablenken – ohne ihn zu berühren."),
 
-            // Chaos
-            card(.chaos, "Rückkehr", "Der Becher bleibt stehen. Nichts passiert."),
-            card(.chaos, "Platztausch", "Alle rücken einen Platz weiter."),
-            card(.chaos, "Beutetausch", "Ihr tauscht einen vollen Becher mit dem Gegner."),
-            card(.chaos, "Alle", "Der ganze Tisch trinkt \(small.text)."),
-            card(.chaos, "Fremdbestimmt", "Der Gegner zieht deine nächste Karte – und liest sie vor."),
-            card(.chaos, "Rollentausch", "Ihr tauscht für einen Zug die Teams.")
+            // Chaos als laufende Regel statt als Platztausch: wirkt über
+            // mehrere Züge und zwingt niemanden, aufzustehen.
+            card(.chaos, "Handwechsel", "Bis der nächste Becher fällt, werfen alle mit der schwachen Hand."),
+            card(.chaos, "Gedächtnislücke", "Ab jetzt heißt jeder Becher „Kelch“. Wer „Becher“ sagt, trinkt \(small.text)."),
+            card(.chaos, "Stille Post", "Bis zum nächsten Treffer darf niemand den Namen eines anderen sagen."),
+            card(.chaos, "Doppeltes Tempo", "Die nächste Runde wird ohne Pause geworfen – Ball holen und sofort weiter.")
         ]
     }
 
-    // MARK: Hard
+    // MARK: Hart – nur im Hard-Modus
 
-    /// Kommen nur im Hard-Modus dazu. Bewusst als eigene Liste und nicht als
-    /// Markierung an der Karte: So sieht man beim Lesen des Codes sofort,
-    /// was der Schalter tatsaechlich freischaltet.
+    /// Bewusst eine eigene Liste und keine Markierung an der Karte: So sieht
+    /// man beim Lesen des Codes sofort, was der Schalter freischaltet.
     private static var hardCards: [ExtremeCard] {
         let shot = DrinkAmount.shot
         let medium = DrinkAmount.sips(4)
 
         return [
+            // Kleidung
             card(.challenge, "Ein Stück weniger", "Zieh ein Kleidungsstück aus. Socken zählen einzeln."),
+            card(.challenge, "Zwei Stücke", "Zieh zwei Kleidungsstücke aus. Socken zählen einzeln."),
             card(.challenge, "Tausch", "Tausche ein Kleidungsstück mit einem Gegner."),
             card(.challenge, "Barfuß", "Schuhe und Socken aus – bis zum Ende der Partie."),
-            card(.challenge, "Oberteil", "Oberteil aus oder \(shot.text). Du entscheidest."),
-            card(.challenge, "Fremdbestimmt angezogen", "Der Gegner sucht aus, welches Kleidungsstück du ausziehst."),
-            card(.challenge, "Peinlich", "Erzähl die peinlichste Geschichte, die dir gerade einfällt – oder \(shot.text)."),
+            card(.challenge, "Wahrheit oder Stoff", "Der Tisch stellt eine Frage. Keine Antwort kostet ein Kleidungsstück."),
+
+            // Handy
             card(.challenge, "Letzte Nachricht", "Lies deine letzte verschickte Nachricht laut vor."),
+            card(.challenge, "Letztes Foto", "Zeig dem Tisch das letzte Foto in deiner Galerie."),
+            card(.challenge, "Chatverlauf", "Der Gegner sucht einen Chat aus. Lies die letzte Nachricht daraus vor."),
+            card(.challenge, "Playlist", "Der Gegner sucht ein Lied auf deinem Handy aus. Es läuft bis zum Ende der Runde."),
+
+            // Reden
+            card(.challenge, "Peinlich", "Erzähl die peinlichste Geschichte, die dir gerade einfällt – oder trink \(shot.text)."),
             card(.challenge, "Ehrliche Antwort", "Der Gegner stellt eine Frage. Antworte ehrlich oder trink \(shot.text)."),
+            card(.challenge, "Ex-Geschichte", "Erzähl, warum deine letzte Beziehung zu Ende ging – oder zieh ein Kleidungsstück aus."),
+
+            // Körper
+            card(.challenge, "Eiswürfel", "Ein Eiswürfel in den Nacken. Du hältst still, bis er geschmolzen ist."),
+            card(.challenge, "Stehplatz", "Bis zum Ende der Partie darfst du dich nicht mehr hinsetzen."),
+
+            // Strafe
             card(.penalty, "Doppelter Kurzer", "Zwei Shots. Such dir aus, wer den zweiten übernimmt."),
-            card(.penalty, "Kettenreaktion", "Du trinkst \(medium.text) – und darfst dasselbe zweimal weitergeben.")
+            card(.penalty, "Kettenreaktion", "Du trinkst \(medium.text) – und darfst dasselbe zweimal weitergeben."),
+            card(.penalty, "Kopf an Kopf", "Du und ein Gegner deiner Wahl: beide \(shot.text), gleichzeitig."),
+
+            // Chaos
+            card(.chaos, "Doppelter Einsatz", "Bis du das nächste Mal triffst, zählt jede Strafe für dich doppelt."),
+            card(.chaos, "Blindes Vertrauen", "Ein Gegner mischt deinen nächsten Becher aus dem, was auf dem Tisch steht.")
         ]
     }
 
