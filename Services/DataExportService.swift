@@ -31,16 +31,20 @@ import Foundation
 // MARK: - Format der Datei
 
 /// Wurzel der Sicherungsdatei.
-struct DataExportPayload: Encodable {
+struct DataExportPayload: Codable {
     /// Steigt, sobald sich die Struktur unvertraeglich aendert. Wer die Datei
     /// spaeter einliest, kann daran erkennen, ob er sie versteht.
+    /// 1 = ohne Wurf-Aktionen, damit nicht wiederherstellbar.
+    /// 2 = mit Aktionen.
+    static let currentVersion = 2
+
     let formatVersion: Int
     let exportedAt: Date
     let profiles: [ExportedProfile]
     let games: [ExportedGame]
 }
 
-struct ExportedProfile: Encodable {
+struct ExportedProfile: Codable {
     let id: String
     let name: String
     let emoji: String
@@ -51,7 +55,7 @@ struct ExportedProfile: Encodable {
 }
 
 /// Lebenszeit-Summen, so wie sie am Profil stehen.
-struct ExportedStatistics: Encodable {
+struct ExportedStatistics: Codable {
     let gamesPlayed: Int
     let gamesWon: Int
     let totalThrows: Int
@@ -65,7 +69,7 @@ struct ExportedStatistics: Encodable {
     let eloRating: Int
 }
 
-struct ExportedGame: Encodable {
+struct ExportedGame: Codable {
     let id: String
     let type: String
     let status: String
@@ -82,14 +86,14 @@ struct ExportedGame: Encodable {
     let throwLog: [ExportedThrow]
 }
 
-struct ExportedTeam: Encodable {
+struct ExportedTeam: Codable {
     let id: String
     let playerIds: [String]
     let playerNames: [String]
     let score: Int
 }
 
-struct ExportedThrow: Encodable {
+struct ExportedThrow: Codable {
     let id: String
     let sequenceNumber: Int
     let roundNumber: Int
@@ -103,6 +107,14 @@ struct ExportedThrow: Encodable {
     let cupsRemoved: Int
     let chosenCupIds: [String]?
     let timestamp: Date?
+
+    /// Die Aktion, die diesen Eintrag ausgeloest hat.
+    ///
+    /// Ohne sie ist der Log wertlos: `ThrowRepository.replay` ueberspringt
+    /// jeden Eintrag ohne Aktion, ein wiederhergestelltes Spiel bliebe also
+    /// beim Anfangszustand stehen. Heatmap, Verlaufskurve und
+    /// Zeitraum-Statistiken haengen alle daran.
+    let action: GameAction?
 }
 
 // MARK: - Ergebnis eines Laufs
@@ -150,7 +162,7 @@ struct DataExportService: DataExportServiceProtocol {
         }
 
         let payload = DataExportPayload(
-            formatVersion: 1,
+            formatVersion: DataExportPayload.currentVersion,
             exportedAt: Date(),
             profiles: profiles.map(exported(profile:)),
             games: exportedGames
@@ -239,7 +251,8 @@ struct DataExportService: DataExportServiceProtocol {
             isBounce: entry.isBounce,
             cupsRemoved: entry.cupsRemoved,
             chosenCupIds: entry.chosenCupIds,
-            timestamp: entry.timestamp
+            timestamp: entry.timestamp,
+            action: entry.action
         )
     }
 

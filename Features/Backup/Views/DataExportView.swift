@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct DataExportView: View {
 
@@ -27,12 +28,23 @@ struct DataExportView: View {
     @State private var isWorking = false
     @State private var errorText: String?
 
-    private var service: DataExportService {
-        DataExportService(
+    @State private var isPickingFile = false
+    @State private var importPreview: DataImportPreview?
+    @State private var importData: Data?
+    @State private var importStep: String?
+    @State private var importError: String?
+
+    private var service: (export: DataExportService, importService: DataImportService) {
+        (DataExportService(
             profileRepository: container.playerProfileRepository,
             gameRepository: container.gameRepository,
             throwRepository: container.throwRepository
-        )
+        ),
+        DataImportService(
+            profileRepository: container.playerProfileRepository,
+            gameRepository: container.gameRepository,
+            throwRepository: container.throwRepository
+        ))
     }
 
     var body: some View {
@@ -66,9 +78,21 @@ struct DataExportView: View {
                     .opacity(isWorking ? 0.5 : 1)
 
                     if isWorking {
-                        ProgressView()
-                            .tint(BeerStatsColor.accent)
+                        VStack(spacing: 6) {
+                            ProgressView().tint(BeerStatsColor.accent)
+                            if let importStep {
+                                Text(importStep)
+                                    .font(BeerStatsFont.caption)
+                                    .foregroundStyle(BeerStatsColor.textSecondary)
+                            }
+                        }
+                    } else if let importStep {
+                        Text(importStep)
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(BeerStatsColor.success)
                     }
+
+                    restoreSection
                 }
                 .padding(24)
             }
@@ -165,6 +189,138 @@ struct DataExportView: View {
         }
     }
 
+    // MARK: - Wiederherstellen
+
+    /// Steht unter dem Sichern und ist zurueckhaltender gestaltet.
+    ///
+    /// Wiederherstellen ist die seltenere und die gefaehrlichere Haelfte: Es
+    /// LEGT AN, es ersetzt nichts. Wer es auf ein Konto laufen laesst, in dem
+    /// schon Profile stehen, hat danach jedes zweimal. Deshalb steht die
+    /// Warnung im Text und nicht im Kleingedruckten.
+    private var restoreSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("WIEDERHERSTELLEN")
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .kerning(1.8)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .padding(.top, 14)
+
+            if let vorschau = importPreview {
+                previewCard(vorschau)
+            } else {
+                Text("Eine gesicherte Datei zurücklesen. Profile und Partien werden neu angelegt – vorhandene bleiben stehen.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button("Datei auswählen") { isPickingFile = true }
+                    .font(BeerStatsFont.headline)
+                    .foregroundStyle(BeerStatsColor.accentSecondary)
+            }
+
+            if let importError {
+                Text(importError)
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.error)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fileImporter(isPresented: $isPickingFile, allowedContentTypes: [.json]) { ergebnis in
+            handlePickedFile(ergebnis)
+        }
+    }
+
+    private func previewCard(_ vorschau: DataImportPreview) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Sicherung vom \(vorschau.exportedAt.formatted(date: .abbreviated, time: .shortened))")
+                .font(BeerStatsFont.headline)
+                .foregroundStyle(BeerStatsColor.textPrimary)
+
+            Text("\(vorschau.profileCount) Profile · \(vorschau.gameCount) Partien · \(vorschau.throwCount) Würfe")
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            if !vorschau.canRestoreThrowLog {
+                Text("Ältere Fassung ohne Wurf-Aktionen: Profile und Kennzahlen kommen zurück, die Partien lassen sich daraus aber nicht mehr nachspielen.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.warning)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Text("Achtung: Es wird angelegt, nicht ersetzt. Auf einem Konto mit vorhandenen Profilen steht danach alles doppelt.")
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.warning)
+                .fixedSize(horizontal: false, vertical: true)
+
+            PrimaryButton(title: "Nur Profile und Werte", systemImage: "person.2.fill") {
+                Task { await runImport(includeGames: false) }
+            }
+            .disabled(isWorking)
+
+            if vorschau.canRestoreThrowLog && vorschau.gameCount > 0 {
+                Button("Alles, auch die \(vorschau.gameCount) Partien") {
+                    Task { await runImport(includeGames: true) }
+                }
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .disabled(isWorking)
+            }
+
+            Button("Abbrechen") {
+                importPreview = nil
+                importData = nil
+            }
+            .font(BeerStatsFont.caption)
+            .foregroundStyle(BeerStatsColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .glassPanel(cornerRadius: 18)
+        .neonEdge(BeerStatsColor.accentSecondary, cornerRadius: 18, intensity: 0.5)
+    }
+
+    private func handlePickedFile(_ ergebnis: Result<URL, Error>) {
+        importError = nil
+        do {
+            let url = try ergebnis.get()
+            // Aus der Dateien-App kommt die Datei mit eingeschraenkten
+            // Rechten – ohne diesen Zugriff schlaegt das Lesen fehl.
+            let zugriff = url.startAccessingSecurityScopedResource()
+            defer { if zugriff { url.stopAccessingSecurityScopedResource() } }
+
+            let daten = try Data(contentsOf: url)
+            importPreview = try service.importService.preview(daten)
+            importData = daten
+        } catch {
+            importError = "Datei nicht lesbar: \(error.localizedDescription)"
+        }
+    }
+
+    private func runImport(includeGames: Bool) async {
+        guard let importData else { return }
+        isWorking = true
+        importError = nil
+        defer { isWorking = false }
+
+        do {
+            let ergebnis = try await service.importService.restore(
+                importData,
+                ownerId: ownerId,
+                includeGames: includeGames,
+                progress: { schritt in importStep = schritt }
+            )
+            importPreview = nil
+            self.importData = nil
+            importStep = "\(ergebnis.profiles) Profile, \(ergebnis.games) Partien wiederhergestellt"
+            HapticManager.success()
+            SoundManager.play(.victory)
+        } catch {
+            importError = AppError.from(error).localizedDescription
+            HapticManager.error()
+        }
+    }
+
     // MARK: - Ablauf
 
     private func run() async {
@@ -173,7 +329,7 @@ struct DataExportView: View {
         defer { isWorking = false }
 
         do {
-            let result = try await service.makeExport(ownerId: ownerId)
+            let result = try await service.export.makeExport(ownerId: ownerId)
             summary = result
             HapticManager.success()
             SoundManager.play(.victory)

@@ -37,6 +37,15 @@ protocol ThrowRepositoryProtocol {
 
     func replay(_ entries: [Throw], format: GameFormat, playersPerTeam: Int) -> LiveGameState
 
+    /// Haengt einen fertigen Eintrag an, ohne ihn aus einer Aktion zu bauen.
+    ///
+    /// Nur fuer das Wiederherstellen aus einer Sicherung. Der normale Weg ist
+    /// `record(action:by:before:after:...)`, der die laufende Nummer und den
+    /// Wurf-Typ aus dem Spielstand ableitet – beim Wiederherstellen stehen
+    /// beide schon in der Datei und duerfen sich nicht aendern, sonst weicht
+    /// der nachgespielte Stand vom urspruenglichen ab.
+    func append(_ entry: Throw, gameId: String) async throws
+
     /// Roher Wurf-Log einer Partie, unveraendert wie gespeichert.
     ///
     /// Die Auswertungen unten spielen den Log nach und geben Kennzahlen
@@ -155,6 +164,10 @@ final class ThrowRepository: ThrowRepositoryProtocol {
 
     func fetchThrows(gameId: String) async throws -> [Throw] {
         try await throwService.fetchThrows(gameId: gameId)
+    }
+
+    func append(_ entry: Throw, gameId: String) async throws {
+        try await throwService.appendThrow(entry, gameId: gameId)
     }
 
     // MARK: - Schreiben
