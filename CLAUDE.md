@@ -179,7 +179,10 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
   abgeschlossene Partien und den vollständigen Wurf-Log als JSON und gibt
   sie ans Teilen-Blatt. Bewusst **nicht** hinter dem Entwickler-Passwort –
   eine Sicherung, an die man nur kommt, wenn ohnehin alles läuft, ist
-  keine. Ein Wiederherstellen gibt es noch nicht.
+  keine. **Zurücklesen geht ebenfalls** – wahlweise nur Profile samt
+  Kennzahlen oder alles inklusive Wurf-Logs. Es *legt an*, es ersetzt
+  nichts: Auf einem Konto mit vorhandenen Profilen steht danach alles
+  doppelt.
 - Turniermodus: lost geeignete Spiele aus, Strafe steigt je Runde
 - Neunzehn Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Bussfahrer, Wahrheit oder Pflicht,
@@ -340,10 +343,7 @@ Diesen Abschnitt bitte löschen, sobald er zurück ist.
 4. **Bester Partner, schlimmster Gegner.** Die Partien enthalten die
    Aufstellungen; mit wem man gewinnt, ist reine Auswertung. `HeadToHeadView`
    gibt es schon, Team-Chemie fehlt.
-5. **Wiederherstellen aus der Sicherung.** Die größte Lücke: Es gibt einen
-   Export und keinen Import. Auch der größte Aufwand – die IDs müssen neu
-   verknüpft werden, weil Firestore beim Anlegen neue vergibt.
-6. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
+5. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
    acht Funde aus der Cloud-Prüfung vom 15. August lagen dort, alle mit
    derselben Ursache: derselbe Zustand an zwei Stellen gehalten. Ein Schnitt
    entlang Regelwerk / Synchronisation / Nebenwirkungen legt die Fehlerklasse
@@ -360,7 +360,10 @@ Nichts davon ist je auf Hardware gelaufen.
   aufeinander. Ungetestet, wahrscheinlichster Ärger.
 - **Abend, Trinkbilanz, Namen** in den Partyspielen – besonders, ob Position
   3 im Spiel und Position 3 in der Teilnehmerliste dieselbe Person meinen.
-- **Datensicherung** samt Teilen-Blatt.
+- **Datensicherung** samt Teilen-Blatt – und vor allem das
+  **Wiederherstellen**, weil es als einziges schreibt. Beim ersten Versuch
+  „Nur Profile und Werte" auf einem frischen Konto, nicht „Alles" auf dem
+  echten.
 - **Widget-Extension:** Erst der Sideload zeigt, ob die `.ipa` installierbar
   bleibt (Lessons Learned Nr. 5).
 - **Ohne Netz:** Flugmodus, App killen, ganze Partie spielen, Netz an. Der
