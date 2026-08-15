@@ -131,6 +131,12 @@ dort Profil-IDs, liefe die Zugriffsregel ins Leere.
 
 Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
 
+Was hier steht, ist der **Standard**. Sechs dieser Regeln lassen sich seit
+den Hausregeln abschalten (`HouseRule` in `Core/Utilities/HouseRules.swift`,
+Oberfläche im Neues-Spiel-Screen). Jede Partie trägt ihr Regelwerk in ihrem
+eigenen Dokument – wer später die Hausregeln ändert, verbiegt damit **nicht**
+den nachgespielten Wurf-Log alter Partien.
+
 - **Zwei Bälle pro Zug, in beiden Modi.** Im 2v2 wirft jeder Spieler einen,
   im 1v1 dieselbe Person beide. `ballsPerTurn` ist deshalb von
   `playersPerTeam` getrennt.
@@ -168,6 +174,11 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
   `HomeViewModel` wird dorthin durchgereicht, nicht neu gebaut, sonst liefe
   ein zweiter Listener auf dieselben Daten.
 - Neues Spiel aus Profilen → direkt ins Live-Tracking (keine Lobby)
+- **Hausregeln**: Bounce, Trickshot, On Fire (samt Schwelle), Airball-Strafe,
+  Umstellen und Redemption einzeln abschaltbar. Liegen in UserDefaults, weil
+  sie zum Tisch gehören und nicht zur Partie; in die Partie geschrieben wird
+  trotzdem jedes Mal. Die Zeile im Neues-Spiel-Screen nennt, was abweicht,
+  und der Regeln-Screen erklärt nur noch, was auch gilt.
 - Glücksrad, das die Teams aus allen aktiven Profilen auslost
 - Live-Tracking mit vollständigem Regelwerk, Undo, Re-Rack, Abbruch
 - Statistiken auf Profile, umschaltbar zwischen Gesamt und letztem Monat
@@ -199,6 +210,13 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
   neuer Fall in der Aufzählung – wer es stattdessen in die View schreibt,
   taucht in „Zuletzt gespielt" nicht auf.
 
+- **Eine neue abschaltbare Regel ist ein neuer Fall in `HouseRule`.** Titel,
+  Erklärung, Kurzform für die Zusammenfassung und der `WritableKeyPath` ins
+  `GameFormat` stehen dort beisammen; Einstellungs-Screen und
+  Abweichungs-Zeile bauen sich daraus. Wer den Schalter stattdessen in die
+  View schreibt, taucht in der Zusammenfassung nicht auf – und dann steht
+  „Standard“ über einer Partie, die keiner ist.
+
 - **Kartenspiele tragen den ganzen Satz auf der Karte**, nicht nur den
   Nachsatz. Ein fester Vorspann („Ich hab noch nie …") kann grammatisch
   nicht aufgehen: Es gibt „Ich bin noch nie …" und „Ich hatte noch nie …".
@@ -217,6 +235,11 @@ Vollständig in `GameEngine` umgesetzt. Nicht eigenmächtig ändern.
   `JSONEncoder` schreiben lassen – vor allem aber, damit eine Umbenennung
   im Modell nicht die Sicherungen von letztem Jahr entwertet. Das Format
   trägt eine `formatVersion` und darf sich langsamer ändern als der Code.
+  Neue Felder gehören deshalb **optional** hinein – so wie der Regelwerk-
+  Abschnitt einer Partie: Sicherungen von vorher haben ihn nicht, für die
+  gilt beim Zurücklesen der Standard, und genau der galt damals auch.
+  Alles, was die Engine zum Nachspielen braucht, muss dort stehen. Sonst
+  läuft der wiederhergestellte Log unter anderen Regeln als der echte.
 
 - **Zeitraum-Statistiken werden gerechnet, nicht gespeichert.** Die Werte am
   Profil sind Lebenszeit-Summen. Für „letzter Monat" spielt
@@ -270,6 +293,13 @@ Auszeichnungen, weitere Partyspiele (Reaktionsduell, Mäxchen).
    aufgezeichneten Schritten. Ein Compiler-Fehler sieht nie so aus. Bevor
    der Swift-Code durchsucht wird, gehört deshalb der Blick auf die
    Schritte; `scripts/watch_build.py` schreibt genau das hin.
+8. **Eine Einstellung, die niemand einstellen kann, wird auch nicht
+   ausgewertet.** `GameFormat` trug sieben Schalter, von denen nur die
+   Becherzahl an der Oberfläche ankam. Beim Sichtbarmachen stellte sich
+   heraus: `redemptionAllowed` hat die Engine nie gelesen – die Redemption
+   lief auch abgeschaltet. Kein Test hätte das gefunden, es gab keinen. Wer
+   Konfiguration auf Vorrat baut, baut ungeprüften Code; entweder gleich mit
+   Oberfläche und Test, oder gar nicht.
 
 ---
 
@@ -325,25 +355,19 @@ Diesen Abschnitt bitte löschen, sobald er zurück ist.
 
 ### Was sich lohnt, nach Wert sortiert
 
-1. **Hausregeln erreichbar machen.** `GameFormat` hat acht Schalter, die
-   Engine wertet alle aus – im Neues-Spiel-Screen lässt sich genau einer
-   ändern (die Becherzahl). Das Regelwerk wurde als Konfigurationsobjekt
-   gebaut, damit Varianten möglich sind; die Möglichkeit ist nie an die
-   Oberfläche gekommen. `RulesView` zeigt die Schalter bereits korrekt an.
-   Reine Oberfläche, kein Risiko.
-2. **Elo berechnen oder streichen.** `eloRating` steht in drei Modellen, in
+1. **Elo berechnen oder streichen.** `eloRating` steht in drei Modellen, in
    `LeaderboardEntry` und in der Sicherungsdatei – immer auf `1000`, nirgends
    gerechnet. Eine Zahl, die aussieht, als bedeute sie etwas. Berechnen macht
    die Rangliste erst aussagekräftig (wer gegen Starke gewinnt, steigt
    schneller); streichen ist ebenfalls ehrlich. Beides ist besser als jetzt.
-3. **Trefferquote über die Uhrzeit.** Jeder `Throw` trägt einen Zeitstempel,
+2. **Trefferquote über die Uhrzeit.** Jeder `Throw` trägt einen Zeitstempel,
    benutzt wird er für nichts. „Bis 22 Uhr 47 %, nach Mitternacht 22 %" ist
    die ehrlichste Statistik, die diese App haben kann, und kostet keine
    neuen Daten.
-4. **Bester Partner, schlimmster Gegner.** Die Partien enthalten die
+3. **Bester Partner, schlimmster Gegner.** Die Partien enthalten die
    Aufstellungen; mit wem man gewinnt, ist reine Auswertung. `HeadToHeadView`
    gibt es schon, Team-Chemie fehlt.
-5. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
+4. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
    acht Funde aus der Cloud-Prüfung vom 15. August lagen dort, alle mit
    derselben Ursache: derselbe Zustand an zwei Stellen gehalten. Ein Schnitt
    entlang Regelwerk / Synchronisation / Nebenwirkungen legt die Fehlerklasse
@@ -353,6 +377,12 @@ Diesen Abschnitt bitte löschen, sobald er zurück ist.
 
 Nichts davon ist je auf Hardware gelaufen.
 
+- **Hausregeln**: Eine Partie mit abgeschalteter Redemption zu Ende spielen –
+  der letzte Becher muss direkt in den Sieger-Screen führen, ohne Nachwurf.
+  Das Regelwerk selbst ist per Unit-Test abgedeckt (`HouseRulesTests`), der
+  Weg dorthin nicht: dass der Schalter das Spiel erreicht, dass die
+  Einstellung den App-Start überlebt, und dass die Zeile im
+  Neues-Spiel-Screen mit sieben Abweichungen nicht auseinanderfällt.
 - **Beerpong Extreme** insgesamt: Blitzt die Karte auf? Beim richtigen Team?
   Die Zuordnung `.hit` → Gegner und `.cupChosen` → wählendes Team ist
   durchdacht, nicht beobachtet.
