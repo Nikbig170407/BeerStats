@@ -21,6 +21,7 @@ struct NewGameView: View {
 
     /// Offener Platz, für den gerade ein Spieler gewählt wird.
     @State private var pickerTarget: SlotTarget?
+    @State private var showsHouseRules = false
     @State private var extremeCups: Double = 0
     @State private var extremeMode: ExtremeMode = .normal
 
@@ -53,6 +54,7 @@ struct NewGameView: View {
             VStack(alignment: .leading, spacing: 24) {
                 modePicker
                 cupPicker
+                houseRulesLink
                 extremeSection
 
                 if viewModel.isLoading {
@@ -99,6 +101,9 @@ struct NewGameView: View {
         }
         .sheet(item: $pickerTarget) { target in
             playerPicker(for: target)
+        }
+        .sheet(isPresented: $showsHouseRules) {
+            HouseRulesView(format: $viewModel.houseRules)
         }
         // Kein Zwischenschritt: Nach dem Start geht es sofort ins Tracking.
         .navigationDestination(isPresented: hasCreatedGame) {
@@ -335,12 +340,58 @@ struct NewGameView: View {
     private var cupPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionLabel("Becher pro Team")
-            Picker("Becher", selection: $viewModel.cupCount) {
+            Picker("Becher", selection: $viewModel.houseRules.cupCount) {
                 Text("10 Becher").tag(10)
                 Text("6 Becher").tag(6)
             }
             .pickerStyle(.segmented)
         }
+    }
+
+    /// Einstieg in die Sonderregeln.
+    ///
+    /// Die Zeile zeigt, was abweicht, nicht nur dass sie existiert: Wer mit
+    /// abgeschaltetem Bounce spielt, soll das hier sehen und nicht erst am
+    /// Tisch merken, wenn der Knopf fehlt. Steht der Standard, sagt sie genau
+    /// das – dann ist Aufmachen unnoetig.
+    private var houseRulesLink: some View {
+        Button {
+            showsHouseRules = true
+        } label: {
+            HStack(spacing: 14) {
+                Text("⚖️").font(.system(size: 26))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Hausregeln")
+                        .font(BeerStatsFont.headline)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                    Text(viewModel.houseRules.isStandardRuleset
+                         ? "Alle Sonderregeln an"
+                         : viewModel.houseRules.ruleDeviations.joined(separator: " · "))
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(
+                            viewModel.houseRules.isStandardRuleset
+                                ? BeerStatsColor.textSecondary
+                                : BeerStatsColor.warning
+                        )
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .padding(16)
+            .glassPanel()
+            .neonEdge(
+                viewModel.houseRules.isStandardRuleset
+                    ? BeerStatsColor.textSecondary
+                    : BeerStatsColor.warning,
+                intensity: viewModel.houseRules.isStandardRuleset ? 0.2 : 0.55
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
+        .animation(AppAnimation.standard, value: viewModel.houseRules)
     }
 
     // MARK: - Aufstellung

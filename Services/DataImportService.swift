@@ -170,7 +170,10 @@ struct DataImportService: DataImportServiceProtocol {
             let neueSpielId = try await gameRepository.createGame(
                 type: GameType(rawValue: spiel.type) ?? .twoVsTwo,
                 teams: teams,
-                format: GameFormat(cupCount: spiel.cupCount),
+                // Mitsamt der Sonderregeln, sonst spielt die Engine den Log
+                // spaeter unter anderen Regeln nach als denen, unter denen er
+                // entstanden ist.
+                format: spiel.gameFormat,
                 createdBy: ownerId,
                 accessUserIds: [ownerId]
             )

@@ -23,7 +23,15 @@ final class NewGameViewModel: ObservableObject {
     @Published var gameType: GameType = .twoVsTwo {
         didSet { resetSelection() }
     }
-    @Published var cupCount: Int = AppConstants.GameDefaults.standardCupCount
+    /// Die Hausregeln dieses Tisches, Becherzahl inklusive.
+    ///
+    /// Kommt aus UserDefaults und geht bei jeder Aenderung dorthin zurueck:
+    /// Wer ohne Bounce spielt, will das nicht vor jeder Partie neu einstellen.
+    /// Der Vorsprung steht bewusst NICHT hier drin, sondern kommt erst in
+    /// `format` dazu – er gehoert zur Aufstellung, nicht zum Tisch.
+    @Published var houseRules: GameFormat = .houseRules {
+        didSet { GameFormat.houseRules = houseRules }
+    }
 
     /// Ob der vorgeschlagene Ausgleich angenommen wurde.
     ///
@@ -36,6 +44,11 @@ final class NewGameViewModel: ObservableObject {
     /// Gibt es keinen Vorschlag, gibt es auch keinen Vorsprung.
     @Published var isHandicapAccepted = false
 
+    /// Die Becherzahl. Steht in den Hausregeln, wird aber eine Ebene hoeher
+    /// im Screen entschieden – anders als die Sonderregeln aendert sie sich
+    /// oft genug, um jedes Mal sichtbar zu sein.
+    var cupCount: Int { houseRules.cupCount }
+
     /// Das Regelwerk dieser Partie – an genau EINER Stelle.
     ///
     /// Vorher wurde es zweimal gebaut: hier fuer Firestore und noch einmal in
@@ -44,7 +57,9 @@ final class NewGameViewModel: ObservableObject {
     /// Stellen ankommt, laufen gespielte Partie und nachgespielte Historie
     /// auseinander - und zwar lautlos, weil beide fuer sich stimmig aussehen.
     var format: GameFormat {
-        GameFormat(cupCount: cupCount, handicapByTeam: acceptedHandicap)
+        var laufend = houseRules
+        laufend.handicapByTeam = acceptedHandicap
+        return laufend
     }
 
     /// Der tatsaechlich geltende Vorsprung – nur, wenn der Vorschlag noch

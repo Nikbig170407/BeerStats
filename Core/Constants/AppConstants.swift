@@ -41,6 +41,13 @@ enum AppConstants {
         /// Spieler "on Fire" ist und bei jedem weiteren Treffer einen
         /// Bonus-Wurf erhält.
         static let onFireStreakThreshold = 3
+        /// Wie weit sich diese Schwelle als Hausregel verstellen lässt.
+        ///
+        /// Nach unten bei zwei, weil ein Spieler ab eins nach jedem Treffer
+        /// weiterwürfe und der Gegner nie an die Reihe käme. Nach oben bei
+        /// sechs – wer sechsmal in Folge trifft, hat die Partie ohnehin
+        /// entschieden, eine höhere Schwelle wäre eine Regel ohne Fall.
+        static let onFireStreakRange = 2...6
     }
 
     /// UI-Timing-Werte für konsistente Animationen in der gesamten App.

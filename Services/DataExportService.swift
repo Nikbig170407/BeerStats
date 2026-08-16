@@ -80,10 +80,68 @@ struct ExportedGame: Codable {
     let winnerTeamId: String?
     let teams: [ExportedTeam]
     let cupCount: Int
+    /// Die Sonderregeln, unter denen diese Partie lief.
+    ///
+    /// Der Wurf-Log allein reicht nicht: Nachgespielt wird er DURCH die
+    /// Engine, und die braucht dasselbe Regelwerk. Eine Partie ohne
+    /// Redemption oder mit Vorsprung ergaebe unter dem Standard einen
+    /// anderen Verlauf als den, der am Tisch stattgefunden hat – im Zweifel
+    /// einen anderen Sieger, und niemand sieht der Historie an, dass sie
+    /// falsch ist.
+    ///
+    /// Optional, weil Sicherungen aus der Zeit vor den Hausregeln ihn nicht
+    /// haben. Fehlt er, gilt der Standard – und genau der galt damals auch.
+    let rules: ExportedRules?
     /// Der vollstaendige Wurf-Log. Er ist die Wahrheit der Partie – aus ihm
     /// laesst sich jeder Zwischenstand wieder herstellen, die Kennzahlen
     /// oben sind daraus nur abgeleitet.
     let throwLog: [ExportedThrow]
+}
+
+/// Das Regelwerk einer Partie, ohne die Becherzahl – die steht eine Ebene
+/// hoeher und stand dort schon, bevor es diesen Abschnitt gab.
+struct ExportedRules: Codable {
+    let reRacksAllowed: Bool
+    let redemptionAllowed: Bool
+    let bounceShotsAllowed: Bool
+    let trickshotsAllowed: Bool
+    let onFireEnabled: Bool
+    let onFireStreakThreshold: Int
+    let airballPenaltyEnabled: Bool
+    /// Der Vorsprung, mit dem gestartet wurde. Gehoert hierher, weil der
+    /// nachgespielte Anfangszustand allein aus dem Format entsteht.
+    let handicapByTeam: [Int]?
+
+    init(format: GameFormat) {
+        reRacksAllowed = format.reRacksAllowed
+        redemptionAllowed = format.redemptionAllowed
+        bounceShotsAllowed = format.bounceShotsAllowed
+        trickshotsAllowed = format.trickshotsAllowed
+        onFireEnabled = format.onFireEnabled
+        onFireStreakThreshold = format.onFireStreakThreshold
+        airballPenaltyEnabled = format.airballPenaltyEnabled
+        handicapByTeam = format.handicapByTeam
+    }
+}
+
+extension ExportedGame {
+
+    /// Das Regelwerk der Partie, so wie die Engine es braucht.
+    var gameFormat: GameFormat {
+        guard let rules else { return GameFormat(cupCount: cupCount) }
+
+        return GameFormat(
+            cupCount: cupCount,
+            reRacksAllowed: rules.reRacksAllowed,
+            redemptionAllowed: rules.redemptionAllowed,
+            bounceShotsAllowed: rules.bounceShotsAllowed,
+            trickshotsAllowed: rules.trickshotsAllowed,
+            onFireEnabled: rules.onFireEnabled,
+            onFireStreakThreshold: rules.onFireStreakThreshold,
+            airballPenaltyEnabled: rules.airballPenaltyEnabled,
+            handicapByTeam: rules.handicapByTeam
+        )
+    }
 }
 
 struct ExportedTeam: Codable {
@@ -233,6 +291,7 @@ struct DataExportService: DataExportServiceProtocol {
                 )
             },
             cupCount: game.format.cupCount,
+            rules: ExportedRules(format: game.format),
             throwLog: entries.map(exported(entry:))
         )
     }

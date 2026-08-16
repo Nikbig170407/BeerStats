@@ -163,7 +163,11 @@ struct BeerpongMenuView: View {
     /// mit am Tisch steht.
     private var rulesCard: some View {
         NavigationLink {
-            RulesView()
+            // Mit den Hausregeln, nicht mit dem Standard: Seit die
+            // Sonderregeln abschaltbar sind, waere eine Erklaerung des
+            // Standards an einem Tisch ohne Bounce schlicht falsch – und
+            // falsche Regeln sind schlimmer als keine, weil man ihnen glaubt.
+            RulesView(format: .houseRules)
         } label: {
             destinationCard(
                 title: "Regeln",

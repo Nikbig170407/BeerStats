@@ -188,7 +188,7 @@ enum GameEngine {
         // mitgezählt.
         let keepsBall = grantStreak(for: thrower, state: &state, events: &events, format: format)
 
-        if handleRackCleared(attacker: thrower.teamIndex, state: &state, events: &events) { return }
+        if handleRackCleared(attacker: thrower.teamIndex, state: &state, events: &events, format: format) { return }
         if keepsBall { return }
 
         advanceAfterThrow(thrower: thrower, state: &state, events: &events, format: format)
@@ -393,7 +393,8 @@ enum GameEngine {
     private static func handleRackCleared(
         attacker: Int,
         state: inout LiveGameState,
-        events: inout [GameEvent]
+        events: inout [GameEvent],
+        format: GameFormat
     ) -> Bool {
         let targetIndex = state.opponent(of: attacker)
         guard state.racks[targetIndex].isCleared else { return false }
@@ -401,6 +402,15 @@ enum GameEngine {
         if state.phase == .redemption {
             // Auch das zweite Rack ist leer: ausgeglichen.
             finish(winnerTeamIndex: nil, state: &state, events: &events)
+            return true
+        }
+
+        // Ohne Redemption ist der letzte Becher das Spielende. Dieser Schalter
+        // war der einzige im Regelwerk, den die Engine nie gelesen hat – die
+        // Redemption lief auch dann, wenn sie abgeschaltet war. Solange die
+        // Hausregeln nicht einstellbar waren, ist das niemandem aufgefallen.
+        guard format.redemptionAllowed else {
+            finish(winnerTeamIndex: attacker, state: &state, events: &events)
             return true
         }
 
@@ -489,7 +499,7 @@ enum GameEngine {
             finishHit(thrower: thrower, wasTrickshot: wasTrickshot, state: &state, events: &events, format: format)
 
         case .afterBombe(let teamIndex):
-            if handleRackCleared(attacker: teamIndex, state: &state, events: &events) { return }
+            if handleRackCleared(attacker: teamIndex, state: &state, events: &events, format: format) { return }
             // Beide Teamkollegen haben getroffen – also gilt auch hier Balls Back.
             ballsBack(teamIndex: teamIndex, state: &state, events: &events)
         }
