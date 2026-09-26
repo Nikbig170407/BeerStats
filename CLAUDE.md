@@ -196,11 +196,13 @@ den nachgespielten Wurf-Log alter Partien.
   doppelt.
 - Turniermodus: lost geeignete Spiele aus, Strafe steigt je Runde
 - Neunzehn Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
-  *Mit Karten* – Ring of Fire, Bussfahrer, Wahrheit oder Pflicht,
-  Ich hab noch nie. *Raten & reden* – Mäxchen, Zwei Wahrheiten, Der Spion,
-  Wer bin ich?, 21, Schätzmeister, Kategorien, Wer von uns?.
-  *Schnell zwischendurch* – Bombe, Reaktionsduell, Trink-Roulette.
-  *Läuft nebenher* – Verbotene Wörter, Trinkbingo.
+  *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
+  Pflicht, Ich hab noch nie. *Raten & reden* – Schocken, Mäxchen, Zwei
+  Wahrheiten, Der Spion, Wer bin ich?, 21, Schätzmeister, Kategorien,
+  Wer von uns?. *Schnell zwischendurch* – Bombe, Reaktionsduell,
+  Trink-Roulette. *Läuft nebenher* – Verbotene Wörter, Trinkbingo.
+  Die Zahl im Text und die Fälle in `PartyGame` müssen zusammenpassen –
+  hier standen eine Zeit lang neunzehn, aufgezählt waren siebzehn.
 
 **Was man beim Weiterbauen wissen muss:**
 
@@ -260,9 +262,27 @@ den nachgespielten Wurf-Log alter Partien.
 `LobbyView` sind gebaut, aber nicht verlinkt. Sie sind der Weg für später,
 wenn die App auf mehreren Geräten läuft. Nicht löschen.
 
-**Offen / denkbar:** Cloud Functions (bräuchte Blaze), Live Activity für
-den Sperrbildschirm, faire Teams nach Statistik, Ergebnis als Bild teilen,
-Auszeichnungen, weitere Partyspiele (Reaktionsduell, Mäxchen).
+**Offen / denkbar**, nach Wert sortiert:
+
+1. **Trefferquote über die Uhrzeit.** Jeder `Throw` trägt einen Zeitstempel,
+   benutzt wird er für nichts. „Bis 22 Uhr 47 %, nach Mitternacht 22 %" ist
+   die ehrlichste Statistik, die diese App haben kann, und kostet keine
+   neuen Daten.
+2. **Bester Partner, schlimmster Gegner.** Die Partien enthalten die
+   Aufstellungen; mit wem man gewinnt, ist reine Auswertung.
+   `HeadToHeadView` gibt es schon, Team-Chemie fehlt.
+3. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
+   acht Funde aus der Cloud-Prüfung vom 15. August lagen dort, alle mit
+   derselben Ursache: derselbe Zustand an zwei Stellen gehalten. Ein Schnitt
+   entlang Regelwerk / Synchronisation / Nebenwirkungen legt die Fehlerklasse
+   trocken, statt sie einzeln zu jagen.
+4. **„Kennst du deine Leute?"** – ein Partyspiel, dessen Fragen aus den
+   eigenen Beerpong-Daten entstehen („Wer trifft besser, wer wirft mehr
+   Airballs?"). Besprochen, nicht begonnen. Kein Inhalt zu schreiben, und
+   das einzige Trinkspiel, das nur diese App haben kann.
+
+Weiter denkbar, aber ohne konkreten Anlass: Cloud Functions (bräuchte
+Blaze), Live Activity für den Sperrbildschirm, Ergebnis als Bild teilen.
 
 ---
 
@@ -320,69 +340,22 @@ Auszeichnungen, weitere Partyspiele (Reaktionsduell, Mäxchen).
 
 ---
 
-## 9. Sechs Wochen ohne Gerät (ab 15. August 2026)
+## 9. Offene Prüfpunkte am Gerät
 
-Der Nutzer ist bis **Ende September 2026** unterwegs – **ohne Laptop, ohne
-Testgerät**. Gearbeitet wird gelegentlich vom iPhone über `claude.ai/code`.
-Diesen Abschnitt bitte löschen, sobald er zurück ist.
+Vom 15. August bis Ende September 2026 wurde **ohne Testgerät** gearbeitet:
+gebaut wurde nur, was die Cloud-Kette allein bestätigen kann – reine Logik,
+Auswertungen, Tests, Oberfläche über vorhandenen Daten. „Grün" hieß in
+dieser Zeit ausschließlich „übersetzt sich, Tests laufen durch".
 
-### Was in dieser Zeit anders ist
-
-- **Kein Gerätetest, sechs Wochen lang.** Die Signatur der installierten App
-  läuft nach sieben Tagen ab, und ohne PC lässt sich keine neue aufspielen.
-  Der Nutzer weiß das und hat sich bewusst dagegen entschieden. **Grün heißt
-  in dieser Zeit ausschließlich „übersetzt sich, Tests laufen durch".**
-- **Kein `BEERSTATS_GH_TOKEN`.** In der Cloud-Sitzung fehlt die Variable,
-  `scripts/watch_build.py` nennt dann nur den gestolperten Schritt, nicht die
-  Fehlerzeile. Bei rotem Build hilft Nachdenken – oder der Nutzer, der die
-  Zeilen aus der Weboberfläche kopiert.
-- **Jede Sitzung startet kalt.** Diese Datei ist die einzige Übergabe.
-- **Das Handy ist die Tastatur.** Lange Rückfragen kosten den Nutzer mehr als
-  hier. Lieber eine begründete Entscheidung treffen und sie erklären, als
-  drei Varianten zur Auswahl stellen.
-
-### Was daraus folgt
-
-- **Nur bauen, was die Cloud-Kette allein bestätigen kann**: reine Logik,
-  Auswertungen, Tests, Aufräumarbeiten, Oberfläche über vorhandenen Daten.
-- **Nicht anfassen, was ohne Gerät nicht zu beurteilen ist:** Live Activity,
-  `project.yml` und die Widget-Extension (dort zeigt erst der Sideload, ob
-  die `.ipa` installierbar bleibt), Audio-Sitzung, alles Haptische, alles
-  mit Kamera oder Berechtigungen.
-- **Offene Testpunkte sammeln statt überspringen.** Wer etwas baut, das ein
-  Gerät braucht, trägt es unten ein. Nach sechs Wochen ist die ungetestete
-  Fläche sonst nicht mehr überschaubar.
-
-### Was sich lohnt, nach Wert sortiert
-
-1. **Elo berechnen oder streichen.** `eloRating` steht in drei Modellen, in
-   `LeaderboardEntry` und in der Sicherungsdatei – immer auf `1000`, nirgends
-   gerechnet. Eine Zahl, die aussieht, als bedeute sie etwas. Berechnen macht
-   die Rangliste erst aussagekräftig (wer gegen Starke gewinnt, steigt
-   schneller); streichen ist ebenfalls ehrlich. Beides ist besser als jetzt.
-2. **Trefferquote über die Uhrzeit.** Jeder `Throw` trägt einen Zeitstempel,
-   benutzt wird er für nichts. „Bis 22 Uhr 47 %, nach Mitternacht 22 %" ist
-   die ehrlichste Statistik, die diese App haben kann, und kostet keine
-   neuen Daten.
-3. **Bester Partner, schlimmster Gegner.** Die Partien enthalten die
-   Aufstellungen; mit wem man gewinnt, ist reine Auswertung. `HeadToHeadView`
-   gibt es schon, Team-Chemie fehlt.
-4. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
-   acht Funde aus der Cloud-Prüfung vom 15. August lagen dort, alle mit
-   derselben Ursache: derselbe Zustand an zwei Stellen gehalten. Ein Schnitt
-   entlang Regelwerk / Synchronisation / Nebenwirkungen legt die Fehlerklasse
-   trocken, statt sie einzeln zu jagen.
-
-### Was zuerst geprüft wird, sobald wieder ein Gerät da ist
-
-Nichts davon ist je auf Hardware gelaufen.
+Alles hier ist deshalb **nie auf Hardware gelaufen**. Abgearbeitete Punkte
+bitte streichen – die Liste nützt nur, solange sie stimmt.
 
 - **Hausregeln**: Eine Partie mit abgeschalteter Redemption zu Ende spielen –
   der letzte Becher muss direkt in den Sieger-Screen führen, ohne Nachwurf.
-  Das Regelwerk selbst ist per Unit-Test abgedeckt (`HouseRulesTests`), der
-  Weg dorthin nicht: dass der Schalter das Spiel erreicht, dass die
-  Einstellung den App-Start überlebt, und dass die Zeile im
-  Neues-Spiel-Screen mit sieben Abweichungen nicht auseinanderfällt.
+  Das Regelwerk selbst deckt `HouseRulesTests` ab, den Weg dorthin nicht:
+  dass der Schalter das Spiel erreicht, dass die Einstellung den App-Start
+  überlebt, und dass die Abweichungs-Zeile mit sieben Einträgen nicht
+  auseinanderfällt.
 - **Beerpong Extreme** insgesamt: Blitzt die Karte auf? Beim richtigen Team?
   Die Zuordnung `.hit` → Gegner und `.cupChosen` → wählendes Team ist
   durchdacht, nicht beobachtet.
@@ -400,13 +373,21 @@ Nichts davon ist je auf Hardware gelaufen.
   Firestore-Cache ist nirgends im Code konfiguriert – auf iOS ist er
   standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.
 
-### Eine offene Frage, die der Nutzer beantworten muss
+---
 
-Firestore kauft genau eine Sache: Synchronisation über mehrere Geräte. Die
-ist dormant (`Features/Friends/`, `LobbyView`) und wurde zweimal abgewählt.
-Bezahlt wird dafür mit Kontingent, Regeln, einem Login vor der ersten
-Nutzung und einem Konto als Totalverlust-Risiko. **Lokal-zuerst** würde all
-das auflösen – und die neueren Bausteine (Abend, Trinkbilanz, eigene Karten,
-ausgeblendete Karten) liegen ohnehin schon in UserDefaults. Nicht
-eigenmächtig umbauen; aber wenn der Nutzer danach fragt, ist das die
-Antwort.
+## 10. Offene Entscheidungen des Nutzers
+
+**Elo: abgelehnt (September 2026).** `eloRating` steht in drei Modellen, in
+`LeaderboardEntry` und in der Sicherungsdatei – immer auf `1000`, nirgends
+gerechnet. Gerechnet werden soll es ausdrücklich nicht. Damit bleibt nur
+streichen oder so lassen; bitte nicht ungefragt wieder als Vorschlag
+aufwärmen.
+
+**Lokal-zuerst statt Firestore.** Firestore kauft genau eine Sache:
+Synchronisation über mehrere Geräte. Die ist dormant (`Features/Friends/`,
+`LobbyView`) und wurde zweimal abgewählt. Bezahlt wird dafür mit Kontingent,
+Regeln, einem Login vor der ersten Nutzung und einem Konto als
+Totalverlust-Risiko. **Lokal-zuerst** würde all das auflösen – und die
+neueren Bausteine (Abend, Trinkbilanz, eigene Karten, ausgeblendete Karten)
+liegen ohnehin schon in UserDefaults. Nicht eigenmächtig umbauen; aber wenn
+der Nutzer danach fragt, ist das die Antwort.
