@@ -60,7 +60,7 @@ struct LiveGameView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(spacing: 40, lineOpacity: 0.04)
+            AmbientBackdrop()
 
             VStack(spacing: 0) {
                 header

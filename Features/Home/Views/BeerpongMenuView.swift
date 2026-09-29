@@ -37,7 +37,7 @@ struct BeerpongMenuView: View {
             }
             .padding(20)
         }
-        .background(GridBackdrop())
+        .background(AmbientBackdrop())
         .navigationTitle("Beerpong")
         .navigationBarTitleDisplayMode(.inline)
     }

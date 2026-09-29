@@ -26,7 +26,7 @@ struct TruthOrDareView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: tint)
+            AmbientBackdrop(glow: tint)
 
             VStack(spacing: 20) {
                 if let card = current {

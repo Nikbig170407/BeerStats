@@ -52,7 +52,10 @@ struct HomeView: View {
                 }
                 .padding(20)
             }
-            .background(GridBackdrop())
+            .background(AmbientBackdrop())
+            // Die Spielauswahl liess sich seitlich verschieben und federte
+            // zurueck - irgendein Kind ist breiter als der Bildschirm.
+            .verticalScrollOnly()
             .toolbar { toolbarContent }
             .onAppear {
                 recentGames = RecentPartyGames.games

@@ -49,7 +49,7 @@ struct HouseRulesView: View {
                 }
                 .padding(20)
             }
-            .background(GridBackdrop(glow: BeerStatsColor.accent))
+            .background(AmbientBackdrop(glow: BeerStatsColor.accent))
             .navigationTitle("Hausregeln")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

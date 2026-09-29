@@ -46,7 +46,7 @@ struct RingOfFireView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.error)
+            AmbientBackdrop(glow: BeerStatsColor.error)
 
             ScrollView {
                 VStack(spacing: 18) {

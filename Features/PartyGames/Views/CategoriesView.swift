@@ -39,7 +39,7 @@ struct CategoriesView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.warning)
+            AmbientBackdrop(glow: BeerStatsColor.warning)
 
             VStack(spacing: 22) {
                 categoryCard

@@ -35,7 +35,7 @@ struct HeadsUpView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.accent)
+            AmbientBackdrop(glow: BeerStatsColor.accent)
 
             switch phase {
             case .setup: setupView.padding(24)

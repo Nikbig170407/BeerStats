@@ -32,7 +32,7 @@ struct CountTo21View: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.accent)
+            AmbientBackdrop(glow: BeerStatsColor.accent)
 
             ScrollView {
                 VStack(spacing: 18) {

@@ -43,7 +43,7 @@ struct TournamentView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.warning)
+            AmbientBackdrop(glow: BeerStatsColor.warning)
 
             ScrollView {
                 VStack(spacing: 20) {

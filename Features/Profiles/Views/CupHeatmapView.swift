@@ -48,7 +48,7 @@ struct CupHeatmapView: View {
             }
             .padding(20)
         }
-        .background(GridBackdrop())
+        .background(AmbientBackdrop())
         .navigationTitle("Trefferbild")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }

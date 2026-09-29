@@ -40,7 +40,7 @@ struct TeamWheelView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop()
+            AmbientBackdrop()
 
             VStack(spacing: 18) {
                 Text(isComplete ? "Aufstellung steht" : "Wer spielt mit wem?")

@@ -34,7 +34,7 @@ struct NeverHaveIEverView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: currentCard?.isPenalty == true
+            AmbientBackdrop(glow: currentCard?.isPenalty == true
                 ? BeerStatsColor.accentSecondary
                 : BeerStatsColor.success)
 

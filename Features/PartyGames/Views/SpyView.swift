@@ -48,7 +48,7 @@ struct SpyView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.accentSecondary)
+            AmbientBackdrop(glow: BeerStatsColor.accentSecondary)
 
             ScrollView {
                 VStack(spacing: 20) {

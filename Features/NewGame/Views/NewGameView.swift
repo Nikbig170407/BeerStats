@@ -77,7 +77,7 @@ struct NewGameView: View {
             }
             .padding(20)
         }
-        .background(GridBackdrop())
+        .background(AmbientBackdrop())
         .navigationTitle("Neues Spiel")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {

@@ -51,7 +51,7 @@ struct BombPassView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.accentSecondary)
+            AmbientBackdrop(glow: BeerStatsColor.accentSecondary)
 
             VStack(spacing: 24) {
                 header

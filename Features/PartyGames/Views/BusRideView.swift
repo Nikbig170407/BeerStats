@@ -47,7 +47,7 @@ struct BusRideView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.accentSecondary)
+            AmbientBackdrop(glow: BeerStatsColor.accentSecondary)
 
             VStack(spacing: 20) {
                 cardRow

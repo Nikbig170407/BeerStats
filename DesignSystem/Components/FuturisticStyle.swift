@@ -86,63 +86,143 @@ extension View {
     }
 }
 
-// MARK: - Raster-Hintergrund
+// MARK: - Hintergrund
 
-/// Feines Linienraster mit weichem Farbschein – gibt Bildschirmen Tiefe,
-/// ohne vom Inhalt abzulenken.
-struct GridBackdrop: View {
+/// Warmer, weicher Hintergrund: dunkler Grund, zwei Lichtquellen in den
+/// Markenfarben und ein paar sehr blasse Blasen.
+///
+/// Hier lag vorher ein technisches Linienraster. Das gab Tiefe, sah aber nach
+/// Entwicklerwerkzeug aus – und diese App steht auf einem Tisch mit Bier
+/// darauf, nicht auf einem Schreibtisch. Die Blasen sind dasselbe Motiv wie
+/// `CupShape` und `BeerGlassMark`: Der Hintergrund soll nach dem Getränk
+/// aussehen, nicht nach Messgerät.
+///
+/// Die Blasen stehen als feste Liste im Code und werden **nicht gewürfelt**.
+/// Ein `Canvas` zeichnet bei jeder Layout-Änderung neu; mit Zufallszahlen
+/// sprängen sie bei jedem Tastendruck an eine andere Stelle.
+struct AmbientBackdrop: View {
 
-    var spacing: CGFloat = 34
-    var lineOpacity: Double = 0.05
+    /// Die Lichtquelle oben links. Jeder Screen gibt seine eigene Farbe mit –
+    /// so bleibt der Hintergrund derselbe und trägt trotzdem die Stimmung des
+    /// Screens.
     var glow: Color = BeerStatsColor.accent
+
+    /// Lage und Größe relativ zur Fläche, damit es auf jedem Gerät gleich
+    /// aussieht. Bewusst unregelmäßig – gleichmäßig verteilt wäre wieder ein
+    /// Raster, nur mit runden Ecken.
+    private static let bubbles: [(x: CGFloat, y: CGFloat, size: CGFloat, opacity: Double)] = [
+        (0.09, 0.07, 0.20, 0.055),
+        (0.78, 0.04, 0.11, 0.040),
+        (0.36, 0.14, 0.06, 0.070),
+        (0.92, 0.17, 0.26, 0.030),
+        (0.17, 0.29, 0.09, 0.055),
+        (0.61, 0.26, 0.15, 0.035),
+        (0.04, 0.46, 0.13, 0.045),
+        (0.85, 0.44, 0.07, 0.065),
+        (0.44, 0.52, 0.22, 0.028),
+        (0.24, 0.63, 0.05, 0.075),
+        (0.71, 0.66, 0.17, 0.038),
+        (0.11, 0.78, 0.10, 0.050),
+        (0.52, 0.83, 0.07, 0.060),
+        (0.89, 0.88, 0.19, 0.032),
+        (0.31, 0.95, 0.12, 0.042)
+    ]
 
     var body: some View {
         ZStack {
             BeerStatsColor.backgroundPrimary
 
-            Canvas { context, size in
-                let stroke = GraphicsContext.Shading.color(BeerStatsColor.textPrimary.opacity(lineOpacity))
+            // Oben eine Spur heller: gibt der Fläche eine Richtung, ohne dass
+            // man eine Kante sieht.
+            LinearGradient(
+                colors: [
+                    BeerStatsColor.backgroundSecondary.opacity(0.6),
+                    BeerStatsColor.backgroundPrimary
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
 
-                var x: CGFloat = 0
-                while x <= size.width {
-                    var path = Path()
-                    path.move(to: CGPoint(x: x, y: 0))
-                    path.addLine(to: CGPoint(x: x, y: size.height))
-                    context.stroke(path, with: stroke, lineWidth: 0.7)
-                    x += spacing
-                }
-
-                var y: CGFloat = 0
-                while y <= size.height {
-                    var path = Path()
-                    path.move(to: CGPoint(x: 0, y: y))
-                    path.addLine(to: CGPoint(x: size.width, y: y))
-                    context.stroke(path, with: stroke, lineWidth: 0.7)
-                    y += spacing
-                }
-            }
-
-            // Zwei weiche Farbschleier, damit das Raster nicht technisch-kalt wirkt.
             RadialGradient(
-                colors: [glow.opacity(0.16), .clear],
-                center: UnitPoint(x: 0.15, y: 0.0),
+                colors: [glow.opacity(0.20), .clear],
+                center: UnitPoint(x: 0.12, y: -0.02),
                 startRadius: 0,
-                endRadius: 420
+                endRadius: 520
             )
             RadialGradient(
-                colors: [BeerStatsColor.accentSecondary.opacity(0.12), .clear],
-                center: UnitPoint(x: 0.95, y: 0.25),
+                colors: [BeerStatsColor.accentSecondary.opacity(0.13), .clear],
+                center: UnitPoint(x: 1.02, y: 0.82),
                 startRadius: 0,
-                endRadius: 380
+                endRadius: 460
+            )
+
+            Canvas { context, size in
+                // An der kürzeren Kante gemessen, sonst werden die Blasen im
+                // Querformat zu Ellipsen-Ersatz in Übergröße.
+                let kante = min(size.width, size.height)
+
+                for blase in Self.bubbles {
+                    let durchmesser = blase.size * kante
+                    let kreis = Path(
+                        ellipseIn: CGRect(
+                            x: blase.x * size.width - durchmesser / 2,
+                            y: blase.y * size.height - durchmesser / 2,
+                            width: durchmesser,
+                            height: durchmesser
+                        )
+                    )
+                    // Gefüllt in der Stimmungsfarbe, umrandet in Weiß: Erst
+                    // die helle Kante macht daraus eine Blase statt eines
+                    // Farbflecks.
+                    context.fill(kreis, with: .color(glow.opacity(blase.opacity * 0.55)))
+                    context.stroke(
+                        kreis,
+                        with: .color(BeerStatsColor.textPrimary.opacity(blase.opacity * 0.8)),
+                        lineWidth: 1
+                    )
+                }
+            }
+            .blur(radius: 0.6)
+
+            // Nach unten satter: Der Inhalt soll oben schweben, und die
+            // Knöpfe am unteren Rand brauchen ruhigen Grund unter sich.
+            LinearGradient(
+                colors: [.clear, BeerStatsColor.backgroundPrimary.opacity(0.7)],
+                startPoint: .center,
+                endPoint: .bottom
             )
         }
         .ignoresSafeArea()
     }
 }
 
+// MARK: - Senkrecht bleiben
+
+extension View {
+
+    /// Nimmt einer senkrechten Liste das seitliche Nachfedern.
+    ///
+    /// Eine `ScrollView` federt waagerecht mit, sobald irgendein Kind breiter
+    /// ist als der Bildschirm – man schiebt die Kacheln ein Stück zur Seite
+    /// und sie rutschen zurück. Gewollt ist das nie, es sieht nur nach
+    /// kaputtem Layout aus.
+    ///
+    /// `.basedOnSize` federt nur noch, wenn der Inhalt die Richtung wirklich
+    /// braucht. Gibt es ab iOS 16.4; darunter bleibt es beim alten Verhalten,
+    /// das Deployment-Target ist 16.0.
+    @ViewBuilder
+    func verticalScrollOnly() -> some View {
+        if #available(iOS 16.4, *) {
+            scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        } else {
+            self
+        }
+    }
+}
+
 #Preview {
     ZStack {
-        GridBackdrop()
+        AmbientBackdrop()
         VStack(spacing: 20) {
             Text("Panel")
                 .font(BeerStatsFont.title)

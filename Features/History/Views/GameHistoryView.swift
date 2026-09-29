@@ -40,7 +40,7 @@ struct GameHistoryView: View {
             }
             .padding(20)
         }
-        .background(GridBackdrop())
+        .background(AmbientBackdrop())
         .navigationTitle("Spielverlauf")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }

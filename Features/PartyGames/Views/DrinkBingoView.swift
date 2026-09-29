@@ -38,7 +38,7 @@ struct DrinkBingoView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.success)
+            AmbientBackdrop(glow: BeerStatsColor.success)
 
             ScrollView {
                 VStack(spacing: 16) {

@@ -30,7 +30,7 @@ struct EstimationView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.success)
+            AmbientBackdrop(glow: BeerStatsColor.success)
 
             VStack(spacing: 20) {
                 if let question = current {

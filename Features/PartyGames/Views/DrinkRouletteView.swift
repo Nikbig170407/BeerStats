@@ -57,7 +57,7 @@ struct DrinkRouletteView: View {
 
     var body: some View {
         ZStack {
-            GridBackdrop(glow: BeerStatsColor.error)
+            AmbientBackdrop(glow: BeerStatsColor.error)
 
             VStack(spacing: 22) {
                 wheel
