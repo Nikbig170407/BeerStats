@@ -62,6 +62,9 @@ struct ExtremeCardOverlay: View {
                     .padding(.top, 8)
                     .padding(.horizontal, 6)
 
+                terms
+                    .padding(.top, 14)
+
                 Button {
                     onDismiss()
                     HapticManager.lightImpact()
@@ -102,5 +105,70 @@ struct ExtremeCardOverlay: View {
                 hasAppeared = true
             }
         }
+    }
+
+    // MARK: - Dauer und Strafe
+
+    /// Die zwei Fragen, die am Tisch sonst diskutiert werden, bevor jemand
+    /// weiterwirft: Wie lange gilt das, und was passiert, wenn ich es nicht
+    /// mache?
+    ///
+    /// Die Dauer steht IMMER da, auch wenn sie „Sofort" lautet. Eine Zeile,
+    /// die mal fehlt und mal nicht, beantwortet die Frage nur manchmal – und
+    /// dann fragt doch wieder jemand.
+    private var terms: some View {
+        VStack(spacing: 6) {
+            termRow(
+                systemImage: "clock",
+                label: "Wie lange",
+                value: card.duration ?? "Sofort",
+                tint: BeerStatsColor.textSecondary
+            )
+
+            // Kein Feld heisst: Es gibt nichts zu brechen. Eine reine
+            // Trinkstrafe ist mit dem Trinken erledigt.
+            if let penalty = card.penalty {
+                termRow(
+                    systemImage: "exclamationmark.triangle.fill",
+                    label: "Sonst",
+                    value: penalty,
+                    tint: BeerStatsColor.error
+                )
+            }
+        }
+    }
+
+    private func termRow(
+        systemImage: String,
+        label: String,
+        value: String,
+        tint: Color
+    ) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(tint)
+                .frame(width: 16)
+
+            Text(label.uppercased())
+                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .kerning(1.2)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            Text(value)
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textPrimary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(
+            BeerStatsColor.surfaceElevated.opacity(0.6),
+            in: RoundedRectangle(cornerRadius: 11, style: .continuous)
+        )
     }
 }

@@ -155,6 +155,71 @@ final class ExtremeDeckTests: XCTestCase {
         }
     }
 
+    // MARK: - Dauer und Strafe
+
+    /// Jede Aufgabe muss sagen, was Verweigern kostet.
+    ///
+    /// Eine Challenge ohne Strafe ist eine Bitte: Wer keine Lust hat, legt
+    /// das Handy weg und es passiert nichts. Genau das war der Zustand,
+    /// bevor es das Feld gab.
+    func testEveryChallengeSaysWhatRefusingCosts() {
+        forEverySetting {
+            for card in allCards where card.category == .challenge {
+                XCTAssertNotNil(
+                    card.penalty,
+                    "\(card.title) ist eine Aufgabe, sagt aber nicht, was Nichtstun kostet"
+                )
+            }
+        }
+    }
+
+    /// Dauer und Strafe stehen als Kurztext auf einer Zeile – kein Satz, kein
+    /// Punkt am Ende, und niemals leer.
+    func testTermsAreShortFragments() {
+        forEverySetting {
+            for card in allCards {
+                for (feld, wert) in [("Dauer", card.duration), ("Strafe", card.penalty)] {
+                    guard let wert else { continue }
+                    XCTAssertFalse(wert.isEmpty, "\(card.title): \(feld) ist leer")
+                    XCTAssertFalse(
+                        wert.hasSuffix("."),
+                        "\(card.title): \(feld) ist ein Satz statt einer Angabe: \(wert)"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Dieselbe Regel wie fuer den Text, jetzt auch fuer die Strafe: Die
+    /// Menge kommt aus DrinkAmount, nie aus der Tastatur.
+    ///
+    /// Die Strafe ist die Stelle, an der eine feste Zahl am ehesten passiert –
+    /// sie wird beim Schreiben einer Karte nebenbei eingetippt.
+    func testNoPenaltyWritesAnAmountAsADigit() {
+        let pattern = try! NSRegularExpression(
+            pattern: "\\d+\\s*(Schluck|Schlücke|Shot)",
+            options: [.caseInsensitive]
+        )
+
+        DrinkIntensity.current = .mild
+        DrinkRules.shotsEnabled = false
+        let zahm = Dictionary(uniqueKeysWithValues: allCards.map { ($0.id, $0.penalty ?? "") })
+
+        DrinkIntensity.current = .hard
+        DrinkRules.shotsEnabled = true
+
+        for card in allCards {
+            let strafe = card.penalty ?? ""
+            guard strafe == zahm[card.id] else { continue }
+
+            let range = NSRange(strafe.startIndex..., in: strafe)
+            XCTAssertNil(
+                pattern.firstMatch(in: strafe, range: range),
+                "\(card.title) nennt eine Strafe, die sich mit der Einstellung nicht ändert: \(strafe)"
+            )
+        }
+    }
+
     /// Ist der Shot-Schalter aus, darf das Wort in keinem Text mehr stehen.
     /// Wer keine Kurzen dahat, soll auch keine angeboten bekommen.
     func testNoShotSurvivesWithShotsDisabled() {
@@ -166,6 +231,12 @@ final class ExtremeDeckTests: XCTestCase {
                 XCTAssertFalse(
                     card.text.lowercased().contains("shot"),
                     "\(card.title) verlangt einen Shot, obwohl ohne Shots gespielt wird: \(card.text)"
+                )
+                // Die Strafe ist derselbe Fall: Wer nichts zum Shotten
+                // dahat, soll auch beim Verweigern keinen angeboten bekommen.
+                XCTAssertFalse(
+                    (card.penalty ?? "").lowercased().contains("shot"),
+                    "\(card.title) straft mit einem Shot, obwohl ohne Shots gespielt wird"
                 )
             }
         }

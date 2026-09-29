@@ -88,6 +88,22 @@ struct ExtremeCard: Identifiable, Equatable {
     let category: ExtremeCategory
     let title: String
     let text: String
+
+    /// Wie lange die Karte gilt – „Bis zum nächsten Treffer", „Zehn
+    /// Sekunden". `nil` heißt: sofort erledigt, danach ist es vorbei.
+    ///
+    /// Als eigenes Feld und nicht im Text: Es stand mal drin, mal nicht, und
+    /// am Tisch wurde dann darüber diskutiert statt geworfen. Jetzt steht die
+    /// Antwort auf jeder Karte an derselben Stelle – auch die Antwort
+    /// „sofort".
+    let duration: String?
+
+    /// Was es kostet, die Aufgabe nicht zu machen oder die Regel zu brechen.
+    ///
+    /// `nil` heißt: Es gibt nichts zu brechen. Eine reine Trinkstrafe ist
+    /// mit dem Trinken erledigt, ein Vorteil erst recht. Eine erfundene
+    /// Strafe stünde dort nur, damit das Feld gefüllt ist.
+    let penalty: String?
 }
 
 // MARK: - Einstellungen
@@ -151,7 +167,12 @@ enum ExtremeDeck {
                 id: "custom-\(index)",
                 category: .challenge,
                 title: "Eure Karte",
-                text: text
+                text: text,
+                // Wie lange eine selbst geschriebene Aufgabe gilt, weiss nur,
+                // wer sie geschrieben hat. Die Strafe fuers Verweigern ist
+                // dagegen dieselbe wie ueberall.
+                duration: nil,
+                penalty: DrinkAmount.sips(4).text
             )
         }
 
@@ -181,16 +202,21 @@ enum ExtremeDeck {
 
         return [
             card(.penalty, "Nachbarschaft", "Deine beiden Nachbarn trinken \(small.text)."),
-            card(.challenge, "Neuer Name", "Bis zum Ende der Runde hörst du nur auf einen Spitznamen, den der Gegner aussucht."),
-            card(.challenge, "Stumm", "Bis zu deinem nächsten Wurf sagst du kein Wort."),
-            card(.challenge, "Standbild", "Halte bis zum nächsten Treffer die Pose, die du gerade hast."),
-            card(.challenge, "Komplimentzwang", "Sag jedem Gegner etwas Nettes. Zögern kostet \(small.text)."),
+            card(.challenge, "Neuer Name", "Der Gegner sucht dir einen Spitznamen aus. Du hörst nur noch darauf.",
+                 duration: "Bis zum Ende der Runde", penalty: small.text),
+            card(.challenge, "Stumm", "Du sagst kein Wort.",
+                 duration: "Bis zu deinem nächsten Wurf", penalty: small.text),
+            card(.challenge, "Standbild", "Halte die Pose, die du gerade hast.",
+                 duration: "Bis zum nächsten Treffer", penalty: small.text),
+            card(.challenge, "Komplimentzwang", "Sag jedem Gegner etwas Nettes.",
+                 duration: "Reihum, sofort", penalty: small.text),
             card(.chaos, "Alle", "Der ganze Tisch trinkt \(small.text)."),
             // Die einzige Karte, die nichts tut – und deshalb wertvoll: Ohne
             // sie wäre jeder geladene Becher garantiert ein Ereignis.
             card(.chaos, "Rückkehr", "Der Becher bleibt stehen. Nichts passiert."),
             card(.chaos, "Anstoßen", "Alle stoßen an, bevor weitergeworfen wird."),
-            card(.challenge, "Kurze Ansage", "Halt eine Rede über den Becher, den du gerade getroffen hast. Zehn Sekunden.")
+            card(.challenge, "Kurze Ansage", "Halt eine Rede über den Becher, den du gerade getroffen hast.",
+                 duration: "Zehn Sekunden", penalty: small.text)
         ]
     }
 
@@ -219,38 +245,60 @@ enum ExtremeDeck {
 
             // Vorteil
             card(.boon, "Nachschlag", "Du wirfst sofort noch einen Ball."),
-            card(.boon, "Doppelwert", "Dein nächster Treffer nimmt zwei Becher."),
+            card(.boon, "Doppelwert", "Dein nächster Treffer nimmt zwei Becher.",
+                 duration: "Bis zu deinem nächsten Treffer"),
             card(.boon, "Griff", "Ein Becher deiner Wahl kommt zusätzlich weg."),
             card(.boon, "Freies Umstellen", "Ihr dürft sofort umstellen – zählt nicht gegen euer Kontingent."),
             card(.boon, "Geschenkt", "Balls Back, auch ohne beide getroffen zu haben."),
             card(.boon, "Ansage", "Der Gegner wirft den nächsten Ball aus doppelter Entfernung."),
-            card(.boon, "Zweite Chance", "Verfehlst du den nächsten Ball, darfst du ihn nochmal werfen."),
-            card(.boon, "Kantengold", "Bei deinem nächsten Wurf zählt auch ein Treffer auf den Rand."),
+            card(.boon, "Zweite Chance", "Verfehlst du den nächsten Ball, darfst du ihn nochmal werfen.",
+                 duration: "Ein Wurf"),
+            card(.boon, "Kantengold", "Auch ein Treffer auf den Rand zählt.",
+                 duration: "Dein nächster Wurf"),
             card(.boon, "Aufräumen", "Stellt eure Becher um, wie ihr wollt – ohne feste Formation."),
-            card(.boon, "Freispruch", "Die nächste Strafe, die dich trifft, entfällt."),
+            card(.boon, "Freispruch", "Die nächste Strafe, die dich trifft, entfällt.",
+                 duration: "Bis sie greift"),
 
             // Handicap
-            card(.handicap, "Blind", "Der Gegner wirft die nächsten zwei Bälle mit geschlossenen Augen."),
-            card(.handicap, "Schwache Hand", "Nächster Wurf des Gegners mit der anderen Hand."),
-            card(.handicap, "Einbeinig", "Der Gegner wirft den nächsten Ball auf einem Bein."),
-            card(.handicap, "Schweigen", "Kein Wort im nächsten Zug des Gegners. Wer redet, trinkt \(small.text)."),
-            card(.handicap, "Rückhand", "Der Gegner wirft den nächsten Ball über die Schulter, mit dem Rücken zum Tisch."),
-            card(.handicap, "Im Sitzen", "Der Gegner wirft den nächsten Ball im Sitzen."),
-            card(.handicap, "Zeitdruck", "Der Gegner hat drei Sekunden für den nächsten Wurf. Danach zählt er als daneben."),
-            card(.handicap, "Faust", "Der Gegner wirft den nächsten Ball aus der Faust, nicht aus den Fingerspitzen."),
-            card(.handicap, "Augenkontakt", "Der Gegner sieht dich an, während er wirft – nicht den Becher."),
-            card(.handicap, "Vollbepackt", "Der Gegner hält beim nächsten Wurf sein Getränk in der anderen Hand."),
+            card(.handicap, "Blind", "Der Gegner wirft mit geschlossenen Augen.",
+                 duration: "Zwei Bälle", penalty: medium.text),
+            card(.handicap, "Schwache Hand", "Der Gegner wirft mit der anderen Hand.",
+                 duration: "Ein Wurf", penalty: medium.text),
+            card(.handicap, "Einbeinig", "Der Gegner wirft auf einem Bein.",
+                 duration: "Ein Wurf", penalty: medium.text),
+            card(.handicap, "Schweigen", "Kein Wort im gegnerischen Team.",
+                 duration: "Der nächste Zug des Gegners", penalty: small.text),
+            card(.handicap, "Rückhand", "Der Gegner wirft über die Schulter, mit dem Rücken zum Tisch.",
+                 duration: "Ein Wurf", penalty: medium.text),
+            card(.handicap, "Im Sitzen", "Der Gegner wirft im Sitzen.",
+                 duration: "Ein Wurf", penalty: medium.text),
+            card(.handicap, "Zeitdruck", "Der Gegner hat drei Sekunden. Danach zählt der Wurf als daneben.",
+                 duration: "Ein Wurf"),
+            card(.handicap, "Faust", "Der Gegner wirft aus der Faust, nicht aus den Fingerspitzen.",
+                 duration: "Ein Wurf", penalty: medium.text),
+            card(.handicap, "Augenkontakt", "Der Gegner sieht dich an, während er wirft – nicht den Becher.",
+                 duration: "Ein Wurf", penalty: medium.text),
+            card(.handicap, "Vollbepackt", "Der Gegner hält sein Getränk in der anderen Hand.",
+                 duration: "Ein Wurf", penalty: medium.text),
 
             // Chaos als laufende Regel statt als Platztausch: wirkt über
             // mehrere Züge und zwingt niemanden, aufzustehen.
-            card(.chaos, "Handwechsel", "Bis der nächste Becher fällt, werfen alle mit der schwachen Hand."),
-            card(.chaos, "Gedächtnislücke", "Ab jetzt heißt jeder Becher „Kelch“. Wer „Becher“ sagt, trinkt \(small.text)."),
-            card(.chaos, "Stille Post", "Bis zum nächsten Treffer darf niemand den Namen eines anderen sagen."),
-            card(.chaos, "Doppeltes Tempo", "Die nächste Runde wird ohne Pause geworfen – Ball holen und sofort weiter."),
-            card(.chaos, "Namenlos", "Ab jetzt heißt jeder „Chef“. Wer einen echten Namen sagt, trinkt \(small.text)."),
-            card(.chaos, "Applaus", "Bis der nächste Becher fällt, klatschen alle nach jedem Treffer. Wer vergisst, trinkt \(small.text)."),
-            card(.chaos, "Fluch", "Der Gegner sucht ein Wort aus. Wer es bis zum nächsten Treffer sagt, trinkt \(small.text)."),
-            card(.chaos, "Schwache Hand am Glas", "Bis der nächste Becher fällt, hält jeder sein Getränk in der schwachen Hand.")
+            card(.chaos, "Handwechsel", "Alle werfen mit der schwachen Hand.",
+                 duration: "Bis der nächste Becher fällt", penalty: small.text),
+            card(.chaos, "Gedächtnislücke", "Jeder Becher heißt ab jetzt „Kelch“.",
+                 duration: "Bis zum Ende der Partie", penalty: small.text),
+            card(.chaos, "Stille Post", "Niemand darf den Namen eines anderen sagen.",
+                 duration: "Bis zum nächsten Treffer", penalty: small.text),
+            card(.chaos, "Doppeltes Tempo", "Ohne Pause werfen – Ball holen und sofort weiter.",
+                 duration: "Die nächste Runde", penalty: small.text),
+            card(.chaos, "Namenlos", "Ab jetzt heißt jeder „Chef“.",
+                 duration: "Bis zum Ende der Partie", penalty: small.text),
+            card(.chaos, "Applaus", "Alle klatschen nach jedem Treffer.",
+                 duration: "Bis der nächste Becher fällt", penalty: small.text),
+            card(.chaos, "Fluch", "Der Gegner sucht ein Wort aus. Sagt es niemand mehr.",
+                 duration: "Bis zum nächsten Treffer", penalty: small.text),
+            card(.chaos, "Schwache Hand am Glas", "Jeder hält sein Getränk in der schwachen Hand.",
+                 duration: "Bis der nächste Becher fällt", penalty: small.text)
         ]
     }
 
@@ -264,25 +312,38 @@ enum ExtremeDeck {
 
         return [
             // Kleidung
-            card(.challenge, "Ein Stück weniger", "Zieh ein Kleidungsstück aus. Socken zählen einzeln."),
-            card(.challenge, "Zwei Stücke", "Zieh zwei Kleidungsstücke aus. Socken zählen einzeln."),
-            card(.challenge, "Tausch", "Tausche ein Kleidungsstück mit einem Gegner."),
-            card(.challenge, "Barfuß", "Schuhe und Socken aus – bis zum Ende der Partie."),
-            card(.challenge, "Wahrheit oder Stoff", "Der Tisch stellt eine Frage. Keine Antwort kostet ein Kleidungsstück."),
+            card(.challenge, "Ein Stück weniger", "Zieh ein Kleidungsstück aus. Socken zählen einzeln.",
+                 penalty: shot.text),
+            card(.challenge, "Zwei Stücke", "Zieh zwei Kleidungsstücke aus. Socken zählen einzeln.",
+                 penalty: shot.text),
+            card(.challenge, "Tausch", "Tausche ein Kleidungsstück mit einem Gegner.",
+                 penalty: shot.text),
+            card(.challenge, "Barfuß", "Schuhe und Socken aus.",
+                 duration: "Bis zum Ende der Partie", penalty: shot.text),
+            card(.challenge, "Wahrheit oder Stoff", "Der Tisch stellt eine Frage. Antworte ehrlich.",
+                 penalty: "Ein Kleidungsstück"),
 
             // Handy
-            card(.challenge, "Letzte Nachricht", "Lies deine letzte verschickte Nachricht laut vor."),
-            card(.challenge, "Letztes Foto", "Zeig dem Tisch das letzte Foto in deiner Galerie."),
-            card(.challenge, "Chatverlauf", "Der Gegner sucht einen Chat aus. Lies die letzte Nachricht daraus vor."),
-            card(.challenge, "Playlist", "Der Gegner sucht ein Lied auf deinem Handy aus. Es läuft bis zum Ende der Runde."),
+            card(.challenge, "Letzte Nachricht", "Lies deine letzte verschickte Nachricht laut vor.",
+                 penalty: shot.text),
+            card(.challenge, "Letztes Foto", "Zeig dem Tisch das letzte Foto in deiner Galerie.",
+                 penalty: shot.text),
+            card(.challenge, "Chatverlauf", "Der Gegner sucht einen Chat aus. Lies die letzte Nachricht daraus vor.",
+                 penalty: shot.text),
+            card(.challenge, "Playlist", "Der Gegner sucht ein Lied auf deinem Handy aus. Es läuft.",
+                 duration: "Bis zum Ende der Runde", penalty: shot.text),
 
             // Reden
-            card(.challenge, "Peinlich", "Erzähl die peinlichste Geschichte, die dir gerade einfällt – oder trink \(shot.text)."),
-            card(.challenge, "Ehrliche Antwort", "Der Gegner stellt eine Frage. Antworte ehrlich oder trink \(shot.text)."),
-            card(.challenge, "Ex-Geschichte", "Erzähl, warum deine letzte Beziehung zu Ende ging – oder zieh ein Kleidungsstück aus."),
+            card(.challenge, "Peinlich", "Erzähl die peinlichste Geschichte, die dir gerade einfällt.",
+                 penalty: shot.text),
+            card(.challenge, "Ehrliche Antwort", "Der Gegner stellt eine Frage. Antworte ehrlich.",
+                 penalty: shot.text),
+            card(.challenge, "Ex-Geschichte", "Erzähl, warum deine letzte Beziehung zu Ende ging.",
+                 penalty: "Ein Kleidungsstück"),
 
             // Körper
-            card(.challenge, "Stehplatz", "Bis zum Ende der Partie darfst du dich nicht mehr hinsetzen."),
+            card(.challenge, "Stehplatz", "Du darfst dich nicht mehr hinsetzen.",
+                 duration: "Bis zum Ende der Partie", penalty: shot.text),
 
             // Strafe
             card(.penalty, "Doppelter Kurzer", "Trink \(shot.text). Dann such dir jemanden, der dasselbe tut."),
@@ -290,23 +351,31 @@ enum ExtremeDeck {
             card(.penalty, "Kopf an Kopf", "Du und ein Gegner deiner Wahl: beide \(shot.text), gleichzeitig."),
 
             // Chaos
-            card(.chaos, "Doppelter Einsatz", "Bis du das nächste Mal triffst, zählt jede Strafe für dich doppelt."),
+            card(.chaos, "Doppelter Einsatz", "Jede Strafe zählt für dich doppelt.",
+                 duration: "Bis du das nächste Mal triffst"),
             card(.chaos, "Blindes Vertrauen", "Ein Gegner mischt deinen nächsten Becher aus dem, was auf dem Tisch steht."),
 
             // Handy – dieselbe Sorte wie "Letztes Foto", weil die am Tisch am
             // besten funktioniert hat: Es kostet Überwindung, aber niemand
             // muss aufstehen oder sich etwas merken.
-            card(.challenge, "Suchverlauf", "Zeig den letzten Eintrag in deinem Suchverlauf."),
-            card(.challenge, "Bildschirmzeit", "Zeig dem Tisch deine Bildschirmzeit von gestern."),
-            card(.challenge, "Kontakt", "Der Gegner sucht einen Kontakt aus. Erzähl, wer das ist."),
+            card(.challenge, "Suchverlauf", "Zeig den letzten Eintrag in deinem Suchverlauf.",
+                 penalty: shot.text),
+            card(.challenge, "Bildschirmzeit", "Zeig dem Tisch deine Bildschirmzeit von gestern.",
+                 penalty: shot.text),
+            card(.challenge, "Kontakt", "Der Gegner sucht einen Kontakt aus. Erzähl, wer das ist.",
+                 penalty: shot.text),
 
             // Reden
-            card(.challenge, "Rangliste", "Sag ehrlich, wen am Tisch du zuletzt kennengelernt hast – und was du zuerst gedacht hast."),
-            card(.challenge, "Beichte", "Erzähl etwas, das hier noch niemand von dir weiß – oder trink \(shot.text)."),
-            card(.challenge, "Letzte Ausrede", "Wofür hast du dich zuletzt herausgeredet? Erzähl es, oder trink \(shot.text)."),
+            card(.challenge, "Rangliste", "Sag ehrlich, wen am Tisch du zuletzt kennengelernt hast – und was du zuerst gedacht hast.",
+                 penalty: shot.text),
+            card(.challenge, "Beichte", "Erzähl etwas, das hier noch niemand von dir weiß.",
+                 penalty: shot.text),
+            card(.challenge, "Letzte Ausrede", "Wofür hast du dich zuletzt herausgeredet? Erzähl es.",
+                 penalty: shot.text),
 
             // Kleidung
-            card(.challenge, "Alles zurück", "Zieh ein Kleidungsstück wieder an – wenn keins ausliegt, trink \(medium.text).")
+            card(.challenge, "Alles zurück", "Zieh ein Kleidungsstück wieder an.",
+                 penalty: medium.text)
         ]
     }
 
@@ -318,13 +387,17 @@ enum ExtremeDeck {
     private static func card(
         _ category: ExtremeCategory,
         _ title: String,
-        _ text: String
+        _ text: String,
+        duration: String? = nil,
+        penalty: String? = nil
     ) -> ExtremeCard {
         ExtremeCard(
             id: "\(category.rawValue)-\(title)",
             category: category,
             title: title,
-            text: text
+            text: text,
+            duration: duration,
+            penalty: penalty
         )
     }
 }
