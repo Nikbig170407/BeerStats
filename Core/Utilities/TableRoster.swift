@@ -28,6 +28,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 enum TableRoster {
 
@@ -93,5 +94,30 @@ enum TableRoster {
     /// Setzt auf "alle Aktiven" zurueck.
     static func reset() {
         selectedIds = []
+    }
+}
+
+// MARK: - Environment-Integration
+
+private struct TablePlayersKey: EnvironmentKey {
+    static let defaultValue: [PlayerProfile] = []
+}
+
+extension EnvironmentValues {
+
+    /// Wer heute am Tisch steht – fuer jedes Spiel, das Namen statt Zahlen
+    /// zeigen will.
+    ///
+    /// Ueber die Umgebung und nicht als Parameter an `PartyGame.destination`:
+    /// Sonst muessten alle neunzehn Spiele die Liste annehmen, auch die
+    /// siebzehn, die sie nicht brauchen – und jedes neue Spiel muesste daran
+    /// denken. So nimmt sie sich, wer sie braucht.
+    ///
+    /// Leer ist ein gueltiger Zustand: Wer noch keine Profile angelegt hat,
+    /// spielt weiter wie bisher, nur ohne Namen. Jedes Spiel, das diesen Wert
+    /// liest, muss diesen Fall koennen.
+    var tablePlayers: [PlayerProfile] {
+        get { self[TablePlayersKey.self] }
+        set { self[TablePlayersKey.self] = newValue }
     }
 }

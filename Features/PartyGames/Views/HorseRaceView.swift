@@ -42,6 +42,16 @@ struct HorseRaceView: View {
     @State private var message: String?
     @State private var phase: Phase = .betting
 
+    /// Wer heute am Tisch steht. Leer ist gueltig – dann laeuft das Rennen
+    /// wie frueher, nur ohne Namen.
+    @Environment(\.tablePlayers) private var tablePlayers
+
+    /// Wer auf welche Bahn gesetzt hat: Profil-ID → Index der Farbe.
+    ///
+    /// Bleibt ueber das Rennen hinaus stehen. Nach einem Rennen setzt fast
+    /// jeder wieder auf dasselbe Pferd; wer wechseln will, tippt einmal.
+    @State private var bets: [String: Int] = [:]
+
     private let suits = PlayingCard.Suit.allCases
     private let loserPenalty = DrinkAmount.sips(3)
     private let winnerReward = DrinkAmount.sips(5)
@@ -54,7 +64,9 @@ struct HorseRaceView: View {
                 VStack(spacing: 16) {
                     sideTrack
                     track
+                    betsBoard
                     statusPanel
+                    bettingPanel
                     controls
                 }
                 .padding(18)
@@ -157,6 +169,139 @@ struct HorseRaceView: View {
         .animation(AppAnimation.standard, value: positions[index])
     }
 
+    // MARK: - Einsaetze
+
+    /// Wer auf welcher Bahn steht.
+    private func bettors(on lane: Int) -> [PlayerProfile] {
+        tablePlayers.filter { profile in
+            guard let id = profile.id else { return false }
+            return bets[id] == lane
+        }
+    }
+
+    private func names(on lane: Int) -> String? {
+        let leute = bettors(on: lane)
+        guard !leute.isEmpty else { return nil }
+        return leute.map(\.name).joined(separator: ", ")
+    }
+
+    /// „trinkt" oder „trinken" – ein Satz mit falschem Verb faellt am Tisch
+    /// sofort auf.
+    private func verb(_ singular: String, _ plural: String, on lane: Int) -> String {
+        bettors(on: lane).count == 1 ? singular : plural
+    }
+
+    /// Das Setzen vor dem Rennen: eine Zeile je Person, vier Farben zum
+    /// Antippen.
+    ///
+    /// Eine Zeile je PERSON und nicht je Farbe: So sieht man auf einen Blick,
+    /// wer noch nicht gesetzt hat – und das ist die Frage, die am Tisch
+    /// gestellt wird.
+    @ViewBuilder
+    private var bettingPanel: some View {
+        if phase == .betting, !tablePlayers.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("WER SETZT AUF WAS")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .kerning(1.8)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+
+                ForEach(tablePlayers) { profile in
+                    betRow(profile)
+                }
+
+                Text("Nochmal auf dieselbe Farbe tippen nimmt den Einsatz zurück. Nach dem Rennen bleiben die Einsätze stehen.")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .glassPanel(cornerRadius: 18)
+        }
+    }
+
+    private func betRow(_ profile: PlayerProfile) -> some View {
+        HStack(spacing: 7) {
+            ProfileAvatarView(profile: profile, size: 30)
+
+            Text(profile.name)
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            ForEach(suits.indices, id: \.self) { index in
+                suitButton(profile: profile, lane: index)
+            }
+        }
+    }
+
+    private func suitButton(profile: PlayerProfile, lane: Int) -> some View {
+        let suit = suits[lane]
+        let isSet = profile.id.map { bets[$0] == lane } ?? false
+
+        return Button {
+            guard let id = profile.id else { return }
+            if bets[id] == lane {
+                bets[id] = nil
+            } else {
+                bets[id] = lane
+            }
+            HapticManager.lightImpact()
+        } label: {
+            Text(suit.symbol)
+                .font(.system(size: 17))
+                .foregroundStyle(
+                    isSet
+                        ? BeerStatsColor.textOnAccent
+                        : (suit.isRed ? BeerStatsColor.error : BeerStatsColor.textPrimary)
+                )
+                .frame(width: 34, height: 34)
+                .background(
+                    isSet ? BeerStatsColor.success : BeerStatsColor.surfaceElevated.opacity(0.6),
+                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel("\(profile.name) auf \(suit.name)")
+    }
+
+    /// Waehrend des Rennens: wer auf welchem Pferd sitzt.
+    ///
+    /// Genau dafuer ist das Setzen da – merken muss es sich niemand mehr,
+    /// auch nicht nach dem vierten Bier.
+    @ViewBuilder
+    private var betsBoard: some View {
+        let belegt = suits.indices.filter { !bettors(on: $0).isEmpty }
+
+        if phase != .betting, !belegt.isEmpty {
+            VStack(spacing: 6) {
+                ForEach(belegt, id: \.self) { lane in
+                    HStack(spacing: 8) {
+                        Text(suits[lane].symbol)
+                            .font(.system(size: 15))
+                            .foregroundStyle(
+                                suits[lane].isRed ? BeerStatsColor.error : BeerStatsColor.textPrimary
+                            )
+                            .frame(width: 20)
+                        Text(names(on: lane) ?? "")
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .glassPanel(cornerRadius: 14)
+        }
+    }
+
     // MARK: - Status
 
     @ViewBuilder
@@ -168,7 +313,9 @@ struct HorseRaceView: View {
                 Text("Setzt eure Pferde")
                     .font(BeerStatsFont.title)
                     .foregroundStyle(BeerStatsColor.textPrimary)
-                Text("Jeder sagt laut, auf welche Farbe er setzt. Wer auf den Sieger tippt, verteilt \(winnerReward.text) – alle anderen trinken \(loserPenalty.text).")
+                Text(tablePlayers.isEmpty
+                     ? "Jeder sagt laut, auf welche Farbe er setzt. Wer auf den Sieger tippt, verteilt \(winnerReward.text) – alle anderen trinken \(loserPenalty.text)."
+                     : "Setzt euch unten auf eine Farbe. Wer auf den Sieger tippt, verteilt \(winnerReward.text) – alle anderen trinken \(loserPenalty.text).")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .multilineTextAlignment(.center)
@@ -223,7 +370,8 @@ struct HorseRaceView: View {
                 Text("\(suits[winner].name) gewinnt")
                     .font(BeerStatsFont.title)
                     .foregroundStyle(BeerStatsColor.success)
-                Text("Wer auf \(suits[winner].name) gesetzt hat, verteilt \(winnerReward.text).")
+                Text(names(on: winner).map { "\($0) \(verb("verteilt", "verteilen", on: winner)) \(winnerReward.text)." }
+                     ?? "Wer auf \(suits[winner].name) gesetzt hat, verteilt \(winnerReward.text).")
                     .font(BeerStatsFont.headline)
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .multilineTextAlignment(.center)
@@ -319,7 +467,12 @@ struct HorseRaceView: View {
                 positions[lane] = max(0, positions[lane] - 1)
             }
 
-            message = "Seitenstrecke \(revealedSides): \(card.suit.name) muss zurück. Wer darauf gesetzt hat, trinkt \(DrinkAmount.sips(revealedSides).text)."
+            // Je weiter hinten die Seitenkarte lag, desto teurer – deshalb
+            // die laufende Nummer als Menge.
+            let strafe = DrinkAmount.sips(revealedSides).text
+            message = names(on: lane).map {
+                "Seitenstrecke \(revealedSides): \(card.suit.name) muss zurück. \($0) \(verb("trinkt", "trinken", on: lane)) \(strafe)."
+            } ?? "Seitenstrecke \(revealedSides): \(card.suit.name) muss zurück. Wer darauf gesetzt hat, trinkt \(strafe)."
             HapticManager.error()
             SoundManager.play(.bombe)
         }

@@ -25,6 +25,9 @@ struct HomeView: View {
     /// nicht von selbst bei SwiftUI.
     @State private var recentGames = RecentPartyGames.games
     @State private var runningEvening = EveningLog.current
+    /// Wer heute am Tisch steht. Wie oben: UserDefaults meldet sich nicht von
+    /// selbst, also beim Erscheinen neu lesen.
+    @State private var tablePlayers: [PlayerProfile] = []
 
     init(container: AppContainer, currentUserId: String) {
         self.container = container
@@ -57,9 +60,17 @@ struct HomeView: View {
             // zurueck - irgendein Kind ist breiter als der Bildschirm.
             .verticalScrollOnly()
             .toolbar { toolbarContent }
+            // Jedes Spiel, das Namen zeigen kann, nimmt sie sich von hier.
+            .environment(\.tablePlayers, tablePlayers)
             .onAppear {
                 recentGames = RecentPartyGames.games
                 runningEvening = EveningLog.current
+                tablePlayers = TableRoster.players(from: viewModel.profiles)
+            }
+            // Die Profile kommen ueber einen Listener nach – beim ersten
+            // Erscheinen ist die Liste oft noch leer.
+            .onChange(of: viewModel.profiles.count) { _ in
+                tablePlayers = TableRoster.players(from: viewModel.profiles)
             }
         }
     }
