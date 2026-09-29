@@ -24,11 +24,23 @@ import SwiftUI
 
 struct RingOfFireView: View {
 
+    /// Wie viele Karten im Ring liegen. Bleibt gespeichert – wer kurze
+    /// Runden mag, mag sie auch naechste Woche.
+    @AppStorage("ringOfFire.cardCount") private var cardCount = PlayingCardDeck.fullSize
+
+    /// Vor dem Start steht die Vorbereitung, danach der Tisch.
+    @State private var hasStarted = false
+
     /// `nil` bedeutet: Platz im Ring, Karte schon gezogen.
-    @State private var ring: [PlayingCard?] = PlayingCardDeck.shuffled().map { Optional($0) }
+    @State private var ring: [PlayingCard?] = []
     @State private var current: PlayingCard?
     @State private var flipAngle: Double = 0
     @State private var flipTask: Task<Void, Never>?
+
+    /// Die Karte, auf der das Licht gerade steht, waehrend gezogen wird.
+    @State private var spotlight: Int?
+    @State private var isDrawing = false
+    @State private var drawTask: Task<Void, Never>?
 
     // Laufende Rollen. Als Zaehler, weil jede weitere Karte desselben Rangs
     // eine weitere Person in dieselbe Rolle bringt – am Tisch liegen dann
@@ -45,6 +57,61 @@ struct RingOfFireView: View {
     private var rule: RingOfFireRule? { current.map { RingOfFireRules.rule(for: $0.rank) } }
 
     var body: some View {
+        Group {
+            if hasStarted {
+                table
+            } else {
+                setup
+            }
+        }
+        .navigationTitle("Ring of Fire")
+        .navigationBarTitleDisplayMode(.inline)
+        .onDisappear {
+            flipTask?.cancel()
+            drawTask?.cancel()
+        }
+        .sheet(isPresented: $isAskingForRule) {
+            rulePrompt
+        }
+    }
+
+    // MARK: - Vorbereitung
+
+    private var setup: some View {
+        GameSetupScreen(
+            emoji: "🔥",
+            title: "Ring of Fire",
+            subtitle: "Wie lang soll die Runde werden?",
+            tint: BeerStatsColor.error,
+            onStart: start
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("KARTEN IM RING")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .kerning(1.8)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+
+                ChoiceRow(
+                    options: [
+                        ChoiceOption(value: 20, title: "20", detail: "kurz"),
+                        ChoiceOption(value: 32, title: "32", detail: "mittel"),
+                        ChoiceOption(value: PlayingCardDeck.fullSize, title: "52", detail: "ganzer Stapel")
+                    ],
+                    selection: $cardCount,
+                    tint: BeerStatsColor.error
+                )
+
+                Text("Die Karten kommen aus dem gemischten Stapel. In einer kurzen Runde kommt deshalb nicht jede Regel vor – welche fehlt, weiß vorher niemand.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    // MARK: - Tisch
+
+    private var table: some View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.error)
 
@@ -52,16 +119,12 @@ struct RingOfFireView: View {
                 VStack(spacing: 18) {
                     ringOfCards
                     cardPanel
+                    drawButton
                     roleBoard
                 }
                 .padding(20)
             }
-        }
-        .navigationTitle("Ring of Fire")
-        .navigationBarTitleDisplayMode(.inline)
-        .onDisappear { flipTask?.cancel() }
-        .sheet(isPresented: $isAskingForRule) {
-            rulePrompt
+            .verticalScrollOnly()
         }
     }
 
@@ -87,14 +150,17 @@ struct RingOfFireView: View {
 
                 ForEach(ring.indices, id: \.self) { position in
                     if ring[position] != nil {
-                        ringCard(width: cardWidth, height: cardHeight)
+                        ringCard(
+                            width: cardWidth,
+                            height: cardHeight,
+                            isLit: spotlight == position
+                        )
                             // Erst nach aussen schieben, dann um die Mitte
                             // drehen: `offset` verschiebt nur die Darstellung,
                             // nicht den Rahmen – der Drehpunkt bleibt also die
                             // Mitte des Rings.
                             .offset(y: -radius)
                             .rotationEffect(.degrees(angle(for: position)))
-                            .onTapGesture { draw(at: position) }
                     }
                 }
             }
@@ -108,26 +174,38 @@ struct RingOfFireView: View {
         Double(position) / Double(ring.count) * 360
     }
 
-    private func ringCard(width: CGFloat, height: CGFloat) -> some View {
+    /// Eine Karte im Ring. `isLit` ist der Lichtpunkt, der beim Ziehen
+    /// herumwandert.
+    ///
+    /// Die Karten sind nicht mehr antippbar: Gezogen wird ausgelost. Wer
+    /// selbst aussucht, nimmt am Ende immer die Karte vor sich – und der
+    /// Ring ist ohnehin verdeckt, die Wahl war also nie eine.
+    private func ringCard(width: CGFloat, height: CGFloat, isLit: Bool) -> some View {
         RoundedRectangle(cornerRadius: 2, style: .continuous)
             .fill(
-                LinearGradient(
-                    colors: [BeerStatsColor.surfaceElevated, BeerStatsColor.backgroundPrimary],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+                isLit
+                    ? LinearGradient(
+                        colors: [BeerStatsColor.error, BeerStatsColor.warning],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    : LinearGradient(
+                        colors: [BeerStatsColor.surfaceElevated, BeerStatsColor.backgroundPrimary],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .strokeBorder(BeerStatsColor.error.opacity(0.65), lineWidth: 0.8)
+                    .strokeBorder(
+                        BeerStatsColor.error.opacity(isLit ? 1 : 0.65),
+                        lineWidth: isLit ? 1.4 : 0.8
+                    )
             )
+            .shadow(color: BeerStatsColor.error.opacity(isLit ? 0.9 : 0), radius: 8)
             .frame(width: width, height: height)
-            // Die Trefferflaeche ist bewusst groesser als die Karte. Bei 52
-            // Karten auf dem Kreis waere sie sonst schmaler als ein Daumen –
-            // und weil alle verdeckt liegen, ist ein Danebentippen ohnehin
-            // folgenlos.
+            .scaleEffect(isLit ? 1.55 : 1)
             .frame(width: 26, height: 32)
-            .contentShape(Rectangle())
     }
 
     // MARK: - Gezogene Karte
@@ -168,6 +246,9 @@ struct RingOfFireView: View {
                 Text("Ring durch")
                     .font(BeerStatsFont.title)
                     .foregroundStyle(BeerStatsColor.textPrimary)
+                // Zurueck in die Vorbereitung statt sofort neu: Nach einer
+                // durchgespielten Runde ist genau der Moment, in dem jemand
+                // "diesmal kuerzer" sagt.
                 PrimaryButton(title: "Neuer Ring", systemImage: "shuffle") { restart() }
             }
             .frame(maxWidth: .infinity)
@@ -176,16 +257,30 @@ struct RingOfFireView: View {
 
         } else {
             VStack(spacing: 8) {
-                Text("Tipp eine Karte im Ring an")
+                Text("Reihum ziehen")
                     .font(BeerStatsFont.headline)
                     .foregroundStyle(BeerStatsColor.textPrimary)
-                Text("Reihum. Was auf der Karte steht, gilt sofort.")
+                Text("Der Ring lost aus. Was auf der Karte steht, gilt sofort.")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
             }
             .frame(maxWidth: .infinity)
             .padding(22)
             .glassPanel(cornerRadius: 22)
+        }
+    }
+
+    @ViewBuilder
+    private var drawButton: some View {
+        if remaining > 0 {
+            PrimaryButton(
+                title: isDrawing ? "Läuft …" : "Karte ziehen",
+                systemImage: isDrawing ? "hourglass" : "hand.tap.fill"
+            ) {
+                drawRandom()
+            }
+            .opacity(isDrawing ? 0.5 : 1)
+            .disabled(isDrawing)
         }
     }
 
@@ -351,13 +446,84 @@ struct RingOfFireView: View {
         }
     }
 
-    private func restart() {
+    private func start() {
         flipTask?.cancel()
-        ring = PlayingCardDeck.shuffled().map { Optional($0) }
+        drawTask?.cancel()
+        ring = PlayingCardDeck.shuffled(count: cardCount).map { Optional($0) }
         current = nil
         flipAngle = 0
+        spotlight = nil
+        isDrawing = false
         clearRoles()
+        hasStarted = true
         HapticManager.success()
+    }
+
+    private func restart() {
+        flipTask?.cancel()
+        drawTask?.cancel()
+        isDrawing = false
+        spotlight = nil
+        hasStarted = false
+    }
+
+    /// Lost eine der noch liegenden Karten aus und laesst das Licht dorthin
+    /// laufen.
+    private func drawRandom() {
+        guard !isDrawing else { return }
+
+        let liegende = ring.indices.filter { ring[$0] != nil }
+        guard let ziel = liegende.randomElement() else { return }
+
+        isDrawing = true
+        drawTask?.cancel()
+        drawTask = Task { @MainActor in
+            await runSpotlight(to: ziel, over: liegende)
+            guard !Task.isCancelled else { return }
+            spotlight = nil
+            isDrawing = false
+            draw(at: ziel)
+        }
+    }
+
+    /// Der Lichtpunkt laeuft im Uhrzeigersinn ueber die liegenden Karten und
+    /// wird zum Schluss langsamer, bis er auf der gezogenen stehen bleibt.
+    ///
+    /// Die Schrittzahl ist so gewaehlt, dass der letzte Schritt genau auf der
+    /// Zielkarte landet – das Licht haelt also dort an, wo die Karte
+    /// tatsaechlich herkommt. Es sieht nicht nur nach Auslosung aus, es ist
+    /// die Auslosung.
+    private func runSpotlight(to target: Int, over positions: [Int]) async {
+        guard let zielIndex = positions.firstIndex(of: target) else {
+            spotlight = target
+            return
+        }
+
+        // Eine volle Runde plus der Weg zum Ziel. Bei wenigen Karten waere das
+        // ein Zucken statt einer Drehung – deshalb so lange weitere Runden
+        // dazu, bis es nach etwas aussieht. Vielfache der Rundenlaenge
+        // erhalten dabei, dass der letzte Schritt auf dem Ziel landet.
+        var schritte = positions.count + zielIndex
+        while schritte < 16 { schritte += positions.count }
+
+        for schritt in 0...schritte {
+            guard !Task.isCancelled else { return }
+
+            spotlight = positions[schritt % positions.count]
+
+            // Die letzten Schritte bremsen spuerbar ab – das ist der ganze
+            // Trick am Gluecksrad. Davor laeuft es gleichmaessig schnell.
+            let restlich = schritte - schritt
+            let dauer: Double
+            if restlich > 14 {
+                dauer = 0.012
+            } else {
+                dauer = 0.05 + 0.25 * (Double(14 - restlich) / 14)
+                HapticManager.lightImpact()
+            }
+
+            try? await Task.sleep(nanoseconds: UInt64(dauer * 1_000_000_000))
+        }
     }
 
     private func clearRoles() {

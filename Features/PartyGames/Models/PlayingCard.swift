@@ -83,6 +83,19 @@ enum PlayingCardDeck {
     static let ranks = Array(2...14)
 
     /// Ein vollstaendiges, gemischtes Blatt.
+    /// Wie viele Karten ein vollstaendiger Stapel hat.
+    static var fullSize: Int { ranks.count * PlayingCard.Suit.allCases.count }
+
+    /// Ein gemischter Stapel mit hoechstens `count` Karten.
+    ///
+    /// Bewusst vom gemischten Stapel abgeschnitten und nicht nach Raengen
+    /// zusammengestellt: In einem kurzen Ring soll ueberraschen, was fehlt.
+    /// Die Folge muss aber dastehen, wo man es einstellt – bei zwanzig
+    /// Karten kommt nicht jede Regel vor.
+    static func shuffled(count: Int) -> [PlayingCard] {
+        Array(shuffled().prefix(max(1, count)))
+    }
+
     static func shuffled() -> [PlayingCard] {
         PlayingCard.Suit.allCases
             .flatMap { suit in ranks.map { PlayingCard(rank: $0, suit: suit) } }
