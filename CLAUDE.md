@@ -179,6 +179,16 @@ den nachgespielten Wurf-Log alter Partien.
   sie zum Tisch gehören und nicht zur Partie; in die Partie geschrieben wird
   trotzdem jedes Mal. Die Zeile im Neues-Spiel-Screen nennt, was abweicht,
   und der Regeln-Screen erklärt nur noch, was auch gilt.
+- **Spieler-Zentrale**: Das Personen-Symbol in der Spielauswahl führt zu den
+  Mitspielern – anlegen, bearbeiten, Statistiken, Rangliste. Dort steht auch,
+  **wer heute am Tisch ist** (`TableRoster`). Diese Aufstellung gilt für alle
+  Spiele, nicht nur für Beerpong.
+- **Vorbereitung vor dem Spiel**: Ring of Fire fragt vorher die Kartenzahl,
+  Pferderennen lässt die Leute vorher auf die Farben setzen. Der gemeinsame
+  Baustein dafür ist `GameSetupScreen`.
+- **Die offene Partie ruft nicht mehr.** Statt einer dauerhaften Anzeige wird
+  beim Griff nach Beerpong gefragt: weiterspielen oder neu, mit Aufstellung
+  und Stand. Der Stand kommt aus dem nachgespielten Wurf-Log.
 - Glücksrad, das die Teams aus allen aktiven Profilen auslost
 - Live-Tracking mit vollständigem Regelwerk, Undo, Re-Rack, Abbruch
 - Statistiken auf Profile, umschaltbar zwischen Gesamt und letztem Monat
@@ -218,6 +228,26 @@ den nachgespielten Wurf-Log alter Partien.
   Abweichungs-Zeile bauen sich daraus. Wer den Schalter stattdessen in die
   View schreibt, taucht in der Zusammenfassung nicht auf – und dann steht
   „Standard“ über einer Partie, die keiner ist.
+
+- **Wer heute mitspielt, steht in `TableRoster`** – und kommt über
+  `\.tablePlayers` in der SwiftUI-Umgebung bei den Spielen an, nicht als
+  Parameter an `PartyGame.destination`. Sonst müssten alle neunzehn Spiele
+  die Liste annehmen, auch die siebzehn, die sie nicht brauchen. Wichtig:
+  **Leer ist ein gültiger Zustand** – wer keine Profile hat, spielt ohne
+  Namen weiter. Beide Wege müssen im Spiel stehen, nicht nur der schöne.
+  Nicht zu verwechseln mit `PlayerProfile.isActive`: Das heißt „gehört noch
+  zur Truppe" und gilt für Monate, die Aufstellung heißt „ist heute da".
+
+- **Einstellungen vor dem Spiel gehören in `GameSetupScreen`**, die Auswahl
+  aus wenigen Werten in `ChoiceRow`. Beides sind geteilte Bausteine wie
+  `PlayerCountStepper` und `HandoffPanel` – wer einen eigenen Vorspann baut,
+  lässt ihn anders aussehen.
+
+- **Extreme-Karten tragen Dauer und Strafe als eigene Felder**, nicht im
+  Text. Die Dauer steht auf jeder Karte, auch wenn sie „Sofort" lautet; die
+  Strafe fehlt nur dort, wo es nichts zu brechen gibt. Drei Tests halten das
+  fest, einer davon: Jede Challenge muss sagen, was Verweigern kostet – ohne
+  das ist sie eine Bitte.
 
 - **Kartenspiele tragen den ganzen Satz auf der Karte**, nicht nur den
   Nachsatz. Ein fester Vorspann („Ich hab noch nie …") kann grammatisch
@@ -321,6 +351,15 @@ Blaze), Live Activity für den Sperrbildschirm, Ergebnis als Bild teilen.
    Konfiguration auf Vorrat baut, baut ungeprüften Code; entweder gleich mit
    Oberfläche und Test, oder gar nicht.
 
+9. **Ein denormalisiertes Feld wartet nicht auf eine Cloud Function, die es
+   nie gab.** `Game.cupsRemaining` traegt laut Modellkommentar den
+   Becherstand und wird „von einer Cloud Function bei jedem neuen Throw
+   aktualisiert". Cloud Functions brauchen Blaze, und den gibt es nicht –
+   geschrieben wird das Feld genau einmal, beim Anlegen, mit der vollen
+   Becherzahl. Der Spielverlauf liest es und zeigt deshalb bei jeder Partie
+   10 : 10. Wer eine Architektur im Kommentar beschreibt, die es nicht gibt,
+   baut eine Falle: Der naechste liest den Kommentar und glaubt ihm.
+
 ---
 
 ## 8. Arbeitsweise
@@ -356,6 +395,12 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   dass der Schalter das Spiel erreicht, dass die Einstellung den App-Start
   überlebt, und dass die Abweichungs-Zeile mit sieben Einträgen nicht
   auseinanderfällt.
+- **Alles vom 29. September**: Aufstellung („am Tisch"), Vorbereitung bei
+  Ring of Fire samt ausgeloster Karte, Setzen beim Pferderennen, Dauer und
+  Strafe auf den Extreme-Karten, die Frage nach der offenen Partie, der neue
+  Hintergrund. Nichts davon lief je auf Hardware. Besonders zu prüfen: die
+  Auslosung bei Ring of Fire dauert etwa drei Sekunden – das ist geschätzt,
+  nicht gemessen.
 - **Beerpong Extreme** insgesamt: Blitzt die Karte auf? Beim richtigen Team?
   Die Zuordnung `.hit` → Gegner und `.cupChosen` → wählendes Team ist
   durchdacht, nicht beobachtet.
@@ -382,6 +427,15 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
 gerechnet. Gerechnet werden soll es ausdrücklich nicht. Damit bleibt nur
 streichen oder so lassen; bitte nicht ungefragt wieder als Vorschlag
 aufwärmen.
+
+**Der Becherstand im Spielverlauf.** `Game.cupsRemaining` steht immer auf der
+vollen Becherzahl (siehe Lessons Learned Nr. 9), `GameHistoryView` zeigt ihn
+trotzdem als Ergebnis. Vorschlag: beim „Ergebnis übernehmen" die tatsächlich
+verbliebenen Becher schreiben – ein Schreibzugriff an einer Stelle, an der
+ohnehin geschrieben wird – und „beide Teams auf voller Becherzahl" im
+Verlauf als *unbekannt* behandeln statt als Ergebnis. Alte Partien blieben
+unbekannt; nachtraeglich ginge es nur durch Nachspielen aller Logs. Dem
+Nutzer am 29. September gemeldet, noch nicht entschieden.
 
 **Lokal-zuerst statt Firestore.** Firestore kauft genau eine Sache:
 Synchronisation über mehrere Geräte. Die ist dormant (`Features/Friends/`,
