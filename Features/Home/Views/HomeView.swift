@@ -207,6 +207,19 @@ struct HomeView: View {
             }
             .accessibilityLabel(isSpeechOn ? "Ansage ausschalten" : "Ansage einschalten")
         }
+        // Die Leute stehen bewusst hier oben und nicht mehr nur im
+        // Beerpong-Menue: Wer heute am Tisch ist, gilt fuer jedes Spiel -
+        // und das eine Mal am Abend, an dem man es einstellt, will man
+        // nicht erst durch ein Spielmenue dafuer.
+        ToolbarItem(placement: .topBarTrailing) {
+            NavigationLink {
+                ProfilesView(container: container, ownerId: viewModel.currentUserId)
+            } label: {
+                Image(systemName: "person.2.fill")
+                    .foregroundStyle(BeerStatsColor.accent)
+            }
+            .accessibilityLabel("Spieler")
+        }
         ToolbarItem(placement: .topBarTrailing) {
             NavigationLink {
                 DeveloperSettingsView(
