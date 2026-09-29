@@ -265,11 +265,7 @@ struct HomeView: View {
                             .foregroundStyle(BeerStatsColor.textPrimary)
                         Text(beerpongSubtitle)
                             .font(BeerStatsFont.caption)
-                            .foregroundStyle(
-                                viewModel.resumableGame == nil
-                                    ? BeerStatsColor.textSecondary
-                                    : BeerStatsColor.accent
-                            )
+                            .foregroundStyle(BeerStatsColor.textSecondary)
                             .lineLimit(1)
                     }
                     Spacer()
@@ -294,10 +290,14 @@ struct HomeView: View {
         .buttonStyle(PressableButtonStyle())
     }
 
+    /// Immer derselbe Satz.
+    ///
+    /// Hier stand "Eine Partie läuft noch – fortsetzen", solange eine offen
+    /// war. Eine Meldung, die niemand angefordert hat und die stehen bleibt,
+    /// bis sich jemand kümmert. Gefragt wird jetzt dort, wo die Frage
+    /// aufkommt: eine Ebene tiefer, beim Griff nach Beerpong.
     private var beerpongSubtitle: String {
-        viewModel.resumableGame == nil
-            ? "Tracken, Statistiken, Rangliste"
-            : "Eine Partie läuft noch – fortsetzen"
+        "Tracken, Statistiken, Rangliste"
     }
 
     private func miniStat(_ value: String, _ label: String) -> some View {
