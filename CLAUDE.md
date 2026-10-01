@@ -189,6 +189,11 @@ den nachgespielten Wurf-Log alter Partien.
 - **Die offene Partie ruft nicht mehr.** Statt einer dauerhaften Anzeige wird
   beim Griff nach Beerpong gefragt: weiterspielen oder neu, mit Aufstellung
   und Stand. Der Stand kommt aus dem nachgespielten Wurf-Log.
+- **Trefferquote nach Tageszeit** im Profil, in Fenstern zu vier Stunden.
+  Eine Quote erst ab zwanzig Würfen im Fenster, darunter nur die Zahl der
+  Würfe. Wird auf Knopfdruck geladen, weil sie jeden Wurf-Log einzeln liest.
+- **Die Partyspiele sagen Namen statt Nummern**, sobald jemand am Tisch
+  steht – auch ohne laufenden Abend (`PlayerNames`, Reihenfolge unten).
 - Glücksrad, das die Teams aus allen aktiven Profilen auslost
 - Live-Tracking mit vollständigem Regelwerk, Undo, Re-Rack, Abbruch
 - Statistiken auf Profile, umschaltbar zwischen Gesamt und letztem Monat
@@ -237,6 +242,15 @@ den nachgespielten Wurf-Log alter Partien.
   Namen weiter. Beide Wege müssen im Spiel stehen, nicht nur der schöne.
   Nicht zu verwechseln mit `PlayerProfile.isActive`: Das heißt „gehört noch
   zur Truppe" und gilt für Monate, die Aufstellung heißt „ist heute da".
+
+- **Namen in Partyspielen laufen über `PlayerNames`**, und die Reihenfolge
+  der Quellen ist Pflicht, nicht Geschmack: **laufender Abend, sonst Tisch,
+  sonst „Spieler 3"**. Die Trinkbilanz ist auf die Positionen des Abends
+  gebucht – käme der Name von woanders, hieße Position 3 im Spiel jemand
+  anderes als Position 3 in der Bilanz, und die Bilanz wäre falsch, ohne
+  dass es auffiele. Ein Test hält das fest. Die Namen des Tisches liegen als
+  Schnappschuss in UserDefaults, weil ein Partyspiel kein Repository kennt
+  und auch keins bekommen soll.
 
 - **Einstellungen vor dem Spiel gehören in `GameSetupScreen`**, die Auswahl
   aus wenigen Werten in `ChoiceRow`. Beides sind geteilte Bausteine wie
@@ -294,19 +308,15 @@ wenn die App auf mehreren Geräten läuft. Nicht löschen.
 
 **Offen / denkbar**, nach Wert sortiert:
 
-1. **Trefferquote über die Uhrzeit.** Jeder `Throw` trägt einen Zeitstempel,
-   benutzt wird er für nichts. „Bis 22 Uhr 47 %, nach Mitternacht 22 %" ist
-   die ehrlichste Statistik, die diese App haben kann, und kostet keine
-   neuen Daten.
-2. **Bester Partner, schlimmster Gegner.** Die Partien enthalten die
+1. **Bester Partner, schlimmster Gegner.** Die Partien enthalten die
    Aufstellungen; mit wem man gewinnt, ist reine Auswertung.
    `HeadToHeadView` gibt es schon, Team-Chemie fehlt.
-3. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
+2. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
    acht Funde aus der Cloud-Prüfung vom 15. August lagen dort, alle mit
    derselben Ursache: derselbe Zustand an zwei Stellen gehalten. Ein Schnitt
    entlang Regelwerk / Synchronisation / Nebenwirkungen legt die Fehlerklasse
    trocken, statt sie einzeln zu jagen.
-4. **„Kennst du deine Leute?"** – ein Partyspiel, dessen Fragen aus den
+3. **„Kennst du deine Leute?"** – ein Partyspiel, dessen Fragen aus den
    eigenen Beerpong-Daten entstehen („Wer trifft besser, wer wirft mehr
    Airballs?"). Besprochen, nicht begonnen. Kein Inhalt zu schreiben, und
    das einzige Trinkspiel, das nur diese App haben kann.
@@ -359,6 +369,10 @@ Blaze), Live Activity für den Sperrbildschirm, Ergebnis als Bild teilen.
    Becherzahl. Der Spielverlauf liest es und zeigt deshalb bei jeder Partie
    10 : 10. Wer eine Architektur im Kommentar beschreibt, die es nicht gibt,
    baut eine Falle: Der naechste liest den Kommentar und glaubt ihm.
+   **Behoben am 1. Oktober 2026**: `finishGame` schreibt den Endstand einmal
+   am Spielende, und `Game.finalCups` entscheidet, ob ein Stand ueberhaupt
+   ein Ergebnis ist. `currentTurnTeamId` und `playerStreaks` warten
+   weiterhin auf dieselbe Cloud Function und duerfen nicht gelesen werden.
 
 ---
 
@@ -401,6 +415,10 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Hintergrund. Nichts davon lief je auf Hardware. Besonders zu prüfen: die
   Auslosung bei Ring of Fire dauert etwa drei Sekunden – das ist geschätzt,
   nicht gemessen.
+- **Alles vom 1. Oktober**: Endstand im Spielverlauf (alte Partien müssen
+  einen Strich zeigen, neue ein echtes Ergebnis), die Trefferquote nach
+  Tageszeit, und ob die Partyspiele die richtigen Namen sagen – besonders
+  mit laufendem Abend, wo seine Teilnehmer gelten und nicht der Tisch.
 - **Beerpong Extreme** insgesamt: Blitzt die Karte auf? Beim richtigen Team?
   Die Zuordnung `.hit` → Gegner und `.cupChosen` → wählendes Team ist
   durchdacht, nicht beobachtet.
@@ -427,15 +445,6 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
 gerechnet. Gerechnet werden soll es ausdrücklich nicht. Damit bleibt nur
 streichen oder so lassen; bitte nicht ungefragt wieder als Vorschlag
 aufwärmen.
-
-**Der Becherstand im Spielverlauf.** `Game.cupsRemaining` steht immer auf der
-vollen Becherzahl (siehe Lessons Learned Nr. 9), `GameHistoryView` zeigt ihn
-trotzdem als Ergebnis. Vorschlag: beim „Ergebnis übernehmen" die tatsächlich
-verbliebenen Becher schreiben – ein Schreibzugriff an einer Stelle, an der
-ohnehin geschrieben wird – und „beide Teams auf voller Becherzahl" im
-Verlauf als *unbekannt* behandeln statt als Ergebnis. Alte Partien blieben
-unbekannt; nachtraeglich ginge es nur durch Nachspielen aller Logs. Dem
-Nutzer am 29. September gemeldet, noch nicht entschieden.
 
 **Lokal-zuerst statt Firestore.** Firestore kauft genau eine Sache:
 Synchronisation über mehrere Geräte. Die ist dormant (`Features/Friends/`,
