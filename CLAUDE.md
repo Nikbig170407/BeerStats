@@ -53,8 +53,16 @@ Lösungen. Diesen Anspruch bitte beibehalten.
   Das Skript nennt bei einem Fehlschlag den **Schritt**, der gestolpert
   ist. Meist grenzt das die Ursache schon ein; erst wenn es „App bauen"
   oder „Regelwerk testen" ist, braucht es die Zeilen ab dem ersten
-  `error:`. Den Nutzer danach zu fragen ist der zweite Schritt, nicht der
-  erste.
+  `error:`. **Die Logzeilen kann Claude selbst lesen**, sofern die Sitzung
+  eine GitHub-Anbindung hat: Job-Logs des fehlgeschlagenen Laufs abrufen
+  (`get_job_logs` mit `failed_only`), dort steht der fehlgeschlagene Test
+  oder der Compiler-Fehler im Klartext. Den Nutzer nach Logzeilen zu fragen
+  ist der letzte Schritt, nicht der erste.
+
+  **Die beiden Jobs sind unabhängig.** Ein rotes „Regelwerk testen" heißt
+  nicht, dass keine `.ipa` entstanden ist – der Build-Job läuft daneben
+  weiter. Das ist Absicht (siehe Kommentar in `build.yml`): Ein kaputter
+  Test soll niemandem die App vom Tisch nehmen.
 - **Das Repository ist öffentlich – und zwar aus Kostengründen.** macOS-Runner
   zählen bei GitHub zehnfach; die 2000 Freiminuten eines privaten Repos sind
   in Wahrheit 200 macOS-Minuten im Monat, und die waren aufgebraucht. Für
