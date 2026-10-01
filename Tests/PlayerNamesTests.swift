@@ -96,16 +96,23 @@ final class PlayerNamesTests: XCTestCase {
     /// Der wichtigste Test der Datei: Laeuft ein Abend, zaehlen seine
     /// Positionen - sonst bucht die Trinkbilanz auf die falschen Leute.
     func testTheRunningEveningWins() {
+        // Unterschiedlich viele Leute, damit die Zahl allein schon verraet,
+        // aus welcher Quelle sie kommt.
         TableRoster.remember([
             profil("Lena", "🔥", id: "p1"),
             profil("Jan", "🐢", id: "p2")
         ])
-        EveningLog.start(with: [profil("Marcel", "🦊", id: "p9")])
+        EveningLog.start(with: [
+            profil("Marcel", "🦊", id: "p9"),
+            profil("Sarah", "🦉", id: "p8"),
+            profil("Tim", "🐙", id: "p7")
+        ])
 
         defer { EveningLog.current = nil }
 
         XCTAssertEqual(PlayerNames.name(for: 0), "🦊 Marcel")
-        XCTAssertEqual(PlayerNames.suggestedCount(), 1, "die Teilnehmerzahl kommt vom Abend")
+        XCTAssertEqual(PlayerNames.plainName(for: 2), "Tim")
+        XCTAssertEqual(PlayerNames.suggestedCount(), 3, "die Teilnehmerzahl kommt vom Abend")
     }
 
     /// Ist der Abend vorbei, uebernimmt wieder der Tisch.
