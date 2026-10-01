@@ -48,6 +48,10 @@ enum AppConstants {
         /// sechs – wer sechsmal in Folge trifft, hat die Partie ohnehin
         /// entschieden, eine höhere Schwelle wäre eine Regel ohne Fall.
         static let onFireStreakRange = 2...6
+        /// Ab so vielen Würfen bekommt ein Zeitfenster eine Trefferquote.
+        /// Darunter steht nur die Zahl der Würfe da – eine Quote aus fünf
+        /// Würfen sieht aus wie eine Messung und ist geraten.
+        static let minimumThrowsPerTimeSlot = 20
     }
 
     /// UI-Timing-Werte für konsistente Animationen in der gesamten App.

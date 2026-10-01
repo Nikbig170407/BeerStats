@@ -78,6 +78,17 @@ protocol ThrowRepositoryProtocol {
         profileId: String,
         games: [Game]
     ) async throws -> UserStatistics
+
+    /// Trefferquote nach Tageszeit, aus den Wurf-Logs der uebergebenen
+    /// Partien.
+    ///
+    /// Liest jeden Log einzeln und kostet damit so viele Zugriffe wie die
+    /// Zeitraum-Statistik. Deshalb nur auf Anforderung aufrufen, nicht beim
+    /// Oeffnen eines Screens.
+    func hitRateByTimeOfDay(
+        profileId: String,
+        games: [Game]
+    ) async throws -> [TimeSlotStats]
 }
 
 /// Zeitraum, über den Statistiken betrachtet werden.
@@ -281,6 +292,26 @@ final class ThrowRepository: ThrowRepositoryProtocol {
             }
         }
         return state
+    }
+
+    func hitRateByTimeOfDay(
+        profileId: String,
+        games: [Game]
+    ) async throws -> [TimeSlotStats] {
+        let relevant = games.filter { game in
+            game.teams.contains { $0.playerIds.contains(profileId) }
+        }
+
+        // Je Partie zaehlen und erst danach zusammenlegen: Haengte man die
+        // Logs aneinander, koennte ein Undo am Anfang der einen Partie den
+        // letzten Wurf der vorherigen streichen.
+        var auswertung = TimeOfDayHitRate()
+        for game in relevant {
+            guard let gameId = game.id else { continue }
+            let entries = try await fetchThrows(gameId: gameId)
+            auswertung.add(gameLog: entries, profileId: profileId)
+        }
+        return auswertung.slots
     }
 
     // MARK: - Heatmap

@@ -27,6 +27,13 @@ struct ProfileDetailView: View {
     @State private var isLoadingPeriod = false
     @State private var trend: [TrendPoint] = []
 
+    /// Trefferquote nach Tageszeit. Wird erst auf Anforderung geladen – sie
+    /// liest jeden Wurf-Log einzeln und kostet so viele Zugriffe wie die
+    /// Zeitraum-Statistik.
+    @State private var timeSlots: [TimeSlotStats] = []
+    @State private var isLoadingTimeSlots = false
+    @State private var hasLoadedTimeSlots = false
+
     /// Bei „Gesamt" die am Profil gespeicherten Summen, sonst die aus dem
     /// Wurf-Log neu gerechneten Werte. Die gespeicherten Summen sind
     /// Lebenszeit-Werte und lassen sich nicht nachträglich zerlegen –
@@ -48,6 +55,7 @@ struct ProfileDetailView: View {
                     resultSection
                     trendSection
                     arsenalSection
+                    timeOfDaySection
                     streakSection
                     achievementSection
                 }
@@ -194,6 +202,118 @@ struct ProfileDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
             .glassPanel(cornerRadius: 18)
+        }
+    }
+
+    // MARK: - Nach Uhrzeit
+
+    /// Die ehrlichste Statistik, die diese App hat: nicht wer besser wirft,
+    /// sondern was der Abend aus einem macht.
+    private var timeOfDaySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("NACH UHRZEIT")
+                .font(BeerStatsFont.statLabel)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            if hasLoadedTimeSlots {
+                if timeSlots.isEmpty {
+                    Text("Keine Würfe mit Zeitstempel gefunden.")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                } else {
+                    ForEach(timeSlots) { slot in
+                        timeSlotRow(slot)
+                    }
+
+                    Text("Ab \(AppConstants.GameDefaults.minimumThrowsPerTimeSlot) Würfen steht eine Quote da. Darunter nur die Zahl – eine Quote aus fünf Würfen sieht aus wie eine Messung und ist geraten.")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
+                }
+            } else if isLoadingTimeSlots {
+                CupFillLoadingView(size: 44)
+                    .frame(maxWidth: .infinity)
+            } else {
+                Button {
+                    Task { await loadTimeSlots() }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "clock")
+                        Text("Auswerten")
+                            .font(BeerStatsFont.headline)
+                        Spacer()
+                        Text("liest die Wurf-Logs")
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                    }
+                    .foregroundStyle(profile.color.color)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .glassPanel(cornerRadius: 14)
+                    .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .glassPanel(cornerRadius: 18)
+    }
+
+    private func timeSlotRow(_ slot: TimeSlotStats) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(slot.title)
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                    .monospacedDigit()
+
+                Spacer()
+
+                Text(slot.hitRate.map { "\(Int(($0 * 100).rounded())) %" } ?? "–")
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .foregroundStyle(
+                        slot.hitRate == nil ? BeerStatsColor.textSecondary : profile.color.color
+                    )
+
+                Text("\(slot.attempts) Würfe")
+                    .font(BeerStatsFont.statLabel)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .frame(width: 72, alignment: .trailing)
+            }
+
+            // Balkenlaenge ist die Quote selbst, nicht auf den besten Wert
+            // gestreckt: Ein halb voller Balken soll fünfzig Prozent heissen,
+            // egal wie die anderen Fenster aussehen.
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(BeerStatsColor.surfaceElevated.opacity(0.6))
+                    Capsule()
+                        .fill(profile.color.color)
+                        .frame(width: geometry.size.width * (slot.hitRate ?? 0))
+                }
+            }
+            .frame(height: 7)
+        }
+    }
+
+    private func loadTimeSlots() async {
+        guard let profileId = profile.id, !isLoadingTimeSlots else { return }
+        isLoadingTimeSlots = true
+        defer {
+            isLoadingTimeSlots = false
+            hasLoadedTimeSlots = true
+        }
+
+        do {
+            let games = try await gameRepository.fetchFinishedGames(userId: ownerId)
+            timeSlots = try await throwRepository.hitRateByTimeOfDay(
+                profileId: profileId,
+                games: period.filter(games)
+            )
+        } catch {
+            AppLogger.firestore.error("Tageszeit nicht ladbar: \(error.localizedDescription)")
         }
     }
 
