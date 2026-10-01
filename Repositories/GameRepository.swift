@@ -21,7 +21,7 @@ protocol GameRepositoryProtocol {
         accessUserIds: [String]?
     ) async throws -> String
     func startGame(gameId: String) async throws
-    func finishGame(gameId: String, winnerTeamId: String?) async throws
+    func finishGame(gameId: String, winnerTeamId: String?, cupsRemaining: [String: Int]?) async throws
     /// Bricht ein Spiel ohne Wertung ab.
     func cancelGame(gameId: String) async throws
     func fetchFinishedGames(userId: String) async throws -> [Game]
@@ -77,8 +77,12 @@ final class GameRepository: GameRepositoryProtocol {
         try await gameService.updateGameStatus(gameId: gameId, status: .active, startedAt: Date())
     }
 
-    func finishGame(gameId: String, winnerTeamId: String?) async throws {
-        try await gameService.finishGame(gameId: gameId, winnerTeamId: winnerTeamId)
+    func finishGame(gameId: String, winnerTeamId: String?, cupsRemaining: [String: Int]?) async throws {
+        try await gameService.finishGame(
+            gameId: gameId,
+            winnerTeamId: winnerTeamId,
+            cupsRemaining: cupsRemaining
+        )
     }
 
     /// Abbruch statt Löschen: Der Wurf-Log der angefangenen Partie bleibt

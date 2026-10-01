@@ -203,9 +203,20 @@ struct DataImportService: DataImportServiceProtocol {
             // Zum Schluss abschliessen, damit die Partie im Spielverlauf
             // auftaucht und nicht als offene Runde zum Fortsetzen angeboten
             // wird.
+            // Der Endstand kommt aus der Datei, nicht aus dem nachgespielten
+            // Log: Die Team-Kennungen bleiben beim Wiederherstellen gleich,
+            // also passt er unveraendert. Sicherungen von vor dieser
+            // Aenderung tragen dort Nullen – dann steht im Verlauf ein
+            // Strich statt eines erfundenen Ergebnisses.
+            let endstand = Dictionary(
+                spiel.teams.map { ($0.id, $0.score) },
+                uniquingKeysWith: { first, _ in first }
+            )
+
             try await gameRepository.finishGame(
                 gameId: neueSpielId,
-                winnerTeamId: spiel.winnerTeamId
+                winnerTeamId: spiel.winnerTeamId,
+                cupsRemaining: endstand.values.allSatisfy({ $0 == 0 }) ? nil : endstand
             )
             wiederhergestellteSpiele += 1
         }

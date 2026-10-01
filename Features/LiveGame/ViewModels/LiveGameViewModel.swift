@@ -262,9 +262,24 @@ final class LiveGameViewModel: ObservableObject {
         // das falsche Spiel als beendet markiert.
         let settledGameId = gameId
 
+        // Der Endstand, wie er aus dem Wurf-Log entstanden ist. Ohne ihn
+        // bliebe im Spiel-Dokument die volle Becherzahl vom Anlegen stehen,
+        // und der Spielverlauf zeigte 10 : 10.
+        let endstand = Dictionary(
+            teams.indices.compactMap { index -> (String, Int)? in
+                guard finishedState.racks.indices.contains(index) else { return nil }
+                return (teams[index].id, finishedState.racks[index].remainingCount)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+
         do {
             if let settledGameId, let gameRepository {
-                try await gameRepository.finishGame(gameId: settledGameId, winnerTeamId: winningTeamId)
+                try await gameRepository.finishGame(
+                    gameId: settledGameId,
+                    winnerTeamId: winningTeamId,
+                    cupsRemaining: endstand
+                )
             }
             // Beerpong Extreme zahlt bewusst NICHT auf die Statistiken ein.
             // Karten wie "wirf blind" oder "auf einem Bein" verschlechtern

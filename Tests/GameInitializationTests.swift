@@ -68,4 +68,52 @@ final class GameInitializationTests: XCTestCase {
         XCTAssertEqual(game.playerStreaks, ["p0": 0, "p1": 0, "p2": 0, "p3": 0])
         XCTAssertEqual(game.allPlayerIds, ["p0", "p1", "p2", "p3"])
     }
+
+    // MARK: - Endstand
+
+    private func twoTeams() -> [Team] {
+        [
+            Team(id: "t0", playerIds: ["p0"], playerNames: ["Anna"], ballsInPlay: 1),
+            Team(id: "t1", playerIds: ["p1"], playerNames: ["Ben"], ballsInPlay: 1)
+        ]
+    }
+
+    /// Eine frisch angelegte Partie hat kein Ergebnis – auch wenn in
+    /// `cupsRemaining` Zahlen stehen.
+    ///
+    /// Genau hier lag der Fehler: Der Spielverlauf las das Feld und zeigte
+    /// bei jeder Partie 10 : 10, weil es nach dem Anlegen nie wieder
+    /// beschrieben wurde.
+    func testAFreshGameHasNoResult() {
+        let game = Game(type: .oneVsOne, createdBy: "konto", teams: twoTeams())
+
+        XCTAssertFalse(game.cupsRemaining.isEmpty, "die Becher stehen sehr wohl im Dokument")
+        XCTAssertNil(game.finalCups, "ein unveraenderter Anfangsstand ist kein Ergebnis")
+    }
+
+    func testAFinishedGameReportsItsScore() {
+        var game = Game(type: .oneVsOne, createdBy: "konto", teams: twoTeams())
+        game.cupsRemaining = ["t0": 4, "t1": 0]
+
+        XCTAssertEqual(game.finalCups, [4, 0])
+    }
+
+    /// Ein Unentschieden raeumt beide Racks ab. Null zu null ist ein
+    /// Ergebnis und darf nicht als „unbekannt" durchgehen.
+    func testADrawIsAResult() {
+        var game = Game(type: .oneVsOne, createdBy: "konto", teams: twoTeams())
+        game.cupsRemaining = ["t0": 0, "t1": 0]
+
+        XCTAssertEqual(game.finalCups, [0, 0])
+    }
+
+    /// Nur der volle Anfangsstand auf BEIDEN Seiten gilt als unbekannt. Wer
+    /// gewinnt, ohne einen Becher abzugeben, hat ein Ergebnis.
+    func testOnlyBothRacksFullCountsAsUnknown() {
+        let format = GameFormat()
+        var game = Game(type: .oneVsOne, createdBy: "konto", teams: twoTeams())
+        game.cupsRemaining = ["t0": format.cupCount, "t1": 0]
+
+        XCTAssertEqual(game.finalCups, [format.cupCount, 0])
+    }
 }

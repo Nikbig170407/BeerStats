@@ -73,7 +73,7 @@ final class FirebaseGameService: GameServiceProtocol {
         return snapshot.documents.compactMap { try? $0.data(as: Game.self) }
     }
 
-    func finishGame(gameId: String, winnerTeamId: String?) async throws {
+    func finishGame(gameId: String, winnerTeamId: String?, cupsRemaining: [String: Int]?) async throws {
         var data: [String: Any] = [
             "status": GameStatus.finished.rawValue,
             "endedAt": FieldValue.serverTimestamp()
@@ -81,6 +81,19 @@ final class FirebaseGameService: GameServiceProtocol {
         // Bei einem Unentschieden bleibt das Feld bewusst leer, statt eine
         // Platzhalter-ID zu schreiben, die später falsch ausgewertet würde.
         data["winnerTeamId"] = winnerTeamId ?? NSNull()
+
+        // Der Endstand. Beim Anlegen steht hier die volle Becherzahl, und bis
+        // hierher hat ihn nie jemand fortgeschrieben – laut Modellkommentar
+        // sollte das eine Cloud Function tun, die es ohne Blaze-Tarif nie
+        // gab. Der Spielverlauf las das Feld trotzdem und zeigte deshalb bei
+        // jeder Partie 10 : 10.
+        //
+        // Geschrieben wird genau einmal, hier am Ende, aus dem nachgespielten
+        // Endzustand. `nil` heisst: Der Aufrufer kennt ihn nicht – dann
+        // bleibt der alte Wert stehen und der Verlauf zeigt einen Strich.
+        if let cupsRemaining {
+            data["cupsRemaining"] = cupsRemaining
+        }
 
         try await db.collection(AppConstants.Firestore.games).document(gameId).updateData(data)
     }

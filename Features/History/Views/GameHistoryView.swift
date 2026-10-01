@@ -116,10 +116,13 @@ struct GameHistoryView: View {
 
     /// Wie viele Becher noch standen – der Abstand am Ende ist das, woran
     /// man sich erinnert.
+    ///
+    /// Die Regel, wann ein Stand ein Ergebnis ist, steht am Modell
+    /// (`Game.finalCups`) – sie gilt nicht nur für diese Ansicht, und ein
+    /// Test hält sie dort fest.
     private func scoreText(for game: Game) -> String {
-        let remaining = game.teams.map { game.cupsRemaining[$0.id] ?? 0 }
-        guard remaining.count == 2 else { return "–" }
-        return "\(remaining[0]) : \(remaining[1])"
+        guard let cups = game.finalCups else { return "–" }
+        return "\(cups[0]) : \(cups[1])"
     }
 
     private func dateText(for game: Game) -> String {

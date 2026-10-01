@@ -148,6 +148,9 @@ struct ExportedTeam: Codable {
     let id: String
     let playerIds: [String]
     let playerNames: [String]
+    /// Becher, die diesem Team am Ende noch standen – das Ergebnis der
+    /// Partie. Hier stand frueher `Team.score`, ein Feld, das nie jemand
+    /// beschrieben hat; in jeder Sicherung stand deshalb 0.
     let score: Int
 }
 
@@ -287,7 +290,11 @@ struct DataExportService: DataExportServiceProtocol {
                     id: $0.id,
                     playerIds: $0.playerIds,
                     playerNames: $0.playerNames,
-                    score: $0.score
+                    // Aus dem Spiel-Dokument, nicht aus `Team.score`: Das
+                    // Feld wird nirgends gepflegt. Partien von vor dieser
+                    // Aenderung tragen hier die volle Becherzahl – also
+                    // „unbekannt", und genau so liest es der Verlauf auch.
+                    score: game.cupsRemaining[$0.id] ?? 0
                 )
             },
             cupCount: game.format.cupCount,

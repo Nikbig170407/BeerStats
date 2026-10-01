@@ -2,14 +2,21 @@
 //  Game.swift
 //  BeerStats
 //
-//  Zentrales Datenmodell für ein Spiel. Enthält bewusst mehrere
-//  denormalisierte Felder (cupsRemaining, currentTurnTeamId,
-//  playerStreaks), die von einer Cloud Function bei jedem neuen Throw-
-//  Dokument inkrementell aktualisiert werden – die Views lesen so den
-//  Live-Zustand direkt aus dem Game-Dokument, ohne bei jeder Änderung den
-//  kompletten throws-Log neu auswerten zu müssen (siehe Architektur-
-//  Dokument, Abschnitt Performance/Statistiken).
+//  Zentrales Datenmodell für ein Spiel.
 //
+//  **Achtung bei den denormalisierten Feldern** (`cupsRemaining`,
+//  `currentTurnTeamId`, `playerStreaks`): Hier stand jahrelang, sie würden
+//  „von einer Cloud Function bei jedem neuen Throw inkrementell
+//  aktualisiert". Cloud Functions brauchen den Blaze-Tarif, und den gibt es
+//  in diesem Projekt nicht – geschrieben hat diese Felder nie jemand.
+//
+//  Der Spielverlauf las `cupsRemaining` trotzdem und zeigte deshalb bei
+//  jeder Partie 10 : 10. Seit Oktober 2026 schreibt `finishGame` den
+//  Endstand einmal am Spielende; `currentTurnTeamId` und `playerStreaks`
+//  stehen weiter unverändert da und dürfen nicht gelesen werden.
+//
+//  Der Live-Zustand entsteht ausschließlich aus dem nachgespielten
+//  Wurf-Log. Das ist langsamer als ein gepflegtes Feld und dafür wahr.
 
 import Foundation
 import FirebaseFirestore
@@ -37,8 +44,12 @@ struct Game: Codable, Identifiable, Equatable {
     var teams: [Team]
     var format: GameFormat
 
-    /// Verbleibende Becher pro Team-ID – denormalisiert für eine performante
-    /// Live-Anzeige ohne den throws-Log auszählen zu müssen.
+    /// Verbleibende Becher pro Team-ID.
+    ///
+    /// Beim Anlegen steht hier für jedes Team die volle Becherzahl,
+    /// beschrieben wird das Feld erst wieder beim Abschluss der Partie
+    /// (`finishGame`). Während des Spiels ist es also **falsch** – wer den
+    /// laufenden Stand braucht, spielt den Wurf-Log nach.
     var cupsRemaining: [String: Int]
 
     /// Alle Konten, die dieses Spiel sehen und bearbeiten dürfen. Firestore
@@ -70,6 +81,21 @@ struct Game: Codable, Identifiable, Equatable {
     /// Für die spätere Zuschauer-/Liga-Funktion vorgesehen (siehe Roadmap-
     /// Erweiterungen), aktuell ohne Auswirkung auf die UI.
     var isPublic: Bool = false
+
+    /// Der Endstand, sofern bekannt: verbleibende Becher je Team, in der
+    /// Reihenfolge der Teams.
+    ///
+    /// `nil`, wenn bei beiden Teams noch alle Becher stehen. Das ist dann
+    /// nicht das Ergebnis, sondern der unveränderte Wert vom Anlegen – eine
+    /// Partie, in der kein einziger Becher fiel, gibt es nicht. Partien von
+    /// vor Oktober 2026 liefern deshalb `nil`, und das ist die ehrliche
+    /// Antwort: Ihr Ergebnis steht nirgends mehr.
+    var finalCups: [Int]? {
+        let remaining = teams.map { cupsRemaining[$0.id] ?? 0 }
+        guard remaining.count == 2 else { return nil }
+        guard remaining != [format.cupCount, format.cupCount] else { return nil }
+        return remaining
+    }
 
     init(
         id: String? = nil,
