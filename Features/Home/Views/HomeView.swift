@@ -66,11 +66,13 @@ struct HomeView: View {
                 recentGames = RecentPartyGames.games
                 runningEvening = EveningLog.current
                 tablePlayers = TableRoster.players(from: viewModel.profiles)
+                TableRoster.remember(tablePlayers)
             }
             // Die Profile kommen ueber einen Listener nach – beim ersten
             // Erscheinen ist die Liste oft noch leer.
             .onChange(of: viewModel.profiles.count) { _ in
                 tablePlayers = TableRoster.players(from: viewModel.profiles)
+                TableRoster.remember(tablePlayers)
             }
         }
     }

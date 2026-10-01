@@ -97,6 +97,54 @@ enum TableRoster {
     }
 }
 
+// MARK: - Was die Spiele davon brauchen
+
+/// Ein Platz am Tisch, so wie ihn ein Partyspiel braucht: Name und Emoji,
+/// ohne Firestore und ohne Ladezeit.
+struct TableSeat: Codable, Equatable {
+    let id: String
+    let name: String
+    let emoji: String
+}
+
+extension TableRoster {
+
+    static let seatsStorageKey = "table.seats"
+
+    /// Die Leute am Tisch als Schnappschuss, in ihrer Reihenfolge.
+    ///
+    /// Warum nicht einfach die Profile nachladen: Ein Partyspiel kennt kein
+    /// Repository. Es laeuft ohne Konto, ohne Netz und oft ohne dass je ein
+    /// Profil geladen wurde – `SpyView` bekommt kein Firestore in die Hand,
+    /// und das soll auch so bleiben. Was es braucht, sind drei Zeichenketten.
+    ///
+    /// Der Preis ist, dass eine Umbenennung hier erst ankommt, wenn jemand
+    /// die Mitspieler oder das Hauptmenue oeffnet – dort wird der
+    /// Schnappschuss aufgefrischt. Fuer einen Namen am Tisch ist das nah
+    /// genug an der Wahrheit.
+    static var seats: [TableSeat] {
+        get {
+            guard let data = UserDefaults.standard.data(forKey: seatsStorageKey),
+                  let gespeichert = try? JSONDecoder().decode([TableSeat].self, from: data)
+            else { return [] }
+            return gespeichert
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            UserDefaults.standard.set(data, forKey: seatsStorageKey)
+        }
+    }
+
+    /// Frischt den Schnappschuss auf. Aufzurufen, wo die Profile bekannt
+    /// sind – also dort, wo die Aufstellung ohnehin berechnet wird.
+    static func remember(_ players: [PlayerProfile]) {
+        seats = players.compactMap { profile in
+            guard let id = profile.id else { return nil }
+            return TableSeat(id: id, name: profile.name, emoji: profile.emoji)
+        }
+    }
+}
+
 // MARK: - Environment-Integration
 
 private struct TablePlayersKey: EnvironmentKey {

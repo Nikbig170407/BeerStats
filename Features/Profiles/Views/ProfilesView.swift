@@ -209,7 +209,12 @@ struct ProfilesView: View {
     }
 
     private func refreshRoster() {
-        atTable = Set(TableRoster.players(from: viewModel.profiles).compactMap(\.id))
+        let amTisch = TableRoster.players(from: viewModel.profiles)
+        atTable = Set(amTisch.compactMap(\.id))
+        // Damit die Partyspiele Namen sagen koennen, ohne Firestore zu
+        // kennen. Hier ist der Schnappschuss so frisch wie moeglich: Wer
+        // gerade umbenannt wurde, steht in `profiles` schon richtig drin.
+        TableRoster.remember(amTisch)
     }
 
     /// Der Haken steht NEBEN der Karte, nicht darin: Zwei Tippziele

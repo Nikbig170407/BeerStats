@@ -12,10 +12,19 @@
 //  im Kopf mitzuzaehlen, wer nochmal die Drei ist – und nach dem dritten
 //  Bier zaehlt niemand mehr richtig. Ein Name braucht kein Mitzaehlen.
 //
-//  Entscheidend ist der Rueckfall: Laeuft kein Abend, kommt weiter die
-//  Nummer. Kein Spiel darf einen laufenden Abend VORAUSSETZEN, sonst waere
-//  aus einer Bequemlichkeit eine Pflicht geworden – und wer schnell eine
-//  Runde Schocken spielen will, muesste erst einen Abend anlegen.
+//  Entscheidend ist der Rueckfall, und seit Oktober 2026 ist er zweistufig:
+//
+//  1. Laeuft ein Abend, gelten SEINE Teilnehmer. Das ist keine Vorliebe,
+//     sondern Pflicht: Die Trinkbilanz ist auf die Positionen des Abends
+//     gebucht. Kaeme der Name von woanders, hiesse Position 3 im Spiel
+//     jemand anderes als Position 3 in der Bilanz – und die Bilanz ist
+//     falsch, ohne dass es jemandem auffiele.
+//  2. Sonst gilt, wer am Tisch steht (`TableRoster`). Das ist der Fall fuer
+//     die schnelle Runde zwischendurch, fuer die niemand einen Abend
+//     anlegen will.
+//  3. Steht niemand fest, kommt weiter die Nummer. Kein Spiel darf einen
+//     Abend oder eine Aufstellung VORAUSSETZEN, sonst waere aus einer
+//     Bequemlichkeit eine Pflicht geworden.
 //
 
 import Foundation
@@ -46,16 +55,28 @@ enum PlayerNames {
     /// der Zaehler zeigt sie an, weil er nur seine eigenen Knoepfe begrenzt,
     /// nicht den Wert, der hereingereicht wird.
     static func suggestedCount(atLeast minimum: Int = 2) -> Int? {
-        guard let abend = EveningLog.current, abend.isRunning else { return nil }
-        let anzahl = abend.participants.count
+        let anzahl: Int
+        if let abend = EveningLog.current, abend.isRunning {
+            anzahl = abend.participants.count
+        } else {
+            anzahl = TableRoster.seats.count
+        }
         return anzahl >= minimum ? anzahl : nil
     }
 
-    private static func participant(at index: Int) -> EveningParticipant? {
-        guard let abend = EveningLog.current, abend.isRunning,
-              abend.participants.indices.contains(index)
-        else { return nil }
-        return abend.participants[index]
+    /// Name und Emoji der Position `index`, aus der jeweils gueltigen
+    /// Quelle. Die Reihenfolge der Stufen steht im Dateikopf und ist nicht
+    /// beliebig.
+    private static func participant(at index: Int) -> (name: String, emoji: String)? {
+        if let abend = EveningLog.current, abend.isRunning {
+            guard abend.participants.indices.contains(index) else { return nil }
+            let teilnehmer = abend.participants[index]
+            return (teilnehmer.name, teilnehmer.emoji)
+        }
+
+        let tisch = TableRoster.seats
+        guard tisch.indices.contains(index) else { return nil }
+        return (tisch[index].name, tisch[index].emoji)
     }
 }
 
