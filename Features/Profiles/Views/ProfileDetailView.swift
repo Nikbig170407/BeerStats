@@ -27,6 +27,11 @@ struct ProfileDetailView: View {
     @State private var isLoadingPeriod = false
     @State private var trend: [TrendPoint] = []
 
+    /// Mit wem gewonnen, gegen wen verloren. Faellt beim selben Abruf ab wie
+    /// der Verlauf – die Rechnung braucht nur die Aufstellungen, keinen
+    /// einzigen Wurf-Log.
+    @State private var chemistry: TeamChemistry?
+
     /// Trefferquote nach Tageszeit. Wird erst auf Anforderung geladen – sie
     /// liest jeden Wurf-Log einzeln und kostet so viele Zugriffe wie die
     /// Zeitraum-Statistik.
@@ -55,6 +60,7 @@ struct ProfileDetailView: View {
                     resultSection
                     trendSection
                     arsenalSection
+                    chemistrySection
                     timeOfDaySection
                     streakSection
                     achievementSection
@@ -73,7 +79,7 @@ struct ProfileDetailView: View {
         .background(BeerStatsColor.backgroundPrimary.ignoresSafeArea())
         .navigationTitle(profile.name)
         .navigationBarTitleDisplayMode(.inline)
-        .task { await loadTrend() }
+        .task { await loadFromFinishedGames() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Bearbeiten", action: onEdit)
@@ -205,6 +211,85 @@ struct ProfileDetailView: View {
         }
     }
 
+    // MARK: - Team-Chemie
+
+    /// Die Frage, die am Tisch beim Auslosen wirklich gestellt wird.
+    @ViewBuilder
+    private var chemistrySection: some View {
+        if let chemistry, !chemistry.partners.isEmpty || !chemistry.opponents.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("TEAM-CHEMIE")
+                    .font(BeerStatsFont.statLabel)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+
+                if let partner = chemistry.bestPartner {
+                    pairingRow(
+                        emoji: "🤝",
+                        label: "Bester Partner",
+                        pairing: partner,
+                        tint: BeerStatsColor.success
+                    )
+                }
+
+                if let gegner = chemistry.worstOpponent {
+                    pairingRow(
+                        emoji: "😤",
+                        label: "Schlimmster Gegner",
+                        pairing: gegner,
+                        tint: BeerStatsColor.error
+                    )
+                }
+
+                if chemistry.bestPartner == nil && chemistry.worstOpponent == nil {
+                    Text("Noch zu wenige gemeinsame Partien. Ab \(AppConstants.GameDefaults.minimumGamesForChemistry) mit derselben Person steht hier etwas.")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .glassPanel(cornerRadius: 18)
+        }
+    }
+
+    private func pairingRow(
+        emoji: String,
+        label: String,
+        pairing: Pairing,
+        tint: Color
+    ) -> some View {
+        let gegenueber = otherProfiles.first { $0.id == pairing.profileId }
+
+        return HStack(spacing: 12) {
+            Text(emoji).font(.system(size: 24)).frame(width: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(BeerStatsFont.statLabel)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                // Ein geloeschtes Profil steht weiter in alten Partien. Es
+                // zu verschweigen waere falsch, es als Namen auszugeben
+                // auch.
+                Text(gegenueber?.name ?? "Nicht mehr dabei")
+                    .font(BeerStatsFont.headline)
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(pairing.winRate.map { "\(Int(($0 * 100).rounded())) %" } ?? "–")
+                    .font(.system(size: 17, weight: .heavy, design: .rounded))
+                    .foregroundStyle(tint)
+                Text("\(pairing.wins) von \(pairing.games)")
+                    .font(BeerStatsFont.statLabel)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+        }
+    }
+
     // MARK: - Nach Uhrzeit
 
     /// Die ehrlichste Statistik, die diese App hat: nicht wer besser wirft,
@@ -317,12 +402,18 @@ struct ProfileDetailView: View {
         }
     }
 
-    /// Laeuft einmal beim Oeffnen und liest pro Partie den Wurf-Log – das
-    /// kostet Lesezugriffe, deshalb gedeckelt auf fuenfzehn.
-    private func loadTrend() async {
+    /// Laeuft einmal beim Oeffnen.
+    ///
+    /// Holt die abgeschlossenen Partien einmal und wertet beides daraus aus.
+    /// Die Team-Chemie ist dabei geschenkt: Sie braucht nur die
+    /// Aufstellungen, die in den Partien ohnehin stehen. Der Verlauf liest
+    /// zusaetzlich pro Partie den Wurf-Log – das kostet Lesezugriffe,
+    /// deshalb gedeckelt auf fuenfzehn.
+    private func loadFromFinishedGames() async {
         guard let profileId = profile.id, trend.isEmpty else { return }
         do {
             let games = try await gameRepository.fetchFinishedGames(userId: ownerId)
+            chemistry = TeamChemistry(profileId: profileId, games: games)
             trend = try await throwRepository.hitRateTrend(
                 profileId: profileId,
                 games: games,

@@ -52,6 +52,10 @@ enum AppConstants {
         /// Darunter steht nur die Zahl der Würfe da – eine Quote aus fünf
         /// Würfen sieht aus wie eine Messung und ist geraten.
         static let minimumThrowsPerTimeSlot = 20
+        /// Ab so vielen gemeinsamen Partien bekommt eine Paarung eine
+        /// Siegquote. Wer einmal zusammen gespielt und gewonnen hat, stünde
+        /// sonst mit hundert Prozent als „bester Partner" da.
+        static let minimumGamesForChemistry = 3
     }
 
     /// UI-Timing-Werte für konsistente Animationen in der gesamten App.
