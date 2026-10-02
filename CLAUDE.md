@@ -200,6 +200,9 @@ den nachgespielten Wurf-Log alter Partien.
 - **Trefferquote nach Tageszeit** im Profil, in Fenstern zu vier Stunden.
   Eine Quote erst ab zwanzig Würfen im Fenster, darunter nur die Zahl der
   Würfe. Wird auf Knopfdruck geladen, weil sie jeden Wurf-Log einzeln liest.
+- **Team-Chemie im Profil**: bester Partner, schlimmster Gegner. Quote erst
+  ab drei gemeinsamen Partien. Kostet keinen zusätzlichen Lesezugriff – sie
+  braucht nur die Aufstellungen, die in den Partien ohnehin stehen.
 - **Die Partyspiele sagen Namen statt Nummern**, sobald jemand am Tisch
   steht – auch ohne laufenden Abend (`PlayerNames`, Reihenfolge unten).
 - Glücksrad, das die Teams aus allen aktiven Profilen auslost
@@ -316,15 +319,12 @@ wenn die App auf mehreren Geräten läuft. Nicht löschen.
 
 **Offen / denkbar**, nach Wert sortiert:
 
-1. **Bester Partner, schlimmster Gegner.** Die Partien enthalten die
-   Aufstellungen; mit wem man gewinnt, ist reine Auswertung.
-   `HeadToHeadView` gibt es schon, Team-Chemie fehlt.
-2. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
+1. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
    acht Funde aus der Cloud-Prüfung vom 15. August lagen dort, alle mit
    derselben Ursache: derselbe Zustand an zwei Stellen gehalten. Ein Schnitt
    entlang Regelwerk / Synchronisation / Nebenwirkungen legt die Fehlerklasse
    trocken, statt sie einzeln zu jagen.
-3. **„Kennst du deine Leute?"** – ein Partyspiel, dessen Fragen aus den
+2. **„Kennst du deine Leute?"** – ein Partyspiel, dessen Fragen aus den
    eigenen Beerpong-Daten entstehen („Wer trifft besser, wer wirft mehr
    Airballs?"). Besprochen, nicht begonnen. Kein Inhalt zu schreiben, und
    das einzige Trinkspiel, das nur diese App haben kann.
@@ -423,6 +423,10 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Hintergrund. Nichts davon lief je auf Hardware. Besonders zu prüfen: die
   Auslosung bei Ring of Fire dauert etwa drei Sekunden – das ist geschätzt,
   nicht gemessen.
+- **Team-Chemie (2. Oktober)**: Stimmen bester Partner und schlimmster
+  Gegner mit dem überein, was ihr am Tisch sagen würdet? Die Rechnung ist
+  per Test abgedeckt, die Datenlage nicht – bei wenigen Partien kann ein
+  Name oben stehen, der sich falsch anfühlt.
 - **Alles vom 1. Oktober**: Endstand im Spielverlauf (alte Partien müssen
   einen Strich zeigen, neue ein echtes Ergebnis), die Trefferquote nach
   Tageszeit, und ob die Partyspiele die richtigen Namen sagen – besonders
