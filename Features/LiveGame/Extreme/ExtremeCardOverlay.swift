@@ -118,17 +118,16 @@ struct ExtremeCardOverlay: View {
     /// dann fragt doch wieder jemand.
     private var terms: some View {
         VStack(spacing: 6) {
-            termRow(
+            TermRow(
                 systemImage: "clock",
                 label: "Wie lange",
-                value: card.duration ?? "Sofort",
-                tint: BeerStatsColor.textSecondary
+                value: card.duration ?? "Sofort"
             )
 
             // Kein Feld heisst: Es gibt nichts zu brechen. Eine reine
             // Trinkstrafe ist mit dem Trinken erledigt.
             if let penalty = card.penalty {
-                termRow(
+                TermRow(
                     systemImage: "exclamationmark.triangle.fill",
                     label: "Sonst",
                     value: penalty,
@@ -138,37 +137,4 @@ struct ExtremeCardOverlay: View {
         }
     }
 
-    private func termRow(
-        systemImage: String,
-        label: String,
-        value: String,
-        tint: Color
-    ) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(tint)
-                .frame(width: 16)
-
-            Text(label.uppercased())
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
-                .kerning(1.2)
-                .foregroundStyle(BeerStatsColor.textSecondary)
-
-            Text(value)
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity)
-        .background(
-            BeerStatsColor.surfaceElevated.opacity(0.6),
-            in: RoundedRectangle(cornerRadius: 11, style: .continuous)
-        )
-    }
 }

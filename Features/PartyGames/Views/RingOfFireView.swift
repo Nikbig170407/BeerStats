@@ -34,8 +34,12 @@ struct RingOfFireView: View {
     /// `nil` bedeutet: Platz im Ring, Karte schon gezogen.
     @State private var ring: [PlayingCard?] = []
     @State private var current: PlayingCard?
-    @State private var flipAngle: Double = 0
-    @State private var flipTask: Task<Void, Never>?
+
+    /// Der zweite Screen – die gezogene Karte in Gross.
+    @State private var showsAction = false
+    /// Steht die Hausregel-Frage noch aus? Sie kommt erst NACH dem
+    /// Aktionsscreen: Erst liest man die Karte zu Ende, dann tippt man.
+    @State private var needsRulePrompt = false
 
     /// Die Karte, auf der das Licht gerade steht, waehrend gezogen wird.
     @State private var spotlight: Int?
@@ -54,7 +58,6 @@ struct RingOfFireView: View {
     @State private var ruleDraft = ""
 
     private var remaining: Int { ring.compactMap { $0 }.count }
-    private var rule: RingOfFireRule? { current.map { RingOfFireRules.rule(for: $0.rank) } }
 
     var body: some View {
         Group {
@@ -66,10 +69,7 @@ struct RingOfFireView: View {
         }
         .navigationTitle("Ring of Fire")
         .navigationBarTitleDisplayMode(.inline)
-        .onDisappear {
-            flipTask?.cancel()
-            drawTask?.cancel()
-        }
+        .onDisappear { drawTask?.cancel() }
         .sheet(isPresented: $isAskingForRule) {
             rulePrompt
         }
@@ -118,13 +118,32 @@ struct RingOfFireView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     ringOfCards
-                    cardPanel
+                    emptyRingPanel
                     drawButton
                     roleBoard
                 }
                 .padding(20)
             }
             .verticalScrollOnly()
+        }
+        // Vollbild statt Blatt: In dem Moment zaehlt nur, was auf der Karte
+        // steht. Der Ring darunter wuerde nur ablenken.
+        .fullScreenCover(isPresented: $showsAction) {
+            if let current {
+                RingOfFireActionView(
+                    card: current,
+                    rule: RingOfFireRules.rule(for: current.rank)
+                ) {
+                    showsAction = false
+                }
+            }
+        }
+        // Die Hausregel wird erst danach eingetippt – ein Textfeld ueber der
+        // Karte haette man gelesen, bevor man die Karte gelesen hat.
+        .onChange(of: showsAction) { istOffen in
+            guard !istOffen, needsRulePrompt else { return }
+            needsRulePrompt = false
+            isAskingForRule = true
         }
     }
 
@@ -133,114 +152,107 @@ struct RingOfFireView: View {
     private var ringOfCards: some View {
         GeometryReader { geometry in
             let side = min(geometry.size.width, geometry.size.height)
-            let cardWidth = side * 0.045
-            let cardHeight = side * 0.068
-            let radius = side / 2 - cardHeight
+            // Die Karten teilen sich den Umfang. Bei zwanzig Karten ist jede
+            // mehr als doppelt so breit wie bei zweiundfuenfzig – mehr geht
+            // nicht, der Kreis hat nun mal nur einen Umfang. Deshalb steht
+            // die Kartenzahl auch in der Vorbereitung.
+            let platzProKarte = (.pi * side * 0.86) / CGFloat(max(ring.count, 1))
+            let cardWidth = min(side * 0.11, platzProKarte * 0.74)
+            let cardHeight = cardWidth * 1.45
+            let radius = side / 2 - cardHeight * 0.75
 
             ZStack {
                 VStack(spacing: 2) {
-                    Text("🍾").font(.system(size: side * 0.17))
+                    Text("🍾").font(.system(size: side * 0.15))
                     Text("\(remaining)")
-                        .font(.system(size: side * 0.09, weight: .heavy, design: .rounded))
+                        .font(.system(size: side * 0.1, weight: .heavy, design: .rounded))
                         .foregroundStyle(BeerStatsColor.error)
+                        .monospacedDigit()
                     Text("übrig")
                         .font(BeerStatsFont.statLabel)
                         .foregroundStyle(BeerStatsColor.textSecondary)
                 }
 
                 ForEach(ring.indices, id: \.self) { position in
-                    if ring[position] != nil {
-                        ringCard(
-                            width: cardWidth,
-                            height: cardHeight,
-                            isLit: spotlight == position
-                        )
-                            // Erst nach aussen schieben, dann um die Mitte
-                            // drehen: `offset` verschiebt nur die Darstellung,
-                            // nicht den Rahmen – der Drehpunkt bleibt also die
-                            // Mitte des Rings.
-                            .offset(y: -radius)
-                            .rotationEffect(.degrees(angle(for: position)))
-                    }
+                    ringCard(
+                        width: cardWidth,
+                        height: cardHeight,
+                        isLit: spotlight == position,
+                        isEmpty: ring[position] == nil
+                    )
+                        // Erst nach aussen schieben, dann um die Mitte
+                        // drehen: `offset` verschiebt nur die Darstellung,
+                        // nicht den Rahmen – der Drehpunkt bleibt also die
+                        // Mitte des Rings.
+                        .offset(y: -radius)
+                        .rotationEffect(.degrees(angle(for: position)))
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
-        .frame(height: 290)
+        // Nimmt sich die volle Breite und bleibt quadratisch: Der Ring ist
+        // der Screen, nicht eine Zeile darin.
+        .aspectRatio(1, contentMode: .fit)
         .animation(AppAnimation.standard, value: remaining)
     }
 
     private func angle(for position: Int) -> Double {
-        Double(position) / Double(ring.count) * 360
+        Double(position) / Double(max(ring.count, 1)) * 360
     }
 
-    /// Eine Karte im Ring. `isLit` ist der Lichtpunkt, der beim Ziehen
-    /// herumwandert.
+    /// Eine Karte im Ring.
     ///
-    /// Die Karten sind nicht mehr antippbar: Gezogen wird ausgelost. Wer
-    /// selbst aussucht, nimmt am Ende immer die Karte vor sich – und der
-    /// Ring ist ohnehin verdeckt, die Wahl war also nie eine.
-    private func ringCard(width: CGFloat, height: CGFloat, isLit: Bool) -> some View {
-        RoundedRectangle(cornerRadius: 2, style: .continuous)
+    /// `isEmpty` ist der freie Platz einer gezogenen Karte. Er bleibt
+    /// stehen, statt zu verschwinden: Die Luecken sind die Anzeige des
+    /// Spielstands – man sieht auf einen Blick, wie viel schon durch ist.
+    /// Ein Ring, der sich beim Ziehen zusammenschiebt, verliert genau diese
+    /// Information.
+    ///
+    /// `isLit` ist der Lichtpunkt, der beim Ziehen herumwandert. Die Karten
+    /// sind nicht antippbar: Gezogen wird ausgelost.
+    private func ringCard(width: CGFloat, height: CGFloat, isLit: Bool, isEmpty: Bool) -> some View {
+        RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
             .fill(
-                isLit
+                isEmpty
                     ? LinearGradient(
-                        colors: [BeerStatsColor.error, BeerStatsColor.warning],
+                        colors: [Color.clear, Color.clear],
                         startPoint: .top,
                         endPoint: .bottom
                     )
-                    : LinearGradient(
-                        colors: [BeerStatsColor.surfaceElevated, BeerStatsColor.backgroundPrimary],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                    : (isLit
+                        ? LinearGradient(
+                            colors: [BeerStatsColor.error, BeerStatsColor.warning],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        : LinearGradient(
+                            colors: [BeerStatsColor.surfaceElevated, BeerStatsColor.backgroundPrimary],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
                     .strokeBorder(
-                        BeerStatsColor.error.opacity(isLit ? 1 : 0.65),
-                        lineWidth: isLit ? 1.4 : 0.8
+                        BeerStatsColor.error.opacity(isEmpty ? 0.22 : (isLit ? 1 : 0.7)),
+                        style: StrokeStyle(
+                            lineWidth: isEmpty ? 1 : (isLit ? 1.8 : 1.1),
+                            dash: isEmpty ? [2.5, 2.5] : []
+                        )
                     )
             )
-            .shadow(color: BeerStatsColor.error.opacity(isLit ? 0.9 : 0), radius: 8)
+            .shadow(color: BeerStatsColor.error.opacity(isLit ? 0.9 : 0), radius: 10)
             .frame(width: width, height: height)
-            .scaleEffect(isLit ? 1.55 : 1)
-            .frame(width: 26, height: 32)
+            .scaleEffect(isLit ? 1.45 : 1)
     }
 
-    // MARK: - Gezogene Karte
+    // MARK: - Ring durch
 
+    /// Steht nur da, wenn nichts mehr liegt. Alles andere zur gezogenen
+    /// Karte passiert auf dem zweiten Screen.
     @ViewBuilder
-    private var cardPanel: some View {
-        if let rule, let current {
-            VStack(spacing: 14) {
-                PlayingCardView(card: current, width: 110)
-                    .rotation3DEffect(.degrees(flipAngle), axis: (x: 0, y: 1, z: 0))
-
-                Text(rule.nickname)
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
-                    .kerning(2)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-
-                HStack(spacing: 8) {
-                    Text(rule.emoji).font(.system(size: 26))
-                    Text(rule.title)
-                        .font(.scaled(26, weight: .heavy, design: .rounded))
-                        .foregroundStyle(tint(for: rule))
-                }
-
-                Text(rule.text)
-                    .font(BeerStatsFont.body)
-                    .foregroundStyle(BeerStatsColor.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(22)
-            .glassPanel(cornerRadius: 22)
-            .neonEdge(tint(for: rule), cornerRadius: 22, intensity: 0.8)
-
-        } else if remaining == 0 {
+    private var emptyRingPanel: some View {
+        if remaining == 0 {
             VStack(spacing: 14) {
                 Text("🔥").font(.system(size: 54))
                 Text("Ring durch")
@@ -250,19 +262,6 @@ struct RingOfFireView: View {
                 // durchgespielten Runde ist genau der Moment, in dem jemand
                 // "diesmal kuerzer" sagt.
                 PrimaryButton(title: "Neuer Ring", systemImage: "shuffle") { restart() }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(22)
-            .glassPanel(cornerRadius: 22)
-
-        } else {
-            VStack(spacing: 8) {
-                Text("Reihum ziehen")
-                    .font(BeerStatsFont.headline)
-                    .foregroundStyle(BeerStatsColor.textPrimary)
-                Text("Der Ring lost aus. Was auf der Karte steht, gilt sofort.")
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
             }
             .frame(maxWidth: .infinity)
             .padding(22)
@@ -282,10 +281,6 @@ struct RingOfFireView: View {
             .opacity(isDrawing ? 0.5 : 1)
             .disabled(isDrawing)
         }
-    }
-
-    private func tint(for rule: RingOfFireRule) -> Color {
-        rule.role == nil ? BeerStatsColor.accent : BeerStatsColor.error
     }
 
     // MARK: - Merkliste
@@ -401,24 +396,12 @@ struct RingOfFireView: View {
 
     private func draw(at position: Int) {
         guard let card = ring[position] else { return }
-        flipTask?.cancel()
 
         withAnimation(AppAnimation.standard) { ring[position] = nil }
 
-        // Zweistufiger Umschlag: Auf halbem Weg steht die Karte hochkant, erst
-        // dort wird sie ausgetauscht. Sonst sieht man das Motiv wechseln.
-        withAnimation(.easeIn(duration: 0.16)) { flipAngle = 90 }
-
-        flipTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 160_000_000)
-            guard !Task.isCancelled else { return }
-
-            current = card
-            flipAngle = -90
-            withAnimation(.easeOut(duration: 0.18)) { flipAngle = 0 }
-
-            apply(RingOfFireRules.rule(for: card.rank), rank: card.rank)
-        }
+        current = card
+        apply(RingOfFireRules.rule(for: card.rank), rank: card.rank)
+        showsAction = true
     }
 
     private func apply(_ rule: RingOfFireRule, rank: Int) {
@@ -436,7 +419,10 @@ struct RingOfFireView: View {
             SoundManager.play(.ballsBack)
         case .houseRule:
             SoundManager.play(.reRack)
-            isAskingForRule = true
+            // Nicht sofort: Erst liest man die Karte zu Ende, dann tippt
+            // man. Ausgeloest wird die Frage beim Schliessen des
+            // Aktionsscreens.
+            needsRulePrompt = true
         case .none:
             // Das Ass ist der einzige Rang mit einem Shot – dafür der harte
             // Ton, alles andere bleibt der leise Kartenklang. Am Rang und
@@ -447,11 +433,9 @@ struct RingOfFireView: View {
     }
 
     private func start() {
-        flipTask?.cancel()
         drawTask?.cancel()
         ring = PlayingCardDeck.shuffled(count: cardCount).map { Optional($0) }
         current = nil
-        flipAngle = 0
         spotlight = nil
         isDrawing = false
         clearRoles()
@@ -460,7 +444,6 @@ struct RingOfFireView: View {
     }
 
     private func restart() {
-        flipTask?.cancel()
         drawTask?.cancel()
         isDrawing = false
         spotlight = nil

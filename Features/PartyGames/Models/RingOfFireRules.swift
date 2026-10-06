@@ -49,9 +49,26 @@ struct RingOfFireRule: Equatable {
     let title: String
     /// Der gelaeufige Name aus dem Spiel – steht klein darueber.
     let nickname: String
+    /// Was zu tun ist. Nur die Handlung – wie lange und was Versagen kostet,
+    /// stehen darunter in eigenen Zeilen.
     let text: String
     let emoji: String
     var role: RingOfFireRole?
+
+    /// Wie lange die Karte wirkt. `nil` heisst: sofort erledigt.
+    ///
+    /// Eigenes Feld aus demselben Grund wie bei den Extreme-Karten: Es stand
+    /// mal im Satz, mal gar nicht, und am Tisch wurde dann diskutiert statt
+    /// gespielt. Jetzt steht die Antwort auf jeder Karte an derselben
+    /// Stelle – auch die Antwort „sofort".
+    var duration: String?
+
+    /// Was derjenige trinkt, der bei dieser Karte verliert.
+    ///
+    /// `nil` bei Karten, die einfach eine Menge ansagen: Dort IST das
+    /// Trinken die Handlung, es gibt nichts zu verlieren. Eine Strafe dort
+    /// hinzuschreiben waere eine zweite Menge, die niemand trinkt.
+    var penalty: String?
 }
 
 enum RingOfFireRules {
@@ -77,7 +94,8 @@ enum RingOfFireRules {
                 title: "Wasserfall",
                 nickname: "FOUR – WATERFALL",
                 text: "Alle fangen gleichzeitig an. Absetzen darf erst, wessen linker Nachbar abgesetzt hat – du fängst an.",
-                emoji: "🌊"
+                emoji: "🌊",
+                duration: "Bis alle abgesetzt haben"
             )
         case 5:
             return RingOfFireRule(
@@ -97,54 +115,66 @@ enum RingOfFireRules {
             return RingOfFireRule(
                 title: "Hände hoch",
                 nickname: "SEVEN TO HEAVEN",
-                text: "Alle Hände sofort nach oben! Wer als Letzter oben ist, trinkt \(DrinkAmount.sips(3).text).",
-                emoji: "☝️"
+                text: "Alle Hände sofort nach oben. Wer als Letzter oben ist, hat verloren.",
+                emoji: "☝️",
+                penalty: DrinkAmount.sips(3).text
             )
         case 8:
             return RingOfFireRule(
                 title: "Trink-Duo",
                 nickname: "EIGHT – MATE",
-                text: "Such dir einen Trinkpartner. Ab jetzt trinkt ihr immer zusammen: Muss einer trinken, trinkt der andere dieselbe Menge mit.",
+                text: "Such dir einen Trinkpartner. Muss einer von euch trinken, trinkt der andere dieselbe Menge mit.",
                 emoji: "🤝",
-                role: .drinkingMate
+                role: .drinkingMate,
+                duration: "Bis zum Spielende"
             )
         case 9:
             return RingOfFireRule(
                 title: "Reimen",
                 nickname: "NINE – RHYME",
-                text: "Sag ein Wort. Reihum wird darauf gereimt. Wer nichts findet oder sich wiederholt, trinkt \(DrinkAmount.sips(3).text).",
-                emoji: "🎤"
+                text: "Sag ein Wort. Reihum wird darauf gereimt. Wer nichts findet oder sich wiederholt, hat verloren.",
+                emoji: "🎤",
+                duration: "Bis jemand patzt",
+                penalty: DrinkAmount.sips(3).text
             )
         case 10:
             return RingOfFireRule(
                 title: "Zehn Gebote",
                 nickname: "TEN – RULE",
-                text: "Stell eine Regel auf, die ab sofort für alle gilt. Wer sie missachtet, trinkt \(DrinkAmount.sips(2).text).",
+                text: "Stell eine Regel auf, die ab sofort für alle gilt.",
                 emoji: "📜",
-                role: .houseRule
+                role: .houseRule,
+                duration: "Bis zum Spielende",
+                penalty: DrinkAmount.sips(2).text
             )
         case 11:
             return RingOfFireRule(
                 title: "Daumenmeister",
                 nickname: "JACK – DUMB BUMB",
-                text: "Leg die Karte vor dich. Wann immer du den Daumen auf den Tisch legst, müssen alle nachziehen. Wer als Letzter unten ist, trinkt \(DrinkAmount.sips(3).text). Gilt bis zum Spielende.",
+                text: "Leg die Karte vor dich. Wann immer du den Daumen auf den Tisch legst, ziehen alle nach. Wer als Letzter unten ist, hat verloren.",
                 emoji: "👍",
-                role: .thumbMaster
+                role: .thumbMaster,
+                duration: "Bis zum Spielende",
+                penalty: DrinkAmount.sips(3).text
             )
         case 12:
             return RingOfFireRule(
                 title: "Question Queen",
                 nickname: "QUEEN – QUESTION",
-                text: "Leg die Karte vor dich. Wer dir ab jetzt auf eine Frage antwortet, trinkt \(DrinkAmount.sips(2).text). Gilt bis zum Spielende.",
+                text: "Leg die Karte vor dich. Wer dir ab jetzt auf eine Frage antwortet, hat verloren.",
                 emoji: "👑",
-                role: .questionQueen
+                role: .questionQueen,
+                duration: "Bis zum Spielende",
+                penalty: DrinkAmount.sips(2).text
             )
         case 13:
             return RingOfFireRule(
                 title: "Kategorie",
                 nickname: "KING – CATEGORY",
-                text: "Nenne eine Kategorie. Reihum nennt jeder einen Begriff. Wer patzt oder sich wiederholt, trinkt \(DrinkAmount.sips(3).text).",
-                emoji: "📚"
+                text: "Nenne eine Kategorie. Reihum nennt jeder einen Begriff. Wer patzt oder sich wiederholt, hat verloren.",
+                emoji: "📚",
+                duration: "Bis jemand patzt",
+                penalty: DrinkAmount.sips(3).text
             )
         default:
             return RingOfFireRule(
