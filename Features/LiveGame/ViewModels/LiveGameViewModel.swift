@@ -30,6 +30,29 @@ final class LiveGameViewModel: ObservableObject {
     /// wird am Tisch garantiert übersehen.
     @Published private(set) var syncWarning: String?
 
+    /// Wie viele Eintraege nicht im Log gelandet sind.
+    ///
+    /// Die Warnung allein war eine Sackgasse: Sie sagte „prueft die
+    /// Verbindung", und wenn die wieder da war, gab es trotzdem keinen Weg,
+    /// den Wurf nachzureichen. Der Wurf-Log ist aber die Wahrheit – fehlt
+    /// dort ein Eintrag, laeuft die nachgespielte Partie fuer immer anders
+    /// als die gespielte.
+    @Published private(set) var unsavedCount = 0
+    @Published private(set) var isRetryingWrites = false
+
+    /// Was nicht geschrieben werden konnte, in der Reihenfolge des Spiels.
+    ///
+    /// Die laufende Nummer steckt im mitgegebenen Zustand, nicht in der
+    /// Uhrzeit des Schreibens – deshalb darf ein Eintrag beliebig spaeter
+    /// nachkommen, ohne dass die Reihenfolge im Log durcheinandergeraet.
+    private var pendingWrites: [PendingWrite] = []
+
+    /// Ein Schreibvorgang, der wiederholt werden kann.
+    private enum PendingWrite {
+        case action(GameAction, thrower: PlayerRef, before: LiveGameState, after: LiveGameState)
+        case undo(thrower: PlayerRef, state: LiveGameState)
+    }
+
     /// Läuft, während das Ergebnis geschrieben wird.
     @Published private(set) var isSettling = false
     @Published private(set) var settleError: String?
@@ -219,7 +242,9 @@ final class LiveGameViewModel: ObservableObject {
                 // Der Wurf steht lokal schon auf dem Schirm, im Log aber
                 // nicht. Spätestens beim nächsten Nachspielen verschwindet er
                 // wieder – das darf nicht unbemerkt passieren.
-                self.syncWarning = "Ein Wurf wurde nicht gespeichert. Prüft die Verbindung."
+                self.remember(
+                    .action(action, thrower: thrower, before: before, after: after)
+                )
             }
         }
     }
@@ -421,6 +446,61 @@ final class LiveGameViewModel: ObservableObject {
         syncWarning = nil
     }
 
+    // MARK: - Liegengebliebenes nachreichen
+
+    /// Merkt sich einen fehlgeschlagenen Schreibvorgang und sagt es an.
+    private func remember(_ write: PendingWrite) {
+        pendingWrites.append(write)
+        unsavedCount = pendingWrites.count
+        syncWarning = unsavedCount == 1
+            ? "Ein Eintrag ist nicht im Log gelandet."
+            : "\(unsavedCount) Einträge sind nicht im Log gelandet."
+    }
+
+    /// Schickt alles Liegengebliebene noch einmal los.
+    ///
+    /// Der Reihe nach und abbrechend beim ersten erneuten Fehlschlag: Die
+    /// Eintraege haengen in ihrer Reihenfolge aneinander, und einen Wurf
+    /// nachzureichen, dessen Vorgaenger weiterhin fehlt, macht den Log nicht
+    /// richtiger – nur laenger.
+    func retryUnsavedWrites() async {
+        guard let gameId, let throwRepository, !pendingWrites.isEmpty else { return }
+
+        isRetryingWrites = true
+        defer { isRetryingWrites = false }
+
+        while let naechster = pendingWrites.first {
+            do {
+                switch naechster {
+                case let .action(action, thrower, before, after):
+                    try await throwRepository.record(
+                        action: action,
+                        by: thrower,
+                        before: before,
+                        after: after,
+                        gameId: gameId,
+                        teams: teams
+                    )
+                case let .undo(thrower, state):
+                    try await throwRepository.recordUndo(
+                        by: thrower,
+                        in: state,
+                        gameId: gameId,
+                        teams: teams
+                    )
+                }
+                pendingWrites.removeFirst()
+                unsavedCount = pendingWrites.count
+            } catch {
+                AppLogger.firestore.error("Nachreichen gescheitert: \(error.localizedDescription)")
+                syncWarning = "Nachreichen hat nicht geklappt. Prüft die Verbindung."
+                return
+            }
+        }
+
+        syncWarning = nil
+    }
+
     var canUndo: Bool { !history.isEmpty }
 
     /// Rückgängig heißt: lokal sofort zurückspringen und zusätzlich einen
@@ -450,7 +530,7 @@ final class LiveGameViewModel: ObservableObject {
                 )
             } catch {
                 AppLogger.firestore.error("Undo konnte nicht gespeichert werden: \(error.localizedDescription)")
-                self.syncWarning = "Das Rückgängigmachen wurde nicht gespeichert."
+                self.remember(.undo(thrower: thrower, state: snapshot))
             }
         }
     }

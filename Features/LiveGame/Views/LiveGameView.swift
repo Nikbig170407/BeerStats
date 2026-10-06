@@ -354,19 +354,47 @@ struct LiveGameView: View {
             // Ein Hinweis, der von selbst verschwindet, wird am Tisch
             // garantiert uebersehen.
             if let warning = viewModel.syncWarning {
-                Button {
-                    viewModel.dismissSyncWarning()
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                        Text(warning)
-                            .font(BeerStatsFont.caption)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 0)
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                    Text(warning)
+                        .font(BeerStatsFont.caption)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer(minLength: 0)
+
+                    // Der Weg zurueck. Ohne ihn war die Warnung eine
+                    // Sackgasse: Sie sagte, etwas fehle, und sobald das Netz
+                    // wieder da war, konnte man trotzdem nichts tun.
+                    if viewModel.unsavedCount > 0 {
+                        Button {
+                            Task { await viewModel.retryUnsavedWrites() }
+                        } label: {
+                            Text(viewModel.isRetryingWrites ? "…" : "Nachreichen")
+                                .font(BeerStatsFont.headline)
+                                .foregroundStyle(BeerStatsColor.textOnAccent)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    BeerStatsColor.error,
+                                    in: Capsule()
+                                )
+                                .contentShape(Capsule())
+                        }
+                        .buttonStyle(PressableButtonStyle())
+                        .disabled(viewModel.isRetryingWrites)
+                    }
+
+                    Button {
+                        viewModel.dismissSyncWarning()
+                    } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 11, weight: .bold))
+                            .padding(6)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(PressableButtonStyle())
+                }
                     .foregroundStyle(BeerStatsColor.error)
                     .padding(10)
                     .background(
@@ -378,8 +406,6 @@ struct LiveGameView: View {
                             .strokeBorder(BeerStatsColor.error, lineWidth: 1)
                     )
                     .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .buttonStyle(PressableButtonStyle())
             }
 
             if let prompt = viewModel.choicePrompt {
