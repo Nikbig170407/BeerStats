@@ -17,10 +17,6 @@ struct HomeView: View {
 
     @StateObject private var viewModel: HomeViewModel
     private let container: AppContainer
-    /// Spiegelt die dauerhaft gespeicherte Einstellung, damit das Symbol in
-    /// der Leiste sofort umspringt.
-    @State private var isSoundOn = SoundManager.isEnabled
-    @State private var isSpeechOn = SpeechAnnouncer.isEnabled
     /// Wird beim Zurueckkehren neu gelesen – UserDefaults meldet sich
     /// nicht von selbst bei SwiftUI.
     @State private var recentGames = RecentPartyGames.games
@@ -188,45 +184,15 @@ struct HomeView: View {
         .padding(.top, 8)
     }
 
+    /// Zwei Symbole, nicht fuenf.
+    ///
+    /// Hier lagen abmelden, Ton, Ansage und Entwicklereinstellungen
+    /// nebeneinander – vier Schalter, von denen man drei nie braucht, und
+    /// einer davon meldet einen ab, direkt neben der Spielauswahl. Alles vier
+    /// steht jetzt in den Einstellungen; oben bleiben die zwei Wege, die man
+    /// am Abend wirklich geht.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button {
-                try? container.authRepository.signOut()
-            } label: {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-            }
-            .accessibilityLabel("Abmelden")
-        }
-        ToolbarItem(placement: .topBarLeading) {
-            Button {
-                isSoundOn.toggle()
-                SoundManager.isEnabled = isSoundOn
-                if isSoundOn { SoundManager.play(.tap) }
-                HapticManager.lightImpact()
-            } label: {
-                Image(systemName: isSoundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                    .foregroundStyle(isSoundOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
-            }
-            .accessibilityLabel(isSoundOn ? "Ton ausschalten" : "Ton einschalten")
-        }
-        ToolbarItem(placement: .topBarLeading) {
-            Button {
-                isSpeechOn.toggle()
-                SpeechAnnouncer.isEnabled = isSpeechOn
-                if isSpeechOn { SpeechAnnouncer.announce("Ansage ist an") }
-                HapticManager.lightImpact()
-            } label: {
-                Image(systemName: isSpeechOn ? "bubble.left.and.text.bubble.right.fill" : "bubble.left.and.text.bubble.right")
-                    .foregroundStyle(isSpeechOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
-            }
-            .accessibilityLabel(isSpeechOn ? "Ansage ausschalten" : "Ansage einschalten")
-        }
-        // Die Leute stehen bewusst hier oben und nicht mehr nur im
-        // Beerpong-Menue: Wer heute am Tisch ist, gilt fuer jedes Spiel -
-        // und das eine Mal am Abend, an dem man es einstellt, will man
-        // nicht erst durch ein Spielmenue dafuer.
         ToolbarItem(placement: .topBarTrailing) {
             NavigationLink {
                 ProfilesView(container: container, ownerId: viewModel.currentUserId)
@@ -238,15 +204,12 @@ struct HomeView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             NavigationLink {
-                DeveloperSettingsView(
-                    repository: container.playerProfileRepository,
-                    ownerId: viewModel.currentUserId
-                )
+                SettingsView(container: container, ownerId: viewModel.currentUserId)
             } label: {
-                Image(systemName: "wrench.and.screwdriver.fill")
+                Image(systemName: "gearshape.fill")
                     .foregroundStyle(BeerStatsColor.textSecondary)
             }
-            .accessibilityLabel("Entwicklereinstellungen")
+            .accessibilityLabel("Einstellungen")
         }
     }
 
@@ -330,22 +293,68 @@ struct HomeView: View {
     /// Spiel eine der fünf Angaben zu vergessen.
     private var partySection: some View {
         VStack(alignment: .leading, spacing: 22) {
-            // Ein Abend spielt zwei bis drei Spiele und scrollt sonst an
-            // neunzehn vorbei. Die stehen deshalb oben.
+            // Ein Abend spielt zwei bis drei Spiele. Die stehen deshalb oben,
+            // vor den Ordnern – sonst waere der haeufigste Weg der laengste.
             if !recentGames.isEmpty {
                 gameGroup("ZULETZT GESPIELT") {
-                    ForEach(recentGames) { gameLink($0) }
+                    ForEach(recentGames) { PartyGameCard(game: $0) }
                 }
+            }
+
+            gameGroup("SPIELE") {
+                ForEach(PartyGame.Group.allCases) { folderCard($0) }
             }
 
             tournamentCard
-
-            ForEach(PartyGame.Group.allCases) { group in
-                gameGroup(group.title) {
-                    ForEach(PartyGame.allCases.filter { $0.group == group }) { gameLink($0) }
-                }
-            }
         }
+    }
+
+    /// Eine Gruppe als Kachel.
+    ///
+    /// Neunzehn Spiele untereinander waren eine Liste, durch die man
+    /// scrollt, bis man das Richtige sieht – und bei neunzehn sieht man es
+    /// nicht mehr. Vier Ordner sind dagegen die Frage, die am Tisch ohnehin
+    /// gestellt wird: Karten in der Mitte, oder reden, oder schnell was
+    /// zwischendurch?
+    private func folderCard(_ group: PartyGame.Group) -> some View {
+        NavigationLink {
+            PartyGameFolderView(group: group)
+        } label: {
+            HStack(spacing: 16) {
+                Text(group.emoji)
+                    .font(.system(size: 30))
+                    .frame(width: 54, height: 54)
+                    .background(
+                        group.tint.opacity(0.16),
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(group.label)
+                        .font(BeerStatsFont.headline)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                    Text(group.subtitle)
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Text("\(group.games.count)")
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .foregroundStyle(group.tint)
+                    .monospacedDigit()
+
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .padding(16)
+            .glassPanel()
+            .neonEdge(group.tint, intensity: 0.4)
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 
     /// Steht ueber den Gruppen, weil es kein zwanzigstes Spiel ist, sondern
@@ -383,28 +392,6 @@ struct HomeView: View {
         .buttonStyle(PressableButtonStyle())
     }
 
-    private func gameLink(_ game: PartyGame) -> some View {
-        NavigationLink {
-            // Vermerkt wird beim Erscheinen, nicht beim Antippen: Wer sich
-            // vertippt und sofort zurückgeht, hat nicht gespielt.
-            game.destination
-                .onAppear {
-                    RecentPartyGames.record(game)
-                    // Tut nichts, wenn kein Abend laeuft – deshalb steht der
-                    // Aufruf hier ohne Abfrage.
-                    EveningLog.record(partyGame: game)
-                }
-        } label: {
-            gameCard(
-                emoji: game.emoji,
-                title: game.title,
-                subtitle: game.subtitle,
-                tint: game.tint
-            )
-        }
-        .buttonStyle(PressableButtonStyle())
-    }
-
     private func gameGroup<Content: View>(
         _ title: String,
         @ViewBuilder content: () -> Content
@@ -416,33 +403,5 @@ struct HomeView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
             content()
         }
-    }
-
-    private func gameCard(emoji: String, title: String, subtitle: String, tint: Color) -> some View {
-        HStack(spacing: 16) {
-            Text(emoji)
-                .font(.system(size: 32))
-                .frame(width: 54, height: 54)
-                .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(BeerStatsFont.headline)
-                    .foregroundStyle(BeerStatsColor.textPrimary)
-                Text(subtitle)
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-                    .lineLimit(2)
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .foregroundStyle(BeerStatsColor.textSecondary)
-        }
-        .padding(16)
-        .glassPanel()
-        .neonEdge(tint, intensity: 0.4)
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }

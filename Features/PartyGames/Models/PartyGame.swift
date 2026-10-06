@@ -54,6 +54,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
 
         var id: String { rawValue }
 
+        /// Als Ueberschrift ueber einer Liste – deshalb in Grossbuchstaben.
         var title: String {
             switch self {
             case .cards: return "MIT KARTEN"
@@ -61,6 +62,49 @@ enum PartyGame: String, CaseIterable, Identifiable {
             case .quick: return "SCHNELL ZWISCHENDURCH"
             case .alongside: return "LÄUFT NEBENHER"
             }
+        }
+
+        /// Als Beschriftung einer Kachel – dort liest sich Geschrei schlecht.
+        var label: String {
+            switch self {
+            case .cards: return "Mit Karten"
+            case .talking: return "Raten & reden"
+            case .quick: return "Schnell zwischendurch"
+            case .alongside: return "Läuft nebenher"
+            }
+        }
+
+        /// Was man in der Gruppe tut, in einem halben Satz.
+        var subtitle: String {
+            switch self {
+            case .cards: return "Ein Stapel in der Mitte, einer zieht"
+            case .talking: return "Raten, lügen, schätzen – ohne Material"
+            case .quick: return "Eine Runde in zwei Minuten"
+            case .alongside: return "Läuft den ganzen Abend mit"
+            }
+        }
+
+        var emoji: String {
+            switch self {
+            case .cards: return "🃏"
+            case .talking: return "🗣️"
+            case .quick: return "⚡️"
+            case .alongside: return "🎯"
+            }
+        }
+
+        var tint: Color {
+            switch self {
+            case .cards: return BeerStatsColor.error
+            case .talking: return BeerStatsColor.accentSecondary
+            case .quick: return BeerStatsColor.warning
+            case .alongside: return BeerStatsColor.success
+            }
+        }
+
+        /// Die Spiele dieser Gruppe, in der Reihenfolge des Katalogs.
+        var games: [PartyGame] {
+            PartyGame.allCases.filter { $0.group == self }
         }
     }
 
