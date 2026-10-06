@@ -348,12 +348,31 @@ struct BeerpongMenuView: View {
             } label: {
                 destinationCard(
                     title: "Daten sichern",
-                    subtitle: "Profile, Partien und Wurf-Logs als Datei",
+                    subtitle: backupSubtitle,
                     systemImage: "arrow.down.doc.fill",
-                    tint: BeerStatsColor.accentSecondary
+                    tint: BackupReminder.isDue
+                        ? BeerStatsColor.warning
+                        : BeerStatsColor.accentSecondary
                 )
             }
             .buttonStyle(PressableButtonStyle())
+        }
+    }
+
+    /// Sagt, wann zuletzt gesichert wurde – und wird deutlich, wenn es zu
+    /// lange her ist.
+    ///
+    /// Die Datei ist das einzige Netz, das diese Daten haben. Ein Hinweis,
+    /// der erst erscheint, wenn etwas passiert ist, waere keiner.
+    private var backupSubtitle: String {
+        guard let tage = BackupReminder.daysSinceLastExport else {
+            return "Noch nie gesichert – es gibt keine zweite Kopie"
+        }
+        switch tage {
+        case 0: return "Heute gesichert"
+        case 1: return "Gestern gesichert"
+        case ..<BackupReminder.reminderAfterDays: return "Vor \(tage) Tagen gesichert"
+        default: return "Letzte Sicherung vor \(tage) Tagen – wird Zeit"
         }
     }
 

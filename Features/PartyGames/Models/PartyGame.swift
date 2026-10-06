@@ -196,6 +196,59 @@ enum PartyGame: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Wie es gespielt wird, in drei bis vier Saetzen.
+    ///
+    /// Bis Oktober 2026 hatte nur Beerpong einen Regel-Screen. Die
+    /// Partyspiele erklaerten sich im Spiel selbst – wer neu am Tisch stand,
+    /// musste fragen, und wer als Gastgeber die Regeln kannte, musste sie
+    /// neunzehnmal erzaehlen.
+    ///
+    /// Steht hier im Katalog und nicht in den Spielen: Dort stuende sie in
+    /// neunzehn verschiedenen Formen, und ein neues Spiel haette sie
+    /// garantiert nicht.
+    var howToPlay: String {
+        switch self {
+        case .ringOfFire:
+            return "Die Karten liegen verdeckt im Kreis. Wer dran ist, tippt „Karte ziehen“ – die App lost aus, welche es wird, und sagt, was zu tun ist. Manche Karten gelten nur im Moment, andere bis zum Spielende; das steht auf jeder Karte. Vorher stellt ihr ein, mit wie vielen Karten ihr spielt."
+        case .horseRace:
+            return "Vier Asse laufen um die Wette. Jeder setzt vorher auf eine Farbe – tippt euch in der Liste auf euer Pferd, dann weiß die App später, wer trinkt. Aufgedeckte Karten schieben das passende Pferd vor; die Seitenkarten schicken es zurück, sobald alle daran vorbei sind."
+        case .busRide:
+            return "Vier Fragen nacheinander: Rot oder Schwarz, höher oder tiefer, dazwischen oder draußen, welche Farbe. Jede richtige Antwort bringt dich eine Stufe weiter, jede falsche kostet – und zurück auf Anfang. Wer durchkommt, ist raus."
+        case .truthOrDare:
+            return "Wahrheit oder Pflicht, wie immer – nur dass die App die Karten stellt. Wer verweigert, trinkt die Menge, die auf der Karte steht. Eigene Karten lassen sich im Hauptmenü dazumischen."
+        case .neverHaveIEver:
+            return "Die App liest vor, was du noch nie getan hast. Wer es doch getan hat, trinkt. Drei Härtestufen – harmlos, deftig, und was man danach besser vergisst."
+        case .schocken:
+            return "Drei Würfel, bis zu drei Würfe pro Person. Wer in der Runde den schlechtesten Wurf hat, bekommt einen Deckel; wer alle Deckel hat, trinkt. Die App kennt die Rangfolge – Schock Aus schlägt alles."
+        case .maexchen:
+            return "Würfeln, ohne dass es jemand sieht, und ansagen. Du darfst lügen. Wer dir nicht glaubt, deckt auf: Hast du gelogen, trinkst du – hat er zu Unrecht gezweifelt, trinkt er. Die App hält den Würfel verdeckt und weiß als Einzige die Wahrheit."
+        case .twoTruths:
+            return "Drei Sätze über dich, einer davon erfunden. Die anderen raten, welcher. Wer danebenliegt, trinkt – errät es niemand, trinkst du."
+        case .headsUp:
+            return "Handy an die Stirn, ohne hinzusehen. Die anderen beschreiben den Begriff, du rätst. Gerät nach unten heißt richtig, nach oben heißt weiter. Jeder verpasste Begriff kostet am Ende."
+        case .spy:
+            return "Alle bekommen dasselbe Wort – einer nicht, und der weiß nicht einmal, dass er der Spion ist. Reihum sagt jeder einen Satz dazu, nicht zu genau. Danach wird abgestimmt: Trefft ihr den Spion, trinkt er. Trefft ihr daneben, trinkt ihr."
+        case .countTo21:
+            return "Reihum zählen, jeder sagt eine bis drei Zahlen. Wer 21 sagt, trinkt und darf eine Regel erfinden – zum Beispiel, dass die 7 ab jetzt „Prost“ heißt. Danach geht es von vorn los, mit allen Regeln."
+        case .estimation:
+            return "Eine Frage mit einer Zahl als Antwort. Jeder schätzt, die App deckt auf. Wer am weitesten daneben liegt, trinkt – wer genau trifft, verteilt."
+        case .categories:
+            return "Eine Kategorie, dann reihum ein Begriff daraus. Wer patzt, sich wiederholt oder zu lange braucht, trinkt. Die Bedenkzeit wird jede Runde kürzer."
+        case .mostLikely:
+            return "Die App stellt eine Frage – „wer von uns würde am ehesten …“. Auf drei zeigen alle gleichzeitig auf eine Person. Wer die meisten Finger abbekommt, trinkt."
+        case .bombPass:
+            return "Zünden und weiterreichen. Die App zählt, aber nicht sichtbar – irgendwann geht sie hoch. Wer sie dann in der Hand hält, trinkt."
+        case .reactionDuel:
+            return "Zwei Daumen auf dem Bildschirm, beide warten auf das Signal. Wer zuerst tippt, gewinnt – wer zu früh tippt, verliert sofort."
+        case .drinkRoulette:
+            return "Rad drehen, Feld abwarten, machen was dasteht. Keine Einrichtung, keine Erklärung – das Spiel für zwischendurch."
+        case .forbiddenWords:
+            return "Jeder zieht ein Wort, das er den ganzen Abend nicht sagen darf, und merkt es sich. Wer sein Wort trotzdem sagt und dabei erwischt wird, trinkt. Das Handy wandert einmal rum, damit niemand die Wörter der anderen sieht."
+        case .drinkBingo:
+            return "Sechzehn Felder mit Dingen, die an so einem Abend von selbst passieren. Passiert eins, tippt es an. Wer eine Reihe voll hat, ruft Bingo und verteilt."
+        }
+    }
+
     var tint: Color {
         switch self {
         case .ringOfFire, .drinkRoulette, .countTo21:

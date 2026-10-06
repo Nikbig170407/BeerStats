@@ -193,6 +193,47 @@ struct DataExportSummary {
     }
 }
 
+// MARK: - Wann zuletzt
+
+/// Wann zuletzt gesichert wurde.
+///
+/// Die Sicherungsdatei ist das einzige Netz, das die Daten dieser App
+/// haben: ein Konto, keine zweite Kopie, und ohne Blaze-Tarif auch kein
+/// serverseitiger Weg, eine anzulegen. Trotzdem erinnerte nichts daran –
+/// man musste von selbst darauf kommen, und zwar bevor etwas passiert.
+///
+/// Gemerkt wird nur das Datum, nicht die Datei. Wo sie liegt, entscheidet
+/// das Teilen-Blatt; die App weiss es nicht und soll es nicht wissen.
+enum BackupReminder {
+
+    static let storageKey = "backup.lastExport"
+
+    /// Nach so vielen Tagen wird erinnert.
+    ///
+    /// Vier Wochen: Oft genug, dass nicht ein ganzer Sommer Partien an einem
+    /// Konto haengt, selten genug, dass der Hinweis nicht zur Tapete wird.
+    static let reminderAfterDays = 28
+
+    static var lastExport: Date? {
+        get { UserDefaults.standard.object(forKey: storageKey) as? Date }
+        set { UserDefaults.standard.set(newValue, forKey: storageKey) }
+    }
+
+    /// Wie viele Tage seit der letzten Sicherung vergangen sind – `nil`,
+    /// wenn noch nie gesichert wurde.
+    static var daysSinceLastExport: Int? {
+        guard let lastExport else { return nil }
+        return Calendar.current.dateComponents([.day], from: lastExport, to: Date()).day
+    }
+
+    /// Ob ein Hinweis faellig ist. Auch dann, wenn noch nie gesichert wurde –
+    /// das ist der gefaehrlichste Zustand von allen.
+    static var isDue: Bool {
+        guard let tage = daysSinceLastExport else { return true }
+        return tage >= reminderAfterDays
+    }
+}
+
 // MARK: - Dienst
 
 protocol DataExportServiceProtocol {
@@ -238,6 +279,10 @@ struct DataExportService: DataExportServiceProtocol {
 
         let data = try encoder.encode(payload)
         let url = try write(data)
+
+        // Erst hier, nach dem Schreiben: Ein Lauf, der unterwegs scheitert,
+        // ist keine Sicherung und darf die Erinnerung nicht zuruecksetzen.
+        BackupReminder.lastExport = Date()
 
         return DataExportSummary(
             profileCount: profiles.count,
