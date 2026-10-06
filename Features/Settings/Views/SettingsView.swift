@@ -30,6 +30,7 @@ struct SettingsView: View {
     @AppStorage(DrinkRules.shotsStorageKey) private var shotsEnabled = true
     @AppStorage(AppAppearance.backdropKey) private var backdropRaw = BackdropStyle.bubbles.rawValue
     @AppStorage(AppAppearance.neonEdgesKey) private var neonEdgesOn = true
+    @AppStorage(AppPalette.storageKey) private var paletteRaw = AppPalette.amber.rawValue
 
     @State private var showsSignOutConfirmation = false
 
@@ -73,6 +74,23 @@ struct SettingsView: View {
     /// den Bausteinen selbst gelesen, nicht von den einzelnen Ansichten.
     private var appearanceSection: some View {
         section("DARSTELLUNG") {
+            Text("FARBSCHEMA")
+                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .kerning(1.2)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            HStack(spacing: 10) {
+                ForEach(AppPalette.allCases) { palette in
+                    paletteButton(palette)
+                }
+            }
+
+            Text("Wechselt die beiden Akzentfarben. Hintergrund, Schrift und die Becher bleiben – ein Red Solo Cup ist rot, auch wenn die App gerade grün ist. Beim Umschalten springt die App auf den Startbildschirm, weil sie sich neu anzieht.")
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.bottom, 4)
+
             Text("HINTERGRUND")
                 .font(.system(size: 10, weight: .heavy, design: .rounded))
                 .kerning(1.2)
@@ -94,11 +112,57 @@ struct SettingsView: View {
             )
             .padding(.top, 2)
 
-            Text("Farbschema und Hell-Modus kommen als Nächstes. Dafür müssen erst alle Farben aus dem Asset-Katalog in den Code – sonst gäbe es nur eine Palette zur Auswahl.")
+            Text("Der Hell-Modus fehlt noch. Die App ist durchgehend dunkel gebaut – das ist ein zweiter Anstrich für jeden Screen, kein Schalter.")
                 .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    /// Ein Farbschema als zwei Punkte – so sieht man, was man waehlt,
+    /// statt es aus einem Namen zu erraten.
+    private func paletteButton(_ palette: AppPalette) -> some View {
+        let isOn = paletteRaw == palette.rawValue
+
+        return Button {
+            paletteRaw = palette.rawValue
+            HapticManager.lightImpact()
+        } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(palette.accent)
+                        .frame(width: 30, height: 30)
+                    Circle()
+                        .fill(palette.accentSecondary)
+                        .frame(width: 15, height: 15)
+                        .offset(x: 11, y: 11)
+                }
+                .frame(width: 42, height: 42)
+
+                Text(palette.title)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(
+                        isOn ? BeerStatsColor.textPrimary : BeerStatsColor.textSecondary
+                    )
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(
+                isOn ? BeerStatsColor.surfaceElevated : Color.clear,
+                in: RoundedRectangle(cornerRadius: 13, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .strokeBorder(
+                        isOn ? palette.accent : Color.clear,
+                        lineWidth: 1.4
+                    )
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel(palette.title)
     }
 
     // MARK: - Ton

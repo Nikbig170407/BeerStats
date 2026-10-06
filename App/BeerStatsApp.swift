@@ -43,12 +43,23 @@ struct BeerStatsApp: App {
         _appState = StateObject(wrappedValue: AppState(authService: container.authService))
     }
 
+    /// Nur hier gelesen, damit ein Wechsel die ganze Oberflaeche neu baut.
+    @AppStorage(AppPalette.storageKey) private var paletteRaw = AppPalette.amber.rawValue
+
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(appState)
                 .environment(\.appContainer, container)
                 .preferredColorScheme(.dark) // BeerStats ist primär als Dark-Mode-App konzipiert
+                // Baut die Oberflaeche neu auf, wenn das Farbschema wechselt.
+                //
+                // Die Akzentfarben werden beim Zeichnen gelesen; ohne diesen
+                // Anstoss behielten schon gezeichnete Ansichten ihre alte
+                // Farbe, bis sie zufaellig neu entstehen. Der Preis ist, dass
+                // man dabei auf dem Startbildschirm landet – das steht in den
+                // Einstellungen dabei.
+                .id(paletteRaw)
         }
     }
 }

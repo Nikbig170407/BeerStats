@@ -29,9 +29,14 @@ import SwiftUI
 
 enum BeerStatsColor {
 
-    // Marken- und Akzentfarben
-    static let accent = Color("AccentColor")
-    static let accentSecondary = Color("AccentSecondary")
+    // Marken- und Akzentfarben.
+    //
+    // Als einzige Farben kommen sie nicht aus dem Asset-Katalog, sondern aus
+    // `AppPalette` – sie sind in den Einstellungen waehlbar. Berechnet statt
+    // gespeichert, damit ein Wechsel sofort gilt; die App baut dazu ihre
+    // Ansichten neu auf (siehe BeerStatsApp).
+    static var accent: Color { AppPalette.current.accent }
+    static var accentSecondary: Color { AppPalette.current.accentSecondary }
 
     // Hintergründe
     static let backgroundPrimary = Color("BackgroundPrimary")
