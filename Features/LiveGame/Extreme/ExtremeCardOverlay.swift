@@ -38,7 +38,7 @@ struct ExtremeCardOverlay: View {
                     .scaleEffect(hasAppeared ? 1 : 0.4)
 
                 Text(card.category.title.uppercased())
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .font(.scaled(12, weight: .heavy, design: .rounded))
                     .kerning(2.4)
                     .foregroundStyle(card.category.color)
                     .padding(.top, 10)
@@ -49,7 +49,7 @@ struct ExtremeCardOverlay: View {
                     .padding(.top, 2)
 
                 Text(card.title)
-                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .font(.scaled(32, weight: .heavy, design: .rounded))
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .multilineTextAlignment(.center)
                     .padding(.top, 14)

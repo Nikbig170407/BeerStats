@@ -100,7 +100,7 @@ struct TeamWheelView: View {
                 .frame(width: 74, height: 74)
                 .overlay(Circle().strokeBorder(BeerStatsColor.accent, lineWidth: 2))
             Text(isComplete ? "✓" : "\(remaining.count)")
-                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .font(.scaled(26, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.accent)
 
             // Zeiger
@@ -129,7 +129,7 @@ struct TeamWheelView: View {
                 let tint = teamIndex == 0 ? BeerStatsColor.accent : BeerStatsColor.accentSecondary
                 HStack(spacing: 10) {
                     Text("TEAM \(teamIndex + 1)")
-                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .font(.scaled(11, weight: .heavy, design: .rounded))
                         .kerning(1.3)
                         .foregroundStyle(tint)
                         .frame(width: 62, alignment: .leading)

@@ -87,7 +87,7 @@ struct RingOfFireView: View {
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 Text("KARTEN IM RING")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -290,7 +290,7 @@ struct RingOfFireView: View {
         if thumbMasters + questionQueens + drinkingMates + houseRules.count > 0 {
             VStack(alignment: .leading, spacing: 10) {
                 Text("LÄUFT NOCH")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 

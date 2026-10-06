@@ -92,7 +92,7 @@ struct CupHeatmapView: View {
                     lineWidth: 1.5
                 )
             Text("\(hits)")
-                .font(.system(size: 13, weight: .heavy, design: .rounded))
+                .font(.scaled(13, weight: .heavy, design: .rounded))
                 .foregroundStyle(intensity > 0.45 ? .white : BeerStatsColor.textSecondary)
         }
         .frame(width: 46, height: 46)

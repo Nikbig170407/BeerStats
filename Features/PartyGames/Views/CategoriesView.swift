@@ -101,7 +101,7 @@ struct CategoriesView: View {
                         .foregroundStyle(BeerStatsColor.textSecondary)
                 case .running:
                     Text(String(format: "%.1f", remaining))
-                        .font(.system(size: 42, weight: .heavy, design: .rounded))
+                        .font(.scaled(42, weight: .heavy, design: .rounded))
                         .foregroundStyle(ringColor)
                         .monospacedDigit()
                     Text("Sekunden")
@@ -144,7 +144,7 @@ struct CategoriesView: View {
                 nextTurn()
             } label: {
                 Text("Gesagt")
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    .font(.scaled(26, weight: .heavy, design: .rounded))
                     .foregroundStyle(BeerStatsColor.textOnAccent)
                     .frame(maxWidth: .infinity)
                     .frame(height: 92)

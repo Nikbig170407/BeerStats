@@ -110,7 +110,7 @@ struct HeadsUpView: View {
     private var playingView: some View {
         VStack(spacing: 0) {
             Text(String(format: "%.0f", remaining))
-                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .font(.scaled(30, weight: .heavy, design: .rounded))
                 .foregroundStyle(remaining <= 10 ? BeerStatsColor.error : BeerStatsColor.textSecondary)
                 .monospacedDigit()
                 .padding(.top, 8)
@@ -118,7 +118,7 @@ struct HeadsUpView: View {
             Spacer(minLength: 0)
 
             Text(current ?? "")
-                .font(.system(size: 44, weight: .heavy, design: .rounded))
+                .font(.scaled(44, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.4)
@@ -138,7 +138,7 @@ struct HeadsUpView: View {
     private func tapZone(title: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 22, weight: .heavy, design: .rounded))
+                .font(.scaled(22, weight: .heavy, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(tint.opacity(0.15))
@@ -164,11 +164,11 @@ struct HeadsUpView: View {
             VStack(spacing: 10) {
                 if misses > 0 {
                     Text("Du trinkst \(DrinkAmount.sips(misses).text)")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.scaled(22, weight: .bold, design: .rounded))
                         .foregroundStyle(BeerStatsColor.error)
                 } else {
                     Text("Ohne Fehler durch")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.scaled(22, weight: .bold, design: .rounded))
                         .foregroundStyle(BeerStatsColor.success)
                 }
 

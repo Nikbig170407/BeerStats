@@ -108,7 +108,7 @@ struct TruthOrDareView: View {
             Text(card.kind.emoji).font(.system(size: 36))
 
             Text(card.kind.title.uppercased())
-                .font(Font.system(size: 13, weight: .heavy, design: .rounded))
+                .font(Font.scaled(13, weight: .heavy, design: .rounded))
                 .kerning(2.8)
                 .foregroundStyle(tint)
 
@@ -170,7 +170,7 @@ struct TruthOrDareView: View {
             VStack(spacing: 14) {
                 Text("🍺").font(.system(size: 90))
                 Text(TruthOrDareDeck.refusal.text.uppercased())
-                    .font(.system(size: 34, weight: .heavy, design: .rounded))
+                    .font(.scaled(34, weight: .heavy, design: .rounded))
                     .kerning(2)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(BeerStatsColor.error)

@@ -96,7 +96,7 @@ struct ForbiddenWordsView: View {
             // Der Bereich hat bis zu zwoelf Woerter, und manche sind lang –
             // lieber kleiner setzen als umbrechen.
             Text(words.indices.contains(index) ? words[index] : "–")
-                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                .font(.scaled(40, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.warning)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)

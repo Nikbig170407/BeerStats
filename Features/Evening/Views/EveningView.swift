@@ -63,7 +63,7 @@ struct EveningView: View {
         if !frueher.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Text("FRÜHERE ABENDE")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -188,7 +188,7 @@ struct EveningView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 Text("TRINKBILANZ")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -200,7 +200,7 @@ struct EveningView: View {
             if !abend.entries.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("GESPIELT")
-                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .font(.scaled(11, weight: .heavy, design: .rounded))
                         .kerning(1.8)
                         .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -280,7 +280,7 @@ struct EveningView: View {
             HapticManager.lightImpact()
         } label: {
             Text(label)
-                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                .font(.scaled(15, weight: .heavy, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(width: 40, height: 40)
                 .glassPanel(cornerRadius: 12)
@@ -330,7 +330,7 @@ struct EveningView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("ENDSTAND")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -382,7 +382,7 @@ struct EveningView: View {
             }
 
             Text("Bleibt unter „Frühere Abende“ gespeichert.")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .font(.scaled(10, weight: .medium, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
@@ -402,7 +402,7 @@ struct EveningView: View {
         if !fuerDenAbend.isEmpty || !proPerson.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Text("AUSZEICHNUNGEN")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -427,7 +427,7 @@ struct EveningView: View {
         VStack(spacing: 4) {
             Text(emoji).font(.system(size: 34))
             Text(title.uppercased())
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .font(.scaled(10, weight: .heavy, design: .rounded))
                 .kerning(1.4)
                 .foregroundStyle(BeerStatsColor.textSecondary)
             Text(value)

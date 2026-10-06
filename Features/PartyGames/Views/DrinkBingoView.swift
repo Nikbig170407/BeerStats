@@ -91,7 +91,7 @@ struct DrinkBingoView: View {
             toggle(index)
         } label: {
             Text(fields[index])
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.scaled(10, weight: .semibold, design: .rounded))
                 .foregroundStyle(isMarked ? BeerStatsColor.textOnAccent : BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.6)
@@ -135,7 +135,7 @@ struct DrinkBingoView: View {
             VStack(spacing: 14) {
                 Text("🎉").font(.system(size: 84))
                 Text("BINGO")
-                    .font(.system(size: 42, weight: .heavy, design: .rounded))
+                    .font(.scaled(42, weight: .heavy, design: .rounded))
                     .kerning(5)
                     .foregroundStyle(BeerStatsColor.success)
                 Text("Verteile \(bingoReward.text)")

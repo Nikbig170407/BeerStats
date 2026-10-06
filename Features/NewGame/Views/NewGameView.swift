@@ -223,7 +223,7 @@ struct NewGameView: View {
                                 Text(mode.title)
                                     .font(BeerStatsFont.headline)
                                 Text(mode.detail)
-                                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                                    .font(.scaled(10, weight: .medium, design: .rounded))
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -249,7 +249,7 @@ struct NewGameView: View {
                 drinkRules
 
                 Text("Zählt nicht in die Statistiken – die Karten verfälschen jede Trefferquote.")
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .font(.scaled(10, weight: .medium, design: .rounded))
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -265,7 +265,7 @@ struct NewGameView: View {
     private var drinkRules: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("HÄRTE")
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .font(.scaled(10, weight: .heavy, design: .rounded))
                 .kerning(1.4)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .padding(.top, 4)
@@ -279,7 +279,7 @@ struct NewGameView: View {
                         VStack(spacing: 1) {
                             Text(level.emoji).font(.system(size: 17))
                             Text(level.title)
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .font(.scaled(12, weight: .bold, design: .rounded))
                         }
                         .foregroundStyle(
                             intensity == level.rawValue
@@ -308,7 +308,7 @@ struct NewGameView: View {
                     Text(shotsEnabled
                          ? "Karten dürfen Shots verlangen"
                          : "Shots werden in Schlücke umgerechnet")
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.scaled(10, weight: .medium, design: .rounded))
                         .foregroundStyle(BeerStatsColor.textSecondary)
                 }
             }
@@ -448,7 +448,7 @@ struct NewGameView: View {
             .frame(height: 1)
 
             Text("VS")
-                .font(.system(size: 17, weight: .heavy, design: .rounded))
+                .font(.scaled(17, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
@@ -470,7 +470,7 @@ struct NewGameView: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("TEAM \(teamIndex + 1)")
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .font(.scaled(12, weight: .heavy, design: .rounded))
                     .kerning(1.6)
                     .foregroundStyle(tint)
                 Spacer()

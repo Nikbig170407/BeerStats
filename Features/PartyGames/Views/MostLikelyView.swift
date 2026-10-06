@@ -89,13 +89,13 @@ struct MostLikelyView: View {
             EmptyView()
         case .counting(let value):
             Text("\(value)")
-                .font(.system(size: 64, weight: .heavy, design: .rounded))
+                .font(.scaled(64, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.warning)
                 .transition(.scale.combined(with: .opacity))
                 .id(value)
         case .reveal:
             Text("ZEIGEN!")
-                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                .font(.scaled(34, weight: .heavy, design: .rounded))
                 .kerning(3)
                 .foregroundStyle(BeerStatsColor.success)
                 .transition(.scale.combined(with: .opacity))

@@ -42,7 +42,7 @@ struct RingOfFireActionView: View {
                         .padding(.top, 12)
 
                     Text(rule.nickname)
-                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .font(.scaled(11, weight: .heavy, design: .rounded))
                         .kerning(2)
                         .foregroundStyle(BeerStatsColor.textSecondary)
 

@@ -79,14 +79,14 @@ struct TournamentView: View {
 
             VStack(spacing: 10) {
                 Text("SPIELER")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
                 PlayerCountStepper(count: $playerCount, range: 2...12, tint: BeerStatsColor.warning)
 
                 Text("RUNDEN")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .padding(.top, 6)
@@ -133,7 +133,7 @@ struct TournamentView: View {
 
             VStack(spacing: 12) {
                 Text("RUNDE \(index + 1) VON \(games.count)")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(2)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -267,7 +267,7 @@ struct TournamentView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text("Zum Abschluss \(DrinkAmount.shot.text)")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(.scaled(22, weight: .bold, design: .rounded))
                     .foregroundStyle(BeerStatsColor.error)
                     .frame(maxWidth: .infinity)
                     .padding(16)

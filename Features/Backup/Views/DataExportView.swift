@@ -180,7 +180,7 @@ struct DataExportView: View {
     private func figure(_ value: String, _ caption: String) -> some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .font(.scaled(26, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.success)
                 .monospacedDigit()
             Text(caption)
@@ -200,7 +200,7 @@ struct DataExportView: View {
     private var restoreSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("WIEDERHERSTELLEN")
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .padding(.top, 14)

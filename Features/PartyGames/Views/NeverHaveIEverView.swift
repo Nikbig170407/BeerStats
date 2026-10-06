@@ -84,7 +84,7 @@ struct NeverHaveIEverView: View {
                     .rotationEffect(.degrees(flashPulse ? 0 : -25))
 
                 Text("STRAFE")
-                    .font(.system(size: 40, weight: .heavy, design: .rounded))
+                    .font(.scaled(40, weight: .heavy, design: .rounded))
                     .kerning(5)
                     .foregroundStyle(BeerStatsColor.accentSecondary)
                     .shadow(color: BeerStatsColor.accentSecondary.opacity(0.6), radius: 14)
@@ -216,7 +216,7 @@ struct NeverHaveIEverView: View {
             // weil "Ich bin noch nie" und "Ich hatte noch nie" sonst nicht
             // gehen. Hier steht deshalb nur noch die Stufe.
             Text(isPenalty ? "STRAFE" : (card.level?.title.uppercased() ?? ""))
-                .font(Font.system(size: 12, weight: .heavy, design: .rounded))
+                .font(Font.scaled(12, weight: .heavy, design: .rounded))
                 .kerning(2.4)
                 .foregroundStyle(isPenalty ? tint : BeerStatsColor.textSecondary)
 

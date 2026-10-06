@@ -30,7 +30,7 @@ struct PlayerCountStepper: View {
             }
 
             Text("\(count)")
-                .font(.system(size: 44, weight: .heavy, design: .rounded))
+                .font(.scaled(44, weight: .heavy, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(minWidth: 78)
                 .monospacedDigit()
@@ -49,7 +49,7 @@ struct PlayerCountStepper: View {
             HapticManager.lightImpact()
         } label: {
             Text(label)
-                .font(.system(size: 29, weight: .heavy, design: .rounded))
+                .font(.scaled(29, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .frame(width: 60, height: 60)
                 .glassPanel(cornerRadius: 18)

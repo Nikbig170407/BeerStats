@@ -74,7 +74,7 @@ struct EstimationView: View {
                 Divider().background(BeerStatsColor.textSecondary.opacity(0.3))
 
                 Text(question.answerText)
-                    .font(.system(size: 40, weight: .heavy, design: .rounded))
+                    .font(.scaled(40, weight: .heavy, design: .rounded))
                     .foregroundStyle(BeerStatsColor.success)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)

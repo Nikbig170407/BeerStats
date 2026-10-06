@@ -13,7 +13,7 @@ enum BeerStatsFont {
 
     /// Große, prägnante Zahl – z. B. Punktestand im Live-Spiel, muss auf
     /// einen Blick aus Armlänge lesbar sein.
-    static let scoreDisplay = Font.system(size: 64, weight: .bold, design: .rounded)
+    static let scoreDisplay = Font.scaled(64, weight: .bold, design: .rounded)
 
     static let largeTitle = Font.system(.largeTitle, design: .rounded).weight(.bold)
     static let title = Font.system(.title2, design: .rounded).weight(.semibold)

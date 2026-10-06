@@ -21,7 +21,7 @@ struct DrinkIntensityPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("HÄRTE")
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 

@@ -106,7 +106,7 @@ struct SpyView: View {
             Text(isSpy ? "🕵️" : "📍").font(.system(size: 54))
 
             Text(isSpy ? "Du bist der Spion" : word)
-                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .font(.scaled(30, weight: .heavy, design: .rounded))
                 .foregroundStyle(isSpy ? BeerStatsColor.error : BeerStatsColor.success)
                 .multilineTextAlignment(.center)
 

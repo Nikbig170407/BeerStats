@@ -86,7 +86,7 @@ struct CustomCardsView: View {
                     VStack(spacing: 3) {
                         Text(kandidat.emoji).font(.system(size: 20))
                         Text(kandidat.title)
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .font(.scaled(11, weight: .bold, design: .rounded))
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -166,7 +166,7 @@ struct CustomCardsView: View {
     private var liste: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("\(karten.count) EIGENE \(karten.count == 1 ? "KARTE" : "KARTEN")")
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.6)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 

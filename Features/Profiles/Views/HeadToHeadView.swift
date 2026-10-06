@@ -78,7 +78,7 @@ struct HeadToHeadView: View {
                 .lineLimit(1)
             if !isLoading && record.duels > 0 {
                 Text("\(wins)")
-                    .font(.system(size: 36, weight: .heavy, design: .rounded))
+                    .font(.scaled(36, weight: .heavy, design: .rounded))
                     .foregroundStyle(isLeading(wins: wins) ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
             }
         }

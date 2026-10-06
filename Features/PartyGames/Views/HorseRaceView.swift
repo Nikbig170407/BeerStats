@@ -82,7 +82,7 @@ struct HorseRaceView: View {
     private var sideTrack: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("SEITENSTRECKE")
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .font(.scaled(10, weight: .heavy, design: .rounded))
                 .kerning(1.6)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -116,7 +116,7 @@ struct HorseRaceView: View {
             .frame(height: 40)
 
             Text("\(index + 1)")
-                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .font(.scaled(9, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
@@ -202,7 +202,7 @@ struct HorseRaceView: View {
         if phase == .betting, !tablePlayers.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Text("WER SETZT AUF WAS")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -211,7 +211,7 @@ struct HorseRaceView: View {
                 }
 
                 Text("Nochmal auf dieselbe Farbe tippen nimmt den Einsatz zurück. Nach dem Rennen bleiben die Einsätze stehen.")
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .font(.scaled(10, weight: .medium, design: .rounded))
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

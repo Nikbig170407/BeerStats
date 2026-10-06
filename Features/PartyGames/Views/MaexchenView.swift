@@ -95,7 +95,7 @@ struct MaexchenView: View {
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.textSecondary)
                     Text(MaexchenRanking.label(claim))
-                        .font(.system(size: 40, weight: .heavy, design: .rounded))
+                        .font(.scaled(40, weight: .heavy, design: .rounded))
                         .foregroundStyle(BeerStatsColor.accentSecondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -154,7 +154,7 @@ struct MaexchenView: View {
                 Text(myRoll.diceSymbols)
                     .font(.system(size: 72))
                 Text(MaexchenRanking.label(myRoll.value))
-                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .font(.scaled(32, weight: .heavy, design: .rounded))
                     .foregroundStyle(myRoll.isMia ? BeerStatsColor.error : BeerStatsColor.success)
             }
             .frame(maxWidth: .infinity)
@@ -242,7 +242,7 @@ struct MaexchenView: View {
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .padding(.top, 6)
                 Text(lastRoll.map { "\($0.diceSymbols)  \(MaexchenRanking.label($0.value))" } ?? "–")
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    .font(.scaled(26, weight: .heavy, design: .rounded))
                     .foregroundStyle(liar ? BeerStatsColor.error : BeerStatsColor.success)
             }
             .frame(maxWidth: .infinity)
@@ -250,7 +250,7 @@ struct MaexchenView: View {
             .glassPanel(cornerRadius: 22)
 
             Text("\(PlayerNames.name(for: loser)) trinkt \(amount.text)")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.scaled(22, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.error)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)

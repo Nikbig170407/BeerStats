@@ -116,7 +116,7 @@ struct ResumePromptView: View {
         } else if let remaining, remaining.indices.contains(index) {
             HStack(spacing: 5) {
                 Text("\(remaining[index])")
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    .font(.scaled(26, weight: .heavy, design: .rounded))
                     .foregroundStyle(BeerStatsColor.accent)
                     .monospacedDigit()
                 Text("Becher")
@@ -126,7 +126,7 @@ struct ResumePromptView: View {
         } else {
             // Lieber nichts als eine Zahl, die vielleicht nicht stimmt.
             Text("–")
-                .font(.system(size: 22, weight: .heavy, design: .rounded))
+                .font(.scaled(22, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
@@ -150,7 +150,7 @@ struct ResumePromptView: View {
                     Text("Neue Partie")
                         .font(BeerStatsFont.headline)
                     Text("bricht die laufende ab")
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.scaled(10, weight: .medium, design: .rounded))
                 }
                 .foregroundStyle(BeerStatsColor.error)
                 .frame(maxWidth: .infinity)

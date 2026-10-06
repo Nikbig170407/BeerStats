@@ -171,7 +171,7 @@ struct BeerpongMenuView: View {
     private var destinationCards: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("AUSWERTUNG")
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .padding(.top, 4)
@@ -338,7 +338,7 @@ struct BeerpongMenuView: View {
     private var backupCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("SICHERUNG")
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .padding(.top, 4)

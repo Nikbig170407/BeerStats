@@ -99,11 +99,11 @@ struct CountTo21View: View {
         } label: {
             VStack(spacing: 2) {
                 Text("\(number)")
-                    .font(.system(size: 20, weight: .heavy, design: .rounded))
+                    .font(.scaled(20, weight: .heavy, design: .rounded))
                     .foregroundStyle(tileColor(hasRule: rule != nil, isFinal: isFinal))
                 if let rule {
                     Text(rule)
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .font(.scaled(9, weight: .semibold, design: .rounded))
                         .foregroundStyle(BeerStatsColor.textSecondary)
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
@@ -156,7 +156,7 @@ struct CountTo21View: View {
         } label: {
             VStack(spacing: 3) {
                 Text(title)
-                    .font(.system(size: 20, weight: .heavy, design: .rounded))
+                    .font(.scaled(20, weight: .heavy, design: .rounded))
                     .foregroundStyle(tint)
                 Text(detail)
                     .font(BeerStatsFont.caption)
@@ -177,7 +177,7 @@ struct CountTo21View: View {
     private var ruleList: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("AKTIVE REGELN")
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -219,7 +219,7 @@ struct CountTo21View: View {
     private func ruleEditor(for number: Int) -> some View {
         VStack(spacing: 18) {
             Text("\(number)")
-                .font(.system(size: 54, weight: .heavy, design: .rounded))
+                .font(.scaled(54, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.accent)
 
             Text("Was passiert statt der Zahl?")

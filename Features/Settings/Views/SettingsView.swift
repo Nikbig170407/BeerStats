@@ -75,7 +75,7 @@ struct SettingsView: View {
     private var appearanceSection: some View {
         section("DARSTELLUNG") {
             Text("FARBSCHEMA")
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .font(.scaled(10, weight: .heavy, design: .rounded))
                 .kerning(1.2)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -86,13 +86,13 @@ struct SettingsView: View {
             }
 
             Text("Färbt Akzente und Hintergrund. Die Schrift bleibt, und die Becher bleiben rot – ein Red Solo Cup ist rot, auch wenn die App gerade grün ist. Beim Umschalten springt die App auf den Startbildschirm, weil sie sich neu anzieht.")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .font(.scaled(10, weight: .medium, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.bottom, 4)
 
             Text("HINTERGRUND")
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .font(.scaled(10, weight: .heavy, design: .rounded))
                 .kerning(1.2)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -113,7 +113,7 @@ struct SettingsView: View {
             .padding(.top, 2)
 
             Text("Der Hell-Modus fehlt noch. Die App ist durchgehend dunkel gebaut – das ist ein zweiter Anstrich für jeden Screen, kein Schalter.")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .font(.scaled(10, weight: .medium, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -141,7 +141,7 @@ struct SettingsView: View {
                 .frame(width: 42, height: 42)
 
                 Text(palette.title)
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.scaled(11, weight: .bold, design: .rounded))
                     .foregroundStyle(
                         isOn ? BeerStatsColor.textPrimary : BeerStatsColor.textSecondary
                     )
@@ -214,7 +214,7 @@ struct SettingsView: View {
             )
 
             Text("Gilt für alle Partyspiele. Dieselbe Einstellung steht auch im Hauptmenü – sie wird am Tisch entschieden, nicht hier.")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .font(.scaled(10, weight: .medium, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -281,7 +281,7 @@ struct SettingsView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 

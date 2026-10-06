@@ -84,7 +84,7 @@ struct BusRideView: View {
         case .asking:
             VStack(spacing: 8) {
                 Text("FRAGE \(round + 1) VON 4")
-                    .font(Font.system(size: 12, weight: .heavy, design: .rounded))
+                    .font(Font.scaled(12, weight: .heavy, design: .rounded))
                     .kerning(2.4)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -124,7 +124,7 @@ struct BusRideView: View {
         VStack(spacing: 10) {
             Text(emoji).font(.system(size: 40))
             Text(title)
-                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .font(.scaled(26, weight: .heavy, design: .rounded))
                 .kerning(2)
                 .foregroundStyle(tint)
             Text(message)

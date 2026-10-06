@@ -154,7 +154,7 @@ struct PartyGameRulesView: View {
                             .glassPanel(cornerRadius: 16)
 
                         Text("Die Trinkmengen richten sich nach der eingestellten Härte – nachzulesen und zu ändern in den Einstellungen.")
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.scaled(11, weight: .medium, design: .rounded))
                             .foregroundStyle(BeerStatsColor.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }

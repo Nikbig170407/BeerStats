@@ -268,7 +268,7 @@ struct HomeView: View {
     private func miniStat(_ value: String, _ label: String) -> some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.system(size: 19, weight: .heavy, design: .rounded))
+                .font(.scaled(19, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.accent)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -342,7 +342,7 @@ struct HomeView: View {
                 Spacer()
 
                 Text("\(group.games.count)")
-                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .font(.scaled(15, weight: .heavy, design: .rounded))
                     .foregroundStyle(group.tint)
                     .monospacedDigit()
 
@@ -398,7 +398,7 @@ struct HomeView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
             content()

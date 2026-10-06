@@ -34,7 +34,7 @@ struct HighlightOverlayView: View {
                 .shadow(color: highlight.tint.opacity(0.55), radius: 26)
 
             Text(highlight.title)
-                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                .font(.scaled(40, weight: .heavy, design: .rounded))
                 .foregroundStyle(highlight.tint)
                 .shadow(color: .black.opacity(0.9), radius: 2, y: 2)
                 .shadow(color: highlight.tint.opacity(0.6), radius: 22)

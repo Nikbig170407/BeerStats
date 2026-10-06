@@ -253,7 +253,7 @@ struct LiveGameView: View {
         return VStack(spacing: 8) {
             HStack(spacing: 8) {
                 Text(viewModel.teamName(teamIndex))
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.4)
                     .foregroundStyle(isActive ? tint : BeerStatsColor.textSecondary)
 
@@ -649,7 +649,7 @@ struct LiveGameView: View {
         if let mvp = viewModel.matchMVP {
             VStack(spacing: 6) {
                 Text("BESTER WERFER")
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .font(.scaled(10, weight: .heavy, design: .rounded))
                     .kerning(1.6)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 

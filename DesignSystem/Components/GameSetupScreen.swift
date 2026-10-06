@@ -128,7 +128,7 @@ struct ChoiceRow<Value: Hashable>: View {
                     .font(BeerStatsFont.headline)
                 if let detail = option.detail {
                     Text(detail)
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.scaled(10, weight: .medium, design: .rounded))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                 }

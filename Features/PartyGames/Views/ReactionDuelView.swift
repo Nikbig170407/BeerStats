@@ -55,7 +55,7 @@ struct ReactionDuelView: View {
 
             VStack(spacing: 10) {
                 Text(headline(for: playerIndex))
-                    .font(.system(size: 30, weight: .heavy, design: .rounded))
+                    .font(.scaled(30, weight: .heavy, design: .rounded))
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .multilineTextAlignment(.center)
 
@@ -66,7 +66,7 @@ struct ReactionDuelView: View {
                     .padding(.horizontal, 24)
 
                 Text("\(scores[playerIndex])")
-                    .font(.system(size: 20, weight: .heavy, design: .rounded))
+                    .font(.scaled(20, weight: .heavy, design: .rounded))
                     .foregroundStyle(BeerStatsColor.textPrimary.opacity(0.6))
                     .padding(.top, 4)
             }

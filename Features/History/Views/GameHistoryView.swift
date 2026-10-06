@@ -72,7 +72,7 @@ struct GameHistoryView: View {
 
                 VStack(spacing: 3) {
                     Text(scoreText(for: game))
-                        .font(.system(size: 20, weight: .heavy, design: .rounded))
+                        .font(.scaled(20, weight: .heavy, design: .rounded))
                         .foregroundStyle(BeerStatsColor.textPrimary)
                     Text(winnerIndex == nil ? "unentschieden" : "Becher")
                         .font(BeerStatsFont.statLabel)

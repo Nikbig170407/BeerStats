@@ -110,7 +110,7 @@ struct HouseRulesView: View {
     private var onFireThreshold: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("TREFFER IN FOLGE FÜR ON FIRE")
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.6)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -162,7 +162,7 @@ struct HouseRulesView: View {
 
     private var footer: some View {
         Text("Gilt ab der nächsten Partie und bleibt gespeichert. Laufende Spiele behalten die Regeln, mit denen sie gestartet sind.")
-            .font(.system(size: 11, weight: .medium, design: .rounded))
+            .font(.scaled(11, weight: .medium, design: .rounded))
             .foregroundStyle(BeerStatsColor.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 4)

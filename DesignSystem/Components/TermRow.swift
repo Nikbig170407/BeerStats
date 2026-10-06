@@ -33,7 +33,7 @@ struct TermRow: View {
                 .frame(width: 16)
 
             Text(label.uppercased())
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .font(.scaled(10, weight: .heavy, design: .rounded))
                 .kerning(1.2)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 

@@ -87,7 +87,7 @@ struct SchockenView: View {
     private var rankingCard: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text("RANGFOLGE, NIEDRIG NACH HOCH")
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .font(.scaled(10, weight: .heavy, design: .rounded))
                 .kerning(1.4)
                 .foregroundStyle(BeerStatsColor.textSecondary)
             Text("Zahl · Straße · General · Schock · Schock aus")
@@ -143,7 +143,7 @@ struct SchockenView: View {
             }
 
             Text(SchockenThrow.evaluate(dice).label)
-                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .font(.scaled(26, weight: .heavy, design: .rounded))
                 .foregroundStyle(BeerStatsColor.warning)
 
             Text("Würfel antippen heißt liegen lassen.")
@@ -225,7 +225,7 @@ struct SchockenView: View {
 
             if let loser {
                 Text("\(PlayerNames.name(for: loser)) trinkt \(amount.text)")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(.scaled(22, weight: .bold, design: .rounded))
                     .foregroundStyle(BeerStatsColor.error)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)

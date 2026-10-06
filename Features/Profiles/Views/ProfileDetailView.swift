@@ -155,7 +155,7 @@ struct ProfileDetailView: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             Text("AUSZEICHNUNGEN")
-                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .font(.scaled(11, weight: .heavy, design: .rounded))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -188,7 +188,7 @@ struct ProfileDetailView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("VERLAUF")
-                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .font(.scaled(11, weight: .heavy, design: .rounded))
                         .kerning(1.8)
                         .foregroundStyle(BeerStatsColor.textSecondary)
                     Spacer()
@@ -281,7 +281,7 @@ struct ProfileDetailView: View {
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text(pairing.winRate.map { "\(Int(($0 * 100).rounded())) %" } ?? "–")
-                    .font(.system(size: 17, weight: .heavy, design: .rounded))
+                    .font(.scaled(17, weight: .heavy, design: .rounded))
                     .foregroundStyle(tint)
                 Text("\(pairing.wins) von \(pairing.games)")
                     .font(BeerStatsFont.statLabel)
@@ -311,7 +311,7 @@ struct ProfileDetailView: View {
                     }
 
                     Text("Ab \(AppConstants.GameDefaults.minimumThrowsPerTimeSlot) Würfen steht eine Quote da. Darunter nur die Zahl – eine Quote aus fünf Würfen sieht aus wie eine Messung und ist geraten.")
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.scaled(10, weight: .medium, design: .rounded))
                         .foregroundStyle(BeerStatsColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 2)
@@ -329,7 +329,7 @@ struct ProfileDetailView: View {
                             .font(BeerStatsFont.headline)
                         Spacer()
                         Text("liest die Wurf-Logs")
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .font(.scaled(10, weight: .medium, design: .rounded))
                     }
                     .foregroundStyle(profile.color.color)
                     .padding(.horizontal, 14)
@@ -356,7 +356,7 @@ struct ProfileDetailView: View {
                 Spacer()
 
                 Text(slot.hitRate.map { "\(Int(($0 * 100).rounded())) %" } ?? "–")
-                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .font(.scaled(15, weight: .heavy, design: .rounded))
                     .foregroundStyle(
                         slot.hitRate == nil ? BeerStatsColor.textSecondary : profile.color.color
                     )
