@@ -92,6 +92,41 @@ struct Evening: Codable, Equatable {
         guard let best = winCounts.max(by: { $0.value < $1.value }) else { return nil }
         return (best.key, best.value)
     }
+
+    /// Der Abend in Worten – zum Vorlesen und zum Teilen.
+    ///
+    /// Bewusst Text und kein Bild: Text laesst sich in jede Gruppe schicken,
+    /// vorlesen, suchen und in zehn Jahren noch oeffnen. Ein Bild sieht am
+    /// Abend besser aus und ist eine Sackgasse.
+    var shareText: String {
+        let datum = DateFormatter()
+        datum.locale = Locale(identifier: "de_DE")
+        datum.dateFormat = "EEEE, d. MMMM"
+
+        var zeilen = ["🌅 Unser Abend am \(datum.string(from: startedAt))"]
+        zeilen.append("\(readableDuration) · \(entries.count) \(entries.count == 1 ? "Spiel" : "Spiele")")
+
+        if let sieger = mostWins {
+            zeilen.append("🏆 Meiste Siege: \(sieger.name) (\(sieger.count)×)")
+        }
+        if let durstig = mostDrinks {
+            zeilen.append("🍺 Durstigste Person: \(durstig.name)")
+        }
+
+        zeilen.append("")
+        for teilnehmer in participants.sorted(by: { $0.weight > $1.weight }) {
+            var menge: [String] = []
+            if teilnehmer.sips > 0 {
+                menge.append(teilnehmer.sips == 1 ? "1 Schluck" : "\(teilnehmer.sips) Schlücke")
+            }
+            if teilnehmer.shots > 0 {
+                menge.append(teilnehmer.shots == 1 ? "1 Shot" : "\(teilnehmer.shots) Shots")
+            }
+            zeilen.append("\(teilnehmer.emoji) \(teilnehmer.name): \(menge.isEmpty ? "nichts" : menge.joined(separator: ", "))")
+        }
+
+        return zeilen.joined(separator: "\n")
+    }
 }
 
 // MARK: - Speicher
@@ -135,7 +170,43 @@ enum EveningLog {
         guard var abend = current else { return nil }
         abend.endedAt = Date()
         current = nil
+        archive(abend)
         return abend
+    }
+
+    // MARK: - Frueher
+
+    private static let archiveKey = "evening.archive"
+
+    /// Wie viele Abende aufgehoben werden.
+    ///
+    /// Zwanzig, nicht alle: Die Liste liegt in UserDefaults und wird bei
+    /// jedem Start gelesen. Ein Jahr Freitage waere sie immer noch klein,
+    /// aber irgendwo muss eine Grenze stehen, und zwanzig Abende reichen
+    /// weit zurueck – wer den vom Maerz sucht, sucht ihn ohnehin nicht hier.
+    private static let archiveLimit = 20
+
+    /// Die beendeten Abende, der jüngste zuerst.
+    ///
+    /// Der Rueckblick war bis Oktober 2026 einmalig: "Fertig" antippen, und
+    /// er war weg. Dabei ist er das Einzige, was von einem Abend uebrig
+    /// bleibt – die Partyspiele schreiben keine Statistik.
+    static var archived: [Evening] {
+        get {
+            guard let data = UserDefaults.standard.data(forKey: archiveKey) else { return [] }
+            return (try? JSONDecoder().decode([Evening].self, from: data)) ?? []
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            UserDefaults.standard.set(data, forKey: archiveKey)
+        }
+    }
+
+    private static func archive(_ abend: Evening) {
+        // Ein Abend ohne Spiel und ohne Schluck ist ein Fehlstart, kein
+        // Abend. Er wuerde die Liste fuellen, ohne etwas zu erzaehlen.
+        guard !abend.entries.isEmpty || abend.participants.contains(where: { $0.weight > 0 }) else { return }
+        archived = Array(([abend] + archived).prefix(archiveLimit))
     }
 
     static func discard() {

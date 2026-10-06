@@ -37,6 +37,7 @@ struct EveningView: View {
                         runningView(evening)
                     } else {
                         setupView
+                        earlierEvenings
                     }
                 }
                 .padding(22)
@@ -45,6 +46,68 @@ struct EveningView: View {
         .navigationTitle("Abend")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { evening = EveningLog.current }
+    }
+
+    // MARK: - Frueher
+
+    /// Die letzten Abende zum Nachlesen.
+    ///
+    /// Der Rueckblick war bis Oktober 2026 einmalig – "Fertig" antippen, und
+    /// er war weg. Dabei ist er das Einzige, was von einem Abend uebrig
+    /// bleibt: Die Partyspiele schreiben keine Statistik, und die
+    /// Trinkbilanz steht nirgendwo sonst.
+    @ViewBuilder
+    private var earlierEvenings: some View {
+        let frueher = EveningLog.archived
+
+        if !frueher.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("FRÜHERE ABENDE")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .kerning(1.8)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+
+                ForEach(Array(frueher.enumerated()), id: \.offset) { _, abend in
+                    Button {
+                        summary = abend
+                    } label: {
+                        HStack(spacing: 12) {
+                            Text("🌅").font(.system(size: 22))
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(dateText(abend))
+                                    .font(BeerStatsFont.headline)
+                                    .foregroundStyle(BeerStatsColor.textPrimary)
+                                Text("\(abend.readableDuration) · \(abend.entries.count) \(abend.entries.count == 1 ? "Spiel" : "Spiele")")
+                                    .font(BeerStatsFont.caption)
+                                    .foregroundStyle(BeerStatsColor.textSecondary)
+                            }
+
+                            Spacer(minLength: 0)
+
+                            if let sieger = abend.mostWins {
+                                Text("🏆 \(sieger.name)")
+                                    .font(BeerStatsFont.caption)
+                                    .foregroundStyle(BeerStatsColor.textSecondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .padding(14)
+                        .glassPanel(cornerRadius: 14)
+                        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func dateText(_ abend: Evening) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "de_DE")
+        formatter.dateFormat = "EEEE, d. MMMM"
+        return formatter.string(from: abend.startedAt)
     }
 
     // MARK: - Vorbereitung
@@ -298,10 +361,29 @@ struct EveningView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .padding(.top, 4)
 
+            // Teilen als Text, nicht als Bild: Text laesst sich in jede
+            // Gruppe schicken, vorlesen und in zehn Jahren noch oeffnen.
+            ShareLink(item: abend.shareText) {
+                HStack(spacing: 10) {
+                    Image(systemName: "square.and.arrow.up")
+                    Text("Abend teilen")
+                        .font(BeerStatsFont.headline)
+                }
+                .foregroundStyle(BeerStatsColor.textPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+                .glassPanel(cornerRadius: 15)
+                .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+            }
+
             PrimaryButton(title: "Fertig", systemImage: "checkmark") {
                 summary = nil
                 chosen = []
             }
+
+            Text("Bleibt unter „Frühere Abende“ gespeichert.")
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
 
