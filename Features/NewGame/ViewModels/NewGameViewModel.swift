@@ -265,18 +265,12 @@ final class NewGameViewModel: ObservableObject {
                 )
             }
 
-            let gameId = try await gameRepository.createGame(
+            let gameId = try await gameRepository.createAndStart(
                 type: gameType,
                 teams: teams,
                 format: format,
-                createdBy: currentUserId,
-                // Nur mein Konto darf das Spiel lesen und schreiben – die
-                // Mitspieler sind Profile ohne eigenen Zugang.
-                accessUserIds: [currentUserId]
+                ownerId: currentUserId
             )
-            // Direkt aktiv setzen: Eine Lobby, in der auf Mitspieler gewartet
-            // wird, ergibt keinen Sinn, wenn die App nur auf einem Gerät liegt.
-            try await gameRepository.startGame(gameId: gameId)
 
             createdTeams = teams
             createdGameId = gameId

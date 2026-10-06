@@ -27,6 +27,39 @@ protocol GameRepositoryProtocol {
     func fetchFinishedGames(userId: String) async throws -> [Game]
 }
 
+extension GameRepositoryProtocol {
+
+    /// Legt eine Partie an und startet sie sofort – der ganze Weg vom
+    /// „Spiel starten" bis zum Spielscreen.
+    ///
+    /// Stand vorher nur im Neues-Spiel-Screen. Seit es einen zweiten Weg in
+    /// eine Partie gibt (dieselbe Aufstellung nochmal), waeren es zwei
+    /// Kopien – und die zweite haette garantiert irgendwann vergessen, die
+    /// Partie auch zu starten.
+    ///
+    /// Die Lobby wird dabei uebersprungen: Sie ergibt keinen Sinn, solange
+    /// die App auf einem Geraet liegt.
+    func createAndStart(
+        type: GameType,
+        teams: [Team],
+        format: GameFormat,
+        ownerId: String
+    ) async throws -> String {
+        let gameId = try await createGame(
+            type: type,
+            teams: teams,
+            format: format,
+            createdBy: ownerId,
+            // Nur mein Konto darf das Spiel lesen und schreiben – die
+            // Mitspieler sind Profile ohne eigenen Zugang.
+            accessUserIds: [ownerId]
+        )
+        try await startGame(gameId: gameId)
+        LastLineup.remember(type: type, teams: teams)
+        return gameId
+    }
+}
+
 final class GameRepository: GameRepositoryProtocol {
 
     private let gameService: GameServiceProtocol

@@ -24,6 +24,7 @@ struct BeerpongMenuView: View {
     private enum Route: Hashable {
         case running
         case newGame
+        case quickStart
     }
 
     /// Die offene Partie, nach der gefragt wird.
@@ -36,10 +37,17 @@ struct BeerpongMenuView: View {
     @State private var route: Route?
     @State private var resuming: Game?
 
+    /// Die frisch angelegte Partie aus „Nochmal" – Aufstellung und Kennung
+    /// liegen hier, bis der Spielscreen sie uebernimmt.
+    @State private var quickStart: (teams: [Team], format: GameFormat, gameId: String)?
+    @State private var isStartingQuickGame = false
+    @State private var quickStartError: String?
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 newGameLink
+                rematchLink
                 rulesCard
                 destinationCards
                 backupCard
@@ -93,6 +101,20 @@ struct BeerpongMenuView: View {
                 if let resuming { liveGame(for: resuming) }
             case .newGame:
                 NewGameView(container: container, currentUserId: viewModel.currentUserId)
+            case .quickStart:
+                if let quickStart {
+                    LiveGameView(
+                        teams: quickStart.teams,
+                        format: quickStart.format,
+                        playersPerTeam: quickStart.teams.first?.playerIds.count ?? 2,
+                        perspectiveTeamIndex: 0,
+                        gameId: quickStart.gameId,
+                        throwRepository: container.throwRepository,
+                        gameRepository: container.gameRepository,
+                        profileRepository: container.playerProfileRepository,
+                        ownerId: viewModel.currentUserId
+                    )
+                }
             case .none:
                 EmptyView()
             }
@@ -195,6 +217,92 @@ struct BeerpongMenuView: View {
                 )
             }
             .buttonStyle(PressableButtonStyle())
+        }
+    }
+
+    // MARK: - Nochmal dieselben
+
+    /// Dieselbe Aufstellung wie beim letzten Mal, in einem Griff.
+    ///
+    /// Verschwindet, sobald auch nur eine Person fehlt – ausgemustert oder
+    /// geloescht. Eine Aufstellung mit einer Luecke halb anzubieten waere ein
+    /// Knopf, der erst im Spielscreen scheitert.
+    @ViewBuilder
+    private var rematchLink: some View {
+        if let lineup = LastLineup.resolved(against: viewModel.profiles) {
+            Button {
+                Task { await startQuickGame(lineup) }
+            } label: {
+                HStack(spacing: 14) {
+                    Text("🔁").font(.system(size: 26))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(isStartingQuickGame ? "Wird gestartet …" : "Nochmal dieselben")
+                            .font(BeerStatsFont.headline)
+                            .foregroundStyle(BeerStatsColor.textPrimary)
+                        Text(lineup.teams.map { $0.map(\.name).joined(separator: " & ") }
+                            .joined(separator: " gegen "))
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+                .padding(16)
+                .glassPanel()
+                .neonEdge(BeerStatsColor.success, intensity: 0.45)
+                .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+            .buttonStyle(PressableButtonStyle())
+            .disabled(isStartingQuickGame)
+
+            if let quickStartError {
+                Text(quickStartError)
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.error)
+            }
+        }
+    }
+
+    /// Legt die Partie an und geht hinein.
+    ///
+    /// Mit den aktuellen Hausregeln, nicht mit denen von damals: Die
+    /// Aufstellung wird wiederholt, nicht das Regelwerk – wer seitdem den
+    /// Bounce abgeschaltet hat, will ihn auch hier nicht zurueck.
+    private func startQuickGame(_ lineup: (type: GameType, teams: [[PlayerProfile]])) async {
+        guard !isStartingQuickGame else { return }
+        isStartingQuickGame = true
+        quickStartError = nil
+        defer { isStartingQuickGame = false }
+
+        let teams = lineup.teams.map { leute in
+            Team(
+                id: UUID().uuidString,
+                playerIds: leute.compactMap(\.id),
+                playerNames: leute.map(\.name),
+                ballsInPlay: leute.count
+            )
+        }
+
+        do {
+            let format = GameFormat.houseRules
+            let gameId = try await container.gameRepository.createAndStart(
+                type: lineup.type,
+                teams: teams,
+                format: format,
+                ownerId: viewModel.currentUserId
+            )
+            quickStart = (teams: teams, format: format, gameId: gameId)
+            route = .quickStart
+            HapticManager.success()
+        } catch {
+            HapticManager.error()
+            quickStartError = AppError.from(error).errorDescription
         }
     }
 
