@@ -3,26 +3,38 @@
 //  BeerStats
 //
 //  Semantische Farbnamen statt fest codierter Color(...)-Werte in Views.
-//  Die konkreten Werte liegen als Color Sets in Assets.xcassets, hier stehen
-//  nur die semantischen Zugriffspunkte. So kann das komplette Farbschema
-//  später zentral angepasst werden, ohne eine einzige View anzufassen.
+//  So laesst sich das Farbschema zentral aendern, ohne eine einzige View
+//  anzufassen – und genau das passiert seit Oktober 2026 auch wirklich.
+//
+//  **Zwei Quellen, und der Unterschied ist wichtig:**
+//
+//  Akzente und Hintergruende kommen aus `AppPalette` – sie sind in den
+//  Einstellungen waehlbar und werden beim Zeichnen berechnet. Sie stehen
+//  deshalb als `static var` hier, nicht als `let`.
+//
+//  Schrift, Statusfarben und die Becher kommen weiter aus Assets.xcassets.
+//  Sie gelten in jedem Schema: Die Schrift ist auf dunklen Grund gerechnet
+//  (und alle Schemata sind dunkel), Gruen heisst Treffer und Rot heisst
+//  Fehler unabhaengig vom Anstrich, und ein Red Solo Cup ist die Farbe
+//  eines realen Gegenstands.
 //
 //  Design-Konzept "Taproom bei Nacht": ein warmer, naher Schwarzton statt
 //  kaltem Grau, mit Bier-Bernstein und Cup-Rot als Akzente – bewusst aus dem
-//  Beerpong-Thema abgeleitet statt eines generischen Dark-Mode-Schemas.
+//  Beerpong-Thema abgeleitet statt eines generischen Dark-Mode-Schemas. Das
+//  ist bis heute das Schema „Bernstein" und die Voreinstellung.
 //
-//  Palette (siehe Assets.xcassets für die Color-Set-Definitionen):
-//    AccentColor        #E8A33D  Bier-Bernstein – primäre Akzentfarbe
-//    AccentSecondary    #D64545  Cup-Rot – zweiter Akzent, z. B. Warnhinweise
-//    BackgroundPrimary  #0F0D0B  Haupt-Hintergrund
-//    BackgroundSecondary#1A1613  abgesetzter Hintergrund (z. B. Sections)
-//    SurfaceElevated    #241F1A  Karten, erhöhte Flächen
+//  Fest im Asset-Katalog (siehe dort für die Color-Set-Definitionen):
 //    TextPrimary        #F5F1EA  warmes Off-White
 //    TextSecondary      #A69C8D  gedämpfter Text
 //    TextOnAccent       #1A1310  dunkler Text auf hellem Akzent-Hintergrund
 //    StatusSuccess      #6FBE44  Foam-Grün – z. B. Treffer
 //    StatusWarning      #E0902E  Warnung
 //    StatusError        #E5484D  Fehler, verlorenes Spiel
+//
+//  Die Farbsaetze AccentColor, AccentSecondary, BackgroundPrimary,
+//  BackgroundSecondary und SurfaceElevated liegen weiterhin im Katalog –
+//  gelesen werden sie von hier aus nicht mehr. AccentColor braucht iOS
+//  weiterhin fuer die Systemfarbe der App.
 //
 
 import SwiftUI
@@ -38,10 +50,13 @@ enum BeerStatsColor {
     static var accent: Color { AppPalette.current.accent }
     static var accentSecondary: Color { AppPalette.current.accentSecondary }
 
-    // Hintergründe
-    static let backgroundPrimary = Color("BackgroundPrimary")
-    static let backgroundSecondary = Color("BackgroundSecondary")
-    static let surfaceElevated = Color("SurfaceElevated")
+
+    // Hintergründe – ebenfalls aus der Palette, damit ein Schemawechsel
+    // nicht nur die Knöpfe umfärbt, sondern den Grund darunter. Alle vier
+    // Schemata bleiben dunkel; die Schrift unten ist dafür gerechnet.
+    static var backgroundPrimary: Color { AppPalette.current.backgroundPrimary }
+    static var backgroundSecondary: Color { AppPalette.current.backgroundSecondary }
+    static var surfaceElevated: Color { AppPalette.current.surfaceElevated }
 
     // Text
     static let textPrimary = Color("TextPrimary")

@@ -85,7 +85,7 @@ struct SettingsView: View {
                 }
             }
 
-            Text("Wechselt die beiden Akzentfarben. Hintergrund, Schrift und die Becher bleiben – ein Red Solo Cup ist rot, auch wenn die App gerade grün ist. Beim Umschalten springt die App auf den Startbildschirm, weil sie sich neu anzieht.")
+            Text("Färbt Akzente und Hintergrund. Die Schrift bleibt, und die Becher bleiben rot – ein Red Solo Cup ist rot, auch wenn die App gerade grün ist. Beim Umschalten springt die App auf den Startbildschirm, weil sie sich neu anzieht.")
                 .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
