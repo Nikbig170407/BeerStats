@@ -28,6 +28,8 @@ struct SettingsView: View {
     @State private var isSoundOn = SoundManager.isEnabled
     @State private var isSpeechOn = SpeechAnnouncer.isEnabled
     @AppStorage(DrinkRules.shotsStorageKey) private var shotsEnabled = true
+    @AppStorage(AppAppearance.backdropKey) private var backdropRaw = BackdropStyle.bubbles.rawValue
+    @AppStorage(AppAppearance.neonEdgesKey) private var neonEdgesOn = true
 
     @State private var showsSignOutConfirmation = false
 
@@ -37,6 +39,7 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
+                    appearanceSection
                     soundSection
                     drinkSection
                     developerSection
@@ -59,6 +62,42 @@ struct SettingsView: View {
             Button("Abbrechen", role: .cancel) {}
         } message: {
             Text("Deine Profile und Partien bleiben im Konto. Zum Weiterspielen musst du dich wieder anmelden.")
+        }
+    }
+
+    // MARK: - Darstellung
+
+    /// Der Look ist Geschmack, und Geschmack gehoert nicht fest verdrahtet.
+    ///
+    /// Beides wirkt sofort und ueberall: Hintergrund und Kanten werden von
+    /// den Bausteinen selbst gelesen, nicht von den einzelnen Ansichten.
+    private var appearanceSection: some View {
+        section("DARSTELLUNG") {
+            Text("HINTERGRUND")
+                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .kerning(1.2)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            ChoiceRow(
+                options: BackdropStyle.allCases.map {
+                    ChoiceOption(value: $0.rawValue, title: $0.title, detail: $0.detail)
+                },
+                selection: $backdropRaw
+            )
+
+            toggleRow(
+                title: "Leuchtende Kanten",
+                detail: neonEdgesOn
+                    ? "Karten glühen in ihrer Farbe"
+                    : "Nur eine feine Linie – ruhiger, aber die Karten bleiben abgegrenzt",
+                isOn: $neonEdgesOn
+            )
+            .padding(.top, 2)
+
+            Text("Farbschema und Hell-Modus kommen als Nächstes. Dafür müssen erst alle Farben aus dem Asset-Katalog in den Code – sonst gäbe es nur eine Palette zur Auswahl.")
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

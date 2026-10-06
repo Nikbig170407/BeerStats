@@ -25,24 +25,38 @@ struct NeonEdge: ViewModifier {
     var cornerRadius: CGFloat = 18
     var intensity: Double = 1
 
+    /// Abschaltbar in den Einstellungen. Ueber `@AppStorage` gelesen, damit
+    /// die ganze App sofort umspringt, ohne dass eine Ansicht davon weiss.
+    @AppStorage(AppAppearance.neonEdgesKey) private var neonOn = true
+
     func body(content: Content) -> some View {
         content
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                color.opacity(0.95 * intensity),
-                                color.opacity(0.25 * intensity),
-                                color.opacity(0.7 * intensity)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.4
+                        neonOn
+                            ? LinearGradient(
+                                colors: [
+                                    color.opacity(0.95 * intensity),
+                                    color.opacity(0.25 * intensity),
+                                    color.opacity(0.7 * intensity)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            // Aus heisst nicht randlos: Eine Glasflaeche ohne
+                            // jede Kante verschwimmt mit dem Hintergrund, und
+                            // dann sieht man nicht mehr, wo eine Karte
+                            // aufhoert. Was wegfaellt, ist das Leuchten.
+                            : LinearGradient(
+                                colors: [BeerStatsColor.textSecondary.opacity(0.18)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                        lineWidth: neonOn ? 1.4 : 1
                     )
             )
-            .shadow(color: color.opacity(0.35 * intensity), radius: 14)
+            .shadow(color: color.opacity(neonOn ? 0.35 * intensity : 0), radius: 14)
     }
 }
 
@@ -107,6 +121,13 @@ struct AmbientBackdrop: View {
     /// Screens.
     var glow: Color = BeerStatsColor.accent
 
+    /// Wie viel hier los sein soll – aus den Einstellungen.
+    @AppStorage(AppAppearance.backdropKey) private var styleRaw = BackdropStyle.bubbles.rawValue
+
+    private var style: BackdropStyle {
+        BackdropStyle(rawValue: styleRaw) ?? .bubbles
+    }
+
     /// Lage und Größe relativ zur Fläche, damit es auf jedem Gerät gleich
     /// aussieht. Bewusst unregelmäßig – gleichmäßig verteilt wäre wieder ein
     /// Raster, nur mit runden Ecken.
@@ -143,46 +164,24 @@ struct AmbientBackdrop: View {
                 endPoint: .bottom
             )
 
-            RadialGradient(
-                colors: [glow.opacity(0.20), .clear],
-                center: UnitPoint(x: 0.12, y: -0.02),
-                startRadius: 0,
-                endRadius: 520
-            )
-            RadialGradient(
-                colors: [BeerStatsColor.accentSecondary.opacity(0.13), .clear],
-                center: UnitPoint(x: 1.02, y: 0.82),
-                startRadius: 0,
-                endRadius: 460
-            )
-
-            Canvas { context, size in
-                // An der kürzeren Kante gemessen, sonst werden die Blasen im
-                // Querformat zu Ellipsen-Ersatz in Übergröße.
-                let kante = min(size.width, size.height)
-
-                for blase in Self.bubbles {
-                    let durchmesser = blase.size * kante
-                    let kreis = Path(
-                        ellipseIn: CGRect(
-                            x: blase.x * size.width - durchmesser / 2,
-                            y: blase.y * size.height - durchmesser / 2,
-                            width: durchmesser,
-                            height: durchmesser
-                        )
-                    )
-                    // Gefüllt in der Stimmungsfarbe, umrandet in Weiß: Erst
-                    // die helle Kante macht daraus eine Blase statt eines
-                    // Farbflecks.
-                    context.fill(kreis, with: .color(glow.opacity(blase.opacity * 0.55)))
-                    context.stroke(
-                        kreis,
-                        with: .color(BeerStatsColor.textPrimary.opacity(blase.opacity * 0.8)),
-                        lineWidth: 1
-                    )
-                }
+            if style.showsGlow {
+                RadialGradient(
+                    colors: [glow.opacity(0.20), .clear],
+                    center: UnitPoint(x: 0.12, y: -0.02),
+                    startRadius: 0,
+                    endRadius: 520
+                )
+                RadialGradient(
+                    colors: [BeerStatsColor.accentSecondary.opacity(0.13), .clear],
+                    center: UnitPoint(x: 1.02, y: 0.82),
+                    startRadius: 0,
+                    endRadius: 460
+                )
             }
-            .blur(radius: 0.6)
+
+            if style.showsBubbles {
+                bubbleLayer
+            }
 
             // Nach unten satter: Der Inhalt soll oben schweben, und die
             // Knöpfe am unteren Rand brauchen ruhigen Grund unter sich.
@@ -193,6 +192,36 @@ struct AmbientBackdrop: View {
             )
         }
         .ignoresSafeArea()
+    }
+
+    private var bubbleLayer: some View {
+        Canvas { context, size in
+            // An der kürzeren Kante gemessen, sonst werden die Blasen im
+            // Querformat zu Ellipsen-Ersatz in Übergröße.
+            let kante = min(size.width, size.height)
+
+            for blase in Self.bubbles {
+                let durchmesser = blase.size * kante
+                let kreis = Path(
+                    ellipseIn: CGRect(
+                        x: blase.x * size.width - durchmesser / 2,
+                        y: blase.y * size.height - durchmesser / 2,
+                        width: durchmesser,
+                        height: durchmesser
+                    )
+                )
+                // Gefüllt in der Stimmungsfarbe, umrandet in Weiß: Erst
+                // die helle Kante macht daraus eine Blase statt eines
+                // Farbflecks.
+                context.fill(kreis, with: .color(glow.opacity(blase.opacity * 0.55)))
+                context.stroke(
+                    kreis,
+                    with: .color(BeerStatsColor.textPrimary.opacity(blase.opacity * 0.8)),
+                    lineWidth: 1
+                )
+            }
+        }
+        .blur(radius: 0.6)
     }
 }
 
