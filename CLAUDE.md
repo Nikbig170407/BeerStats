@@ -203,6 +203,25 @@ den nachgespielten Wurf-Log alter Partien.
 - **Team-Chemie im Profil**: bester Partner, schlimmster Gegner. Quote erst
   ab drei gemeinsamen Partien. Kostet keinen zusätzlichen Lesezugriff – sie
   braucht nur die Aufstellungen, die in den Partien ohnehin stehen.
+- **Hauptmenü als vier Ordner**: Mit Karten, Raten & reden, Schnell
+  zwischendurch, Läuft nebenher – dahinter die Spiele. Darüber „Zuletzt
+  gespielt". Oben nur noch zwei Symbole: Spieler und Einstellungen.
+- **Einstellungs-Screen**: Darstellung (Farbschema, Hintergrund, Kanten),
+  Ton, Sprachansage, Härte & Shots, Entwicklereinstellungen, Abmelden.
+- **Darstellung wählbar**: vier Farbschemata (`AppPalette` – färbt Akzente
+  UND Hintergrund), Hintergrund in drei Stufen, Neon-Kanten abschaltbar
+  (`AppAppearance`). Kein Hell-Modus, siehe unten.
+- **Ring of Fire in zwei Screens**: der Ring für sich, die gezogene Karte
+  als Vollbild mit „Verstanden". Karten tragen Dauer und Strafe wie die
+  Extreme-Karten; Lücken bleiben als gestrichelter Platz stehen.
+- **Nochmal dieselben**: die letzte Aufstellung als Zeile im Beerpong-Menü,
+  gestartet mit den aktuellen Hausregeln.
+- **Abende bleiben erhalten**: die letzten zwanzig unter „Frühere Abende",
+  teilbar als Text.
+- **Erinnerung an die Sicherung**: die Karte sagt, wann zuletzt gesichert
+  wurde, und wird nach vier Wochen deutlich.
+- **Anleitung je Partyspiel**: Fragezeichen auf jeder Spielkachel.
+- **Nicht gespeicherte Würfe lassen sich nachreichen** – siehe unten.
 - **Die Partyspiele sagen Namen statt Nummern**, sobald jemand am Tisch
   steht – auch ohne laufenden Abend (`PlayerNames`, Reihenfolge unten).
 - Glücksrad, das die Teams aus allen aktiven Profilen auslost
@@ -254,6 +273,33 @@ den nachgespielten Wurf-Log alter Partien.
   Nicht zu verwechseln mit `PlayerProfile.isActive`: Das heißt „gehört noch
   zur Truppe" und gilt für Monate, die Aufstellung heißt „ist heute da".
 
+- **Ein fehlgeschlagener Schreibvorgang darf nicht verpuffen.** Der
+  Wurf-Log ist die Wahrheit; fehlt dort ein Eintrag, läuft die
+  nachgespielte Partie dauerhaft anders als die gespielte. Scheitert das
+  Schreiben, merkt sich `LiveGameViewModel` den Vorgang und reicht ihn auf
+  Knopfdruck nach. Das geht nur, weil die laufende Nummer im mitgegebenen
+  Spielzustand steckt und nicht in der Uhrzeit des Schreibens – ein
+  Eintrag darf beliebig später kommen.
+
+- **Eine Partie anlegen heißt `createAndStart`.** Es gibt zwei Wege in eine
+  Partie (Neues Spiel und „Nochmal dieselben"); beide gehen durch dieselbe
+  Funktion, die auch die Aufstellung für den Schnellstart merkt. Eine
+  zweite Kopie hätte garantiert irgendwann vergessen, die Partie zu
+  starten.
+
+- **Die Palette ist zweigeteilt** (`DesignSystem/Colors.swift`): Akzente
+  und Hintergründe kommen aus `AppPalette` und sind wählbar, Schrift,
+  Statusfarben und Becher aus dem Asset-Katalog und gelten immer. Alle
+  Schemata sind **dunkel** – die Schrift und sämtliche Deckkräfte sind
+  dafür gerechnet. Ein helles Schema ist kein fünftes Schema, sondern der
+  Hell-Modus.
+
+- **Feste Schriftgrößen nur noch für Emoji.** Textstile gehen über
+  `Font.scaled(…)`, damit sie der Systemeinstellung folgen; Emoji in
+  Rahmen fester Größe bleiben fest, sonst laufen sie über. Die Datei
+  `BeerpongActivityAttributes.swift` gehört zum **Widget-Ziel** und sieht
+  `DesignSystem` nicht – dort geht `scaled` nicht.
+
 - **Namen in Partyspielen laufen über `PlayerNames`**, und die Reihenfolge
   der Quellen ist Pflicht, nicht Geschmack: **laufender Abend, sonst Tisch,
   sonst „Spieler 3"**. Die Trinkbilanz ist auf die Positionen des Abends
@@ -264,9 +310,15 @@ den nachgespielten Wurf-Log alter Partien.
   und auch keins bekommen soll.
 
 - **Einstellungen vor dem Spiel gehören in `GameSetupScreen`**, die Auswahl
-  aus wenigen Werten in `ChoiceRow`. Beides sind geteilte Bausteine wie
-  `PlayerCountStepper` und `HandoffPanel` – wer einen eigenen Vorspann baut,
-  lässt ihn anders aussehen.
+  aus wenigen Werten in `ChoiceRow`, eine Spielkachel in `PartyGameCard`,
+  die Zeile „Wie lange / Strafe" in `TermRow`. Alles geteilte Bausteine wie
+  `PlayerCountStepper` und `HandoffPanel` – wer einen eigenen baut, lässt
+  ihn anders aussehen. `TermRow` war die zweite Kopie, `PartyGameCard` die
+  zweite Stelle, an der man das Vermerken im Abend vergessen kann.
+
+- **Anleitung und Untertitel stehen im Katalog**, nicht im Spiel
+  (`PartyGame.howToPlay`). Im Spiel stünden sie in neunzehn verschiedenen
+  Formen, und ein neues Spiel hätte sie garantiert nicht.
 
 - **Extreme-Karten tragen Dauer und Strafe als eigene Felder**, nicht im
   Text. Die Dauer steht auf jeder Karte, auch wenn sie „Sofort" lautet; die
@@ -382,6 +434,15 @@ Blaze), Live Activity für den Sperrbildschirm, Ergebnis als Bild teilen.
    ein Ergebnis ist. `currentTurnTeamId` und `playerStreaks` warten
    weiterhin auf dieselbe Cloud Function und duerfen nicht gelesen werden.
 
+10. **Vor dem Vorschlagen in die Datei schauen, nicht in die
+    Suchergebnisse.** Zweimal an einem Tag habe ich behauptet, etwas fehle
+    ganz, obwohl es halb da war: Der fehlgeschlagene Wurf zeigte sehr wohl
+    eine Warnung (drei Zeilen unter der Logger-Zeile, die ich gegrept
+    hatte), und der Abend-Rückblick existierte vollständig. Beide Male war
+    der Code besser als meine Beschreibung. Ein Vorschlag, der ein Problem
+    erfindet, kostet den Nutzer Vertrauen – und beim Umsetzen fällt es
+    ohnehin auf.
+
 ---
 
 ## 8. Arbeitsweise
@@ -423,6 +484,15 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Hintergrund. Nichts davon lief je auf Hardware. Besonders zu prüfen: die
   Auslosung bei Ring of Fire dauert etwa drei Sekunden – das ist geschätzt,
   nicht gemessen.
+- **Alles vom 6. bis 8. Oktober**: Ring of Fire in zwei Screens, die vier
+  Ordner, der Einstellungs-Screen, die vier Farbschemata (Minze, Beere und
+  Eis sind gerechnet, nicht gesehen – besonders die Statusfarben auf dem
+  neuen Grund), „Nochmal dieselben", frühere Abende samt Teilen, die
+  Sicherungs-Erinnerung, die Anleitungen. Und einmal mit großer Schrift
+  durch die App: 105 Größen folgen jetzt der Systemeinstellung.
+- **Nachreichen**: Flugmodus an, ein paar Würfe tippen, Netz an, „Nachreichen"
+  drücken – und danach die Partie fortsetzen und prüfen, ob der Stand
+  stimmt. Das ist der einzige Weg, an dem Daten verloren gehen können.
 - **Team-Chemie (2. Oktober)**: Stimmen bester Partner und schlimmster
   Gegner mit dem überein, was ihr am Tisch sagen würdet? Die Rechnung ist
   per Test abgedeckt, die Datenlage nicht – bei wenigen Partien kann ein
