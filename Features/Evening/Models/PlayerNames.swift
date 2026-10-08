@@ -106,3 +106,27 @@ extension EveningLog {
         for index in indices { record(amount, forPlayer: index) }
     }
 }
+
+extension EveningLog {
+
+    /// Schreibt eine Menge der Bilanz gut, adressiert ueber die Profil-ID.
+    ///
+    /// Der Weg ueber die Position (`forPlayer:`) gilt fuer die Partyspiele,
+    /// die ihre Leute nur als "Spieler 3" kennen. Spiele, die mit echten
+    /// Profilen arbeiten, haben die ID zur Hand – und sollen sie benutzen:
+    /// Die Reihenfolge der Aufstellung und die des Abends muessen nicht
+    /// uebereinstimmen, und eine Position aus der falschen Liste bucht
+    /// lautlos auf die falsche Person.
+    ///
+    /// Tut nichts, wenn kein Abend laeuft oder diese Person nicht dabei ist.
+    static func record(_ amount: DrinkAmount, forProfileId id: String) {
+        guard let abend = current, abend.isRunning,
+              abend.participants.contains(where: { $0.id == id })
+        else { return }
+
+        let (sips, shots) = amount.tally
+
+        if sips > 0 { addSips(sips, to: id) }
+        for _ in 0..<shots { addShot(to: id) }
+    }
+}

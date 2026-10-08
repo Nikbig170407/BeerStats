@@ -240,12 +240,13 @@ den nachgespielten Wurf-Log alter Partien.
   nichts: Auf einem Konto mit vorhandenen Profilen steht danach alles
   doppelt.
 - Turniermodus: lost geeignete Spiele aus, Strafe steigt je Runde
-- Neunzehn Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
+- Zwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
   Pflicht, Ich hab noch nie. *Raten & reden* – Schocken, Mäxchen, Zwei
   Wahrheiten, Der Spion, Wer bin ich?, 21, Schätzmeister, Kategorien,
-  Wer von uns?. *Schnell zwischendurch* – Bombe, Reaktionsduell,
-  Trink-Roulette. *Läuft nebenher* – Verbotene Wörter, Trinkbingo.
+  Wer von uns?, Kennst du deine Leute?. *Schnell zwischendurch* – Bombe,
+  Reaktionsduell, Trink-Roulette. *Läuft nebenher* – Verbotene Wörter,
+  Trinkbingo.
   Die Zahl im Text und die Fälle in `PartyGame` müssen zusammenpassen –
   hier standen eine Zeit lang neunzehn, aufgezählt waren siebzehn.
 
@@ -266,8 +267,8 @@ den nachgespielten Wurf-Log alter Partien.
 
 - **Wer heute mitspielt, steht in `TableRoster`** – und kommt über
   `\.tablePlayers` in der SwiftUI-Umgebung bei den Spielen an, nicht als
-  Parameter an `PartyGame.destination`. Sonst müssten alle neunzehn Spiele
-  die Liste annehmen, auch die siebzehn, die sie nicht brauchen. Wichtig:
+  Parameter an `PartyGame.destination`. Sonst müssten alle zwanzig Spiele
+  die Liste annehmen, auch die achtzehn, die sie nicht brauchen. Wichtig:
   **Leer ist ein gültiger Zustand** – wer keine Profile hat, spielt ohne
   Namen weiter. Beide Wege müssen im Spiel stehen, nicht nur der schöne.
   Nicht zu verwechseln mit `PlayerProfile.isActive`: Das heißt „gehört noch
@@ -317,7 +318,7 @@ den nachgespielten Wurf-Log alter Partien.
   zweite Stelle, an der man das Vermerken im Abend vergessen kann.
 
 - **Anleitung und Untertitel stehen im Katalog**, nicht im Spiel
-  (`PartyGame.howToPlay`). Im Spiel stünden sie in neunzehn verschiedenen
+  (`PartyGame.howToPlay`). Im Spiel stünden sie in zwanzig verschiedenen
   Formen, und ein neues Spiel hätte sie garantiert nicht.
 
 - **Extreme-Karten tragen Dauer und Strafe als eigene Felder**, nicht im
@@ -355,6 +356,20 @@ den nachgespielten Wurf-Log alter Partien.
   `ThrowRepository.aggregateStatistics` die Wurf-Logs der betroffenen
   Partien neu durch. Das gilt dadurch rückwirkend und rechnet Undos korrekt
   heraus – kostet aber Lesezugriffe, deshalb nur auf Anforderung.
+- **„Kennst du deine Leute?" liest die Statistiken, schreibt aber keine.**
+  Die Fragen entstehen aus den Kennzahlen am Profil
+  (`KnowYourPeople.questions(for:)`), und zwei Grenzen entscheiden darüber,
+  ob das Spiel fair ist: Eine Frage nach der Trefferquote gibt es erst, wenn
+  **beide** genug geworfen haben, und überhaupt nur, wenn die Werte weit
+  genug auseinanderliegen – fünf Prozentpunkte bei Quoten, zwei bei
+  Zählwerten. Bei 48 gegen 47 Prozent gibt es keine richtige Antwort,
+  sondern nur eine, die zufällig stimmt, und wer dafür trinkt, trinkt zu
+  Unrecht. Solche Fragen entstehen deshalb gar nicht erst; Tests halten
+  beide Grenzen fest. Die Strafe wird über die **Profil-ID** gebucht
+  (`EveningLog.record(_:forProfileId:)`), nicht über die Position – die
+  Aufstellung und die Teilnehmerliste des Abends müssen nicht dieselbe
+  Reihenfolge haben.
+
 - **Partyspiele zahlen nicht auf die Beerpong-Statistiken ein.** Eine Runde
   Bombe hat keine Trefferquote. Wer dort eine Wertung will, braucht einen
   eigenen Zähler, nicht `UserStatistics`.
@@ -376,10 +391,6 @@ wenn die App auf mehreren Geräten läuft. Nicht löschen.
    derselben Ursache: derselbe Zustand an zwei Stellen gehalten. Ein Schnitt
    entlang Regelwerk / Synchronisation / Nebenwirkungen legt die Fehlerklasse
    trocken, statt sie einzeln zu jagen.
-2. **„Kennst du deine Leute?"** – ein Partyspiel, dessen Fragen aus den
-   eigenen Beerpong-Daten entstehen („Wer trifft besser, wer wirft mehr
-   Airballs?"). Besprochen, nicht begonnen. Kein Inhalt zu schreiben, und
-   das einzige Trinkspiel, das nur diese App haben kann.
 
 Weiter denkbar, aber ohne konkreten Anlass: Cloud Functions (bräuchte
 Blaze), Live Activity für den Sperrbildschirm, Ergebnis als Bild teilen.
@@ -512,6 +523,11 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   **Wiederherstellen**, weil es als einziges schreibt. Beim ersten Versuch
   „Nur Profile und Werte" auf einem frischen Konto, nicht „Alles" auf dem
   echten.
+- **„Kennst du deine Leute?" (8. Oktober)**: Stehen überhaupt Fragen da,
+  oder sagt das Spiel „noch zu wenig gespielt"? Die beiden Grenzen sind
+  getestet, die Datenlage nicht – mit wenigen Partien kann es gut sein, dass
+  nur zwei oder drei Fragen übrig bleiben. Und: Landet die Strafe beim
+  Richtigen, wenn ein Abend läuft?
 - **Widget-Extension:** Erst der Sideload zeigt, ob die `.ipa` installierbar
   bleibt (Lessons Learned Nr. 5).
 - **Ohne Netz:** Flugmodus, App killen, ganze Partie spielen, Netz an. Der
