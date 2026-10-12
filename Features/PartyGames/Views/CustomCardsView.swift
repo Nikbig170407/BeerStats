@@ -73,8 +73,15 @@ struct CustomCardsView: View {
         }
     }
 
+    /// Umbrechendes Raster statt einer Zeile.
+    ///
+    /// Mit drei Stapeln passte eine Zeile noch; beim vierten blieben pro
+    /// Kachel keine achtzig Punkte, und "Wahrheit oder Pflicht" bricht dort
+    /// in vier Zeilen um. Ein Raster, das umbricht, traegt auch den
+    /// fuenften Stapel – und auf einem kleinen Geraet mit grosser Schrift
+    /// sowieso.
     private var deckPicker: some View {
-        HStack(spacing: 8) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 8)], spacing: 8) {
             ForEach(CustomCardDeck.allCases) { kandidat in
                 Button {
                     deck = kandidat
@@ -149,13 +156,11 @@ struct CustomCardsView: View {
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
-                Button("Alle wieder anzeigen") {
+                QuietButton(title: "Alle wieder anzeigen", tint: BeerStatsColor.accentSecondary) {
                     HiddenCards.showAll(in: deck)
                     versteckteAnzahl = 0
                     HapticManager.lightImpact()
                 }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.accentSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)

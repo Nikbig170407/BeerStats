@@ -213,9 +213,11 @@ struct DataExportView: View {
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Button("Datei auswählen") { isPickingFile = true }
-                    .font(BeerStatsFont.headline)
-                    .foregroundStyle(BeerStatsColor.accentSecondary)
+                QuietButton(
+                    title: "Datei auswählen",
+                    systemImage: "folder",
+                    tint: BeerStatsColor.accentSecondary
+                ) { isPickingFile = true }
             }
 
             if let importError {
@@ -259,20 +261,16 @@ struct DataExportView: View {
             .disabled(isWorking)
 
             if vorschau.canRestoreThrowLog && vorschau.gameCount > 0 {
-                Button("Alles, auch die \(vorschau.gameCount) Partien") {
+                QuietButton(title: "Alles, auch die \(vorschau.gameCount) Partien") {
                     Task { await runImport(includeGames: true) }
                 }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
                 .disabled(isWorking)
             }
 
-            Button("Abbrechen") {
+            QuietButton(title: "Abbrechen") {
                 importPreview = nil
                 importData = nil
             }
-            .font(BeerStatsFont.caption)
-            .foregroundStyle(BeerStatsColor.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)

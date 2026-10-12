@@ -202,12 +202,10 @@ struct CountTo21View: View {
                 }
             }
 
-            Button("Alle Regeln löschen") {
+            QuietButton(title: "Alle Regeln löschen") {
                 rules.removeAll()
                 HapticManager.success()
             }
-            .font(BeerStatsFont.caption)
-            .foregroundStyle(BeerStatsColor.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
@@ -239,13 +237,11 @@ struct CountTo21View: View {
                 .opacity(trimmedDraft.isEmpty ? 0.4 : 1)
 
             if rules[number] != nil {
-                Button("Regel löschen") {
+                QuietButton(title: "Regel löschen", tint: BeerStatsColor.error) {
                     rules[number] = nil
                     editingNumber = nil
                     HapticManager.lightImpact()
                 }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.error)
             }
 
             Spacer(minLength: 0)

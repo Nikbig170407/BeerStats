@@ -613,9 +613,7 @@ struct LiveGameView: View {
                     .buttonStyle(PressableButtonStyle())
                 }
 
-                Button("Rückgängig") { viewModel.undo() }
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+                QuietButton(title: "Rückgängig") { viewModel.undo() }
                     .disabled(!viewModel.canUndo)
             }
             .padding(.top, 16)

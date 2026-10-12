@@ -29,12 +29,15 @@ import SwiftUI
 
 enum HiddenCards {
 
-    private static func key(_ deck: CustomCardDeck) -> String {
+    /// Nicht `private`, damit die Tests sichern und zuruecklegen koennen,
+    /// was sie anfassen – sie schreiben in dieselben UserDefaults wie die
+    /// App (siehe `PlayerNamesTests`).
+    static func storageKey(for deck: CustomCardDeck) -> String {
         "hiddenCards.\(deck.rawValue)"
     }
 
     static func keys(for deck: CustomCardDeck) -> Set<String> {
-        Set(UserDefaults.standard.stringArray(forKey: key(deck)) ?? [])
+        Set(UserDefaults.standard.stringArray(forKey: storageKey(for: deck)) ?? [])
     }
 
     static func isHidden(_ cardKey: String, in deck: CustomCardDeck) -> Bool {
@@ -44,17 +47,17 @@ enum HiddenCards {
     static func hide(_ cardKey: String, in deck: CustomCardDeck) {
         var alle = keys(for: deck)
         alle.insert(cardKey)
-        UserDefaults.standard.set(Array(alle), forKey: key(deck))
+        UserDefaults.standard.set(Array(alle), forKey: storageKey(for: deck))
     }
 
     static func show(_ cardKey: String, in deck: CustomCardDeck) {
         var alle = keys(for: deck)
         alle.remove(cardKey)
-        UserDefaults.standard.set(Array(alle), forKey: key(deck))
+        UserDefaults.standard.set(Array(alle), forKey: storageKey(for: deck))
     }
 
     static func showAll(in deck: CustomCardDeck) {
-        UserDefaults.standard.removeObject(forKey: key(deck))
+        UserDefaults.standard.removeObject(forKey: storageKey(for: deck))
     }
 
     static func count(for deck: CustomCardDeck) -> Int {
@@ -70,18 +73,37 @@ enum HiddenCards {
 /// die seltene Entscheidung, Weiterspielen die haeufige. Waeren beide gleich
 /// gross, traefe man beim schnellen Tippen das Falsche – und eine
 /// versehentlich ausgeblendete Karte merkt man erst, wenn sie fehlt.
+///
+/// Gemerkt wird der ausgeblendete SCHLUESSEL, nicht ein Ja/Nein.
+///
+/// Das ist kein Detail, sondern der Grund, warum der Knopf lange nur
+/// einmal pro Spiel funktionierte: SwiftUI erkennt eine Ansicht an ihrer
+/// Stelle im Baum, nicht an ihren Werten. Neben dem Weiter-Knopf steht
+/// derselbe `HideCardButton` fuer jede Karte – mit einem `Bool` blieb
+/// deshalb das "schon ausgeblendet" der ersten Karte stehen, und ab da war
+/// der Knopf fuer alle folgenden Karten beschriftet wie benutzt und per
+/// `disabled` tot. Am Tisch sieht das aus wie ein kaputter Knopf.
+///
+/// Mit dem Schluessel vergleicht sich der Zustand selbst: Kommt eine neue
+/// Karte, passt der gemerkte Schluessel nicht mehr, und der Knopf ist
+/// wieder da. Die Aufrufstellen brauchen dafuer kein `.id(…)` zu setzen –
+/// was sie garantiert irgendwann vergessen haetten.
 struct HideCardButton: View {
 
     let cardKey: String
     let deck: CustomCardDeck
     var onHidden: () -> Void = {}
 
-    @State private var wurdeAusgeblendet = false
+    @State private var ausgeblendeterSchluessel: String?
+
+    private var wurdeAusgeblendet: Bool {
+        ausgeblendeterSchluessel == cardKey
+    }
 
     var body: some View {
         Button {
             HiddenCards.hide(cardKey, in: deck)
-            wurdeAusgeblendet = true
+            ausgeblendeterSchluessel = cardKey
             HapticManager.lightImpact()
             onHidden()
         } label: {

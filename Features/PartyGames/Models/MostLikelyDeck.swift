@@ -16,11 +16,29 @@ import Foundation
 struct MostLikelyCard: Identifiable, Equatable {
     let id = UUID()
     let text: String
+    /// Selbst eingetippt. Entscheidet nur eines: Eigene Karten tragen
+    /// keinen Daumen nach unten – die loescht man unter "Eigene Karten",
+    /// so wie in den anderen Kartenspielen auch.
+    var isCustom = false
 }
 
 enum MostLikelyDeck {
 
-    static func shuffled() -> [MostLikelyCard] { all.shuffled() }
+    /// Der Stapel fuer eine Runde: feste Karten plus eigene, ohne die
+    /// weggedaumten.
+    ///
+    /// Der Text ist hier gleichzeitig der Schluessel zum Ausblenden, und
+    /// das geht nur auf, weil diese Karten keine Trinkmenge tragen: Es gibt
+    /// nichts, was sich je nach Haerte anders ausformuliert.
+    static func shuffled() -> [MostLikelyCard] {
+        let eigene = CustomCards.cards(for: .mostLikely)
+            .map { MostLikelyCard(text: $0, isCustom: true) }
+        let versteckt = HiddenCards.keys(for: .mostLikely)
+
+        return (all + eigene)
+            .filter { !versteckt.contains($0.text) }
+            .shuffled()
+    }
 
     static var count: Int { all.count }
 

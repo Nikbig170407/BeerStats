@@ -186,11 +186,9 @@ struct HeadsUpView: View {
             Spacer(minLength: 0)
 
             PrimaryButton(title: "Nächster ist dran", systemImage: "arrow.right") { start() }
-            Button("Kategorie wechseln") {
+            QuietButton(title: "Kategorie wechseln") {
                 withAnimation(AppAnimation.standard) { phase = .setup }
             }
-            .font(BeerStatsFont.caption)
-            .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
 

@@ -25,6 +25,7 @@ import Foundation
 enum CustomCardDeck: String, CaseIterable, Identifiable {
     case neverHaveIEver
     case truthOrDare
+    case mostLikely
     case extremeChallenge
 
     var id: String { rawValue }
@@ -33,6 +34,7 @@ enum CustomCardDeck: String, CaseIterable, Identifiable {
         switch self {
         case .neverHaveIEver: return "Ich hab noch nie"
         case .truthOrDare: return "Wahrheit oder Pflicht"
+        case .mostLikely: return "Wer von uns?"
         case .extremeChallenge: return "Beerpong Extreme"
         }
     }
@@ -41,6 +43,7 @@ enum CustomCardDeck: String, CaseIterable, Identifiable {
         switch self {
         case .neverHaveIEver: return "🙈"
         case .truthOrDare: return "😈"
+        case .mostLikely: return "👉"
         case .extremeChallenge: return "🍺"
         }
     }
@@ -52,6 +55,7 @@ enum CustomCardDeck: String, CaseIterable, Identifiable {
         switch self {
         case .neverHaveIEver: return "Ich hab noch nie ein Auto gefahren."
         case .truthOrDare: return "Ruf deine Mutter an und sing ihr etwas vor."
+        case .mostLikely: return "Wer von uns würde am ehesten auf dem Heimweg einschlafen?"
         case .extremeChallenge: return "Tausche für eine Runde den Platz."
         }
     }
@@ -66,6 +70,10 @@ enum CustomCardDeck: String, CaseIterable, Identifiable {
             return "Schreib den ganzen Satz, nicht nur den Nachsatz."
         case .truthOrDare:
             return "Eine Aufgabe oder eine Frage – beides landet im selben Stapel."
+        case .mostLikely:
+            // Die Antwort ist immer eine Person. Eine Ja/Nein-Frage laesst
+            // sich am Tisch nicht zeigen, und genau zeigen ist das Spiel.
+            return "Eine Frage, auf die alle gleichzeitig auf jemanden zeigen können."
         case .extremeChallenge:
             return "Kommt als Challenge-Karte, wenn ein geladener Becher fällt."
         }
@@ -74,12 +82,14 @@ enum CustomCardDeck: String, CaseIterable, Identifiable {
 
 enum CustomCards {
 
-    private static func key(_ deck: CustomCardDeck) -> String {
+    /// Siehe `HiddenCards.storageKey(for:)` – aus demselben Grund nicht
+    /// `private`.
+    static func storageKey(for deck: CustomCardDeck) -> String {
         "customCards.\(deck.rawValue)"
     }
 
     static func cards(for deck: CustomCardDeck) -> [String] {
-        UserDefaults.standard.stringArray(forKey: key(deck)) ?? []
+        UserDefaults.standard.stringArray(forKey: storageKey(for: deck)) ?? []
     }
 
     static func add(_ text: String, to deck: CustomCardDeck) {
@@ -92,11 +102,11 @@ enum CustomCards {
         guard !vorhanden.contains(sauber) else { return }
 
         vorhanden.append(sauber)
-        UserDefaults.standard.set(vorhanden, forKey: key(deck))
+        UserDefaults.standard.set(vorhanden, forKey: storageKey(for: deck))
     }
 
     static func remove(_ text: String, from deck: CustomCardDeck) {
-        UserDefaults.standard.set(cards(for: deck).filter { $0 != text }, forKey: key(deck))
+        UserDefaults.standard.set(cards(for: deck).filter { $0 != text }, forKey: storageKey(for: deck))
     }
 
     static func count(for deck: CustomCardDeck) -> Int {

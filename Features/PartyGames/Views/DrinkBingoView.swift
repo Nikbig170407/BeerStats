@@ -123,9 +123,7 @@ struct DrinkBingoView: View {
                 .font(BeerStatsFont.statLabel)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
-            Button("Neues Blatt") { reset() }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            QuietButton(title: "Neues Blatt") { reset() }
         }
     }
 

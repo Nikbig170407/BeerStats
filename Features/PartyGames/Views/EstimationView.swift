@@ -54,9 +54,7 @@ struct EstimationView: View {
                 .font(BeerStatsFont.statLabel)
                 .foregroundStyle(BeerStatsColor.textSecondary)
             Spacer()
-            Button("Neu mischen") { restart() }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            QuietButton(title: "Neu mischen") { restart() }
         }
     }
 

@@ -52,9 +52,7 @@ struct MostLikelyView: View {
                 .font(BeerStatsFont.statLabel)
                 .foregroundStyle(BeerStatsColor.textSecondary)
             Spacer()
-            Button("Neu mischen") { restart() }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            QuietButton(title: "Neu mischen") { restart() }
         }
     }
 
@@ -113,21 +111,45 @@ struct MostLikelyView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .frame(height: 52)
         case .reveal:
-            PrimaryButton(title: "Nächste Karte", systemImage: "arrow.right") { advance() }
+            VStack(spacing: 6) {
+                PrimaryButton(title: "Nächste Karte", systemImage: "arrow.right") { advance() }
+
+                // Erst nach dem Zeigen: Vorher kennt die Runde die Karte
+                // noch nicht, und eine Karte wegzudaumen, die niemand
+                // gelesen hat, ergibt keinen Sinn. Eigene Karten tragen
+                // ihn nicht – die stehen unter "Eigene Karten".
+                if let card = currentCard, !card.isCustom {
+                    HideCardButton(cardKey: card.text, deck: .mostLikely)
+                }
+            }
         }
     }
 
+    /// Zwei Enden, die verschieden aussehen muessen: Stapel durchgespielt –
+    /// oder gar keine Karte uebrig, weil alles weggedaumt ist. Im zweiten
+    /// Fall hilft "Neu mischen" nicht, und wer nicht weiss, wo das zurueck
+    /// geht, sitzt vor einem Spiel ohne Inhalt.
     private var finishedView: some View {
         VStack(spacing: 18) {
-            Text("🏁").font(.system(size: 60))
-            Text("Stapel durch")
+            Text(deck.isEmpty ? "🫥" : "🏁").font(.system(size: 60))
+
+            Text(deck.isEmpty ? "Keine Karte übrig" : "Stapel durch")
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
-            Text("\(deck.count) Karten gespielt.")
+
+            Text(deck.isEmpty
+                 ? "Alle Karten sind ausgeblendet. Unter „Eigene Karten“ im Hauptmenü lassen sie sich wieder anzeigen."
+                 : "\(deck.count) Karten gespielt.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
             Spacer(minLength: 0)
-            PrimaryButton(title: "Neu mischen", systemImage: "shuffle") { restart() }
+
+            if !deck.isEmpty {
+                PrimaryButton(title: "Neu mischen", systemImage: "shuffle") { restart() }
+            }
         }
     }
 

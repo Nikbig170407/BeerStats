@@ -243,11 +243,9 @@ struct SchockenView: View {
 
             PrimaryButton(title: "Nächste Runde", systemImage: "arrow.counterclockwise") { startRound() }
 
-            Button("Spielerzahl ändern") {
+            QuietButton(title: "Spielerzahl ändern") {
                 withAnimation(AppAnimation.standard) { phase = .setup }
             }
-            .font(BeerStatsFont.caption)
-            .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
 

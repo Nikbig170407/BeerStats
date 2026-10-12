@@ -175,12 +175,10 @@ struct TournamentView: View {
             }
             .buttonStyle(PressableButtonStyle())
 
-            Button("Gespielt – jetzt werten") {
+            QuietButton(title: "Gespielt – jetzt werten") {
                 withAnimation(AppAnimation.standard) { phase = .scoring(index: index) }
                 HapticManager.lightImpact()
             }
-            .font(BeerStatsFont.caption)
-            .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
 
@@ -229,11 +227,9 @@ struct TournamentView: View {
             // Nicht jede Runde geht auf: Bei manchen Spielen verliert
             // niemand eindeutig, und dann soll man weiterkommen, ohne
             // jemandem einen Strich anzuhängen.
-            Button("Unentschieden – überspringen") {
+            QuietButton(title: "Unentschieden – überspringen") {
                 advance(after: index)
             }
-            .font(BeerStatsFont.caption)
-            .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
 

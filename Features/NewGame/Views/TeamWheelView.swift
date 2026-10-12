@@ -173,9 +173,7 @@ struct TeamWheelView: View {
                     // Zurück zur Aufstellung, wo die Auslosung jetzt steht.
                     dismiss()
                 }
-                Button("Nochmal auslosen") { reset() }
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+                QuietButton(title: "Nochmal auslosen") { reset() }
             } else {
                 PrimaryButton(title: isSpinning ? "Dreht…" : "Drehen", systemImage: "arrow.triangle.2.circlepath") {
                     spin()

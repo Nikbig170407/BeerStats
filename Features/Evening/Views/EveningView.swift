@@ -231,13 +231,11 @@ struct EveningView: View {
                 SoundManager.play(.victory)
             }
 
-            Button("Abend verwerfen") {
+            QuietButton(title: "Abend verwerfen") {
                 EveningLog.discard()
                 evening = nil
                 chosen = []
             }
-            .font(BeerStatsFont.caption)
-            .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
 

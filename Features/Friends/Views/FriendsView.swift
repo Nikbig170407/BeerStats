@@ -121,14 +121,20 @@ struct FriendsView: View {
                         .foregroundStyle(BeerStatsColor.textSecondary)
                 }
                 Spacer()
-                Button("Hinzufügen") {
+                Button {
                     Task { await viewModel.sendRequest(to: user) }
+                } label: {
+                    // Rahmen und Trefferflaeche liegen im Label, nicht
+                    // daneben: Sonst reagiert nur die Schrift, obwohl die
+                    // Pille sichtbar groesser ist (Lessons Learned Nr. 4).
+                    Text("Hinzufügen")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textOnAccent)
+                        .padding(.horizontal, 14)
+                        .frame(minHeight: 40)
+                        .background(BeerStatsColor.accent, in: Capsule())
+                        .contentShape(Capsule())
                 }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textOnAccent)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(BeerStatsColor.accent, in: Capsule())
                 .buttonStyle(PressableButtonStyle())
             }
         }

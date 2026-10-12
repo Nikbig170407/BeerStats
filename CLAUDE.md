@@ -221,6 +221,8 @@ den nachgespielten Wurf-Log alter Partien.
 - **Erinnerung an die Sicherung**: die Karte sagt, wann zuletzt gesichert
   wurde, und wird nach vier Wochen deutlich.
 - **Anleitung je Partyspiel**: Fragezeichen auf jeder Spielkachel.
+- **Karten aussortieren und eigene dazu** – jetzt in vier Stapeln: Ich hab
+  noch nie, Wahrheit oder Pflicht, **Wer von uns?** und Beerpong Extreme.
 - **Nicht gespeicherte Würfe lassen sich nachreichen** – siehe unten.
 - **Die Partyspiele sagen Namen statt Nummern**, sobald jemand am Tisch
   steht – auch ohne laufenden Abend (`PlayerNames`, Reihenfolge unten).
@@ -312,10 +314,13 @@ den nachgespielten Wurf-Log alter Partien.
 
 - **Einstellungen vor dem Spiel gehören in `GameSetupScreen`**, die Auswahl
   aus wenigen Werten in `ChoiceRow`, eine Spielkachel in `PartyGameCard`,
-  die Zeile „Wie lange / Strafe" in `TermRow`. Alles geteilte Bausteine wie
-  `PlayerCountStepper` und `HandoffPanel` – wer einen eigenen baut, lässt
-  ihn anders aussehen. `TermRow` war die zweite Kopie, `PartyGameCard` die
-  zweite Stelle, an der man das Vermerken im Abend vergessen kann.
+  die Zeile „Wie lange / Strafe" in `TermRow`, die leise Nebenhandlung
+  („Neu mischen", „Spielerzahl ändern", „Rückgängig") in `QuietButton`.
+  Alles geteilte Bausteine wie `PlayerCountStepper` und `HandoffPanel` –
+  wer einen eigenen baut, lässt ihn anders aussehen. `TermRow` war die
+  zweite Kopie, `PartyGameCard` die zweite Stelle, an der man das Vermerken
+  im Abend vergessen kann, `QuietButton` stand vierundzwanzigmal da – und
+  jedes Mal ohne Trefferfläche (siehe Lessons Learned Nr. 12).
 
 - **Anleitung und Untertitel stehen im Katalog**, nicht im Spiel
   (`PartyGame.howToPlay`). Im Spiel stünden sie in zwanzig verschiedenen
@@ -454,6 +459,32 @@ Blaze), Live Activity für den Sperrbildschirm, Ergebnis als Bild teilen.
     erfindet, kostet den Nutzer Vertrauen – und beim Umsetzen fällt es
     ohnehin auf.
 
+11. **Ein `Bool` im geteilten Baustein merkt sich die letzte Karte.** Der
+    Daumen nach unten („Nie wieder") funktionierte pro Spielstart genau
+    einmal. Die Ursache ist keine Eigenheit des Knopfes, sondern von
+    SwiftUI: Eine Ansicht wird an ihrer **Stelle im Baum** erkannt, nicht
+    an ihren Werten. Neben dem Weiter-Knopf steht derselbe
+    `HideCardButton` für jede Karte – sein `@State wurdeAusgeblendet`
+    blieb deshalb nach der ersten Karte stehen, und ab da war der Knopf
+    beschriftet wie benutzt und per `disabled` tot. Am Tisch sieht das
+    aus wie ein kaputter Knopf, und kein Test hätte es gefunden: Der
+    Zustand lebt in der Ansicht, nicht in der Rechnung. Die Lösung ist
+    nicht `.id(…)` an jeder Aufrufstelle – das vergisst die nächste –,
+    sondern **den Schlüssel merken statt ein Ja/Nein**: Passt der
+    gemerkte Schlüssel nicht zur Karte, ist der Knopf von selbst wieder
+    da. Wer in einem geteilten Baustein `@State` braucht, speichert
+    deshalb das, worauf er sich bezieht (so wie `CupFillGauge` es mit
+    `onChange` tut), nie ein nacktes `Bool`.
+
+12. **„Reagiert nicht" heißt oft „wurde nicht getroffen".** Vierundzwanzig
+    leise Knöpfe standen als `Button("…")` mit Kleinschrift und grauer
+    Farbe im Projekt – ohne Innenabstand, ohne `contentShape`, ohne
+    Druck-Rückmeldung. Tastbar war damit nur die Schrift selbst, rund
+    fünfzehn Punkte hoch gegen Apples vierundvierzig; getroffen wird am
+    Tisch aber nicht gezielt. Das ist Nr. 4 in seiner leisen Form, und
+    es trifft ausgerechnet die wichtigen Nebenhandlungen – auch
+    „Rückgängig" im Sieger-Screen. Liegt jetzt in `QuietButton`.
+
 ---
 
 ## 8. Arbeitsweise
@@ -528,6 +559,12 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   getestet, die Datenlage nicht – mit wenigen Partien kann es gut sein, dass
   nur zwei oder drei Fragen übrig bleiben. Und: Landet die Strafe beim
   Richtigen, wenn ein Abend läuft?
+- **Knöpfe vom 12. Oktober**: Der Daumen nach unten muss jetzt bei **jeder**
+  Karte gehen, nicht nur bei der ersten – zweimal hintereinander in „Ich hab
+  noch nie" ausprobieren. Dazu „Wer von uns?", das ihn neu hat, und einmal
+  quer durch die Spiele die leisen Knöpfe („Neu mischen", „Spielerzahl
+  ändern"): Sie sind jetzt höher, also auch im Layout zu prüfen. Und die
+  Stapelwahl unter „Eigene Karten" hat vier Kacheln und bricht um.
 - **Widget-Extension:** Erst der Sideload zeigt, ob die `.ipa` installierbar
   bleibt (Lessons Learned Nr. 5).
 - **Ohne Netz:** Flugmodus, App killen, ganze Partie spielen, Netz an. Der

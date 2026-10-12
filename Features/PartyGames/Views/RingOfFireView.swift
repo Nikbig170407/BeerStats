@@ -319,9 +319,7 @@ struct RingOfFireView: View {
                     }
                 }
 
-                Button("Alles zurücksetzen") { clearRoles() }
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+                QuietButton(title: "Alles zurücksetzen") { clearRoles() }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
@@ -368,12 +366,10 @@ struct RingOfFireView: View {
 
             // Aufschreiben ist freiwillig: Am Tisch wird die Regel ohnehin
             // ausgesprochen, und ein Pflichtfeld haelt das Spiel auf.
-            Button("Ohne Notiz weiter") {
+            QuietButton(title: "Ohne Notiz weiter") {
                 ruleDraft = ""
                 isAskingForRule = false
             }
-            .font(BeerStatsFont.caption)
-            .foregroundStyle(BeerStatsColor.textSecondary)
 
             Spacer(minLength: 0)
         }

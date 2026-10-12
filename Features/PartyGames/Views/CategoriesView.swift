@@ -134,9 +134,7 @@ struct CategoriesView: View {
         case .ready:
             VStack(spacing: 10) {
                 PrimaryButton(title: "Los", systemImage: "play.fill") { startTurn() }
-                Button("Andere Kategorie") { newCategory() }
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+                QuietButton(title: "Andere Kategorie") { newCategory() }
             }
 
         case .running:

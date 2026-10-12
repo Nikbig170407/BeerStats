@@ -269,11 +269,9 @@ struct MaexchenView: View {
                 startRound(firstPlayer: loser)
             }
 
-            Button("Spielerzahl ändern") {
+            QuietButton(title: "Spielerzahl ändern") {
                 withAnimation(AppAnimation.standard) { phase = .setup }
             }
-            .font(BeerStatsFont.caption)
-            .foregroundStyle(BeerStatsColor.textSecondary)
         }
     }
 

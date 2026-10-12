@@ -198,9 +198,7 @@ struct NeverHaveIEverView: View {
                 .font(BeerStatsFont.statLabel)
                 .foregroundStyle(BeerStatsColor.textSecondary)
             Spacer()
-            Button("Neu mischen") { start() }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            QuietButton(title: "Neu mischen") { start() }
         }
     }
 
@@ -307,9 +305,7 @@ struct NeverHaveIEverView: View {
             Spacer(minLength: 0)
 
             PrimaryButton(title: "Neu mischen", systemImage: "shuffle") { start() }
-            Button("Einstellungen ändern") { hasStarted = false }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            QuietButton(title: "Einstellungen ändern") { hasStarted = false }
         }
     }
 

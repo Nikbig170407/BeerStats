@@ -162,9 +162,7 @@ struct ResumePromptView: View {
             .buttonStyle(PressableButtonStyle())
             .disabled(isCancelling)
 
-            Button("Später entscheiden") { dismiss() }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            QuietButton(title: "Später entscheiden") { dismiss() }
                 .padding(.top, 2)
         }
     }

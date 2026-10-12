@@ -139,9 +139,7 @@ struct ForbiddenWordsView: View {
                 SoundManager.play(.victory)
             }
 
-            Button("Neu verteilen") { startDealing() }
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            QuietButton(title: "Neu verteilen") { startDealing() }
         }
     }
 
