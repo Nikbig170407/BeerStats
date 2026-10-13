@@ -68,9 +68,20 @@ enum DrinkIntensity: String, CaseIterable, Identifiable {
 
     // MARK: - Persistenz
 
+    /// Der Schluessel der Vorgabe. Heisst weiter so, wie er hiess: Darunter
+    /// liegt die Haerte, die der Nutzer schon gewaehlt hat, und die soll
+    /// seine Vorgabe bleiben statt beim Update auf "Normal" zu springen.
     static let storageKey = "partyGames.drinkIntensity"
 
-    static var current: DrinkIntensity {
+    /// Die Vorgabe fuer Spiele, bei denen noch nie etwas eingestellt wurde.
+    ///
+    /// Stand bis Oktober 2026 ueber den Partyspielen im Hauptmenue und galt
+    /// fuer alle. Das war der Fehler: Mäxchen wird anders getrunken als
+    /// Trink-Roulette, und wer das umstellen wollte, musste raus aus dem
+    /// Spiel, eine Ebene hoch und wieder rein. Jetzt steht die Haerte im
+    /// Vorspann des Spiels – hier steht nur noch, womit ein Spiel anfaengt,
+    /// das man noch nie eingestellt hat.
+    static var standard: DrinkIntensity {
         get {
             guard let raw = UserDefaults.standard.string(forKey: storageKey),
                   let value = DrinkIntensity(rawValue: raw)
@@ -80,6 +91,53 @@ enum DrinkIntensity: String, CaseIterable, Identifiable {
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: storageKey)
         }
+    }
+
+    private static func key(for game: PartyGame) -> String {
+        "\(storageKey).\(game.rawValue)"
+    }
+
+    /// Die Haerte EINES Spiels. Faellt auf die Vorgabe zurueck, solange
+    /// dieses Spiel nie eingestellt wurde.
+    static func stored(for game: PartyGame) -> DrinkIntensity {
+        guard let raw = UserDefaults.standard.string(forKey: key(for: game)),
+              let value = DrinkIntensity(rawValue: raw)
+        else { return standard }
+        return value
+    }
+
+    static func store(_ value: DrinkIntensity, for game: PartyGame) {
+        UserDefaults.standard.set(value.rawValue, forKey: key(for: game))
+    }
+
+    // MARK: - Was gerade gilt
+
+    /// Die Haerte des gerade geoeffneten Spiels – nur im Speicher, nicht in
+    /// UserDefaults.
+    ///
+    /// Bewusst fluechtig: Sie gehoert zum offenen Screen, nicht zum Geraet.
+    /// Bliebe sie gespeichert, liefe Beerpong Extreme nach einer harten
+    /// Runde Schocken ploetzlich auch hart – ohne dass das irgendwo stuende.
+    private static var active: DrinkIntensity?
+
+    /// Die Haerte, in der eine Menge gerade ausformuliert wird.
+    ///
+    /// Ohne geoeffnetes Partyspiel ist das die Vorgabe. Genau das braucht
+    /// Beerpong Extreme, das seine Haerte im Neues-Spiel-Screen stellt.
+    static var current: DrinkIntensity {
+        get { active ?? standard }
+        set { active = newValue }
+    }
+
+    /// Beim Betreten eines Spiels: ab jetzt gilt dessen Haerte.
+    static func activate(for game: PartyGame) {
+        active = stored(for: game)
+    }
+
+    /// Beim Verlassen: zurueck zur Vorgabe. Muss sein, sonst faerbt das
+    /// letzte Partyspiel auf alles ab, was danach Mengen ausformuliert.
+    static func clearActive() {
+        active = nil
     }
 }
 

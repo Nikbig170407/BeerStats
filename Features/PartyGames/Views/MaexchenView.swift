@@ -77,6 +77,8 @@ struct MaexchenView: View {
 
             PlayerCountStepper(count: $playerCount, range: 2...12, tint: BeerStatsColor.accentSecondary)
 
+            DrinkIntensityPicker(game: .maexchen)
+
             PrimaryButton(title: "Los geht's", systemImage: "play.fill") { startRound(firstPlayer: 0) }
         }
     }

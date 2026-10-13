@@ -70,6 +70,8 @@ struct ForbiddenWordsView: View {
 
             PlayerCountStepper(count: $playerCount, range: 2...12, tint: BeerStatsColor.warning)
 
+            DrinkIntensityPicker(game: .forbiddenWords)
+
             PrimaryButton(title: "Wörter verteilen", systemImage: "square.and.pencil") { startDealing() }
         }
     }

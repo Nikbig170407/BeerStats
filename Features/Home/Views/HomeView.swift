@@ -43,9 +43,11 @@ struct HomeView: View {
                     header
                     eveningCard
                     beerpongCard
-                    // Die Härte steht über den Partyspielen, weil sie nur für
-                    // die gilt – Beerpong hat keine Trinkregeln in der App.
-                    DrinkIntensityPicker()
+                    // Die Härte stand hier, über allen Partyspielen. Sie
+                    // steht jetzt im Vorspann jedes Spiels, das Mengen
+                    // ausspricht: Mäxchen wird anders getrunken als
+                    // Trink-Roulette, und von hier oben aus ist das nicht zu
+                    // treffen.
                     partySection
                     customCardsLink
                 }

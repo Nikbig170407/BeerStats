@@ -213,7 +213,7 @@ struct SettingsView: View {
                 isOn: $shotsEnabled
             )
 
-            Text("Gilt für alle Partyspiele. Dieselbe Einstellung steht auch im Hauptmenü – sie wird am Tisch entschieden, nicht hier.")
+            Text("Die Härte stellst du im Vorspann jedes Spiels ein – hier steht nur, womit ein Spiel anfängt, das du noch nie eingestellt hast. „Mit Shots“ gilt überall.")
                 .font(.scaled(10, weight: .medium, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

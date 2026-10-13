@@ -84,6 +84,8 @@ struct SpyView: View {
 
             PlayerCountStepper(count: $playerCount, range: 3...12, tint: BeerStatsColor.accentSecondary)
 
+            DrinkIntensityPicker(game: .spy)
+
             PrimaryButton(title: "Rollen verteilen", systemImage: "person.2.fill") { startDealing() }
         }
     }

@@ -292,6 +292,52 @@ enum PartyGame: String, CaseIterable, Identifiable {
         }
     }
 
+    // MARK: - Haerte
+
+    /// Wo die Trinkhaerte dieses Spiels eingestellt wird.
+    ///
+    /// Sie stand lange EINMAL ueber den Partyspielen und galt fuer alle. Am
+    /// Tisch ist sie aber eine Eigenschaft der Runde: Mäxchen wird anders
+    /// getrunken als Trink-Roulette. Seit Oktober 2026 steht sie deshalb im
+    /// Vorspann des Spiels – und welches Spiel schon einen hat, weiss nur
+    /// der Katalog.
+    enum IntensityStep {
+        /// Das Spiel spricht keine Mengen aus – es gibt nichts einzustellen.
+        case notNeeded
+        /// Das Spiel fragt vorher ohnehin etwas; die Haerte steht dort mit
+        /// drin. Ein eigener Screen davor waeren zwei fast gleiche
+        /// Vorspaenne hintereinander.
+        case inSetup
+        /// Das Spiel fing bisher sofort an und bekommt einen Vorspann nur
+        /// fuer die Haerte (`IntensityGate`).
+        case ownScreen
+    }
+
+    var intensityStep: IntensityStep {
+        switch self {
+        // Kein Schluck wird hier beziffert: Bombe und Reaktionsduell sagen
+        // "du trinkst", und "Wer würde eher?" verteilt nach Fingern.
+        case .bombPass, .reactionDuel, .mostLikely:
+            return .notNeeded
+
+        // Diese sieben fragen vorher schon etwas – Spielerzahl, Kartenzahl,
+        // Stufen, Kategorie. Die Haerte steht in demselben Vorspann.
+        case .ringOfFire, .neverHaveIEver, .schocken, .maexchen, .spy,
+             .headsUp, .forbiddenWords:
+            return .inSetup
+
+        // Alle anderen fangen sofort an. Pferderennen und Wahrheit oder
+        // Pflicht stehen bewusst hier und nicht oben: Was dort zuerst
+        // kommt, ist schon das Spiel (die Bahn, die Wahl) und kein
+        // Einstellungs-Screen – und beide sprechen ihre Mengen bereits dort
+        // aus, die Haerte muss also vorher stehen.
+        case .busRide, .twoTruths, .countTo21, .estimation, .categories,
+             .drinkRoulette, .drinkBingo, .knowYourPeople, .horseRace,
+             .truthOrDare:
+            return .ownScreen
+        }
+    }
+
     // MARK: - Ziel
 
     /// Bewusst `AnyView` statt `@ViewBuilder`.
@@ -301,7 +347,31 @@ enum PartyGame: String, CaseIterable, Identifiable {
     /// sich zwar uebersetzen, treibt die Uebersetzungszeit aber steil hoch –
     /// und hier gibt es nichts zu gewinnen: Das Ziel wird genau einmal
     /// erzeugt, wenn jemand die Karte antippt.
+    /// Der Weg ins Spiel – samt Haerte.
+    ///
+    /// Das Setzen der geltenden Haerte haengt hier und nicht an der
+    /// Spielkachel, weil es zwei Wege ins Spiel gibt: die Kachel und das
+    /// Turnier. An der Kachel allein waere ein ueber das Turnier
+    /// gestartetes Spiel in der Vorgabe gelaufen, obwohl im Vorspann die
+    /// eigene Haerte dasteht – ein Screen, der etwas anderes behauptet als
+    /// das Spiel tut.
     var destination: AnyView {
+        // `screen` statt `destination` im Inneren: Sonst ruft sich das Tor
+        // selbst auf.
+        let ziel: AnyView = intensityStep == .ownScreen
+            ? AnyView(IntensityGate(game: self) { screen })
+            : screen
+
+        return AnyView(
+            ziel
+                .onAppear { DrinkIntensity.activate(for: self) }
+                // Zurueck zur Vorgabe. Ohne das liefe Beerpong Extreme nach
+                // einer harten Runde Schocken auch hart.
+                .onDisappear { DrinkIntensity.clearActive() }
+        )
+    }
+
+    private var screen: AnyView {
         switch self {
         case .ringOfFire: return AnyView(RingOfFireView())
         case .horseRace: return AnyView(HorseRaceView())

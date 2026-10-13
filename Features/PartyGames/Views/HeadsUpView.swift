@@ -38,7 +38,11 @@ struct HeadsUpView: View {
             AmbientBackdrop(glow: BeerStatsColor.accent)
 
             switch phase {
-            case .setup: setupView.padding(24)
+            case .setup:
+                ScrollView {
+                    setupView.padding(24)
+                }
+                .verticalScrollOnly()
             case .playing: playingView
             case .finished: finishedView.padding(24)
             }
@@ -68,6 +72,8 @@ struct HeadsUpView: View {
                     categoryRow(option)
                 }
             }
+
+            DrinkIntensityPicker(game: .headsUp)
 
             Spacer(minLength: 0)
 

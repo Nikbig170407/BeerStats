@@ -77,6 +77,8 @@ struct SchockenView: View {
 
             PlayerCountStepper(count: $playerCount, range: 2...10, tint: BeerStatsColor.warning)
 
+            DrinkIntensityPicker(game: .schocken)
+
             rankingCard
 
             PrimaryButton(title: "Runde starten", systemImage: "play.fill") { startRound() }

@@ -106,6 +106,8 @@ struct RingOfFireView: View {
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            DrinkIntensityPicker(game: .ringOfFire)
         }
     }
 

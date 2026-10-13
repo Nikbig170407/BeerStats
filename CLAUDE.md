@@ -207,7 +207,8 @@ den nachgespielten Wurf-Log alter Partien.
   zwischendurch, Läuft nebenher – dahinter die Spiele. Darüber „Zuletzt
   gespielt". Oben nur noch zwei Symbole: Spieler und Einstellungen.
 - **Einstellungs-Screen**: Darstellung (Farbschema, Hintergrund, Kanten),
-  Ton, Sprachansage, Härte & Shots, Entwicklereinstellungen, Abmelden.
+  Ton, Sprachansage, Shots, Härte-Vorgabe, Entwicklereinstellungen,
+  Abmelden.
 - **Darstellung wählbar**: vier Farbschemata (`AppPalette` – färbt Akzente
   UND Hintergrund), Hintergrund in drei Stufen, Neon-Kanten abschaltbar
   (`AppAppearance`). Kein Hell-Modus, siehe unten.
@@ -391,10 +392,30 @@ den nachgespielten Wurf-Log alter Partien.
   eigenen Zähler, nicht `UserStatistics`.
 - **Trinkmengen niemals als Zahl in den Text schreiben.** Sie laufen über
   `DrinkAmount` (`.sips(3)`, `.shot`) und werden erst beim Anzeigen in der
-  gewählten Härte ausformuliert (`DrinkIntensity`, gespeichert in
-  UserDefaults, gilt für alle Partyspiele). Eine fest eingetippte Menge
-  ignoriert die Einstellung stillschweigend – und genau so etwas fällt erst
-  am Tisch auf.
+  geltenden Härte ausformuliert. Eine fest eingetippte Menge ignoriert die
+  Einstellung stillschweigend – und genau so etwas fällt erst am Tisch auf.
+
+- **Die Härte gehört zum Spiel, nicht zum Gerät.** Sie stand bis Oktober
+  2026 einmal über den Partyspielen und galt für alle. Am Tisch ist sie
+  aber eine Eigenschaft der Runde: Mäxchen wird anders getrunken als
+  Trink-Roulette, und von weit oben im Hauptmenü aus stellt sie niemand um.
+  Jetzt gilt:
+  - `DrinkIntensity.standard` ist die **Vorgabe** (Einstellungen, alter
+    UserDefaults-Schlüssel – die Wahl des Nutzers bleibt also stehen).
+    Beerpong Extreme stellt sie im Neues-Spiel-Screen.
+  - `DrinkIntensity.stored(for: game)` ist die Härte **eines Spiels**,
+    Rückfall auf die Vorgabe.
+  - `DrinkIntensity.current` ist, was **gerade** gilt – nur im Speicher.
+    `PartyGame.destination` setzt es beim Betreten und nimmt es beim
+    Verlassen zurück. Das Zurücknehmen ist Pflicht: sonst läuft Beerpong
+    Extreme nach einer harten Runde Schocken auch hart, und nichts auf dem
+    Bildschirm sagt, warum.
+  - **Wo** gewählt wird, steht im Katalog (`PartyGame.intensityStep`):
+    sieben Spiele fragen vorher ohnehin etwas und haben die Härte in
+    demselben Vorspann, zehn bekommen einen eigenen (`IntensityGate`), drei
+    sprechen keine Mengen aus. Ein neues Spiel wird an dieser einen Stelle
+    eingeordnet – wer es vergisst, hat ein Spiel ohne Härte-Wahl, und ein
+    Test hält das fest.
 
 **Bewusst dormant:** Das Freundesystem (`Features/Friends/`) und
 `LobbyView` sind gebaut, aber nicht verlinkt. Sie sind der Weg für später,
@@ -570,6 +591,13 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   getestet, die Datenlage nicht – mit wenigen Partien kann es gut sein, dass
   nur zwei oder drei Fragen übrig bleiben. Und: Landet die Strafe beim
   Richtigen, wenn ein Abend läuft?
+- **Härte je Spiel (13. Oktober)**: In Schocken, Mäxchen, Spion, Verbotene
+  Wörter, Wer bin ich?, Ich hab noch nie und Ring of Fire steht sie im
+  Vorspann, den es schon gab – passt das Layout noch, auch mit großer
+  Schrift? Die anderen zehn haben jetzt einen eigenen Vorspann davor; der
+  ist neu und nie gelaufen. Und der eigentliche Test: In einem Spiel hart
+  einstellen, zurück, Beerpong starten – die Extreme-Karten müssen wieder
+  in der Vorgabe dastehen.
 - **Knöpfe vom 12. Oktober**: Der Daumen nach unten muss jetzt bei **jeder**
   Karte gehen, nicht nur bei der ersten – zweimal hintereinander in „Ich hab
   noch nie" ausprobieren. Dazu „Wer würde eher?", das ihn neu hat, und einmal

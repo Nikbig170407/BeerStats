@@ -99,7 +99,17 @@ struct NeverHaveIEverView: View {
 
     // MARK: - Vorbereitung
 
+    /// Scrollbar, seit die Haerte mit dazu gehoert: Drei Stufen, die
+    /// Strafen-Zeile und die Haerte sind mehr, als auf ein kleines Geraet
+    /// mit grosser Schrift passt.
     private var setup: some View {
+        ScrollView {
+            setupContent
+        }
+        .verticalScrollOnly()
+    }
+
+    private var setupContent: some View {
         VStack(spacing: 18) {
             Text("🍻")
                 .font(.system(size: 56))
@@ -115,6 +125,8 @@ struct NeverHaveIEverView: View {
                 }
                 penaltyToggle
             }
+
+            DrinkIntensityPicker(game: .neverHaveIEver)
 
             Spacer(minLength: 0)
 
