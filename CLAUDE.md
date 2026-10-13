@@ -419,10 +419,13 @@ den nachgespielten Wurf-Log alter Partien.
     Bildschirm sagt, warum.
   - **Wo** gewählt wird, steht im Katalog (`PartyGame.intensityStep`):
     sieben Spiele fragen vorher ohnehin etwas und haben die Härte in
-    demselben Vorspann, elf bekommen einen eigenen (`IntensityGate`), zwei
-    sprechen keine Mengen aus (Bombe, Reaktionsduell – sie sagen „du
-    trinkst" und lassen die Menge der Runde; eine Härte wäre dort eine
-    Einstellung ohne Wirkung, siehe Lessons Learned Nr. 8). Ein neues Spiel wird an dieser einen Stelle
+    demselben Vorspann, dreizehn bekommen einen eigenen (`IntensityGate`).
+    **Jedes** Partyspiel nennt inzwischen eine Menge und hat damit eine
+    Härte – Bombe, Reaktionsduell und „Wer würde eher?" sagten bis zum
+    13. Oktober bloßes „du trinkst", und was die Runde dann aushandelte,
+    hatte mit der eingestellten Härte nichts zu tun. Dass ein neues Spiel
+    eingeordnet wird, erzwingt der Compiler: `intensityStep` ist ein
+    vollständiges `switch` ohne `default`. Ein neues Spiel wird an dieser einen Stelle
     eingeordnet – wer es vergisst, hat ein Spiel ohne Härte-Wahl, und ein
     Test hält das fest.
 
@@ -604,9 +607,12 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   jetzt als „5 Spiele" in der Unterzeile statt fett und farbig am rechten
   Rand – dort sah sie aus wie eine ungelesene Nachricht. „Zuletzt gespielt"
   ist weg. Passt das Ganze noch, auch mit großer Schrift?
-- **„Wer würde eher?" sagt jetzt eine Menge** (13. Oktober): Nach dem Zeigen
-  steht „Die meisten Finger: 3 Schlücke" da, und deshalb hat das Spiel jetzt
-  auch eine Härte. Fühlt sich die Menge am Tisch richtig an?
+- **Drei Spiele sagen jetzt eine Menge** (13. Oktober) und haben deshalb
+  eine Härte: „Wer würde eher?" („Die meisten Finger: 3 Schlücke"), Bombe
+  (4 Schlücke für den, der drauf sitzen bleibt) und Reaktionsduell
+  (2 Schlücke für den Verlierer, 4 für den Früh-Tipp – vorschnell tippen
+  ist ein Schummelversuch und soll mehr kosten als langsam sein). Die
+  Zahlen sind gesetzt, nicht erprobt: Fühlen sie sich am Tisch richtig an?
 - **Härte je Spiel (13. Oktober)**: In Schocken, Mäxchen, Spion, Verbotene
   Wörter, Wer bin ich?, Ich hab noch nie und Ring of Fire steht sie im
   Vorspann, den es schon gab – passt das Layout noch, auch mit großer

@@ -126,21 +126,34 @@ final class DrinkIntensityTests: XCTestCase {
 
     // MARK: - Katalog
 
-    /// Jedes Spiel, das eine Haerte braucht, muss auch sagen, wo sie
-    /// eingestellt wird – sonst gibt es sie nirgends. Umgekehrt darf ein
-    /// Spiel ohne Mengen keinen Vorspann dafuer bekommen.
-    func testEveryGameSaysWhereItsIntensityIsSet() {
-        let ohneMengen: Set<PartyGame> = [.bombPass, .reactionDuel]
-
-        for game in PartyGame.allCases {
-            if ohneMengen.contains(game) {
-                XCTAssertEqual(game.intensityStep, .notNeeded, "\(game.title)")
-            } else {
-                XCTAssertNotEqual(
-                    game.intensityStep, .notNeeded,
-                    "\(game.title) spricht Mengen aus, fragt aber nicht nach der Härte."
-                )
+    /// Dass jedes Spiel sagt, WO seine Haerte eingestellt wird, erzwingt
+    /// seit dem 13. Oktober der Compiler: `intensityStep` ist ein
+    /// vollstaendiges `switch` ohne `default`, und beide Faelle fuehren zu
+    /// einer Auswahl. Ein neuer Fall in der Aufzaehlung uebersetzt sich
+    /// also erst, wenn er eingeordnet ist.
+    ///
+    /// Was der Compiler nicht sieht: ob die Haerten der Spiele getrennt
+    /// bleiben. Jedes Spiel schreibt unter seinen eigenen Schluessel – ein
+    /// Tippfehler darin wuerde zwei Spiele zusammenlegen, und am Tisch
+    /// faellt das erst auf, wenn eine Runde ploetzlich anders getrunken
+    /// wird als eingestellt.
+    func testEveryGameKeepsItsOwnIntensity() {
+        let haerten = DrinkIntensity.allCases
+        let erwartet = Dictionary(
+            uniqueKeysWithValues: PartyGame.allCases.enumerated().map { index, game in
+                (game, haerten[index % haerten.count])
             }
+        )
+
+        for (game, haerte) in erwartet {
+            DrinkIntensity.store(haerte, for: game)
+        }
+
+        for (game, haerte) in erwartet {
+            XCTAssertEqual(
+                DrinkIntensity.stored(for: game), haerte,
+                "\(game.title) liest die Härte eines anderen Spiels."
+            )
         }
     }
 }

@@ -301,26 +301,24 @@ enum PartyGame: String, CaseIterable, Identifiable {
     /// getrunken als Trink-Roulette. Seit Oktober 2026 steht sie deshalb im
     /// Vorspann des Spiels – und welches Spiel schon einen hat, weiss nur
     /// der Katalog.
+    ///
+    /// Jedes Partyspiel nennt inzwischen eine Menge, deshalb hat auch jedes
+    /// eine Haerte – es gibt nur zwei Antworten, wo sie steht. Bombe und
+    /// Reaktionsduell sagten bis zum 13. Oktober blosses "du trinkst"; was
+    /// die Runde dann aushandelte, hatte mit der eingestellten Haerte
+    /// nichts zu tun.
     enum IntensityStep {
-        /// Das Spiel spricht keine Mengen aus – es gibt nichts einzustellen.
-        case notNeeded
         /// Das Spiel fragt vorher ohnehin etwas; die Haerte steht dort mit
         /// drin. Ein eigener Screen davor waeren zwei fast gleiche
         /// Vorspaenne hintereinander.
         case inSetup
-        /// Das Spiel fing bisher sofort an und bekommt einen Vorspann nur
-        /// fuer die Haerte (`IntensityGate`).
+        /// Das Spiel fing sofort an und bekommt einen Vorspann nur fuer die
+        /// Haerte (`IntensityGate`).
         case ownScreen
     }
 
     var intensityStep: IntensityStep {
         switch self {
-        // Die beiden beziffern nichts: Sie sagen "du trinkst" und lassen
-        // die Menge der Runde. Eine Haerte waere hier eine Einstellung
-        // ohne Wirkung (Lessons Learned Nr. 8).
-        case .bombPass, .reactionDuel:
-            return .notNeeded
-
         // Diese sieben fragen vorher schon etwas – Spielerzahl, Kartenzahl,
         // Stufen, Kategorie. Die Haerte steht in demselben Vorspann.
         case .ringOfFire, .neverHaveIEver, .schocken, .maexchen, .spy,
@@ -334,7 +332,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // aus, die Haerte muss also vorher stehen.
         case .busRide, .twoTruths, .countTo21, .estimation, .categories,
              .drinkRoulette, .drinkBingo, .knowYourPeople, .horseRace,
-             .truthOrDare, .mostLikely:
+             .truthOrDare, .mostLikely, .bombPass, .reactionDuel:
             return .ownScreen
         }
     }

@@ -23,6 +23,15 @@ struct BombPassView: View {
     @State private var pulse = false
     @State private var tickTask: Task<Void, Never>?
 
+    /// Was es kostet, drauf sitzen zu bleiben.
+    ///
+    /// Stand bis Oktober 2026 nicht da – das Spiel sagte "trinkt" und liess
+    /// die Menge der Runde. Gut gemeint, aber am Tisch wird dann jede Runde
+    /// neu verhandelt, und die eingestellte Haerte galt hier gar nicht.
+    /// Vier Schluecke, weil das Spiel fuer zwischendurch gedacht ist und
+    /// mehrmals hintereinander laeuft.
+    private let penalty = DrinkAmount.sips(4)
+
     private enum Phase: Equatable { case idle, running, exploded }
 
     /// Spanne statt fester Dauer – eine feste Länge wäre nach zwei Runden
@@ -94,11 +103,11 @@ struct BombPassView: View {
     private var subline: String {
         switch phase {
         case .idle:
-            return "Zünden, dann das Handy reihum weitergeben. Wer es hält, wenn es knallt, trinkt."
+            return "Zünden, dann das Handy reihum weitergeben. Wer es hält, wenn es knallt, trinkt \(penalty.text)."
         case .running:
             return "Nicht zögern – die Restzeit sieht niemand."
         case .exploded:
-            return "Wer sie zuletzt in der Hand hatte, ist dran."
+            return "Wer sie zuletzt in der Hand hatte, trinkt \(penalty.text)."
         }
     }
 

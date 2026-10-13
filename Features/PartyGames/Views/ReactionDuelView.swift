@@ -33,6 +33,15 @@ struct ReactionDuelView: View {
     @State private var reactionMillis: Int?
     @State private var scores = [0, 0]
 
+    /// Was Verlieren kostet – und was der Frueh-Tipp zusaetzlich kostet.
+    ///
+    /// Bisher war der Frueh-Tipp nur mit "du verlierst sofort" bestraft.
+    /// Das ist dieselbe Strafe wie zu langsam zu sein, obwohl das eine ein
+    /// Versuch zu schummeln ist und das andere nur langsam. Jetzt kostet er
+    /// das Doppelte, und die eingestellte Haerte gilt auch hier.
+    private let penalty = DrinkAmount.sips(2)
+    private let earlyPenalty = DrinkAmount.sips(4)
+
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
@@ -113,11 +122,17 @@ struct ReactionDuelView: View {
         case .go:
             return "Tippen!"
         case .done(let winner, let tooEarly):
+            let menge = (tooEarly ? earlyPenalty : penalty).text
+
             if winner == playerIndex {
-                guard !tooEarly, let millis = reactionMillis else { return "Der andere trinkt." }
-                return "\(millis) ms – der andere trinkt."
+                guard !tooEarly, let millis = reactionMillis else {
+                    return "Der andere trinkt \(menge)."
+                }
+                return "\(millis) ms – der andere trinkt \(menge)."
             }
-            return tooEarly ? "Vorschnell getippt – du trinkst." : "Du trinkst."
+            return tooEarly
+                ? "Vorschnell getippt – du trinkst \(menge)."
+                : "Du trinkst \(menge)."
         }
     }
 
