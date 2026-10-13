@@ -42,9 +42,10 @@ struct PartyGameFolderView: View {
 
 /// Eine Spielkachel samt Weg ins Spiel.
 ///
-/// Stand vorher als zwei Funktionen in `HomeView`. Jetzt brauchen sie zwei
-/// Screens – der Ordner und „Zuletzt gespielt" –, und zwei Kopien waeren
-/// zwei Stellen, an denen man das Vermerken vergisst.
+/// Stand vorher als zwei Funktionen in `HomeView`. Als eigener Baustein,
+/// weil an der Kachel mehr haengt als ein Weg: das Fragezeichen mit der
+/// Anleitung und der Vermerk im Abend. Eine zweite Kopie waere eine
+/// zweite Stelle, an der das Vermerken fehlt.
 struct PartyGameCard: View {
 
     let game: PartyGame
@@ -57,12 +58,9 @@ struct PartyGameCard: View {
             // Vermerkt wird beim Erscheinen, nicht beim Antippen: Wer sich
             // vertippt und sofort zurückgeht, hat nicht gespielt.
             game.destination
-                .onAppear {
-                    RecentPartyGames.record(game)
-                    // Tut nichts, wenn kein Abend laeuft – deshalb steht der
-                    // Aufruf hier ohne Abfrage.
-                    EveningLog.record(partyGame: game)
-                }
+                // Tut nichts, wenn kein Abend laeuft – deshalb steht der
+                // Aufruf hier ohne Abfrage.
+                .onAppear { EveningLog.record(partyGame: game) }
         } label: {
             HStack(spacing: 16) {
                 Text(game.emoji)

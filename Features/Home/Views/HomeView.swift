@@ -19,7 +19,6 @@ struct HomeView: View {
     private let container: AppContainer
     /// Wird beim Zurueckkehren neu gelesen – UserDefaults meldet sich
     /// nicht von selbst bei SwiftUI.
-    @State private var recentGames = RecentPartyGames.games
     @State private var runningEvening = EveningLog.current
     /// Wer heute am Tisch steht. Wie oben: UserDefaults meldet sich nicht von
     /// selbst, also beim Erscheinen neu lesen.
@@ -61,7 +60,6 @@ struct HomeView: View {
             // Jedes Spiel, das Namen zeigen kann, nimmt sie sich von hier.
             .environment(\.tablePlayers, tablePlayers)
             .onAppear {
-                recentGames = RecentPartyGames.games
                 runningEvening = EveningLog.current
                 tablePlayers = TableRoster.players(from: viewModel.profiles)
                 TableRoster.remember(tablePlayers)
@@ -295,14 +293,12 @@ struct HomeView: View {
     /// Spiel eine der fünf Angaben zu vergessen.
     private var partySection: some View {
         VStack(alignment: .leading, spacing: 22) {
-            // Ein Abend spielt zwei bis drei Spiele. Die stehen deshalb oben,
-            // vor den Ordnern – sonst waere der haeufigste Weg der laengste.
-            if !recentGames.isEmpty {
-                gameGroup("ZULETZT GESPIELT") {
-                    ForEach(recentGames) { PartyGameCard(game: $0) }
-                }
-            }
-
+            // Hier stand "Zuletzt gespielt". Die Idee war, den haeufigsten
+            // Weg zu verkuerzen; tatsaechlich stand damit oben eine Liste,
+            // die sich bei jedem Aufmachen anders sortiert – und die vier
+            // Ordner, die immer gleich liegen, rutschten dafuer nach unten.
+            // Ein Weg, den man auswendig kennt, ist schneller als ein
+            // kurzer, den man erst lesen muss.
             gameGroup("SPIELE") {
                 ForEach(PartyGame.Group.allCases) { folderCard($0) }
             }
@@ -322,36 +318,46 @@ struct HomeView: View {
         NavigationLink {
             PartyGameFolderView(group: group)
         } label: {
-            HStack(spacing: 16) {
+            HStack(spacing: 18) {
                 Text(group.emoji)
-                    .font(.system(size: 30))
-                    .frame(width: 54, height: 54)
+                    .font(.system(size: 38))
+                    .frame(width: 68, height: 68)
                     .background(
                         group.tint.opacity(0.16),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                     )
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(group.label)
-                        .font(BeerStatsFont.headline)
+                        .font(.scaled(19, weight: .bold, design: .rounded))
                         .foregroundStyle(BeerStatsColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
                     Text(group.subtitle)
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.textSecondary)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    // Die Zahl stand rechts aussen, fett und in der Farbe
+                    // der Gruppe – das ist die Stelle und die Form, an der
+                    // iOS ungelesene Nachrichten anzeigt, und genau so
+                    // wurde sie gelesen. Als Satz in der Unterzeile ist es
+                    // wieder eine Angabe und keine Meldung.
+                    Text("\(group.games.count) Spiele")
+                        .font(.scaled(11, weight: .heavy, design: .rounded))
+                        .kerning(0.6)
+                        .foregroundStyle(group.tint)
+                        .monospacedDigit()
+                        .padding(.top, 2)
                 }
 
-                Spacer()
-
-                Text("\(group.games.count)")
-                    .font(.scaled(15, weight: .heavy, design: .rounded))
-                    .foregroundStyle(group.tint)
-                    .monospacedDigit()
+                Spacer(minLength: 0)
 
                 Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(BeerStatsColor.textSecondary)
             }
-            .padding(16)
+            .padding(18)
             .glassPanel()
             .neonEdge(group.tint, intensity: 0.4)
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

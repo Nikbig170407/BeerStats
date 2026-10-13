@@ -130,7 +130,7 @@ final class DrinkIntensityTests: XCTestCase {
     /// eingestellt wird – sonst gibt es sie nirgends. Umgekehrt darf ein
     /// Spiel ohne Mengen keinen Vorspann dafuer bekommen.
     func testEveryGameSaysWhereItsIntensityIsSet() {
-        let ohneMengen: Set<PartyGame> = [.bombPass, .reactionDuel, .mostLikely]
+        let ohneMengen: Set<PartyGame> = [.bombPass, .reactionDuel]
 
         for game in PartyGame.allCases {
             if ohneMengen.contains(game) {

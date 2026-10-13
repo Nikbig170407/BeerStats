@@ -204,8 +204,13 @@ den nachgespielten Wurf-Log alter Partien.
   ab drei gemeinsamen Partien. Kostet keinen zusätzlichen Lesezugriff – sie
   braucht nur die Aufstellungen, die in den Partien ohnehin stehen.
 - **Hauptmenü als vier Ordner**: Mit Karten, Raten & reden, Schnell
-  zwischendurch, Läuft nebenher – dahinter die Spiele. Darüber „Zuletzt
-  gespielt". Oben nur noch zwei Symbole: Spieler und Einstellungen.
+  zwischendurch, Läuft nebenher – dahinter die Spiele. Oben nur zwei
+  Symbole: Spieler und Einstellungen. **„Zuletzt gespielt" gibt es nicht
+  mehr** (13. Oktober): Die Idee war, den häufigsten Weg zu verkürzen;
+  tatsächlich stand oben eine Liste, die sich bei jedem Aufmachen anders
+  sortiert, und die vier Ordner – die immer gleich liegen – rutschten dafür
+  nach unten. `RecentPartyGames` ist mit entfernt, nicht nur ausgeblendet:
+  Was niemand liest, soll auch niemand schreiben.
 - **Einstellungs-Screen**: Darstellung (Farbschema, Hintergrund, Kanten),
   Ton, Sprachansage, Shots, Härte-Vorgabe, Entwicklereinstellungen,
   Abmelden.
@@ -261,16 +266,18 @@ den nachgespielten Wurf-Log alter Partien.
 - **Partyspiele stehen im Katalog `PartyGame`, nicht im Hauptmenü.**
   Titel, Emoji, Untertitel, Farbe, Gruppe und Ziel-Ansicht liegen dort
   beisammen; `HomeView` baut die Liste daraus. Ein neues Spiel ist ein
-  neuer Fall in der Aufzählung – wer es stattdessen in die View schreibt,
-  taucht in „Zuletzt gespielt" nicht auf.
+  neuer Fall in der Aufzählung – und zwar der einzige nötige Eingriff: Am
+  Katalog hängen inzwischen Ordner, Anleitung, Turnier-Eignung und die
+  Härte. Wer ein Spiel stattdessen in die View schreibt, hat es nirgends
+  davon.
 
 - **Ein Spiel umbenennen heißt: den Titel ändern, nicht den Fall.**
   „Wer würde eher?" heißt im Code weiter `mostLikely` (`MostLikelyDeck`,
   `MostLikelyView`). Der `rawValue` der Aufzählung steckt in UserDefaults –
-  in „Zuletzt gespielt", in den eigenen und in den ausgeblendeten Karten.
-  Wer ihn umbenennt, wirft diese Daten stillschweigend weg: Die Liste ist
-  leer, die eigenen Karten sind „verschwunden", und niemand sieht einen
-  Zusammenhang zur Umbenennung.
+  in den eigenen Karten, in den ausgeblendeten und in der Härte des Spiels.
+  Wer ihn umbenennt, wirft diese Daten stillschweigend weg: Die eigenen
+  Karten sind „verschwunden", die Härte steht wieder auf der Vorgabe, und
+  niemand sieht einen Zusammenhang zur Umbenennung.
 
 - **Eine neue abschaltbare Regel ist ein neuer Fall in `HouseRule`.** Titel,
   Erklärung, Kurzform für die Zusammenfassung und der `WritableKeyPath` ins
@@ -412,8 +419,10 @@ den nachgespielten Wurf-Log alter Partien.
     Bildschirm sagt, warum.
   - **Wo** gewählt wird, steht im Katalog (`PartyGame.intensityStep`):
     sieben Spiele fragen vorher ohnehin etwas und haben die Härte in
-    demselben Vorspann, zehn bekommen einen eigenen (`IntensityGate`), drei
-    sprechen keine Mengen aus. Ein neues Spiel wird an dieser einen Stelle
+    demselben Vorspann, elf bekommen einen eigenen (`IntensityGate`), zwei
+    sprechen keine Mengen aus (Bombe, Reaktionsduell – sie sagen „du
+    trinkst" und lassen die Menge der Runde; eine Härte wäre dort eine
+    Einstellung ohne Wirkung, siehe Lessons Learned Nr. 8). Ein neues Spiel wird an dieser einen Stelle
     eingeordnet – wer es vergisst, hat ein Spiel ohne Härte-Wahl, und ein
     Test hält das fest.
 
@@ -591,6 +600,13 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   getestet, die Datenlage nicht – mit wenigen Partien kann es gut sein, dass
   nur zwei oder drei Fragen übrig bleiben. Und: Landet die Strafe beim
   Richtigen, wenn ein Abend läuft?
+- **Hauptmenü vom 13. Oktober**: Die Ordner sind größer, und die Zahl steht
+  jetzt als „5 Spiele" in der Unterzeile statt fett und farbig am rechten
+  Rand – dort sah sie aus wie eine ungelesene Nachricht. „Zuletzt gespielt"
+  ist weg. Passt das Ganze noch, auch mit großer Schrift?
+- **„Wer würde eher?" sagt jetzt eine Menge** (13. Oktober): Nach dem Zeigen
+  steht „Die meisten Finger: 3 Schlücke" da, und deshalb hat das Spiel jetzt
+  auch eine Härte. Fühlt sich die Menge am Tisch richtig an?
 - **Härte je Spiel (13. Oktober)**: In Schocken, Mäxchen, Spion, Verbotene
   Wörter, Wer bin ich?, Ich hab noch nie und Ring of Fire steht sie im
   Vorspann, den es schon gab – passt das Layout noch, auch mit großer

@@ -16,7 +16,7 @@
 //  Abend ist fluechtig, gehoert einem Geraet, und jeder Schluck als
 //  Schreibzugriff waere im Spark-Tarif verschwendetes Kontingent.
 //
-//  Zweitens ist es ein statischer Speicher wie `RecentPartyGames` und kein
+//  Zweitens ist es ein statischer Speicher wie `TableRoster` und kein
 //  Dienst im AppContainer. Der Abend muss aus zwanzig Partyspiel-Ansichten
 //  erreichbar sein, die heute gar keinen Container bekommen - ihn dort
 //  durchzufaedeln waere mehr Umbau als der Abend selbst.

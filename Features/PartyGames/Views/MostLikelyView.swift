@@ -21,6 +21,15 @@ struct MostLikelyView: View {
     @State private var phase: Phase = .reading
     @State private var countTask: Task<Void, Never>?
 
+    /// Was die meisten Finger kosten.
+    ///
+    /// Stand bis Oktober 2026 nirgends: Das Spiel sagte "die meisten Finger
+    /// trinken" und liess die Menge offen. Damit war es auch das einzige
+    /// Kartenspiel ohne Haerte – es gab ja nichts zu staerken oder zu
+    /// mildern. Jetzt steht die Menge nach dem Zeigen auf dem Schirm, und
+    /// damit greift die Haerte auch hier.
+    private let penalty = DrinkAmount.sips(3)
+
     private var currentCard: MostLikelyCard? {
         deck.indices.contains(index) ? deck[index] : nil
     }
@@ -93,11 +102,17 @@ struct MostLikelyView: View {
                 .transition(.scale.combined(with: .opacity))
                 .id(value)
         case .reveal:
-            Text("ZEIGEN!")
-                .font(.scaled(34, weight: .heavy, design: .rounded))
-                .kerning(3)
-                .foregroundStyle(BeerStatsColor.success)
-                .transition(.scale.combined(with: .opacity))
+            VStack(spacing: 6) {
+                Text("ZEIGEN!")
+                    .font(.scaled(34, weight: .heavy, design: .rounded))
+                    .kerning(3)
+                    .foregroundStyle(BeerStatsColor.success)
+
+                Text("Die meisten Finger: \(penalty.text)")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .transition(.scale.combined(with: .opacity))
         }
     }
 

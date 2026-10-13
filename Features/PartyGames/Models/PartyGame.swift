@@ -315,9 +315,10 @@ enum PartyGame: String, CaseIterable, Identifiable {
 
     var intensityStep: IntensityStep {
         switch self {
-        // Kein Schluck wird hier beziffert: Bombe und Reaktionsduell sagen
-        // "du trinkst", und "Wer würde eher?" verteilt nach Fingern.
-        case .bombPass, .reactionDuel, .mostLikely:
+        // Die beiden beziffern nichts: Sie sagen "du trinkst" und lassen
+        // die Menge der Runde. Eine Haerte waere hier eine Einstellung
+        // ohne Wirkung (Lessons Learned Nr. 8).
+        case .bombPass, .reactionDuel:
             return .notNeeded
 
         // Diese sieben fragen vorher schon etwas – Spielerzahl, Kartenzahl,
@@ -333,7 +334,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // aus, die Haerte muss also vorher stehen.
         case .busRide, .twoTruths, .countTo21, .estimation, .categories,
              .drinkRoulette, .drinkBingo, .knowYourPeople, .horseRace,
-             .truthOrDare:
+             .truthOrDare, .mostLikely:
             return .ownScreen
         }
     }
@@ -394,31 +395,5 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .forbiddenWords: return AnyView(ForbiddenWordsView())
         case .drinkBingo: return AnyView(DrinkBingoView())
         }
-    }
-}
-
-/// Merkt sich die zuletzt geöffneten Spiele.
-///
-/// Ein Abend spielt zwei bis drei Spiele und scrollt sonst an neunzehn
-/// vorbei. Die drei stehen deshalb oben.
-///
-/// Gespeichert werden nur die Kennungen. Faellt ein Spiel irgendwann weg,
-/// verschwindet es dadurch von selbst aus der Liste, statt beim Antippen
-/// ins Leere zu fuehren.
-enum RecentPartyGames {
-
-    private static let storageKey = "partyGames.recent"
-    private static let limit = 3
-
-    static var games: [PartyGame] {
-        let ids = UserDefaults.standard.stringArray(forKey: storageKey) ?? []
-        return ids.compactMap(PartyGame.init(rawValue:))
-    }
-
-    static func record(_ game: PartyGame) {
-        var ids = UserDefaults.standard.stringArray(forKey: storageKey) ?? []
-        ids.removeAll { $0 == game.rawValue }
-        ids.insert(game.rawValue, at: 0)
-        UserDefaults.standard.set(Array(ids.prefix(limit)), forKey: storageKey)
     }
 }
