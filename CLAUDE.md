@@ -222,7 +222,10 @@ den nachgespielten Wurf-Log alter Partien.
   wurde, und wird nach vier Wochen deutlich.
 - **Anleitung je Partyspiel**: Fragezeichen auf jeder Spielkachel.
 - **Karten aussortieren und eigene dazu** – jetzt in vier Stapeln: Ich hab
-  noch nie, Wahrheit oder Pflicht, **Wer von uns?** und Beerpong Extreme.
+  noch nie, Wahrheit oder Pflicht, **Wer würde eher?** und Beerpong Extreme.
+  Der Daumen nach unten steht in jedem Schritt da, nicht erst nach dem
+  Aufdecken: Ein Knopf, den man erst nach drei Sekunden Countdown sieht,
+  ist für den Nutzer keiner.
 - **Nicht gespeicherte Würfe lassen sich nachreichen** – siehe unten.
 - **Die Partyspiele sagen Namen statt Nummern**, sobald jemand am Tisch
   steht – auch ohne laufenden Abend (`PlayerNames`, Reihenfolge unten).
@@ -246,7 +249,7 @@ den nachgespielten Wurf-Log alter Partien.
   *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
   Pflicht, Ich hab noch nie. *Raten & reden* – Schocken, Mäxchen, Zwei
   Wahrheiten, Der Spion, Wer bin ich?, 21, Schätzmeister, Kategorien,
-  Wer von uns?, Kennst du deine Leute?. *Schnell zwischendurch* – Bombe,
+  Wer würde eher?, Kennst du deine Leute?. *Schnell zwischendurch* – Bombe,
   Reaktionsduell, Trink-Roulette. *Läuft nebenher* – Verbotene Wörter,
   Trinkbingo.
   Die Zahl im Text und die Fälle in `PartyGame` müssen zusammenpassen –
@@ -259,6 +262,14 @@ den nachgespielten Wurf-Log alter Partien.
   beisammen; `HomeView` baut die Liste daraus. Ein neues Spiel ist ein
   neuer Fall in der Aufzählung – wer es stattdessen in die View schreibt,
   taucht in „Zuletzt gespielt" nicht auf.
+
+- **Ein Spiel umbenennen heißt: den Titel ändern, nicht den Fall.**
+  „Wer würde eher?" heißt im Code weiter `mostLikely` (`MostLikelyDeck`,
+  `MostLikelyView`). Der `rawValue` der Aufzählung steckt in UserDefaults –
+  in „Zuletzt gespielt", in den eigenen und in den ausgeblendeten Karten.
+  Wer ihn umbenennt, wirft diese Daten stillschweigend weg: Die Liste ist
+  leer, die eigenen Karten sind „verschwunden", und niemand sieht einen
+  Zusammenhang zur Umbenennung.
 
 - **Eine neue abschaltbare Regel ist ein neuer Fall in `HouseRule`.** Titel,
   Erklärung, Kurzform für die Zusammenfassung und der `WritableKeyPath` ins
@@ -561,7 +572,7 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Richtigen, wenn ein Abend läuft?
 - **Knöpfe vom 12. Oktober**: Der Daumen nach unten muss jetzt bei **jeder**
   Karte gehen, nicht nur bei der ersten – zweimal hintereinander in „Ich hab
-  noch nie" ausprobieren. Dazu „Wer von uns?", das ihn neu hat, und einmal
+  noch nie" ausprobieren. Dazu „Wer würde eher?", das ihn neu hat, und einmal
   quer durch die Spiele die leisen Knöpfe („Neu mischen", „Spielerzahl
   ändern"): Sie sind jetzt höher, also auch im Layout zu prüfen. Und die
   Stapelwahl unter „Eigene Karten" hat vier Kacheln und bricht um.

@@ -2,7 +2,7 @@
 //  MostLikelyView.swift
 //  BeerStats
 //
-//  "Wer von uns?" – Karte vorlesen, bis drei zaehlen, alle zeigen
+//  "Wer würde eher?" – Karte vorlesen, bis drei zaehlen, alle zeigen
 //  gleichzeitig. Die meisten Finger trinken.
 //
 //  Der Countdown ist der Kern des Spiels und deshalb in der App und nicht
@@ -35,13 +35,14 @@ struct MostLikelyView: View {
                     cardView(card)
                     Spacer(minLength: 0)
                     controls
+                    hideRow
                 } else {
                     finishedView
                 }
             }
             .padding(24)
         }
-        .navigationTitle("Wer von uns?")
+        .navigationTitle("Wer würde eher?")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear { countTask?.cancel() }
     }
@@ -111,17 +112,24 @@ struct MostLikelyView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .frame(height: 52)
         case .reveal:
-            VStack(spacing: 6) {
-                PrimaryButton(title: "Nächste Karte", systemImage: "arrow.right") { advance() }
+            PrimaryButton(title: "Nächste Karte", systemImage: "arrow.right") { advance() }
+        }
+    }
 
-                // Erst nach dem Zeigen: Vorher kennt die Runde die Karte
-                // noch nicht, und eine Karte wegzudaumen, die niemand
-                // gelesen hat, ergibt keinen Sinn. Eigene Karten tragen
-                // ihn nicht – die stehen unter "Eigene Karten".
-                if let card = currentCard, !card.isCustom {
-                    HideCardButton(cardKey: card.text, deck: .mostLikely)
-                }
-            }
+    /// Der Daumen nach unten steht die ganze Zeit da, in jedem Schritt.
+    ///
+    /// Erst nach dem Zeigen war falsch: Die Frage steht von Anfang an auf
+    /// der Karte, und wer sie nicht mag, sieht das beim Vorlesen – nicht
+    /// drei Sekunden Countdown spaeter. Vor allem aber war er so praktisch
+    /// unsichtbar: Wer das Spiel aufmacht, sieht "Countdown starten" und
+    /// sonst nichts.
+    ///
+    /// Eigene Karten tragen ihn nicht – die loescht man unter "Eigene
+    /// Karten".
+    @ViewBuilder
+    private var hideRow: some View {
+        if let card = currentCard, !card.isCustom {
+            HideCardButton(cardKey: card.text, deck: .mostLikely)
         }
     }
 

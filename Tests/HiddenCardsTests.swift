@@ -53,7 +53,7 @@ final class HiddenCardsTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Wer von uns?
+    // MARK: - Wer würde eher?
 
     func testAHiddenMostLikelyCardStaysAway() {
         let weg = MostLikelyDeck.all[0].text

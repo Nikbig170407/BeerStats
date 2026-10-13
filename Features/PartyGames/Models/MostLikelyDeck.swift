@@ -2,7 +2,7 @@
 //  MostLikelyDeck.swift
 //  BeerStats
 //
-//  Karteninhalt fuer "Wer von uns?".
+//  Karteninhalt fuer "Wer würde eher?".
 //
 //  Auf drei zaehlt die Runde und alle zeigen gleichzeitig auf jemanden.
 //  Wer die meisten Finger auf sich hat, trinkt. Das Gleichzeitige ist der

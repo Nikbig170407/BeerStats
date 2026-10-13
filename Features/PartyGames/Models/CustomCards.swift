@@ -34,7 +34,7 @@ enum CustomCardDeck: String, CaseIterable, Identifiable {
         switch self {
         case .neverHaveIEver: return "Ich hab noch nie"
         case .truthOrDare: return "Wahrheit oder Pflicht"
-        case .mostLikely: return "Wer von uns?"
+        case .mostLikely: return "Wer würde eher?"
         case .extremeChallenge: return "Beerpong Extreme"
         }
     }

@@ -140,7 +140,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .countTo21: return "21"
         case .estimation: return "Schätzmeister"
         case .categories: return "Kategorien"
-        case .mostLikely: return "Wer von uns?"
+        case .mostLikely: return "Wer würde eher?"
         case .knowYourPeople: return "Kennst du deine Leute?"
         case .bombPass: return "Bombe weitergeben"
         case .reactionDuel: return "Reaktionsduell"
