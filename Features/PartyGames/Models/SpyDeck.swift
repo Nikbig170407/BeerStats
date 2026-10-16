@@ -35,6 +35,15 @@ enum SpyDeck {
         "Wüste", "Dschungel", "Berggipfel", "Höhle", "Leuchtturm",
         "Windmühle", "Schloss", "Ruine", "Friedhof", "Jahrmarkt",
         "Tätowierstudio", "Plattenladen", "Buchhandlung", "Möbelhaus", "Baumarkt",
-        "Elektromarkt", "Wochenmarkt", "Imbiss", "Bierzelt", "Kegelbahn"
+        "Elektromarkt", "Wochenmarkt", "Imbiss", "Bierzelt", "Kegelbahn",
+        "Autobahnraststätte", "Parkhaus", "Standesamt", "Zahnarztstuhl", "Kletterhalle",
+        "Minigolfplatz", "Schrebergarten", "Hundeschule", "Reitstall", "Bootsverleih",
+        "Fähre", "Nachtzug", "Taxistand", "Flohmarkt", "Weihnachtsmarkt",
+        "Schützenfest", "Karnevalsumzug", "Junggesellenabschied", "Klassentreffen", "Vorstellungsgespräch",
+        "Elternabend", "Betriebsfeier", "Umzugswagen", "Möbelaufbau", "Wäscheleine",
+        "Serverraum", "Fotostudio", "Tonstudio", "Probenraum", "Hinterhof",
+        "Dachgeschosswohnung", "Studentenwohnheim", "Jugendherberge", "Ferienwohnung", "Zeltplatz",
+        "Skihütte", "Bergbahn", "Thermalbad", "Freibad", "Sprungturm",
+        "Umkleidekabine", "Kassenbereich", "Lagerhalle", "Großküche", "Kühlhaus"
     ]
 }

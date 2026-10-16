@@ -36,6 +36,16 @@ enum ForbiddenWordDeck {
         "Leute", "Freund", "Mann", "Frau", "Kind",
         "Zeit", "Geld", "Arbeit", "Schule", "Wochenende",
         "Musik", "Film", "Essen", "Hunger", "Durst",
-        "kalt", "warm", "müde", "wach", "verrückt"
+        "kalt", "warm", "müde", "wach", "verrückt",
+        "Hand", "Kopf", "Auge", "Tisch", "Stuhl",
+        "Glas", "Flasche", "Becher", "Ball", "Punkt",
+        "oben", "unten", "links", "rechts", "hier",
+        "jetzt", "gleich", "schnell", "langsam", "fast",
+        "Freitag", "Samstag", "Sonntag", "Woche", "Monat",
+        "Haus", "Wohnung", "Zimmer", "Tür", "Fenster",
+        "Hund", "Katze", "Auto", "Zug", "Rad",
+        "Name", "Nummer", "Foto", "Nachricht", "Anruf",
+        "besser", "schlimmer", "größer", "kleiner", "egal",
+        "witzig", "peinlich", "laut", "leise", "voll"
     ]
 }

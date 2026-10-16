@@ -61,6 +61,26 @@ enum TwoTruthsDeck {
         "Dein größtes Missverständnis",
         "Deine Erfahrungen mit Tieren",
         "Dein letztes Geschenk",
-        "Deine schlimmste Lüge"
+        "Deine schlimmste Lüge",
+        "Dein erstes Konzert",
+        "Dein schlimmster Chef",
+        "Dein Lieblingsessen als Kind",
+        "Deine letzte Arztrechnung",
+        "Dein größter Gewinn",
+        "Deine schlimmste Frisur",
+        "Dein erstes Handy",
+        "Deine letzte Lüge",
+        "Dein schlechtestes Geschenk",
+        "Deine Zeit im Verein",
+        "Dein letzter Krankenhausbesuch",
+        "Deine Angewohnheiten morgens",
+        "Dein erster Job",
+        "Deine Mitbewohner",
+        "Deine schlimmste Zugfahrt",
+        "Deine schlimmste Verkleidung",
+        "Dein größter Streich",
+        "Dein letzter Kinobesuch",
+        "Dein schlimmster Geburtstag",
+        "Dein Lieblingslehrer"
     ]
 }

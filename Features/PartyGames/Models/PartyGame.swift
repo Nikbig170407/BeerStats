@@ -180,15 +180,19 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .ringOfFire: return "52 Karten im Kreis um die Flasche – jede bedeutet etwas anderes"
         case .horseRace: return "Vier Asse, sechs Seitenkarten – setz auf eine Farbe"
         case .busRide: return "Vier Fragen, jede teurer – ein Fehler und zurück auf Anfang"
-        case .truthOrDare: return "90 Karten – verweigern kostet"
-        case .neverHaveIEver: return "150 Fragen in drei Stufen, dazu Strafen"
+        case .truthOrDare:
+            let karten = TruthOrDareDeck.count(.truth) + TruthOrDareDeck.count(.dare)
+            return "\(karten) Karten – verweigern kostet"
+        case .neverHaveIEver:
+            return "\(NeverHaveIEverDeck.statements.count) Fragen in drei Stufen, dazu Strafen"
         case .schocken: return "Drei Würfel, drei Würfe – der schlechteste Wurf trinkt"
         case .maexchen: return "Verdeckt würfeln und lügen – die App weiß, wer geflunkert hat"
         case .twoTruths: return "Drei Sätze, einer erfunden – wer danebenliegt, trinkt"
         case .spy: return "Alle kennen das Wort – einer nicht, und der muss es überspielen"
         case .headsUp: return "Handy an die Stirn – jeder verpasste Begriff kostet einen Schluck"
         case .countTo21: return "Reihum zählen – wer 21 sagt, macht eine neue Regel"
-        case .estimation: return "50 Fragen mit einer Zahl – wer am weitesten daneben liegt, trinkt"
+        case .estimation:
+            return "\(EstimationDeck.count) Fragen mit einer Zahl – wer am weitesten daneben liegt, trinkt"
         case .categories: return "Reihum ein Begriff – die Bedenkzeit wird jede Runde knapper"
         case .mostLikely: return "Alle zeigen gleichzeitig – die meisten Finger trinken"
         case .knowYourPeople: return "Fragen aus euren echten Beerpong-Zahlen – wer danebenliegt, trinkt"

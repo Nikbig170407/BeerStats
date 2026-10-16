@@ -216,7 +216,18 @@ enum ExtremeDeck {
             card(.chaos, "Rückkehr", "Der Becher bleibt stehen. Nichts passiert."),
             card(.chaos, "Anstoßen", "Alle stoßen an, bevor weitergeworfen wird."),
             card(.challenge, "Kurze Ansage", "Halt eine Rede über den Becher, den du gerade getroffen hast.",
-                 duration: "Zehn Sekunden", penalty: small.text)
+                 duration: "Zehn Sekunden", penalty: small.text),
+            card(.challenge, "Linke Hand", "Der nächste Ball geht mit der schwachen Hand raus.",
+                 duration: "Ein Wurf", penalty: small.text),
+            card(.challenge, "Sitzend", "Wirf aus dem Sitzen.",
+                 duration: "Ein Wurf", penalty: small.text),
+            card(.challenge, "Lobrede", "Lob den Wurf des Gegners, als wäre er großartig.",
+                 duration: "Sofort", penalty: small.text),
+            card(.chaos, "Platztausch", "Die beiden Teams wechseln die Seiten des Tisches."),
+            card(.chaos, "Namenswechsel", "Jedes Team sucht sich einen neuen Namen aus."),
+            card(.penalty, "Höflich", "Wer zuletzt gelacht hat, trinkt \(small.text)."),
+            card(.boon, "Zuschauerwahl", "Jemand, der nicht mitspielt, darf deinen nächsten Becher aussuchen.",
+                 duration: "Dein nächster Treffer")
         ]
     }
 
@@ -374,6 +385,16 @@ enum ExtremeDeck {
                  penalty: shot.text),
 
             // Kleidung
+            card(.challenge, "Fremde Hand", "Dein nächster Wurf wird von einem Gegner geführt – er hält deinen Arm.",
+                 duration: "Ein Wurf", penalty: shot.text),
+            card(.challenge, "Augen zu", "Wirf den nächsten Ball mit geschlossenen Augen.",
+                 duration: "Ein Wurf", penalty: shot.text),
+            card(.challenge, "Letzter Anruf", "Zeig, wen du zuletzt angerufen hast.",
+                 duration: "Sofort", penalty: shot.text),
+            card(.challenge, "Offene Galerie", "Der Gegner darf ein Foto aus deiner Galerie aussuchen – die Runde sieht es.",
+                 duration: "Sofort", penalty: shot.text),
+            card(.penalty, "Stafette", "Dein Team trinkt reihum, bis der getroffene Becher leer ist."),
+            card(.chaos, "Alle gleich", "Jeder am Tisch trinkt \(medium.text) – gleichzeitig."),
             card(.challenge, "Alles zurück", "Zieh ein Kleidungsstück wieder an.",
                  penalty: medium.text)
         ]

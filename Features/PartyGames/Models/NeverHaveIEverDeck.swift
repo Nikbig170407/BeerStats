@@ -216,7 +216,32 @@ enum NeverHaveIEverDeck {
         "Ich hab noch nie ins eigene Tor getroffen",
         "Ich war noch nie auf einem Konzert, ohne die Band zu kennen",
         "Ich hab mich noch nie beim Fotografieren im Spiegel selbst erwischt",
-        "Ich hab noch nie etwas weggeworfen, das ich später vermisst habe"
+        "Ich hab noch nie etwas weggeworfen, das ich später vermisst habe",
+        "Ich hab noch nie ein Paket für einen Nachbarn angenommen und vergessen, es abzugeben",
+        "Ich bin noch nie in die falsche Bahn gestiegen und erst spät aufgefallen",
+        "Ich hab noch nie Pfand gesammelt und nie eingelöst",
+        "Ich hab noch nie eine Pflanze vertrocknen lassen",
+        "Ich hab noch nie den Wecker gestellt und wieder ausgemacht, ohne aufzuwachen",
+        "Ich hab noch nie eine Serie weitergeschaut, obwohl ich sie langweilig fand",
+        "Ich hab noch nie etwas gekocht und am Ende bestellt",
+        "Ich bin noch nie gegen eine Glastür gelaufen",
+        "Ich hab noch nie meinen eigenen Namen falsch geschrieben",
+        "Ich hab noch nie beim Einkaufen etwas vergessen, obwohl es auf dem Zettel stand",
+        "Ich hab noch nie einem Kind beim Spielen absichtlich verloren",
+        "Ich hab noch nie mit Absicht die langsamere Kasse gewählt, weil sie leerer aussah",
+        "Ich hab noch nie ein Buch nach dreißig Seiten aufgegeben",
+        "Ich hab noch nie laut im Auto gesungen und gemerkt, dass jemand zusieht",
+        "Ich hab noch nie eine Mahnung bekommen, weil ich es vergessen hatte",
+        "Ich hab noch nie etwas gegessen, das abgelaufen war, und nichts gesagt",
+        "Ich war noch nie bei einem Termin eine Stunde zu früh",
+        "Ich hab noch nie den Hausschlüssel innen stecken lassen",
+        "Ich hab noch nie jemandem zugewinkt, der jemand anderen meinte",
+        "Ich hab noch nie meinen Einkaufswagen im Parkhaus stehen gelassen",
+        "Ich hab noch nie eine Anleitung ignoriert und alles zweimal gebaut",
+        "Ich hab noch nie ein Lied falsch mitgesungen, jahrelang",
+        "Ich hab noch nie eine Treppe hochgezählt und mich verzählt",
+        "Ich hab noch nie den Müll rausgebracht und die Tüte im Flur vergessen",
+        "Ich hab noch nie einen Zug genommen, ohne zu wissen, wohin er fährt"
     ].map { NeverHaveIEverCard(text: $0, kind: .statement(.kids)) }
 
     // MARK: - Spicy
@@ -271,7 +296,32 @@ enum NeverHaveIEverDeck {
         "Ich hab noch nie so getan, als hätte ich die Nachricht nicht gesehen",
         "Ich hab noch nie jemandem einen Spitznamen im Handy gegeben, den er nicht kennt",
         "Ich hatte noch nie nach der Trennung nochmal etwas mit meinem Ex",
-        "Ich hab noch nie jemanden geküsst, obwohl ich vergeben war"
+        "Ich hab noch nie jemanden geküsst, obwohl ich vergeben war",
+        "Ich hab noch nie eine Verabredung abgesagt und bin dann woanders hingegangen",
+        "Ich hab noch nie heimlich die Nachrichten von jemandem gelesen",
+        "Ich hab noch nie ein Date nur wegen des Essens zugesagt",
+        "Ich hab noch nie jemandem gesagt, ich sei auf dem Weg, obwohl ich noch im Bett lag",
+        "Ich hab noch nie den Namen von jemandem vergessen, mit dem ich schon ausgegangen war",
+        "Ich hab noch nie jemanden eifersüchtig gemacht, weil ich es wollte",
+        "Ich hab noch nie ein Gerücht über mich selbst in Umlauf gebracht",
+        "Ich hab noch nie betrunken etwas verschickt, das ich morgens gelöscht habe",
+        "Ich hab noch nie einem Freund gesagt, dass sein Partner in Ordnung ist, obwohl ich das nicht fand",
+        "Ich hab noch nie eine Einladung abgelehnt und behauptet, ich sei krank",
+        "Ich hab noch nie beim ersten Treffen mehr über mich erzählt, als ich wollte",
+        "Ich hab noch nie jemanden nach einer Nacht nicht mehr geschrieben",
+        "Ich hab noch nie eine Beziehung länger geführt, als ich es wollte",
+        "Ich hab noch nie etwas aus dem Bad eines anderen mitgenommen",
+        "Ich hab noch nie heimlich das Profil eines Ex angesehen",
+        "Ich hab noch nie jemanden geküsst, dessen Nachnamen ich nicht kannte",
+        "Ich hab noch nie auf einer Feier den Raum gewechselt, um jemandem auszuweichen",
+        "Ich hab noch nie geflunkert, wie viel ich getrunken habe",
+        "Ich hab noch nie jemanden belogen, um ein Kompliment zu bekommen",
+        "Ich hab noch nie etwas Peinliches über einen Freund erzählt, um besser dazustehen",
+        "Ich hab noch nie am Morgen danach den Weg nach Hause nicht gewusst",
+        "Ich hab noch nie ein Geschenk weiterverschenkt",
+        "Ich hab noch nie jemandem geschrieben, dessen Nummer ich gar nicht haben sollte",
+        "Ich hab noch nie in einer fremden Wohnung übernachtet, ohne zu wissen, wem sie gehört",
+        "Ich hab noch nie einen Streit angefangen, nur weil ich schlechte Laune hatte"
     ].map { NeverHaveIEverCard(text: $0, kind: .statement(.spicy)) }
 
     // MARK: - Extrem
@@ -326,7 +376,32 @@ enum NeverHaveIEverDeck {
         "Ich hab noch nie gesagt, es sei das Beste gewesen, obwohl es nicht stimmte",
         "Ich hatte noch nie Sex, von dem niemand erfahren durfte",
         "Ich hab noch nie einen Schwangerschaftstest gekauft",
-        "Ich hab noch nie verschwiegen, wie viele es vor jemandem waren"
+        "Ich hab noch nie verschwiegen, wie viele es vor jemandem waren",
+        "Ich hab noch nie etwas getan, das ich niemandem in dieser Runde erzählen würde",
+        "Ich hab noch nie jemanden aus Rache verletzt",
+        "Ich hab noch nie Geld genommen, das mir nicht gehörte",
+        "Ich hab noch nie etwas gestohlen, das mehr als ein Getränk wert war",
+        "Ich bin noch nie gefahren, obwohl ich es nicht mehr hätte tun dürfen",
+        "Ich hab noch nie jemanden im Stich gelassen, als es wirklich darauf ankam",
+        "Ich hab noch nie etwas unterschrieben, ohne es zu lesen, und es später bereut",
+        "Ich hab noch nie eine Freundschaft beendet, ohne es zu erklären",
+        "Ich hab noch nie jemandem gegenüber behauptet, über etwas hinweg zu sein",
+        "Ich hab noch nie einen Menschen vermisst, von dem niemand weiß",
+        "Ich hab noch nie etwas geglaubt, was ich mir selbst eingeredet habe",
+        "Ich hab noch nie jemanden mit Absicht vor anderen blamiert",
+        "Ich hab noch nie eine Grenze überschritten, die mir jemand gesetzt hat",
+        "Ich hab noch nie heimlich geweint und am Telefon behauptet, alles sei gut",
+        "Ich hab noch nie etwas getan, nur weil alle anderen zusahen",
+        "Ich hab noch nie jemanden geküsst, der mit jemandem aus dieser Runde zu tun hatte",
+        "Ich hab noch nie etwas über jemanden gesagt, das ihn Freundschaften gekostet hat",
+        "Ich hab noch nie eine ganze Nacht durchgemacht und am nächsten Tag gelogen",
+        "Ich hab noch nie Sex an einem Ort gehabt, an dem es verboten war",
+        "Ich hab noch nie die Wahrheit gesagt, nur um jemandem wehzutun",
+        "Ich hab noch nie jemandem versprochen, zurückzukommen, und es nicht vorgehabt",
+        "Ich hab noch nie etwas getan, was meine Eltern nie erfahren dürfen",
+        "Ich hab noch nie jemanden benutzt, um über jemand anderen hinwegzukommen",
+        "Ich hab noch nie eine Nacht verbracht, an die ich mich gar nicht erinnere",
+        "Ich hab noch nie etwas in diesem Spiel falsch beantwortet, um nicht trinken zu müssen"
     ].map { NeverHaveIEverCard(text: $0, kind: .statement(.extreme)) }
 
     // MARK: - Strafen
@@ -382,6 +457,22 @@ enum NeverHaveIEverDeck {
         // aus der Runde selbst.
         PenaltyTemplate(format: "Trink so viele Schlücke, wie du Geschwister hast"),
         PenaltyTemplate(format: "Trink so viele Schlücke, wie du heute Kaffee getrunken hast"),
-        PenaltyTemplate(format: "Reihum ein Schluck, bis jemand lacht")
+        PenaltyTemplate(format: "Reihum ein Schluck, bis jemand lacht"),
+        PenaltyTemplate(format: "Dein Gegenüber trinkt {}", amount: .sips(4)),
+        PenaltyTemplate(format: "Die beiden neben dir trinken {}", amount: .sips(2)),
+        PenaltyTemplate(format: "Wer zuerst spricht, trinkt {}", amount: .shot),
+        PenaltyTemplate(format: "Wer als Letztes gekommen ist, trinkt {}", amount: .sips(4)),
+        PenaltyTemplate(format: "Wer am nächsten am Fenster sitzt, trinkt {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Wer die hellste Kleidung trägt, trinkt {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Wer zuletzt etwas gegessen hat, trinkt {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Alle, die ein Handy in der Hand haben, trinken {}", amount: .sips(4)),
+        PenaltyTemplate(format: "Alle außer dir trinken {}", amount: .sips(2)),
+        PenaltyTemplate(format: "Trink {} und bestimme, wer als Nächstes vorliest", amount: .sips(3)),
+        PenaltyTemplate(format: "Stoß mit allen an und trink {}", amount: .sips(3)),
+        PenaltyTemplate(format: "Du und die Person mit dem längsten Namen trinken {}", amount: .sips(3)),
+        // Wieder ohne Luecke: Die Menge kommt aus der Runde.
+        PenaltyTemplate(format: "Trink so viele Schlücke, wie du Buchstaben im Vornamen hast"),
+        PenaltyTemplate(format: "Trink so viele Schlücke, wie heute Leute am Tisch sitzen"),
+        PenaltyTemplate(format: "Reihum ein Schluck, bis jemand sein Glas abstellt")
     ]
 }

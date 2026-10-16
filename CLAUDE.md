@@ -251,6 +251,15 @@ den nachgespielten Wurf-Log alter Partien.
   nichts: Auf einem Konto mit vorhandenen Profilen steht danach alles
   doppelt.
 - Turniermodus: lost geeignete Spiele aus, Strafe steigt je Runde
+- **Die Stapel sind groß** (Stand 16. Oktober): 225 Aussagen bei „Ich hab
+  noch nie" (drei Stufen à 75), 140 Karten bei „Wahrheit oder Pflicht",
+  125 Begriffe beim Spion, 100 Karten bei „Wer würde eher?", 100 verbotene
+  Wörter, 90 Kategorien, 80 Schätzfragen, 70 Begriffe je Kategorie bei „Wer
+  bin ich?", 64 Bingo-Felder, 60 Themen bei „Zwei Wahrheiten", 45 Strafkarten.
+  Wo **nicht** nachgelegt werden kann, liegt es am Spiel und nicht am
+  Fleiß: Ring of Fire hat dreizehn Ränge, Bussfahrer und Pferderennen ein
+  Skatblatt, Trink-Roulette acht Felder auf dem Rad. Mehr Karten wären dort
+  ein anderes Spiel.
 - Zwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
   Pflicht, Ich hab noch nie. *Raten & reden* – Schocken, Mäxchen, Zwei
@@ -354,6 +363,27 @@ den nachgespielten Wurf-Log alter Partien.
 - **Kartenspiele tragen den ganzen Satz auf der Karte**, nicht nur den
   Nachsatz. Ein fester Vorspann („Ich hab noch nie …") kann grammatisch
   nicht aufgehen: Es gibt „Ich bin noch nie …" und „Ich hatte noch nie …".
+
+- **Die Stapel sind getestet, nicht nur geschrieben** (`DeckContentTests`).
+  Inhalt wächst oft und wird selten geprüft, und beim Nachlegen passieren
+  immer dieselben zwei Dinge – beide fallen beim Spielen **nicht** auf:
+  Eine Karte steht zweimal drin (am Tisch denkt man „hatten wir die nicht
+  schon?" und spielt weiter; der Stapel ist stillschweigend kleiner als er
+  aussieht), oder eine Karte passt nicht in ihre Form – ein ganzer Satz, wo
+  ein Begriff hin muss („Wer bin ich?" ist mit einem Satz an der Stirn
+  nicht spielbar), zwei Wörter, wo eines verboten werden soll. Der Test
+  prüft Doppelte, Mindestzahlen und die Form je Stapel. Die Mindestzahlen
+  stehen bewusst **unter** dem Stand: Sie sollen ein Löschen merken, nicht
+  jedes Nachlegen zur Teständerung machen. Beim Nachlegen vom
+  13. Oktober hat er sofort zehn Doppelte gefunden, die ich selbst
+  eingetragen hatte.
+
+- **Zahlen über Stapelgrößen werden gerechnet, nicht getippt.** Drei
+  Untertitel nannten feste Zahlen („90 Karten", „150 Fragen", „50 Fragen")
+  und waren nach dem ersten Nachlegen falsch. Sie kommen jetzt aus den
+  Stapeln selbst (`TruthOrDareDeck.count`, `NeverHaveIEverDeck.statements`,
+  `EstimationDeck.count`), und ein Test hält das fest – dieselbe Falle wie
+  beim Spielezähler weiter oben.
 
 - **Geteilte Bausteine benutzen, nicht neu tippen.** Zwei Sachen standen
   mehrfach fast gleich im Projekt und sind inzwischen je eine Komponente:
