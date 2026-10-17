@@ -44,8 +44,10 @@ struct PlayingCard: Identifiable, Equatable {
 
         var isRed: Bool { self == .hearts || self == .diamonds }
 
+        /// Die Farbe auf dem Blatt. Fest, nicht aus dem App-Thema – siehe
+        /// `BeerStatsColor.cardInk`.
         var color: Color {
-            isRed ? BeerStatsColor.error : BeerStatsColor.textPrimary
+            isRed ? BeerStatsColor.cardInkRed : BeerStatsColor.cardInk
         }
     }
 

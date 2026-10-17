@@ -41,13 +41,12 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     header
                     eveningCard
-                    beerpongCard
                     // Die Härte stand hier, über allen Partyspielen. Sie
                     // steht jetzt im Vorspann jedes Spiels, das Mengen
                     // ausspricht: Mäxchen wird anders getrunken als
                     // Trink-Roulette, und von hier oben aus ist das nicht zu
                     // treffen.
-                    partySection
+                    menuGrid
                     customCardsLink
                 }
                 .padding(20)
@@ -213,203 +212,115 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Beerpong
+    // MARK: - Das Menue
 
-    /// Steht bewusst allein und groesser als die uebrigen Spiele: Es ist das
-    /// Spiel, um das herum die App gebaut ist, und das einzige mit Statistik.
-    private var beerpongCard: some View {
-        NavigationLink {
-            BeerpongMenuView(container: container, viewModel: viewModel)
-        } label: {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 14) {
-                    Text("🍺").font(.system(size: 40))
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Beerpong")
-                            .font(BeerStatsFont.title)
-                            .foregroundStyle(BeerStatsColor.textPrimary)
-                        Text(beerpongSubtitle)
-                            .font(BeerStatsFont.caption)
-                            .foregroundStyle(BeerStatsColor.textSecondary)
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                }
-
-                HStack(spacing: 10) {
-                    miniStat("\(viewModel.activeProfiles.count)", "Mitspieler")
-                    miniStat("\(viewModel.totalGamesTracked)", "Partien")
-                    miniStat(
-                        viewModel.leadingProfile?.emoji ?? "–",
-                        viewModel.leadingProfile?.name ?? "Noch offen"
-                    )
-                }
-            }
-            .padding(18)
-            .glassPanel()
-            .neonEdge(BeerStatsColor.accent, intensity: 0.55)
-            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        }
-        .buttonStyle(PressableButtonStyle())
-    }
-
-    /// Immer derselbe Satz.
+    /// Sechs Kacheln, zwei Spalten: Beerpong oben links, dann die vier
+    /// Gruppen, Turnier unten rechts.
     ///
-    /// Hier stand "Eine Partie läuft noch – fortsetzen", solange eine offen
-    /// war. Eine Meldung, die niemand angefordert hat und die stehen bleibt,
-    /// bis sich jemand kümmert. Gefragt wird jetzt dort, wo die Frage
-    /// aufkommt: eine Ebene tiefer, beim Griff nach Beerpong.
-    private var beerpongSubtitle: String {
-        "Tracken, Statistiken, Rangliste"
-    }
-
-    private func miniStat(_ value: String, _ label: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.scaled(19, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.accent)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(label)
-                .font(BeerStatsFont.statLabel)
-                .foregroundStyle(BeerStatsColor.textSecondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 9)
-        .background(
-            BeerStatsColor.surfaceElevated.opacity(0.6),
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-        )
-    }
-
-    // MARK: - Spiele auf dem Handy
-
-    /// Die Liste kommt aus `PartyGame`, nicht aus dieser Datei. Neunzehn
-    /// Einträge von Hand zu pflegen war der sichere Weg, bei jedem neuen
-    /// Spiel eine der fünf Angaben zu vergessen.
-    private var partySection: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            // Hier stand "Zuletzt gespielt". Die Idee war, den haeufigsten
-            // Weg zu verkuerzen; tatsaechlich stand damit oben eine Liste,
-            // die sich bei jedem Aufmachen anders sortiert – und die vier
-            // Ordner, die immer gleich liegen, rutschten dafuer nach unten.
-            // Ein Weg, den man auswendig kennt, ist schneller als ein
-            // kurzer, den man erst lesen muss.
-            gameGroup("SPIELE") {
-                ForEach(PartyGame.Group.allCases) { folderCard($0) }
-            }
-
-            tournamentCard
-        }
-    }
-
-    /// Eine Gruppe als Kachel.
+    /// Vorher war es eine Liste ueber die ganze Breite – eine grosse Karte
+    /// fuer Beerpong, darunter vier Ordnerzeilen, darunter das Turnier. Das
+    /// las sich von oben nach unten und hiess jedes Mal: scrollen, lesen,
+    /// treffen. Als Raster liegt alles gleichzeitig da, und jede Kachel
+    /// liegt immer an derselben Stelle – nach dem zweiten Abend trifft man
+    /// sie, ohne hinzusehen.
     ///
-    /// Neunzehn Spiele untereinander waren eine Liste, durch die man
-    /// scrollt, bis man das Richtige sieht – und bei neunzehn sieht man es
-    /// nicht mehr. Vier Ordner sind dagegen die Frage, die am Tisch ohnehin
-    /// gestellt wird: Karten in der Mitte, oder reden, oder schnell was
-    /// zwischendurch?
-    private func folderCard(_ group: PartyGame.Group) -> some View {
-        NavigationLink {
-            PartyGameFolderView(group: group)
-        } label: {
-            HStack(spacing: 18) {
-                Text(group.emoji)
-                    .font(.system(size: 38))
-                    .frame(width: 68, height: 68)
-                    .background(
-                        group.tint.opacity(0.16),
-                        in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    )
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(group.label)
-                        .font(.scaled(19, weight: .bold, design: .rounded))
-                        .foregroundStyle(BeerStatsColor.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(group.subtitle)
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    // Die Zahl stand rechts aussen, fett und in der Farbe
-                    // der Gruppe – das ist die Stelle und die Form, an der
-                    // iOS ungelesene Nachrichten anzeigt, und genau so
-                    // wurde sie gelesen. Als Satz in der Unterzeile ist es
-                    // wieder eine Angabe und keine Meldung.
-                    Text("\(group.games.count) Spiele")
-                        .font(.scaled(11, weight: .heavy, design: .rounded))
-                        .kerning(0.6)
-                        .foregroundStyle(group.tint)
-                        .monospacedDigit()
-                        .padding(.top, 2)
-                }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+    /// Beerpong steht oben links, das Turnier unten rechts: Das eine ist der
+    /// haeufigste Griff, das andere der seltenste.
+    private var menuGrid: some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: 14),
+                GridItem(.flexible(), spacing: 14)
+            ],
+            spacing: 14
+        ) {
+            menuTile(
+                emoji: "🍺",
+                title: "Beerpong",
+                detail: beerpongDetail,
+                tint: BeerStatsColor.accent
+            ) {
+                BeerpongMenuView(container: container, viewModel: viewModel)
             }
-            .padding(18)
-            .glassPanel()
-            .neonEdge(group.tint, intensity: 0.4)
-            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+            // Die Gruppen kommen aus dem Katalog, nicht von Hand: Ein neues
+            // Spiel landet dadurch von selbst in seiner Kachel.
+            ForEach(PartyGame.Group.allCases) { group in
+                menuTile(
+                    emoji: group.emoji,
+                    title: group.label,
+                    detail: "\(group.games.count) Spiele",
+                    tint: group.tint
+                ) {
+                    PartyGameFolderView(group: group)
+                }
+            }
+
+            menuTile(
+                emoji: "🏆",
+                title: "Turnier",
+                detail: "Quer durch die Spiele",
+                tint: BeerStatsColor.warning
+            ) {
+                TournamentView()
+            }
         }
-        .buttonStyle(PressableButtonStyle())
     }
 
-    /// Steht ueber den Gruppen, weil es kein zwanzigstes Spiel ist, sondern
-    /// eine Klammer um die neunzehn vorhandenen.
-    private var tournamentCard: some View {
+    /// Was unter "Beerpong" steht.
+    ///
+    /// Die drei Kennzahlen von vorher – Mitspieler, Partien, Spitzenreiter –
+    /// passen nicht in eine Kachel. Die beiden, die sich ueberhaupt aendern,
+    /// passen in eine Zeile; der Spitzenreiter steht einen Tipp weiter in
+    /// der Rangliste, wo man ihn ohnehin sucht.
+    private var beerpongDetail: String {
+        let partien = viewModel.totalGamesTracked
+        guard partien > 0 else { return "Noch keine Partie" }
+        let wort = partien == 1 ? "Partie" : "Partien"
+        return "\(partien) \(wort) · \(viewModel.activeProfiles.count) Leute"
+    }
+
+    /// Eine Kachel.
+    ///
+    /// Die Hoehe ist eine MINDESThoehe: Mit grosser Schrift wird die Kachel
+    /// hoeher, statt den Titel abzuschneiden, und das Raster zieht die
+    /// Nachbarin in derselben Zeile mit.
+    private func menuTile<Destination: View>(
+        emoji: String,
+        title: String,
+        detail: String,
+        tint: Color,
+        @ViewBuilder destination: () -> Destination
+    ) -> some View {
         NavigationLink {
-            TournamentView()
+            destination()
         } label: {
-            HStack(spacing: 14) {
-                Text("🏆")
-                    .font(.system(size: 30))
-                    .frame(width: 54, height: 54)
-                    .background(
-                        BeerStatsColor.warning.opacity(0.18),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    )
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Turnier")
-                        .font(BeerStatsFont.headline)
-                        .foregroundStyle(BeerStatsColor.textPrimary)
-                    Text("Mehrere Spiele hintereinander – jede Runde kostet mehr")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                        .lineLimit(2)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(emoji)
+                    .font(.system(size: 34))
+                    .frame(height: 40)
+
+                Spacer(minLength: 4)
+
+                Text(title)
+                    .font(.scaled(18, weight: .bold, design: .rounded))
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(detail)
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
+                    .foregroundStyle(tint)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 142, alignment: .topLeading)
             .padding(16)
             .glassPanel()
-            .neonEdge(BeerStatsColor.warning, intensity: 0.55)
+            .neonEdge(tint, intensity: 0.4)
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(PressableButtonStyle())
-    }
-
-    private func gameGroup<Content: View>(
-        _ title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.scaled(11, weight: .heavy, design: .rounded))
-                .kerning(1.8)
-                .foregroundStyle(BeerStatsColor.textSecondary)
-            content()
-        }
     }
 }

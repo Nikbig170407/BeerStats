@@ -77,6 +77,18 @@ enum BeerStatsColor {
     static let cupMid = Color("CupMid")
     static let cupShadow = Color("CupShadow")
     static let cupRimEdge = Color("CupRimEdge")
+
+    // Spielkarten – dieselbe Begruendung wie beim Becher: die Farben eines
+    // Gegenstands, nicht der Oberflaeche.
+    //
+    // Hier stand bis Oktober 2026 `textPrimary` fuer die schwarzen Farben.
+    // Das ist im dunklen Thema ein warmes Off-WEISS, und das Kartenblatt ist
+    // hell – Pik und Kreuz waren damit fast unsichtbar. Der Fehler ist
+    // typisch: Ein semantischer Name ("Vordergrund") passt nur, solange der
+    // Grund der Oberflaeche gehoert. Auf einem gezeichneten Gegenstand
+    // gelten dessen eigene Farben.
+    static let cardInk = Color(red: 0.11, green: 0.1, blue: 0.1)
+    static let cardInkRed = Color(red: 0.78, green: 0.11, blue: 0.13)
 }
 
 // MARK: - Profilfarben
