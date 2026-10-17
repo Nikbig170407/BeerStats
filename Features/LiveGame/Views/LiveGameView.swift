@@ -252,10 +252,15 @@ struct LiveGameView: View {
 
         return VStack(spacing: 8) {
             HStack(spacing: 8) {
-                Text(viewModel.teamName(teamIndex))
+                // Kurzform und schrumpfbar: Neben der Leiste steht der
+                // Fortschrittsbalken, und "Maximilian & Konstantin" haette
+                // ihn sonst aus dem Bild geschoben.
+                Text(viewModel.teamShortName(teamIndex))
                     .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.4)
                     .foregroundStyle(isActive ? tint : BeerStatsColor.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
 
                 // Fortschrittsbalken der abgeräumten Becher – zeigt den
                 // Spielstand als Bild statt nur als Zahl.
@@ -535,7 +540,11 @@ struct LiveGameView: View {
         return VStack(spacing: 12) {
             Text(winner == nil ? "🤝" : "🏆").font(.system(size: 56))
 
-            Text(winner.map { "\(viewModel.teamName($0)) gewinnt!" } ?? "Unentschieden")
+            Text(
+                winner.map {
+                    "\(viewModel.teamName($0)) \(viewModel.teamVerb($0, "gewinnt", "gewinnen"))!"
+                } ?? "Unentschieden"
+            )
                 .font(BeerStatsFont.largeTitle)
                 .foregroundStyle(BeerStatsColor.accent)
                 .multilineTextAlignment(.center)

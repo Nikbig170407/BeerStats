@@ -144,7 +144,10 @@ struct NewGameView: View {
             VStack(alignment: .leading, spacing: 10) {
                 sectionLabel("Fairer Anwurf")
 
-                Text("Team \(vorschlag.teamIndex + 1) trifft deutlich besser. Zum Ausgleich könnte es mit \(viewModel.cupCount - vorschlag.cups) statt \(viewModel.cupCount) Bechern starten.")
+                // Namen statt "Team 1": Der Vorschlag kommt nur, wenn beide
+                // Teams voll besetzt sind und genug geworfen haben – die
+                // Namen stehen also fest.
+                Text("\(viewModel.teamLabel(vorschlag.teamIndex)) \(viewModel.teamVerb(vorschlag.teamIndex, "trifft", "treffen")) deutlich besser. Zum Ausgleich könnte dieses Team mit \(viewModel.cupCount - vorschlag.cups) statt \(viewModel.cupCount) Bechern starten.")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)

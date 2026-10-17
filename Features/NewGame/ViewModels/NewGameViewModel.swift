@@ -71,6 +71,24 @@ final class NewGameViewModel: ObservableObject {
         return werte
     }
 
+    /// Wie das Team in der Aufstellung heisst – nach seinen Leuten.
+    ///
+    /// Dieselbe Zeichenarbeit wie im Spiel selbst (`Team.displayName`),
+    /// damit der Vorschlag vor der Partie und die Einblendungen darin
+    /// dieselben Namen benutzen.
+    func teamLabel(_ teamIndex: Int) -> String {
+        Team.displayName(for: namesInTeam(teamIndex), fallbackIndex: teamIndex)
+    }
+
+    func teamVerb(_ teamIndex: Int, _ singular: String, _ plural: String) -> String {
+        Team.verb(for: namesInTeam(teamIndex), singular, plural)
+    }
+
+    private func namesInTeam(_ teamIndex: Int) -> [String] {
+        guard selection.indices.contains(teamIndex) else { return [] }
+        return selection[teamIndex].compactMap { profile(withId: $0)?.name }
+    }
+
     /// Durchschnittliche Trefferquote eines Teams, sofern belastbar.
     ///
     /// Profile mit zu wenigen Wuerfen bleiben aussen vor: Wer dreimal

@@ -542,8 +542,8 @@ final class LiveGameViewModel: ObservableObject {
     /// dann trotzdem zu sehen, wer wirft.
     func startLiveActivity() {
         LiveGameActivity.start(
-            teamOne: teamName(0),
-            teamTwo: teamName(1),
+            teamOne: teamShortName(0),
+            teamTwo: teamShortName(1),
             cupsTeamOne: state.racks[0].remainingCount,
             cupsTeamTwo: state.racks[1].remainingCount,
             thrower: currentThrowerName,
@@ -573,8 +573,24 @@ final class LiveGameViewModel: ObservableObject {
         return names[player.slot]
     }
 
+    /// Wie das Team genannt wird – nach seinen Leuten, nicht "Team 1".
+    /// Die Zeichenarbeit steht in `Team`, weil sie dort pruefbar ist.
     func teamName(_ teamIndex: Int) -> String {
-        "Team \(teamIndex + 1)"
+        guard teams.indices.contains(teamIndex) else { return "Team \(teamIndex + 1)" }
+        return teams[teamIndex].displayName(fallbackIndex: teamIndex)
+    }
+
+    /// Kurzform fuer den Sperrbildschirm, wo beide Teams in eine Zeile
+    /// muessen.
+    func teamShortName(_ teamIndex: Int) -> String {
+        guard teams.indices.contains(teamIndex) else { return "Team \(teamIndex + 1)" }
+        return teams[teamIndex].shortDisplayName(fallbackIndex: teamIndex)
+    }
+
+    /// Das Verb zur Teamgroesse: "wirft" oder "werfen".
+    func teamVerb(_ teamIndex: Int, _ singular: String, _ plural: String) -> String {
+        guard teams.indices.contains(teamIndex) else { return singular }
+        return teams[teamIndex].verb(singular, plural)
     }
 
     var currentThrowerName: String { playerName(state.currentThrower) }
@@ -637,7 +653,8 @@ final class LiveGameViewModel: ObservableObject {
     var choicePrompt: String? {
         guard let choice = state.pendingChoice else { return nil }
         let cups = choice.remaining > 1 ? "\(choice.remaining) weitere Becher" : "einen weiteren Becher"
-        return "🍺 \(teamName(choice.choosingTeamIndex)) wählt \(cups) zum Wegstellen"
+        let team = choice.choosingTeamIndex
+        return "🍺 \(teamName(team)) \(teamVerb(team, "wählt", "wählen")) \(cups) zum Wegstellen"
     }
 
     var trickshotHint: String? {
@@ -735,19 +752,35 @@ final class LiveGameViewModel: ObservableObject {
         case .ballsBack(let teamIndex):
             HapticManager.success()
             SoundManager.play(.ballsBack)
-            show(.init(kind: .ballsBack, title: "BALLS BACK!", subtitle: "\(teamName(teamIndex)) wirft nochmal"))
+            show(.init(
+                kind: .ballsBack,
+                title: "BALLS BACK!",
+                subtitle: "\(teamName(teamIndex)) \(teamVerb(teamIndex, "wirft", "werfen")) nochmal"
+            ))
         case .bombe(let choosingTeamIndex):
             HapticManager.success()
             SoundManager.play(.bombe)
-            show(.init(kind: .bombe, title: "BOMBE!", subtitle: "\(teamName(choosingTeamIndex)) wählt 2 weitere Becher"))
+            show(.init(
+                kind: .bombe,
+                title: "BOMBE!",
+                subtitle: "\(teamName(choosingTeamIndex)) \(teamVerb(choosingTeamIndex, "wählt", "wählen")) 2 weitere Becher"
+            ))
         case .redemptionStarted(let teamIndex):
             HapticManager.mediumImpact()
             SoundManager.play(.onFire)
-            show(.init(kind: .redemption, title: "REDEMPTION", subtitle: "\(teamName(teamIndex)) wirft nach"))
+            show(.init(
+                kind: .redemption,
+                title: "REDEMPTION",
+                subtitle: "\(teamName(teamIndex)) \(teamVerb(teamIndex, "wirft", "werfen")) nach"
+            ))
         case .reRacked(let teamIndex, let formation):
             HapticManager.mediumImpact()
             SoundManager.play(.reRack)
-            show(.init(kind: .reRack, title: "UMGESTELLT", subtitle: "\(teamName(teamIndex)) stellt auf \(formation.name) um"))
+            show(.init(
+                kind: .reRack,
+                title: "UMGESTELLT",
+                subtitle: "\(teamName(teamIndex)) \(teamVerb(teamIndex, "stellt", "stellen")) auf \(formation.name) um"
+            ))
         case .finished:
             HapticManager.success()
             SoundManager.play(.victory)
@@ -820,18 +853,18 @@ final class LiveGameViewModel: ObservableObject {
         case .caughtFire(let player):
             return "🔥 \(playerName(player)) ist ON FIRE."
         case .ballsBack(let teamIndex):
-            return "🙌 Balls Back! \(teamName(teamIndex)) wirft nochmal."
+            return "🙌 Balls Back! \(teamName(teamIndex)) \(teamVerb(teamIndex, "wirft", "werfen")) nochmal."
         case .bombe(let choosingTeamIndex):
-            return "💣 BOMBE! \(teamName(choosingTeamIndex)) wählt 2 weitere Becher."
+            return "💣 BOMBE! \(teamName(choosingTeamIndex)) \(teamVerb(choosingTeamIndex, "wählt", "wählen")) 2 weitere Becher."
         case .cupChosen(let byTeamIndex, _):
-            return "🍺 \(teamName(byTeamIndex)) stellt einen Becher weg."
+            return "🍺 \(teamName(byTeamIndex)) \(teamVerb(byTeamIndex, "stellt", "stellen")) einen Becher weg."
         case .reRacked(let teamIndex, let formation):
-            return "🔄 \(teamName(teamIndex)) stellt auf \(formation.name) um."
+            return "🔄 \(teamName(teamIndex)) \(teamVerb(teamIndex, "stellt", "stellen")) auf \(formation.name) um."
         case .redemptionStarted(let teamIndex):
             return "🥤 Rack leer — Redemption für \(teamName(teamIndex))."
         case .finished(let winner):
             guard let winner else { return "🤝 Unentschieden — beide Racks leer." }
-            return "🏆 \(teamName(winner)) gewinnt!"
+            return "🏆 \(teamName(winner)) \(teamVerb(winner, "gewinnt", "gewinnen"))!"
         }
     }
 
