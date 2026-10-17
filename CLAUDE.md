@@ -220,6 +220,11 @@ den nachgespielten Wurf-Log alter Partien.
 - **Ring of Fire in zwei Screens**: der Ring für sich, die gezogene Karte
   als Vollbild mit „Verstanden". Karten tragen Dauer und Strafe wie die
   Extreme-Karten; Lücken bleiben als gestrichelter Platz stehen.
+- **Der Ring spielt mit** (17. Oktober): Die Karten liegen zufällig gestreut
+  und **geschuppt** – jede ein Stück unter der nächsten, wie am echten
+  Tisch. Reißt ein Zug den Ring, kostet er einen Shot. Vorher lagen sie in
+  gleichen Abständen mit Luft dazwischen und die Regel gab es nicht: ein
+  Stapel, den jemand im Kreis angeordnet hatte.
 - **Nochmal dieselben**: die letzte Aufstellung als Zeile im Beerpong-Menü,
   gestartet mit den aktuellen Hausregeln.
 - **Abende bleiben erhalten**: die letzten zwanzig unter „Frühere Abende",
@@ -431,6 +436,22 @@ den nachgespielten Wurf-Log alter Partien.
   `DrinkAmount` (`.sips(3)`, `.shot`) und werden erst beim Anzeigen in der
   geltenden Härte ausformuliert. Eine fest eingetippte Menge ignoriert die
   Einstellung stillschweigend – und genau so etwas fällt erst am Tisch auf.
+
+- **Der Riss in Ring of Fire ist Rechnerei, nicht Zufall** (`RingLayout`).
+  Zwei Konstanten machen das Spiel, beide durchgerechnet und per Test
+  gedeckelt: `overlapFactor` (2,4) sagt, wie viel breiter eine Karte ist als
+  der mittlere Abstand zur Nachbarin, `jitter` (0,6) streut die Abstände.
+  Ohne Streuung lägen alle Karten gleich dicht, und Ziehen wäre entweder nie
+  oder immer gefährlich; mit Streuung gibt es dichte Stellen und dünne – und
+  **man kann es sehen**. Ergebnis: Solange der Ring geschlossen daliegt,
+  reißt etwa jeder sechste Zug, über eine Runde mit 52 Karten drei bis vier.
+  Zwei Feinheiten, die beide einen Shot wert sind: Die Abstände werden auf
+  genau 360 Grad **normiert** (sonst klafft zwischen der letzten und der
+  ersten Karte eine Naht, die nie jemand gezogen hat), und neben einer
+  bestehenden Lücke reißt **nichts** (dort war schon offen – zweimal zahlt
+  niemand für dieselbe Lücke). Die **Kartenbreite folgt dem Layout**, nicht
+  umgekehrt: Was man an Überlappung sieht, ist genau das, womit gerechnet
+  wird. Wer die Breite frei wählt, baut ein Bild, das lügt.
 
 - **Die Härte gehört zum Spiel, nicht zum Gerät.** Sie stand bis Oktober
   2026 einmal über den Partyspielen und galt für alle. Am Tisch ist sie
@@ -650,6 +671,18 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   ist neu und nie gelaufen. Und der eigentliche Test: In einem Spiel hart
   einstellen, zurück, Beerpong starten – die Extreme-Karten müssen wieder
   in der Vorgabe dastehen.
+- **Ring of Fire vom 17. Oktober**: Das Wichtigste zuerst – liegen die
+  Karten erkennbar geschuppt, und sieht man die dünnen Stellen? Dann: reißt
+  der Ring ungefähr so oft, dass es Spannung macht statt Ärger (gerechnet:
+  drei bis vier Shots auf 52 Karten)? Blitz, Ruck und Knall beim Riss sind
+  nie auf Hardware gelaufen. Und bei **zwanzig** Karten wird der Kranz dicht
+  und das Loch in der Mitte klein – dort steht dann nur die Zahl, ohne
+  Flasche und ohne „übrig". Passt das?
+- **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
+  durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
+  Farben jetzt normal aussehen.
+- **Sechs Kacheln im Hauptmenü** (17. Oktober): Beerpong oben links, Turnier
+  unten rechts. Passt das Raster auf dem Gerät, auch mit großer Schrift?
 - **Knöpfe vom 12. Oktober**: Der Daumen nach unten muss jetzt bei **jeder**
   Karte gehen, nicht nur bei der ersten – zweimal hintereinander in „Ich hab
   noch nie" ausprobieren. Dazu „Wer würde eher?", das ihn neu hat, und einmal

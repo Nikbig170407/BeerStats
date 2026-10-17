@@ -13,6 +13,10 @@
 //  zwei Zeilen wie auf den Extreme-Karten: wie lange es gilt und was es
 //  kostet, wenn man verliert.
 //
+//  Hat der Zug den Ring gerissen, steht das GANZ OBEN und nicht unten bei
+//  den Zeilen: Der Shot ist in dem Moment die Nachricht, die Karte nur noch
+//  der Anlass.
+//
 
 import SwiftUI
 
@@ -20,6 +24,9 @@ struct RingOfFireActionView: View {
 
     let card: PlayingCard
     let rule: RingOfFireRule
+    /// Hat dieser Zug den Ring gerissen? Dann kostet er zusaetzlich einen
+    /// Shot – unabhaengig davon, was auf der Karte steht.
+    var tore = false
     let onDone: () -> Void
 
     @State private var hasAppeared = false
@@ -36,6 +43,10 @@ struct RingOfFireActionView: View {
 
             ScrollView {
                 VStack(spacing: 16) {
+                    if tore {
+                        tornBanner
+                    }
+
                     PlayingCardView(card: card, width: 150)
                         .shadow(color: tint.opacity(0.4), radius: 24)
                         .scaleEffect(hasAppeared ? 1 : 0.7)
@@ -90,6 +101,31 @@ struct RingOfFireActionView: View {
                 hasAppeared = true
             }
         }
+    }
+
+    /// Der Riss. Steht ueber der Karte, weil er die groessere Nachricht ist.
+    ///
+    /// Die Menge kommt aus `DrinkAmount`, nicht aus dem Text: Der Riss
+    /// kostet einen Shot, und wer ohne Shots spielt, trinkt die
+    /// entsprechenden Schluecke – dieselbe Regel wie ueberall.
+    private var tornBanner: some View {
+        VStack(spacing: 6) {
+            Text("💥").font(.system(size: 44))
+
+            Text("Ring gerissen")
+                .font(.scaled(26, weight: .heavy, design: .rounded))
+                .foregroundStyle(BeerStatsColor.warning)
+
+            Text("Du hast die Lücke gemacht – \(DrinkAmount.shot.text).")
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(18)
+        .glassPanel(cornerRadius: 20)
+        .neonEdge(BeerStatsColor.warning, cornerRadius: 20, intensity: 1)
     }
 
     /// Wie lange und was es kostet.

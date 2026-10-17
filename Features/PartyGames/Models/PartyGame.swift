@@ -177,7 +177,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .ringOfFire: return "52 Karten im Kreis um die Flasche – jede bedeutet etwas anderes"
+        case .ringOfFire: return "Karten geschuppt im Kreis – wer den Ring reißt, shottet"
         case .horseRace: return "Vier Asse, sechs Seitenkarten – setz auf eine Farbe"
         case .busRide: return "Vier Fragen, jede teurer – ein Fehler und zurück auf Anfang"
         case .truthOrDare:
@@ -217,7 +217,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
     var howToPlay: String {
         switch self {
         case .ringOfFire:
-            return "Die Karten liegen verdeckt im Kreis. Wer dran ist, tippt „Karte ziehen“ – die App lost aus, welche es wird, und sagt, was zu tun ist. Manche Karten gelten nur im Moment, andere bis zum Spielende; das steht auf jeder Karte. Vorher stellt ihr ein, mit wie vielen Karten ihr spielt."
+            return "Die Karten liegen verdeckt und geschuppt im Kreis – jede ein Stück unter der nächsten. Wer dran ist, tippt „Karte ziehen“; die App lost aus, welche es wird, und sagt, was zu tun ist. Und wie am echten Tisch gilt: Reißt dein Zug den Ring, weil die Nachbarkarten sich danach nicht mehr berühren, trinkst du einen Shot. Dicht liegende Karten sind sicher, dünne Stellen nicht – man kann es sehen. Manche Karten gelten nur im Moment, andere bis zum Spielende; das steht auf jeder Karte."
         case .horseRace:
             return "Vier Asse laufen um die Wette. Jeder setzt vorher auf eine Farbe – tippt euch in der Liste auf euer Pferd, dann weiß die App später, wer trinkt. Aufgedeckte Karten schieben das passende Pferd vor; die Seitenkarten schicken es zurück, sobald alle daran vorbei sind."
         case .busRide:

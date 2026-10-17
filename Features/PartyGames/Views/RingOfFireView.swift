@@ -5,15 +5,22 @@
 //  Ring of Fire: 52 verdeckte Karten liegen im Kreis um die Flasche. Wer
 //  dran ist, zieht eine und tut, was darauf steht.
 //
-//  Der Ring ist nicht Deko, sondern die Anzeige des Spielstands: Man sieht
-//  auf einen Blick, wie viel noch kommt, und die Luecken erzaehlen den
-//  bisherigen Abend. Eine Fortschrittsleiste koennte dasselbe, waere aber
-//  eine Zahl statt eines Bildes.
+//  Der Ring ist nicht Deko, sondern spielt mit. Die Karten liegen zufaellig
+//  verteilt und GESCHUPPT – jede ein Stueck unter der naechsten, wie am
+//  echten Tisch. Daraus kommt die Regel, die dem Spiel seinen Namen gibt:
+//  Wer den Ring reisst, trinkt einen Shot. Gerissen ist er, wenn die beiden
+//  Nachbarinnen der gezogenen Karte sich danach nicht mehr beruehren
+//  (`RingLayout.tearsRing`).
 //
-//  Die Karten behalten ihren Platz im Ring, auch wenn sie gezogen sind –
-//  deshalb ein Feld fester Laenge mit Luecken statt eines schrumpfenden
-//  Stapels. Ein Ring, der sich beim Ziehen zusammenschiebt, sieht jedes Mal
-//  anders aus und verliert genau die Information, die ihn ausmacht.
+//  Vorher lagen die Karten in gleichen Abstaenden mit Luft dazwischen, und
+//  die Regel gab es gar nicht – es war ein Stapel, den jemand im Kreis
+//  angeordnet hatte. Der Ring sah aus wie der Ring und tat nichts.
+//
+//  Die Karten behalten ihren Platz, auch wenn sie gezogen sind – deshalb ein
+//  Feld fester Laenge mit Luecken statt eines schrumpfenden Stapels. Die
+//  Luecken sind gleichzeitig die Anzeige des Spielstands und die Landkarte
+//  der Gefahr: Wo schon ein Loch ist, kann nichts mehr reissen, und das
+//  sieht man.
 //
 //  Vier Raenge wirken weiter, nachdem die Karte gezogen wurde. Sie landen in
 //  der Merkliste unter dem Ring, weil sie sonst mit der naechsten Karte aus
@@ -33,7 +40,18 @@ struct RingOfFireView: View {
 
     /// `nil` bedeutet: Platz im Ring, Karte schon gezogen.
     @State private var ring: [PlayingCard?] = []
+    /// Wo die Karten liegen – zufaellig gestreut, teils ueberlappend.
+    @State private var layout = RingLayout.random(count: PlayingCardDeck.fullSize)
     @State private var current: PlayingCard?
+
+    /// Die Stelle, an der der Ring gerade gerissen ist – fuer das
+    /// Aufblitzen im Ring. Verblasst von selbst.
+    @State private var tornAt: Int?
+    /// Hat der ZULETZT gezogene Zug gerissen? Steht getrennt, weil der
+    /// Aktionsscreen laenger offen ist als das Aufblitzen dauert.
+    @State private var currentTore = false
+    @State private var tearPulse = false
+    @State private var tearTask: Task<Void, Never>?
 
     /// Der zweite Screen – die gezogene Karte in Gross.
     @State private var showsAction = false
@@ -69,7 +87,10 @@ struct RingOfFireView: View {
         }
         .navigationTitle("Ring of Fire")
         .navigationBarTitleDisplayMode(.inline)
-        .onDisappear { drawTask?.cancel() }
+        .onDisappear {
+            drawTask?.cancel()
+            tearTask?.cancel()
+        }
         .sheet(isPresented: $isAskingForRule) {
             rulePrompt
         }
@@ -105,6 +126,11 @@ struct RingOfFireView: View {
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                Text("Die Karten liegen geschuppt im Kreis, jede ein Stück unter der nächsten. Reißt dein Zug den Ring – berühren sich die Nachbarn danach nicht mehr –, kostet dich das \(DrinkAmount.shot.text). Wo schon eine Lücke ist, kann nichts mehr reißen.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             DrinkIntensityPicker(game: .ringOfFire)
@@ -134,7 +160,8 @@ struct RingOfFireView: View {
             if let current {
                 RingOfFireActionView(
                     card: current,
-                    rule: RingOfFireRules.rule(for: current.rank)
+                    rule: RingOfFireRules.rule(for: current.rank),
+                    tore: currentTore
                 ) {
                     showsAction = false
                 }
@@ -154,25 +181,39 @@ struct RingOfFireView: View {
     private var ringOfCards: some View {
         GeometryReader { geometry in
             let side = min(geometry.size.width, geometry.size.height)
-            // Die Karten teilen sich den Umfang. Bei zwanzig Karten ist jede
-            // mehr als doppelt so breit wie bei zweiundfuenfzig – mehr geht
-            // nicht, der Kreis hat nun mal nur einen Umfang. Deshalb steht
-            // die Kartenzahl auch in der Vorbereitung.
-            let platzProKarte = (.pi * side * 0.86) / CGFloat(max(ring.count, 1))
-            let cardWidth = min(side * 0.11, platzProKarte * 0.74)
+
+            // Die Kartenbreite folgt dem Layout, nicht umgekehrt: Wie viel
+            // Platz eine Karte im Kreis einnimmt, steht in `cardSpan`, und
+            // genau damit wird auch gerechnet, ob der Ring reisst. Waere die
+            // Breite frei gewaehlt, sehe man eine Ueberlappung und es gaelte
+            // eine andere – ein Bild, das luegt.
+            //
+            // Radius und Hoehe haengen voneinander ab (die Karten ragen nach
+            // innen, der Radius muss das lassen). Einmal aufgeloest:
+            //   r = (side/2) / (1 + 2 * 1.45 * 0.75 * sin(span/2))
+            let halbeSpanne = CGFloat(sin(layout.cardSpan / 2 * .pi / 180))
+            let radius = (side / 2) / (1 + 2.175 * halbeSpanne)
+            let cardWidth = 2 * radius * halbeSpanne
             let cardHeight = cardWidth * 1.45
-            let radius = side / 2 - cardHeight * 0.75
+            // Was in der Mitte frei bleibt. Bei zwanzig Karten liegt der Ring
+            // als dichter Kranz und das Loch ist klein – dann steht dort nur
+            // noch die Zahl.
+            let innen = radius - cardHeight / 2
 
             ZStack {
                 VStack(spacing: 2) {
-                    Text("🍾").font(.system(size: side * 0.15))
+                    if innen > 56 {
+                        Text("🍾").font(.system(size: innen * 0.5))
+                    }
                     Text("\(remaining)")
-                        .font(.system(size: side * 0.1, weight: .heavy, design: .rounded))
+                        .font(.system(size: innen * 0.45, weight: .heavy, design: .rounded))
                         .foregroundStyle(BeerStatsColor.error)
                         .monospacedDigit()
-                    Text("übrig")
-                        .font(BeerStatsFont.statLabel)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
+                    if innen > 56 {
+                        Text("übrig")
+                            .font(BeerStatsFont.statLabel)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                    }
                 }
 
                 ForEach(ring.indices, id: \.self) { position in
@@ -180,7 +221,8 @@ struct RingOfFireView: View {
                         width: cardWidth,
                         height: cardHeight,
                         isLit: spotlight == position,
-                        isEmpty: ring[position] == nil
+                        isEmpty: ring[position] == nil,
+                        isTorn: tornAt == position
                     )
                         // Erst nach aussen schieben, dann um die Mitte
                         // drehen: `offset` verschiebt nur die Darstellung,
@@ -188,9 +230,19 @@ struct RingOfFireView: View {
                         // Mitte des Rings.
                         .offset(y: -radius)
                         .rotationEffect(.degrees(angle(for: position)))
+                        // Muss sein, seit die Karten sich ueberlappen: Der
+                        // Lichtpunkt und der Riss liegen sonst unter der
+                        // naechsten Karte, weil ein ZStack in
+                        // Reihenfolge zeichnet – und genau die beiden sind
+                        // das, was man sehen soll.
+                        .zIndex(spotlight == position || tornAt == position ? 1 : 0)
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
+            // Der Ruck beim Reissen. Kurz und klein – der Ring soll zucken,
+            // nicht wegfliegen.
+            .scaleEffect(tearPulse ? 1.04 : 1)
+            .rotationEffect(.degrees(tearPulse ? 1.5 : 0))
         }
         // Nimmt sich die volle Breite und bleibt quadratisch: Der Ring ist
         // der Screen, nicht eine Zeile darin.
@@ -198,8 +250,10 @@ struct RingOfFireView: View {
         .animation(AppAnimation.standard, value: remaining)
     }
 
+    /// Kommt aus dem Layout, nicht aus der Position: Die Karten liegen
+    /// gestreut, nicht in gleichen Abstaenden.
     private func angle(for position: Int) -> Double {
-        Double(position) / Double(max(ring.count, 1)) * 360
+        layout.angles.indices.contains(position) ? layout.angles[position] : 0
     }
 
     /// Eine Karte im Ring.
@@ -212,7 +266,17 @@ struct RingOfFireView: View {
     ///
     /// `isLit` ist der Lichtpunkt, der beim Ziehen herumwandert. Die Karten
     /// sind nicht antippbar: Gezogen wird ausgelost.
-    private func ringCard(width: CGFloat, height: CGFloat, isLit: Bool, isEmpty: Bool) -> some View {
+    ///
+    /// `isTorn` ist die Stelle, an der der Ring gerade gerissen ist. Sie
+    /// leuchtet kurz auf – die Luecke selbst bleibt danach als normale
+    /// Luecke stehen, denn gerissen wird sie nur einmal.
+    private func ringCard(
+        width: CGFloat,
+        height: CGFloat,
+        isLit: Bool,
+        isEmpty: Bool,
+        isTorn: Bool
+    ) -> some View {
         RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
             .fill(
                 isEmpty
@@ -243,7 +307,21 @@ struct RingOfFireView: View {
                         )
                     )
             )
-            .shadow(color: BeerStatsColor.error.opacity(isLit ? 0.9 : 0), radius: 10)
+            .overlay(
+                // Der Riss: ein kurzer heller Blitz genau dort, wo die Karte
+                // lag. Liegt ueber der gestrichelten Luecke, damit man die
+                // Stelle findet, ohne sie zu suchen.
+                RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
+                    .fill(BeerStatsColor.warning)
+                    .blur(radius: width * 0.3)
+                    .opacity(isTorn ? 0.9 : 0)
+            )
+            .shadow(
+                color: isTorn
+                    ? BeerStatsColor.warning.opacity(0.95)
+                    : BeerStatsColor.error.opacity(isLit ? 0.9 : 0),
+                radius: isTorn ? 18 : 10
+            )
             .frame(width: width, height: height)
             .scaleEffect(isLit ? 1.45 : 1)
     }
@@ -395,11 +473,53 @@ struct RingOfFireView: View {
     private func draw(at position: Int) {
         guard let card = ring[position] else { return }
 
+        // Vor dem Entfernen fragen: Danach liegt die Karte nicht mehr, und
+        // die Frage "reisst das den Ring?" waere nicht mehr zu stellen.
+        let reisst = layout.tearsRing(at: position, present: ring.map { $0 != nil })
+
         withAnimation(AppAnimation.standard) { ring[position] = nil }
 
         current = card
+        currentTore = reisst
         apply(RingOfFireRules.rule(for: card.rank), rank: card.rank)
+
+        if reisst {
+            tear(at: position)
+        } else if remaining == 0 {
+            // Die letzte Karte ohne Riss: Der Ring ist heil durchgespielt,
+            // und das ist am Tisch eine Meldung wert.
+            SoundManager.play(.victory)
+        }
+
         showsAction = true
+    }
+
+    /// Der Ring ist gerissen: Blitz, Ruck, Knall – und der Shot steht
+    /// danach auf dem Aktionsscreen.
+    ///
+    /// Der Klang kommt hier und nicht in `apply`: Ein Riss schlaegt jeden
+    /// Kartenklang, und zwei Toene gleichzeitig sind einer zu viel.
+    private func tear(at position: Int) {
+        tearTask?.cancel()
+        tornAt = position
+
+        HapticManager.error()
+        SoundManager.play(.bombe)
+        SpeechAnnouncer.announce("Ring gerissen")
+
+        tearTask = Task { @MainActor in
+            withAnimation(.spring(response: 0.18, dampingFraction: 0.35)) { tearPulse = true }
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.6)) { tearPulse = false }
+
+            // Der Blitz bleibt laenger als der Ruck: Er muss den
+            // Aktionsscreen ueberleben, damit man die Stelle beim
+            // Zurueckkommen noch findet.
+            try? await Task.sleep(nanoseconds: 2_400_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(AppAnimation.standard) { tornAt = nil }
+        }
     }
 
     private func apply(_ rule: RingOfFireRule, rank: Int) {
@@ -432,19 +552,31 @@ struct RingOfFireView: View {
 
     private func start() {
         drawTask?.cancel()
+        tearTask?.cancel()
         ring = PlayingCardDeck.shuffled(count: cardCount).map { Optional($0) }
+        // Jede Runde wird neu ausgelegt: Dieselben Karten an denselben
+        // Stellen hiesse, dass auch dieselben Stellen reissen – und nach
+        // zwei Abenden wuesste man, wo.
+        layout = RingLayout.random(count: ring.count)
         current = nil
+        currentTore = false
         spotlight = nil
+        tornAt = nil
+        tearPulse = false
         isDrawing = false
         clearRoles()
         hasStarted = true
         HapticManager.success()
+        SoundManager.play(.reRack)
     }
 
     private func restart() {
         drawTask?.cancel()
+        tearTask?.cancel()
         isDrawing = false
         spotlight = nil
+        tornAt = nil
+        tearPulse = false
         hasStarted = false
     }
 
@@ -501,6 +633,10 @@ struct RingOfFireView: View {
             } else {
                 dauer = 0.05 + 0.25 * (Double(14 - restlich) / 14)
                 HapticManager.lightImpact()
+                // Das Ticken der letzten Schritte. Leise (`tap` ist auf ein
+                // Drittel abgemischt) und nur im Auslaufen – auf jedem der
+                // schnellen Schritte waere es ein Rauschen.
+                SoundManager.play(.tap)
             }
 
             try? await Task.sleep(nanoseconds: UInt64(dauer * 1_000_000_000))
