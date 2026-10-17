@@ -515,7 +515,13 @@ wenn die App auf mehreren Geräten läuft. Nicht löschen.
    trocken, statt sie einzeln zu jagen.
 
 Weiter denkbar, aber ohne konkreten Anlass: Cloud Functions (bräuchte
-Blaze), Live Activity für den Sperrbildschirm, Ergebnis als Bild teilen.
+Blaze), Ergebnis als Bild teilen.
+
+**Die Live Activity steht hier nicht mehr – sie ist gebaut.** Sie stand
+monatelang als Idee in dieser Liste, obwohl `LiveGameActivity` samt Start,
+Aktualisieren und Beenden im `LiveGameViewModel` liegt und `LiveGameView`
+sie beim Erscheinen startet. Eine Liste offener Punkte, die Fertiges
+enthält, kostet beim nächsten Mal genau die Zeit, die sie sparen soll.
 
 ---
 
