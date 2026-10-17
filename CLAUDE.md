@@ -220,6 +220,11 @@ den nachgespielten Wurf-Log alter Partien.
 - **Ring of Fire in zwei Screens**: der Ring für sich, die gezogene Karte
   als Vollbild mit „Verstanden". Karten tragen Dauer und Strafe wie die
   Extreme-Karten; Lücken bleiben als gestrichelter Platz stehen.
+- **Bussfahrer hat sein Ende** (17. Oktober): Zwei Hälften, wie am Tisch –
+  erst die Fragerunde, dann **die Busfahrt**. Die hatte gefehlt: Das Spiel
+  hörte nach der vierten richtigen Antwort auf („Das Handy geht weiter"),
+  und der Bussfahrer, der dem Spiel den Namen gibt, kam nie vor. Jetzt deckt
+  er fünf Karten auf, und jede Bildkarte schickt ihn zurück an den Anfang.
 - **Der Ring spielt mit** (17. Oktober): Die Karten liegen zufällig gestreut
   und **geschuppt** – jede ein Stück unter der nächsten, wie am echten
   Tisch. Reißt ein Zug den Ring, kostet er einen Shot. Vorher lagen sie in
@@ -322,6 +327,23 @@ den nachgespielten Wurf-Log alter Partien.
   Funktion, die auch die Aufstellung für den Schnellstart merkt. Eine
   zweite Kopie hätte garantiert irgendwann vergessen, die Partie zu
   starten.
+
+- **Freier Platz ist kein Design** (17. Oktober). In sechs Spielen stand
+  zwischen der Karte und den Knöpfen ein `Spacer`: Die Karte blieb so klein
+  wie ihr Text, und auf einem großen Gerät lag die Hälfte des Screens leer.
+  Der Platz gehört dem Inhalt – die Karte bekommt `maxHeight: .infinity`,
+  die Spacer wandern nach INNEN und halten den Text in ihrer Mitte.
+  Umgestellt sind Bussfahrer, Schätzmeister, Ich hab noch nie, Wahrheit oder
+  Pflicht, Wer würde eher? und Kennst du deine Leute?. Bei den Letzteren,
+  die in einem `ScrollView` liegen, braucht es zusätzlich ein
+  `frame(minHeight: geometry.size.height)` – ohne eine bestimmte Höhe hat
+  `maxHeight: .infinity` nichts, in das es wachsen könnte.
+
+- **Kartengrößen rechnen, nicht tippen.** Bussfahrer zeigte seine Karten in
+  festen 68 Punkten, egal wie breit das Gerät war. Jetzt teilen sie sich die
+  verfügbare Breite (mit Deckel bei einem Viertel, sonst wird die Reihe
+  höher als alles darunter) – dasselbe Prinzip wie beim Ring, wo die
+  Kartenbreite aus dem Layout folgt.
 
 - **Die Palette ist zweigeteilt** (`DesignSystem/Colors.swift`): Akzente
   und Hintergründe kommen aus `AppPalette` und sind wählbar, Schrift,
@@ -671,6 +693,13 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   ist neu und nie gelaufen. Und der eigentliche Test: In einem Spiel hart
   einstellen, zurück, Beerpong starten – die Extreme-Karten müssen wieder
   in der Vorgabe dastehen.
+- **Bussfahrer vom 17. Oktober**: Die Busfahrt ist neu und nie gelaufen.
+  Fünf Karten, jede Bildkarte zurück an den Anfang – gerechnet kommt der
+  Bussfahrer in etwa jedem sechsten Versuch durch. Fühlt sich das am Tisch
+  richtig an oder sitzt er zu lange? Und füllt der Screen jetzt?
+- **Mehr Platz in sechs Spielen** (17. Oktober): Die Karten wachsen in den
+  freien Raum. Zu prüfen, ob irgendwo das Gegenteil passiert – eine Karte,
+  die mit kurzem Text riesig und leer dasteht.
 - **Ring of Fire vom 17. Oktober**: Das Wichtigste zuerst – liegen die
   Karten erkennbar geschuppt, und sieht man die dünnen Stellen? Dann: reißt
   der Ring ungefähr so oft, dass es Spannung macht statt Ärger (gerechnet:

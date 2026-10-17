@@ -44,7 +44,6 @@ struct NeverHaveIEverView: View {
                 } else if let card = currentCard {
                     progressLine
                     cardView(card)
-                    Spacer(minLength: 0)
                     nextButton(for: card)
                 } else {
                     finishedView
@@ -219,6 +218,8 @@ struct NeverHaveIEverView: View {
         let tint = isPenalty ? BeerStatsColor.accentSecondary : BeerStatsColor.success
 
         return VStack(spacing: 16) {
+            Spacer(minLength: 0)
+
             Text(isPenalty ? "🥃" : (card.level?.emoji ?? "🍻"))
                 .font(.system(size: 34))
 
@@ -235,8 +236,15 @@ struct NeverHaveIEverView: View {
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
+        // Fuellt den Platz, statt ihn frei zu lassen: Hier stand ein
+        // `Spacer` zwischen Karte und Knoepfen, und die Karte blieb so klein
+        // wie ihr Text – auf einem grossen Geraet lag die Haelfte des
+        // Screens leer. Die Spacer INNEN halten den Text in der Mitte der
+        // Karte.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(28)
         .glassPanel(cornerRadius: 24)
         .neonEdge(tint, cornerRadius: 24, intensity: isPenalty ? 0.9 : 0.6)

@@ -36,7 +36,6 @@ struct EstimationView: View {
                 if let question = current {
                     progressLine
                     questionCard(question)
-                    Spacer(minLength: 0)
                     controls
                 } else {
                     finishedView
@@ -60,6 +59,7 @@ struct EstimationView: View {
 
     private func questionCard(_ question: EstimationQuestion) -> some View {
         VStack(spacing: 16) {
+            Spacer(minLength: 0)
             Text("🤔").font(.system(size: 34))
 
             Text(question.text)
@@ -92,8 +92,14 @@ struct EstimationView: View {
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .multilineTextAlignment(.center)
             }
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
+        // Fuellt den Platz, statt ihn frei zu lassen: Hier stand ein
+        // `Spacer` zwischen Karte und Knoepfen, und die Karte blieb so klein
+        // wie ihr Text – auf einem grossen Geraet lag die Haelfte des
+        // Screens leer. Die Spacer INNEN halten den Text in der Mitte der
+        // Karte.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(26)
         .glassPanel(cornerRadius: 24)
         .neonEdge(BeerStatsColor.success, cornerRadius: 24, intensity: isRevealed ? 0.9 : 0.5)

@@ -31,7 +31,6 @@ struct TruthOrDareView: View {
             VStack(spacing: 20) {
                 if let card = current {
                     cardView(card)
-                    Spacer(minLength: 0)
                     // Karten ohne Kennung sind selbst eingetippt – die
                     // loescht man unter "Eigene Karten", nicht hier.
                     if !card.key.isEmpty {
@@ -105,6 +104,8 @@ struct TruthOrDareView: View {
 
     private func cardView(_ card: TruthOrDareCard) -> some View {
         VStack(spacing: 16) {
+            Spacer(minLength: 0)
+
             Text(card.kind.emoji).font(.system(size: 36))
 
             Text(card.kind.title.uppercased())
@@ -117,8 +118,13 @@ struct TruthOrDareView: View {
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
+        // Fuellt den Platz, statt ihn frei zu lassen: Hier stand ein
+        // `Spacer` zwischen Karte und Knoepfen, und die Karte blieb so klein
+        // wie ihr Text. Die Spacer INNEN halten den Text in der Mitte.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(28)
         .glassPanel(cornerRadius: 24)
         .neonEdge(tint, cornerRadius: 24, intensity: 0.7)

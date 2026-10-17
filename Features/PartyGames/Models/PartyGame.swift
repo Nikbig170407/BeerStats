@@ -179,7 +179,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         switch self {
         case .ringOfFire: return "Karten geschuppt im Kreis – wer den Ring reißt, shottet"
         case .horseRace: return "Vier Asse, sechs Seitenkarten – setz auf eine Farbe"
-        case .busRide: return "Vier Fragen, jede teurer – ein Fehler und zurück auf Anfang"
+        case .busRide: return "Vier Fragen, dann die Busfahrt – wer am meisten daneben lag, fährt"
         case .truthOrDare:
             let karten = TruthOrDareDeck.count(.truth) + TruthOrDareDeck.count(.dare)
             return "\(karten) Karten – verweigern kostet"
@@ -221,7 +221,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .horseRace:
             return "Vier Asse laufen um die Wette. Jeder setzt vorher auf eine Farbe – tippt euch in der Liste auf euer Pferd, dann weiß die App später, wer trinkt. Aufgedeckte Karten schieben das passende Pferd vor; die Seitenkarten schicken es zurück, sobald alle daran vorbei sind."
         case .busRide:
-            return "Vier Fragen nacheinander: Rot oder Schwarz, höher oder tiefer, dazwischen oder draußen, welche Farbe. Jede richtige Antwort bringt dich eine Stufe weiter, jede falsche kostet – und zurück auf Anfang. Wer durchkommt, ist raus."
+            return "Zwei Hälften. Erst die Fragerunde: Rot oder Schwarz, höher oder tiefer, dazwischen oder draußen, welche Farbe. Jede richtige Antwort bringt dich eine Stufe weiter, jede falsche kostet – und zurück auf Anfang. Wer alle vier schafft, ist raus. Reihum, bis alle durch sind. Dann die Busfahrt: Wer am meisten daneben lag, fährt Bus und deckt fünf Karten auf. Jede Zahl ist gut, jede Bildkarte schickt ihn zurück an den Anfang – und je weiter er gekommen war, desto teurer."
         case .truthOrDare:
             return "Wahrheit oder Pflicht, wie immer – nur dass die App die Karten stellt. Wer verweigert, trinkt die Menge, die auf der Karte steht. Eigene Karten lassen sich im Hauptmenü dazumischen."
         case .neverHaveIEver:

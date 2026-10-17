@@ -42,7 +42,6 @@ struct MostLikelyView: View {
                 if let card = currentCard {
                     progressLine
                     cardView(card)
-                    Spacer(minLength: 0)
                     controls
                     hideRow
                 } else {
@@ -68,6 +67,8 @@ struct MostLikelyView: View {
 
     private func cardView(_ card: MostLikelyCard) -> some View {
         VStack(spacing: 18) {
+            Spacer(minLength: 0)
+
             Text("👉").font(.system(size: 34))
 
             Text(card.text)
@@ -77,8 +78,13 @@ struct MostLikelyView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             countdownLabel
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
+        // Fuellt den Platz, statt ihn frei zu lassen: Hier stand ein
+        // `Spacer` zwischen Karte und Knoepfen, und die Karte blieb so klein
+        // wie ihr Text. Die Spacer INNEN halten den Text in der Mitte.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(28)
         .glassPanel(cornerRadius: 24)
         .neonEdge(BeerStatsColor.warning, cornerRadius: 24, intensity: 0.6)

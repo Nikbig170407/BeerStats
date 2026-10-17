@@ -41,17 +41,20 @@ struct KnowYourPeopleView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.accentSecondary)
 
-            ScrollView {
-                VStack(spacing: 18) {
-                    if let current {
-                        questionCard(current)
-                    } else {
-                        emptyState
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(spacing: 18) {
+                        if let current {
+                            questionCard(current)
+                        } else {
+                            emptyState
+                        }
                     }
+                    .padding(22)
+                    .frame(minHeight: geometry.size.height)
                 }
-                .padding(22)
+                .verticalScrollOnly()
             }
-            .verticalScrollOnly()
         }
         .navigationTitle("Kennst du deine Leute?")
         .navigationBarTitleDisplayMode(.inline)
@@ -62,6 +65,8 @@ struct KnowYourPeopleView: View {
 
     private func questionCard(_ frage: PeopleQuestion) -> some View {
         VStack(spacing: 16) {
+            Spacer(minLength: 0)
+
             if let askedPerson {
                 Text("\(askedPerson.emoji) \(askedPerson.name) ist dran")
                     .font(BeerStatsFont.statLabel)
@@ -84,8 +89,10 @@ struct KnowYourPeopleView: View {
             if answeredId != nil {
                 revealPanel(frage)
             }
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(20)
         .glassPanel(cornerRadius: 22)
         .neonEdge(BeerStatsColor.accentSecondary, cornerRadius: 22, intensity: 0.6)
