@@ -212,6 +212,7 @@ struct HomeView: View {
         }
     }
 
+
     // MARK: - Das Menue
 
     /// Sechs Kacheln, zwei Spalten: Beerpong oben links, dann die vier
@@ -237,7 +238,12 @@ struct HomeView: View {
             menuTile(
                 emoji: "🍺",
                 title: "Beerpong",
+                subtitle: "Werfen, treffen – die App schreibt mit",
                 detail: beerpongDetail,
+                // Wer heute am Tisch steht, statt der Spiele darin: Bei
+                // Beerpong ist die Frage vor dem Antippen nicht "was",
+                // sondern "mit wem".
+                preview: tablePlayers.map(\.emoji),
                 tint: BeerStatsColor.accent
             ) {
                 BeerpongMenuView(container: container, viewModel: viewModel)
@@ -249,7 +255,9 @@ struct HomeView: View {
                 menuTile(
                     emoji: group.emoji,
                     title: group.label,
+                    subtitle: group.subtitle,
                     detail: "\(group.games.count) Spiele",
+                    preview: group.games.map(\.emoji),
                     tint: group.tint
                 ) {
                     PartyGameFolderView(group: group)
@@ -259,12 +267,22 @@ struct HomeView: View {
             menuTile(
                 emoji: "🏆",
                 title: "Turnier",
-                detail: "Quer durch die Spiele",
+                subtitle: "Runde für Runde, die Strafe steigt",
+                detail: "\(tournamentGames.count) Spiele im Topf",
+                preview: tournamentGames.map(\.emoji),
                 tint: BeerStatsColor.warning
             ) {
                 TournamentView()
             }
         }
+    }
+
+    /// Die Spiele, die das Turnier ueberhaupt auslosen kann.
+    ///
+    /// Gerechnet, nicht getippt – sonst steht hier nach dem naechsten Spiel
+    /// eine falsche Zahl (dieselbe Falle wie beim Spielezaehler).
+    private var tournamentGames: [PartyGame] {
+        PartyGame.allCases.filter(\.isTournamentReady)
     }
 
     /// Was unter "Beerpong" steht.
@@ -273,14 +291,26 @@ struct HomeView: View {
     /// passen nicht in eine Kachel. Die beiden, die sich ueberhaupt aendern,
     /// passen in eine Zeile; der Spitzenreiter steht einen Tipp weiter in
     /// der Rangliste, wo man ihn ohnehin sucht.
+    ///
+    /// Gezaehlt wird, wer am Tisch steht – dieselbe Quelle wie die
+    /// Emoji-Reihe darueber. Mit den aktiven Profilen stuenden sonst vier
+    /// Gesichter ueber "6 Leute", sobald jemand abgewaehlt ist, und das
+    /// sieht aus wie ein Fehler.
     private var beerpongDetail: String {
         let partien = viewModel.totalGamesTracked
         guard partien > 0 else { return "Noch keine Partie" }
         let wort = partien == 1 ? "Partie" : "Partien"
-        return "\(partien) \(wort) · \(viewModel.activeProfiles.count) Leute"
+        guard !tablePlayers.isEmpty else { return "\(partien) \(wort)" }
+        return "\(partien) \(wort) · \(tablePlayers.count) am Tisch"
     }
 
     /// Eine Kachel.
+    ///
+    /// Drei Zeilen und eine Vorschau, nicht bloss Titel und Zahl: Die Kachel
+    /// fuellt den halben Bildschirm, und was darin steht, soll die Frage
+    /// beantworten, die man vor dem Antippen hat – was ist da drin? Die
+    /// Emoji-Reihe ist genau das: die Spiele der Gruppe, am Tisch erkennt
+    /// man sie daran schneller als an ihren Namen.
     ///
     /// Die Hoehe ist eine MINDESThoehe: Mit grosser Schrift wird die Kachel
     /// hoeher, statt den Titel abzuschneiden, und das Raster zieht die
@@ -288,19 +318,23 @@ struct HomeView: View {
     private func menuTile<Destination: View>(
         emoji: String,
         title: String,
+        subtitle: String,
         detail: String,
+        preview: [String],
         tint: Color,
         @ViewBuilder destination: () -> Destination
     ) -> some View {
         NavigationLink {
             destination()
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 7) {
                 Text(emoji)
-                    .font(.system(size: 34))
-                    .frame(height: 40)
-
-                Spacer(minLength: 4)
+                    .font(.system(size: 30))
+                    .frame(width: 52, height: 52)
+                    .background(
+                        tint.opacity(0.16),
+                        in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    )
 
                 Text(title)
                     .font(.scaled(18, weight: .bold, design: .rounded))
@@ -308,14 +342,40 @@ struct HomeView: View {
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
 
+                Text(subtitle)
+                    .font(.scaled(12, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer(minLength: 6)
+
+                if !preview.isEmpty {
+                    // Eine Zeile, notfalls kleiner: Zehn Emoji passen sonst
+                    // nicht in eine halbe Bildschirmbreite, und umbrechen
+                    // wuerde die Kachel je nach Gruppe unterschiedlich hoch
+                    // machen.
+                    Text(preview.joined(separator: " "))
+                        .font(.system(size: 15))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        // Fuer VoiceOver ist die Reihe Zierde – vorgelesen
+                        // waere sie eine Kette von Emoji-Namen.
+                        .accessibilityHidden(true)
+                }
+
                 Text(detail)
                     .font(.scaled(11, weight: .heavy, design: .rounded))
                     .foregroundStyle(tint)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            // `maxHeight: .infinity` zieht die kuerzere Kachel auf die
+            // Hoehe ihrer Nachbarin: "Beerpong" ist einzeilig, "Schnell
+            // zwischendurch" zweizeilig – ohne das stuenden in einer Reihe
+            // zwei verschieden hohe Panels nebeneinander.
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(minHeight: 142, alignment: .topLeading)
+            .frame(minHeight: 172, maxHeight: .infinity, alignment: .topLeading)
             .padding(16)
             .glassPanel()
             .neonEdge(tint, intensity: 0.4)
