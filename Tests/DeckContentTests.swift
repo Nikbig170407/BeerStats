@@ -88,6 +88,8 @@ final class DeckContentTests: XCTestCase {
         pruefe("Schätzmeister", EstimationDeck.all.map(\.text), mindestens: 75)
         pruefe("Ich hab noch nie", NeverHaveIEverDeck.statements.map(\.text), mindestens: 210)
 
+        pruefe("Regel des Abends", EveningRuleDeck.all, mindestens: 38)
+
         for kategorie in HeadsUpCategory.allCases {
             pruefe("Wer bin ich? – \(kategorie.title)", HeadsUpDeck.shuffled(kategorie), mindestens: 60)
         }
@@ -158,6 +160,32 @@ final class DeckContentTests: XCTestCase {
         }
     }
 
+    /// Eine Regel des Abends muss am Tisch nachweisbar sein – und dafuer
+    /// ueberhaupt erst ein Satz, keine Stimmung. Geprueft wird die Form:
+    /// kein Punkt am Ende (sie steht als Karte da, nicht als Fliesstext)
+    /// und mehr als ein Wort. „Leise" ist keine Regel, „Alle reden im
+    /// Fluesterton" ist eine.
+    func testEveryRuleIsASentence() {
+        for regel in EveningRuleDeck.all {
+            XCTAssertFalse(
+                [".", "!"].contains(regel.suffix(1)),
+                "Regel endet wie Fließtext: \(regel)"
+            )
+            XCTAssertGreaterThanOrEqual(
+                regel.split(separator: " ").count, 3,
+                "Zu kurz für eine Regel: \(regel)"
+            )
+        }
+    }
+
+    /// Gezogen wird nur, was noch nicht gilt – sonst steht dieselbe Regel
+    /// zweimal am Tisch und die Runde haelt es fuer einen Fehler.
+    func testDrawingSkipsRulesThatAlreadyApply() {
+        let bereitsAktiv = Array(EveningRuleDeck.all.dropLast())
+        let gezogen = EveningRuleDeck.draw(excluding: bereitsAktiv)
+        XCTAssertEqual(gezogen, EveningRuleDeck.all.last)
+    }
+
     /// Die Zahl im Untertitel wird gerechnet, nicht getippt. Dieser Test
     /// hält fest, dass das so bleibt: Stünde dort wieder eine feste Zahl,
     /// wäre sie beim nächsten Kartensatz falsch.
@@ -174,6 +202,10 @@ final class DeckContentTests: XCTestCase {
         XCTAssertTrue(
             PartyGame.estimation.subtitle.contains("\(EstimationDeck.count) Fragen"),
             PartyGame.estimation.subtitle
+        )
+        XCTAssertTrue(
+            PartyGame.eveningRule.subtitle.contains("\(EveningRuleDeck.count) Regeln"),
+            PartyGame.eveningRule.subtitle
         )
     }
 }

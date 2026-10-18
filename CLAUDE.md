@@ -265,18 +265,19 @@ den nachgespielten Wurf-Log alter Partien.
   noch nie" (drei Stufen à 75), 140 Karten bei „Wahrheit oder Pflicht",
   125 Begriffe beim Spion, 100 Karten bei „Wer würde eher?", 100 verbotene
   Wörter, 90 Kategorien, 80 Schätzfragen, 70 Begriffe je Kategorie bei „Wer
-  bin ich?", 64 Bingo-Felder, 60 Themen bei „Zwei Wahrheiten", 45 Strafkarten.
+  bin ich?" (die auch die Pantomime benutzt), 64 Bingo-Felder, 60 Themen bei
+  „Zwei Wahrheiten", 45 Regeln des Abends, 45 Strafkarten.
   Wo **nicht** nachgelegt werden kann, liegt es am Spiel und nicht am
   Fleiß: Ring of Fire hat dreizehn Ränge, Bussfahrer und Pferderennen ein
   Skatblatt, Trink-Roulette acht Felder auf dem Rad. Mehr Karten wären dort
   ein anderes Spiel.
-- Zwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
+- Zweiundzwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
   Pflicht, Ich hab noch nie. *Raten & reden* – Schocken, Mäxchen, Zwei
   Wahrheiten, Der Spion, Wer bin ich?, 21, Schätzmeister, Kategorien,
-  Wer würde eher?, Kennst du deine Leute?. *Schnell zwischendurch* – Bombe,
-  Reaktionsduell, Trink-Roulette. *Läuft nebenher* – Verbotene Wörter,
-  Trinkbingo.
+  Wer würde eher?, Kennst du deine Leute?, Pantomime. *Schnell
+  zwischendurch* – Bombe, Reaktionsduell, Trink-Roulette. *Läuft nebenher* –
+  Verbotene Wörter, Trinkbingo, Regel des Abends.
   Die Zahl im Text und die Fälle in `PartyGame` müssen zusammenpassen –
   hier standen eine Zeit lang neunzehn, aufgezählt waren siebzehn.
 
@@ -304,6 +305,17 @@ den nachgespielten Wurf-Log alter Partien.
   Abweichungs-Zeile bauen sich daraus. Wer den Schalter stattdessen in die
   View schreibt, taucht in der Zusammenfassung nicht auf – und dann steht
   „Standard“ über einer Partie, die keiner ist.
+
+- **Was nebenher läuft, gehört nicht in den View-Zustand** (18. Oktober).
+  Die Regeln des Abends stapeln sich und gelten weiter, während die Runde
+  Ring of Fire spielt – also liegen sie in UserDefaults
+  (`ActiveEveningRules`) und nicht in `@State`. Mit `@State` wäre der Tisch
+  nach dem Zurückkommen regellos, obwohl am echten Tisch alles weiter galt.
+  Gespeichert wird der **Text** der Regel, nicht ihr Platz im Stapel: Ein
+  Stapel wächst und wird umsortiert, eine Nummer zeigte danach auf eine
+  andere Regel, ohne dass es jemandem auffiele. Aus demselben Grund hat das
+  Spiel **eine** Strafe für alle Regeln und nicht eine je Karte – sonst
+  müsste die gespeicherte Regel ihren Preis mitbringen.
 
 - **Wer heute mitspielt, steht in `TableRoster`** – und kommt über
   `\.tablePlayers` in der SwiftUI-Umgebung bei den Spielen an, nicht als
@@ -770,6 +782,15 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
 - **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.
+- **„Regel des Abends" (18. Oktober)**: Zieht sie eine Regel, die wirklich
+  auffällt, oder eine, die den Abend lahmlegt? Besonders zu prüfen, dass die
+  Regeln **das Verlassen des Screens überleben** – ziehen, Ring of Fire
+  spielen, zurückgehen: Es müssen noch dieselben dastehen. Und ob fünf
+  gleichzeitig noch spielbar sind oder ob die Warnung früher kommen muss.
+- **Pantomime (18. Oktober)**: Reichen 90 Sekunden, oder ist die Runde
+  vorher durch? Die Begriffe sind die von „Wer bin ich?" – taugen sie zum
+  Vorspielen, oder sind gerade „Film & Serie" dafür zu schwer? Und ob die
+  beiden großen Flächen zu treffen sind, während man gleichzeitig spielt.
 - **Sechs Kacheln im Hauptmenü** (17. Oktober): Beerpong oben links, Turnier
   unten rechts. Passt das Raster auf dem Gerät, auch mit großer Schrift?
 - **Inhalt in den Kacheln** (18. Oktober): Jede Kachel trägt jetzt einen

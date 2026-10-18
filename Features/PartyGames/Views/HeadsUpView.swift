@@ -82,33 +82,15 @@ struct HeadsUpView: View {
     }
 
     private func categoryRow(_ option: HeadsUpCategory) -> some View {
-        let isOn = category == option
-
-        return Button {
+        OptionRow(
+            emoji: option.emoji,
+            title: option.title,
+            detail: "\(HeadsUpDeck.count(option)) Begriffe",
+            isOn: category == option,
+            tint: BeerStatsColor.accent
+        ) {
             category = option
-            HapticManager.lightImpact()
-        } label: {
-            HStack(spacing: 14) {
-                Text(option.emoji).font(.system(size: 24))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(option.title)
-                        .font(BeerStatsFont.headline)
-                        .foregroundStyle(BeerStatsColor.textPrimary)
-                    Text("\(HeadsUpDeck.count(option)) Begriffe")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                }
-                Spacer()
-                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
-                    .foregroundStyle(isOn ? BeerStatsColor.accent : BeerStatsColor.textSecondary)
-            }
-            .padding(14)
-            .glassPanel(cornerRadius: 16)
-            .neonEdge(BeerStatsColor.accent, cornerRadius: 16, intensity: isOn ? 0.6 : 0.15)
-            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Runde
@@ -134,23 +116,11 @@ struct HeadsUpView: View {
             Spacer(minLength: 0)
 
             HStack(spacing: 0) {
-                tapZone(title: "Daneben", tint: BeerStatsColor.error) { advance(hit: false) }
-                tapZone(title: "Getroffen", tint: BeerStatsColor.success) { advance(hit: true) }
+                TapZone(title: "Daneben", tint: BeerStatsColor.error) { advance(hit: false) }
+                TapZone(title: "Getroffen", tint: BeerStatsColor.success) { advance(hit: true) }
             }
-            .frame(height: 130)
+            .frame(height: TapZone.height)
         }
-    }
-
-    private func tapZone(title: String, tint: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.scaled(22, weight: .heavy, design: .rounded))
-                .foregroundStyle(tint)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(tint.opacity(0.15))
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Ergebnis

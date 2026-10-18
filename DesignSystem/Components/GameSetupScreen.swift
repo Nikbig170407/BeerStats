@@ -102,6 +102,57 @@ struct ChoiceOption<Value: Hashable>: Identifiable {
 /// Dasselbe Muster stand schon dreimal im Projekt (Haerte, Extreme-Modus,
 /// Becherzahl), jedes Mal mit anderen Radien und Groessen. Ab hier gibt es
 /// einen Baustein dafuer.
+/// Eine Zeile zum Auswaehlen: Emoji, Titel, Zusatz, Haken.
+///
+/// Fuer das, was `ChoiceRow` nicht kann – vier oder mehr Moeglichkeiten mit
+/// eigener Beschreibung. Nebeneinander waeren sie zu schmal, untereinander
+/// braucht jede Zeile dieselben Masse. Stand als private Funktion in
+/// `HeadsUpView`; die Pantomime braucht dieselbe Auswahl (es ist derselbe
+/// Begriffsstapel), und eine zweite Kopie waere nach der Vorlage des
+/// Projekts die erste Zeile Richtung Auseinanderlaufen.
+struct OptionRow: View {
+
+    let emoji: String
+    let title: String
+    var detail: String? = nil
+    let isOn: Bool
+    var tint: Color = BeerStatsColor.accent
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            action()
+            HapticManager.lightImpact()
+        } label: {
+            HStack(spacing: 14) {
+                Text(emoji).font(.system(size: 24))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(BeerStatsFont.headline)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                    if let detail {
+                        Text(detail)
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(isOn ? tint : BeerStatsColor.textSecondary)
+            }
+            .padding(14)
+            .glassPanel(cornerRadius: 16)
+            .neonEdge(tint, cornerRadius: 16, intensity: isOn ? 0.6 : 0.15)
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
+    }
+}
+
 struct ChoiceRow<Value: Hashable>: View {
 
     let options: [ChoiceOption<Value>]
