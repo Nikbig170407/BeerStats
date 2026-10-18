@@ -326,13 +326,31 @@ den nachgespielten Wurf-Log alter Partien.
   Nicht zu verwechseln mit `PlayerProfile.isActive`: Das heißt „gehört noch
   zur Truppe" und gilt für Monate, die Aufstellung heißt „ist heute da".
 
+- **Der Spielscreen besteht aus fünf Teilen, nicht aus einem** (18.
+  Oktober). `LiveGameViewModel` hält nur noch den Zustand, den Undo-Verlauf
+  und die Reihenfolge. Daneben liegen: `LiveGameNaming` (wie Leute und
+  Teams heißen), `LiveGameNarrator` (Protokollzeile und Einblendung zu
+  einem Ereignis – reine Rechnung, ohne Gerät prüfbar),
+  `LiveGameFeedback` (Rütteln und Klang, reine Nebenwirkung),
+  `ExtremeCardDealer` (welche Becher geladen sind) und `LiveGameSync` (alles
+  zum Wurf-Log, samt Warteschlange). Der Schnitt verläuft zwischen **Satz
+  und Nebenwirkung**: Vorher entstanden die Einblendungstexte in derselben
+  Funktion, die Haptik auslöste – ein Satz ließ sich nicht ändern, ohne am
+  Gerät zu prüfen, ob dabei das Rütteln heil bleibt. Jetzt hängen an beiden
+  neuen Werten Tests, die es vorher nicht geben konnte.
+
 - **Ein fehlgeschlagener Schreibvorgang darf nicht verpuffen.** Der
   Wurf-Log ist die Wahrheit; fehlt dort ein Eintrag, läuft die
   nachgespielte Partie dauerhaft anders als die gespielte. Scheitert das
   Schreiben, merkt sich `LiveGameViewModel` den Vorgang und reicht ihn auf
   Knopfdruck nach. Das geht nur, weil die laufende Nummer im mitgegebenen
   Spielzustand steckt und nicht in der Uhrzeit des Schreibens – ein
-  Eintrag darf beliebig später kommen.
+  Eintrag darf beliebig später kommen. **Jeder liegengebliebene Eintrag
+  merkt sich seine Partie** (`LiveGameSync`): Vorher lagen Warteschlange und
+  Spielkennung getrennt, eine Revanche schrieb die Kennung um – und ein
+  nachgereichter Wurf der Vorpartie wäre in den Log der NEUEN Partie
+  gelaufen. Nachgespielt hätte die Revanche einen Treffer enthalten, den es
+  nie gab.
 
 - **Eine Partie anlegen heißt `createAndStart`.** Es gibt zwei Wege in eine
   Partie (Neues Spiel und „Nochmal dieselben"); beide gehen durch dieselbe
@@ -559,16 +577,16 @@ den nachgespielten Wurf-Log alter Partien.
 `LobbyView` sind gebaut, aber nicht verlinkt. Sie sind der Weg für später,
 wenn die App auf mehreren Geräten läuft. Nicht löschen.
 
-**Offen / denkbar**, nach Wert sortiert:
+**Offen / denkbar:** nichts mit konkretem Anlass. Denkbar bleiben Cloud
+Functions – die bräuchten Blaze.
 
-1. **`LiveGameViewModel` teilen.** 771 Zeilen, zehn `@Published`. Vier der
-   acht Funde aus der Cloud-Prüfung vom 15. August lagen dort, alle mit
-   derselben Ursache: derselbe Zustand an zwei Stellen gehalten. Ein Schnitt
-   entlang Regelwerk / Synchronisation / Nebenwirkungen legt die Fehlerklasse
-   trocken, statt sie einzeln zu jagen.
-
-Weiter denkbar, aber ohne konkreten Anlass: Cloud Functions (bräuchte
-Blaze).
+**`LiveGameViewModel` ist geteilt** (18. Oktober). Es stand hier als
+wichtigster offener Punkt: 899 Zeilen, zwölf `@Published`, und vier der
+acht Funde aus der Cloud-Prüfung vom 15. August lagen dort, alle mit
+derselben Ursache – derselbe Zustand an zwei Stellen gehalten. Geschnitten
+ist entlang der Frage, was man zum Prüfen braucht; was dabei herauskam,
+steht unten bei „Was man beim Weiterbauen wissen muss". Geblieben sind 662
+Zeilen Klammer.
 
 **Die Live Activity steht hier nicht mehr – sie ist gebaut.** Sie stand
 monatelang als Idee in dieser Liste, obwohl `LiveGameActivity` samt Start,
@@ -793,6 +811,11 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   beiden großen Flächen zu treffen sind, während man gleichzeitig spielt.
 - **Sechs Kacheln im Hauptmenü** (17. Oktober): Beerpong oben links, Turnier
   unten rechts. Passt das Raster auf dem Gerät, auch mit großer Schrift?
+- **Nachreichen nach einer Revanche** (18. Oktober): Der Weg, der vorher
+  falsch lief. Flugmodus an, ein paar Würfe tippen, Partie zu Ende spielen,
+  Revanche starten, Netz an, „Nachreichen" drücken – die Würfe müssen in der
+  **alten** Partie landen, der Spielverlauf der Revanche darf sie nicht
+  zeigen.
 - **Inhalt in den Kacheln** (18. Oktober): Jede Kachel trägt jetzt einen
   halben Satz und eine Emoji-Reihe – die Spiele der Gruppe, bei Beerpong die
   Leute am Tisch. Zu prüfen: Bleiben zehn Emoji bei „Raten & reden" in einer

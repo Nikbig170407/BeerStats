@@ -6,7 +6,22 @@
 //
 //  Das ViewModel enthält bewusst KEINE Regel-Logik – die liegt vollständig
 //  in GameEngine. Hier passiert nur: Aktion weiterreichen, Verlauf für Undo
-//  mitschreiben, Ereignisse in Anzeigetexte, Haptik und Overlays übersetzen.
+//  mitschreiben, Ereignisse weiterleiten und den Zustand veröffentlichen.
+//
+//  Seit dem 18. Oktober liegt daneben, was vorher mit drin lag. Die Datei
+//  war auf 899 Zeilen gewachsen, und vier der acht Funde aus der
+//  Cloud-Prüfung vom 15. August lagen genau hier – alle mit derselben
+//  Ursache: derselbe Zustand an zwei Stellen gehalten. Geschnitten ist
+//  entlang der Frage, was man zum Prüfen braucht:
+//
+//  - `LiveGameNaming` / `LiveGameNarrator` – wie etwas heißt und wie es
+//    heißt, wenn es passiert. Reine Rechnung, ohne Gerät prüfbar.
+//  - `LiveGameFeedback` – Rütteln und Klang. Reine Nebenwirkung.
+//  - `ExtremeCardDealer` – welche Becher geladen sind.
+//  - `LiveGameSync` – alles, was zum Wurf-Log geht, samt Warteschlange.
+//
+//  Was hier bleibt, ist die Klammer: der Zustand, der Verlauf für Undo und
+//  die Reihenfolge, in der das alles passiert.
 //
 
 import SwiftUI
@@ -40,19 +55,6 @@ final class LiveGameViewModel: ObservableObject {
     @Published private(set) var unsavedCount = 0
     @Published private(set) var isRetryingWrites = false
 
-    /// Was nicht geschrieben werden konnte, in der Reihenfolge des Spiels.
-    ///
-    /// Die laufende Nummer steckt im mitgegebenen Zustand, nicht in der
-    /// Uhrzeit des Schreibens – deshalb darf ein Eintrag beliebig spaeter
-    /// nachkommen, ohne dass die Reihenfolge im Log durcheinandergeraet.
-    private var pendingWrites: [PendingWrite] = []
-
-    /// Ein Schreibvorgang, der wiederholt werden kann.
-    private enum PendingWrite {
-        case action(GameAction, thrower: PlayerRef, before: LiveGameState, after: LiveGameState)
-        case undo(thrower: PlayerRef, state: LiveGameState)
-    }
-
     /// Läuft, während das Ergebnis geschrieben wird.
     @Published private(set) var isSettling = false
     @Published private(set) var settleError: String?
@@ -63,13 +65,17 @@ final class LiveGameViewModel: ObservableObject {
     let format: GameFormat
 
     private let playersPerTeam: Int
-    /// Wechselt bei einer Revanche auf das neu angelegte Spiel.
-    private var gameId: String?
     private let gameType: GameType
-    private let throwRepository: ThrowRepositoryProtocol?
     private let gameRepository: GameRepositoryProtocol?
     private let profileRepository: PlayerProfileRepositoryProtocol?
     private let ownerId: String?
+
+    /// Der Weg zum Wurf-Log – samt Spielkennung und Warteschlange.
+    private let sync: LiveGameSync
+    /// Wie Leute und Teams heissen.
+    private let naming: LiveGameNaming
+    /// Was zu einem Ereignis gesagt und eingeblendet wird.
+    private let narrator: LiveGameNarrator
 
     /// Verhindert doppelte Auswertung: Das Spielende kann sowohl lokal als
     /// auch erneut durch den Log-Stream auftreten, gezählt werden darf es
@@ -86,9 +92,8 @@ final class LiveGameViewModel: ObservableObject {
 
     // MARK: - Beerpong Extreme
 
-    private let extreme: ExtremeSettings
-    /// Geladene Becher je Team, ausgelost beim Start.
-    private var loadedCups: [Set<Int>] = [[], []]
+    /// Welche Becher geladen sind und wann daraus eine Karte wird.
+    private var dealer: ExtremeCardDealer
     /// Die Karte, die gerade auf dem Bildschirm liegt.
     @Published private(set) var extremeCard: ExtremeCard?
 
@@ -114,50 +119,21 @@ final class LiveGameViewModel: ObservableObject {
         self.format = format
         self.playersPerTeam = playersPerTeam
         self.gameType = playersPerTeam == 1 ? .oneVsOne : .twoVsTwo
-        self.gameId = gameId
-        self.throwRepository = throwRepository
         self.gameRepository = gameRepository
         self.profileRepository = profileRepository
         self.ownerId = ownerId
-        self.extreme = extreme
+        self.sync = LiveGameSync(repository: throwRepository, gameId: gameId, teams: teams)
+
+        let naming = LiveGameNaming(teams: teams)
+        self.naming = naming
+        self.narrator = LiveGameNarrator(naming: naming)
+        self.dealer = ExtremeCardDealer(settings: extreme)
         self.state = GameEngine.makeInitialState(format: format, playersPerTeam: playersPerTeam)
 
-        // Welche Becher geladen sind, wird EINMAL zu Beginn ausgelost und
-        // nicht bei jedem Treffer neu gewuerfelt. Sonst waere es keine
-        // Eigenschaft des Bechers mehr, sondern nur eine Wahrscheinlichkeit
-        // pro Wurf – und der Reiz des Modus ist gerade, dass ein bestimmter
-        // Becher geladen IST und niemand weiss, welcher.
-        //
-        // Jedes Team hat eigene geladene Becher: Beide Racks stehen sich
-        // gegenueber, und ein gemeinsamer Satz haette bedeutet, dass ein
-        // Treffer auf Position 3 immer auf beiden Seiten ausloest.
-        resetLoadedCups()
+        // Nach dem Anlegen des Zustands, weil die Auslosung die lebenden
+        // Becher daraus liest.
+        dealer.reload(from: state, format: format)
         observeThrows()
-    }
-
-    /// Lost die geladenen Becher neu aus.
-    ///
-    /// Muss bei JEDEM neuen Rack laufen, nicht nur beim ersten. Ein geladener
-    /// Becher wird beim Ausloesen aus der Menge entfernt; ohne dieses
-    /// Zuruecksetzen liefe eine Revanche mit den Resten der Vorpartie – im
-    /// schlechtesten Fall mit gar keinen Karten, waehrend die App weiter
-    /// "Beerpong Extreme" anzeigt.
-    private func resetLoadedCups() {
-        guard extreme.isEnabled else {
-            loadedCups = [[], []]
-            return
-        }
-
-        // Aus den LEBENDEN Positionen ziehen, nicht aus 0..<cupCount: Beim
-        // fairen Anwurf fehlen einem Team schon zu Beginn Becher, und eine
-        // geladene Position an einer leeren Stelle koennte nie ausloesen. Das
-        // schwaechere Team haette sonst ausgerechnet weniger Karten.
-        loadedCups = (0..<2).map { team in
-            let lebende = state.racks.indices.contains(team)
-                ? state.racks[team].aliveCupIndices
-                : Array(0..<format.cupCount)
-            return Set(lebende.shuffled().prefix(min(extreme.loadedCups, lebende.count)))
-        }
     }
 
     deinit {
@@ -169,15 +145,15 @@ final class LiveGameViewModel: ObservableObject {
     /// Gerät oder von einem Mitspieler – wird der Spielstand daraus neu
     /// aufgebaut.
     private func observeThrows() {
-        guard let gameId, let throwRepository else { return }
+        guard let strom = sync.stream() else { return }
         observationTask = Task { [weak self] in
             guard let self else { return }
-            for await entries in throwRepository.observeThrows(gameId: gameId) {
-                var rebuilt = throwRepository.replay(
+            for await entries in strom {
+                guard var rebuilt = self.sync.replay(
                     entries,
                     format: self.format,
                     playersPerTeam: self.playersPerTeam
-                )
+                ) else { continue }
                 // Der Bounce-Schalter ist reine Bedienung und steht bewusst
                 // nicht im Log. Ohne diese Zeile würde er von jeder
                 // Listener-Rückmeldung stillschweigend zurückgesetzt – man
@@ -216,36 +192,13 @@ final class LiveGameViewModel: ObservableObject {
         guard action.isPersistable else { return }
         history.append(snapshot)
         if history.count > Self.maxHistory { history.removeFirst() }
-        persist(action, by: thrower, before: snapshot, after: result.state)
-    }
 
-    private func persist(
-        _ action: GameAction,
-        by thrower: PlayerRef,
-        before: LiveGameState,
-        after: LiveGameState
-    ) {
-        guard let gameId, let throwRepository else { return }
         Task { [weak self] in
             guard let self else { return }
-            do {
-                try await throwRepository.record(
-                    action: action,
-                    by: thrower,
-                    before: before,
-                    after: after,
-                    gameId: gameId,
-                    teams: self.teams
-                )
-            } catch {
-                AppLogger.firestore.error("Wurf konnte nicht gespeichert werden: \(error.localizedDescription)")
-                // Der Wurf steht lokal schon auf dem Schirm, im Log aber
-                // nicht. Spätestens beim nächsten Nachspielen verschwindet er
-                // wieder – das darf nicht unbemerkt passieren.
-                self.remember(
-                    .action(action, thrower: thrower, before: before, after: after)
-                )
-            }
+            let geschrieben = await self.sync.record(
+                action, by: thrower, before: snapshot, after: result.state
+            )
+            if !geschrieben { self.refreshSyncStatus() }
         }
     }
 
@@ -285,7 +238,7 @@ final class LiveGameViewModel: ObservableObject {
         // Die Kennung JETZT festhalten, nicht erst spaeter lesen: Eine
         // Revanche schreibt `gameId` unmittelbar danach um, und dann wuerde
         // das falsche Spiel als beendet markiert.
-        let settledGameId = gameId
+        let settledGameId = sync.gameId
 
         // Der Endstand, wie er aus dem Wurf-Log entstanden ist. Ohne ihn
         // bliebe im Spiel-Dokument die volle Becherzahl vom Anlegen stehen,
@@ -312,7 +265,7 @@ final class LiveGameViewModel: ObservableObject {
             // normalen Partie nicht vergleichbar und würde die Rangliste
             // still verfälschen. Die Partie selbst wird trotzdem beendet und
             // bleibt im Spielverlauf stehen.
-            if let ownerId, let profileRepository, !extreme.isEnabled {
+            if let ownerId, let profileRepository, !dealer.isEnabled {
                 try await profileRepository.applyFinishedGame(
                     state: finishedState,
                     profileIdsByTeam: profileIdsByTeam,
@@ -330,7 +283,7 @@ final class LiveGameViewModel: ObservableObject {
             // zaehlt, was gespielt wurde, nicht ob es die Trefferquote
             // verfaelscht. Die Statistiken darueber bleiben getrennt.
             EveningLog.record(
-                title: extreme.isEnabled ? "Beerpong Extreme" : "Beerpong",
+                title: dealer.isEnabled ? "Beerpong Extreme" : "Beerpong",
                 emoji: "🍺",
                 // Die Namen der Gewinner, nicht "Team 1". Die Aufstellung
                 // wechselt zwischen den Partien eines Abends, ein Platzhalter
@@ -381,7 +334,7 @@ final class LiveGameViewModel: ObservableObject {
     /// „Spiel fortsetzen" im Hauptmenü stehen – es gäbe keinen Weg, es
     /// wieder loszuwerden.
     func abandonGame() {
-        guard let gameId, let gameRepository else { return }
+        guard let gameId = sync.gameId, let gameRepository else { return }
         // Kein Ergebnis festschreiben: Die Partie wurde nicht zu Ende
         // gespielt und darf keine Statistik erzeugen.
         didSettleGame = true
@@ -420,7 +373,9 @@ final class LiveGameViewModel: ObservableObject {
             try await gameRepository.startGame(gameId: newGameId)
 
             observationTask?.cancel()
-            gameId = newGameId
+            // Liegengebliebenes der Vorpartie wandert NICHT mit: Jeder
+            // Eintrag kennt seine eigene Partie, siehe `LiveGameSync`.
+            sync.rebind(to: newGameId)
             history.removeAll()
             eventLog.removeAll()
             didSettleGame = false
@@ -428,7 +383,7 @@ final class LiveGameViewModel: ObservableObject {
             state = GameEngine.makeInitialState(format: format, playersPerTeam: playersPerTeam)
             // Nach dem neuen Rack, weil die Auslosung die lebenden Becher
             // daraus liest.
-            resetLoadedCups()
+            dealer.reload(from: state, format: format)
             observeThrows()
             HapticManager.success()
         } catch {
@@ -448,57 +403,36 @@ final class LiveGameViewModel: ObservableObject {
 
     // MARK: - Liegengebliebenes nachreichen
 
-    /// Merkt sich einen fehlgeschlagenen Schreibvorgang und sagt es an.
-    private func remember(_ write: PendingWrite) {
-        pendingWrites.append(write)
-        unsavedCount = pendingWrites.count
-        syncWarning = unsavedCount == 1
-            ? "Ein Eintrag ist nicht im Log gelandet."
-            : "\(unsavedCount) Einträge sind nicht im Log gelandet."
+    /// Die EINZIGE Stelle, an der die Anzeige dem Stand der Warteschlange
+    /// folgt.
+    ///
+    /// Vorher stand dieselbe Rechnung an drei Stellen – beim Merken, beim
+    /// Nachreichen und am Ende des Nachreichens – und jede konnte fuer sich
+    /// falsch werden. Genau diese Fehlerklasse ("derselbe Zustand an zwei
+    /// Stellen") war der Anlass fuer den Schnitt.
+    private func refreshSyncStatus(message: String? = nil) {
+        unsavedCount = sync.pendingCount
+
+        if let message {
+            syncWarning = message
+        } else if unsavedCount == 0 {
+            syncWarning = nil
+        } else {
+            syncWarning = unsavedCount == 1
+                ? "Ein Eintrag ist nicht im Log gelandet."
+                : "\(unsavedCount) Einträge sind nicht im Log gelandet."
+        }
     }
 
     /// Schickt alles Liegengebliebene noch einmal los.
-    ///
-    /// Der Reihe nach und abbrechend beim ersten erneuten Fehlschlag: Die
-    /// Eintraege haengen in ihrer Reihenfolge aneinander, und einen Wurf
-    /// nachzureichen, dessen Vorgaenger weiterhin fehlt, macht den Log nicht
-    /// richtiger – nur laenger.
     func retryUnsavedWrites() async {
-        guard let gameId, let throwRepository, !pendingWrites.isEmpty else { return }
+        guard sync.pendingCount > 0 else { return }
 
         isRetryingWrites = true
         defer { isRetryingWrites = false }
 
-        while let naechster = pendingWrites.first {
-            do {
-                switch naechster {
-                case let .action(action, thrower, before, after):
-                    try await throwRepository.record(
-                        action: action,
-                        by: thrower,
-                        before: before,
-                        after: after,
-                        gameId: gameId,
-                        teams: teams
-                    )
-                case let .undo(thrower, state):
-                    try await throwRepository.recordUndo(
-                        by: thrower,
-                        in: state,
-                        gameId: gameId,
-                        teams: teams
-                    )
-                }
-                pendingWrites.removeFirst()
-                unsavedCount = pendingWrites.count
-            } catch {
-                AppLogger.firestore.error("Nachreichen gescheitert: \(error.localizedDescription)")
-                syncWarning = "Nachreichen hat nicht geklappt. Prüft die Verbindung."
-                return
-            }
-        }
-
-        syncWarning = nil
+        let durch = await sync.retryPending()
+        refreshSyncStatus(message: durch ? nil : "Nachreichen hat nicht geklappt. Prüft die Verbindung.")
     }
 
     var canUndo: Bool { !history.isEmpty }
@@ -518,20 +452,10 @@ final class LiveGameViewModel: ObservableObject {
         appendLog("↶ Letzte Aktion rückgängig gemacht.")
         HapticManager.lightImpact()
 
-        guard let gameId, let throwRepository else { return }
         Task { [weak self] in
             guard let self else { return }
-            do {
-                try await throwRepository.recordUndo(
-                    by: thrower,
-                    in: snapshot,
-                    gameId: gameId,
-                    teams: self.teams
-                )
-            } catch {
-                AppLogger.firestore.error("Undo konnte nicht gespeichert werden: \(error.localizedDescription)")
-                self.remember(.undo(thrower: thrower, state: snapshot))
-            }
+            let geschrieben = await self.sync.recordUndo(by: thrower, in: snapshot)
+            if !geschrieben { self.refreshSyncStatus() }
         }
     }
 
@@ -567,30 +491,15 @@ final class LiveGameViewModel: ObservableObject {
 
     // MARK: - Abfragen für die View
 
-    func playerName(_ player: PlayerRef) -> String {
-        let names = teams[player.teamIndex].playerNames
-        guard names.indices.contains(player.slot) else { return "Spieler \(player.slot + 1)" }
-        return names[player.slot]
-    }
+    // Duenne Weiterreicher auf `LiveGameNaming`. Sie bleiben am ViewModel,
+    // weil die Ansichten sie so kennen – die Arbeit steht aber dort, wo sie
+    // ohne ViewModel pruefbar ist.
+    func playerName(_ player: PlayerRef) -> String { naming.player(player) }
+    func teamName(_ teamIndex: Int) -> String { naming.team(teamIndex) }
+    func teamShortName(_ teamIndex: Int) -> String { naming.shortTeam(teamIndex) }
 
-    /// Wie das Team genannt wird – nach seinen Leuten, nicht "Team 1".
-    /// Die Zeichenarbeit steht in `Team`, weil sie dort pruefbar ist.
-    func teamName(_ teamIndex: Int) -> String {
-        guard teams.indices.contains(teamIndex) else { return "Team \(teamIndex + 1)" }
-        return teams[teamIndex].displayName(fallbackIndex: teamIndex)
-    }
-
-    /// Kurzform fuer den Sperrbildschirm, wo beide Teams in eine Zeile
-    /// muessen.
-    func teamShortName(_ teamIndex: Int) -> String {
-        guard teams.indices.contains(teamIndex) else { return "Team \(teamIndex + 1)" }
-        return teams[teamIndex].shortDisplayName(fallbackIndex: teamIndex)
-    }
-
-    /// Das Verb zur Teamgroesse: "wirft" oder "werfen".
     func teamVerb(_ teamIndex: Int, _ singular: String, _ plural: String) -> String {
-        guard teams.indices.contains(teamIndex) else { return singular }
-        return teams[teamIndex].verb(singular, plural)
+        naming.verb(teamIndex, singular, plural)
     }
 
     var currentThrowerName: String { playerName(state.currentThrower) }
@@ -666,8 +575,9 @@ final class LiveGameViewModel: ObservableObject {
 
     private func handle(_ events: [GameEvent]) {
         for event in events {
-            appendLog(logText(for: event))
-            applyFeedback(for: event)
+            appendLog(narrator.logText(for: event))
+            LiveGameFeedback.play(for: event)
+            if let einblendung = narrator.highlight(for: event) { show(einblendung) }
             drawExtremeCardIfLoaded(for: event)
         }
         // Ist die Partie vorbei, hat der Sieger-Screen Vorrang. Eine noch
@@ -679,35 +589,12 @@ final class LiveGameViewModel: ObservableObject {
 
     /// Zieht eine Karte, wenn der getroffene Becher geladen war.
     ///
-    /// Ein Becher loest nur EINMAL aus: Die Kennung wird beim Ziehen aus der
-    /// Menge entfernt. Sonst wuerde dieselbe Position nach einem Umstellen
-    /// oder in der Redemption erneut feuern, obwohl der Becher laengst weg ist.
+    /// Welcher Becher geladen ist und dass er nur EINMAL ausloest, weiss der
+    /// `ExtremeCardDealer`. Hier steht nur noch, was auf dem Bildschirm
+    /// passiert – und die eine Bedingung, die den Spielstand betrifft: Nach
+    /// dem letzten Becher hat der Sieger-Screen Vorrang.
     private func drawExtremeCardIfLoaded(for event: GameEvent) {
-        guard extreme.isEnabled, !state.isFinished else { return }
-
-        let hitTeam: Int
-        let cupIndex: Int
-
-        switch event {
-        case .hit(let thrower, _, _, let index):
-            // Getroffen wird immer das Rack des Gegners.
-            hitTeam = 1 - thrower.teamIndex
-            cupIndex = index
-        case .cupChosen(let byTeamIndex, let index):
-            // Bombe und Bounce: Die Zusatzbecher waehlt das Team, dem sie
-            // gehoeren – hier ist der Waehlende also der Betroffene.
-            hitTeam = byTeamIndex
-            cupIndex = index
-        default:
-            return
-        }
-
-        guard loadedCups.indices.contains(hitTeam),
-              loadedCups[hitTeam].contains(cupIndex) else { return }
-
-        loadedCups[hitTeam].remove(cupIndex)
-
-        guard let card = ExtremeDeck.draw(mode: extreme.mode) else { return }
+        guard !state.isFinished, let card = dealer.card(for: event) else { return }
 
         // Die Karte verdeckt den Tisch. Eine gleichzeitig laufende
         // Einblendung darunter waere nur Unruhe.
@@ -719,78 +606,6 @@ final class LiveGameViewModel: ObservableObject {
 
     func dismissExtremeCard() {
         extremeCard = nil
-    }
-
-    private func applyFeedback(for event: GameEvent) {
-        switch event {
-        case .hit(_, let bounce, let trickshot, _):
-            HapticManager.mediumImpact()
-            SoundManager.play(.cupHit)
-            if bounce {
-                show(.init(
-                    kind: .bounce,
-                    title: "BOUNCE!",
-                    subtitle: "Aufsetzer im Becher – zwei Becher, der Gegner wählt den zweiten"
-                ))
-            } else if trickshot {
-                show(.init(
-                    kind: .trickshot,
-                    title: "TRICKSHOT!",
-                    subtitle: "Zwei Becher – der Gegner wählt den zweiten"
-                ))
-            }
-        case .airball(let thrower, let penalised):
-            HapticManager.error()
-            if penalised {
-                SoundManager.play(.airball)
-                show(.init(kind: .airball, title: "AIRBALL!", subtitle: "\(playerName(thrower)) muss shotten"))
-            }
-        case .caughtFire(let player):
-            HapticManager.success()
-            SoundManager.play(.onFire)
-            show(.init(kind: .onFire, title: "ON FIRE!", subtitle: "\(playerName(player)) behält den Ball bis zum ersten Fehlwurf"))
-        case .ballsBack(let teamIndex):
-            HapticManager.success()
-            SoundManager.play(.ballsBack)
-            show(.init(
-                kind: .ballsBack,
-                title: "BALLS BACK!",
-                subtitle: "\(teamName(teamIndex)) \(teamVerb(teamIndex, "wirft", "werfen")) nochmal"
-            ))
-        case .bombe(let choosingTeamIndex):
-            HapticManager.success()
-            SoundManager.play(.bombe)
-            show(.init(
-                kind: .bombe,
-                title: "BOMBE!",
-                subtitle: "\(teamName(choosingTeamIndex)) \(teamVerb(choosingTeamIndex, "wählt", "wählen")) 2 weitere Becher"
-            ))
-        case .redemptionStarted(let teamIndex):
-            HapticManager.mediumImpact()
-            SoundManager.play(.onFire)
-            show(.init(
-                kind: .redemption,
-                title: "REDEMPTION",
-                subtitle: "\(teamName(teamIndex)) \(teamVerb(teamIndex, "wirft", "werfen")) nach"
-            ))
-        case .reRacked(let teamIndex, let formation):
-            HapticManager.mediumImpact()
-            SoundManager.play(.reRack)
-            show(.init(
-                kind: .reRack,
-                title: "UMGESTELLT",
-                subtitle: "\(teamName(teamIndex)) \(teamVerb(teamIndex, "stellt", "stellen")) auf \(formation.name) um"
-            ))
-        case .finished:
-            HapticManager.success()
-            SoundManager.play(.victory)
-        case .cupChosen:
-            HapticManager.lightImpact()
-            SoundManager.play(.tap)
-        case .missed, .rebound:
-            HapticManager.lightImpact()
-            SoundManager.play(.miss)
-        }
     }
 
     /// Sagt den nächsten Werfer an, wenn er sich geändert hat.
@@ -837,63 +652,11 @@ final class LiveGameViewModel: ObservableObject {
         if eventLog.count > Self.maxLogEntries { eventLog.removeLast() }
     }
 
-    private func logText(for event: GameEvent) -> String {
-        switch event {
-        case .hit(let thrower, let bounce, let trickshot, _):
-            let suffix = bounce ? " 🏓 Bounce Shot" : (trickshot ? " 🌀 Trickshot" : "")
-            return "\(playerName(thrower))\(suffix) trifft."
-        case .missed(let thrower):
-            return "\(playerName(thrower)) wirft daneben."
-        case .airball(let thrower, let penalised):
-            return penalised
-                ? "💀 Airball! \(playerName(thrower)) muss shotten."
-                : "💀 Airball im Trickshot — \(playerName(thrower)) bleibt verschont."
-        case .rebound(let thrower):
-            return "🌀 Rebound! \(playerName(thrower)) fängt den Ball."
-        case .caughtFire(let player):
-            return "🔥 \(playerName(player)) ist ON FIRE."
-        case .ballsBack(let teamIndex):
-            return "🙌 Balls Back! \(teamName(teamIndex)) \(teamVerb(teamIndex, "wirft", "werfen")) nochmal."
-        case .bombe(let choosingTeamIndex):
-            return "💣 BOMBE! \(teamName(choosingTeamIndex)) \(teamVerb(choosingTeamIndex, "wählt", "wählen")) 2 weitere Becher."
-        case .cupChosen(let byTeamIndex, _):
-            return "🍺 \(teamName(byTeamIndex)) \(teamVerb(byTeamIndex, "stellt", "stellen")) einen Becher weg."
-        case .reRacked(let teamIndex, let formation):
-            return "🔄 \(teamName(teamIndex)) \(teamVerb(teamIndex, "stellt", "stellen")) auf \(formation.name) um."
-        case .redemptionStarted(let teamIndex):
-            return "🥤 Rack leer — Redemption für \(teamName(teamIndex))."
-        case .finished(let winner):
-            guard let winner else { return "🤝 Unentschieden — beide Racks leer." }
-            return "🏆 \(teamName(winner)) \(teamVerb(winner, "gewinnt", "gewinnen"))!"
-        }
-    }
-
     // MARK: - Overlay-Modell
 
-    struct Highlight: Equatable, Identifiable {
-        /// Bestimmt Farbe **und** Animation – deshalb nach dem Ereignis
-        /// benannt und nicht nach der Stimmung.
-        enum Kind: Equatable {
-            case airball, ballsBack, bombe, onFire, reRack, redemption, bounce, trickshot, neutral
-        }
-
-        let id = UUID()
-        let kind: Kind
-        let title: String
-        let subtitle: String
-
-        var tint: Color {
-            switch kind {
-            case .airball:    return BeerStatsColor.error
-            case .ballsBack:  return BeerStatsColor.success
-            case .bombe:      return BeerStatsColor.accentSecondary
-            case .onFire:     return BeerStatsColor.accent
-            case .reRack:     return BeerStatsColor.accent
-            case .redemption: return BeerStatsColor.accentSecondary
-            case .bounce:     return BeerStatsColor.warning
-            case .trickshot:  return BeerStatsColor.success
-            case .neutral:    return BeerStatsColor.textPrimary
-            }
-        }
-    }
+    /// Zweitname, damit `HighlightOverlayView` und der Spielscreen
+    /// unveraendert weiterlaufen. Der Typ selbst steht in
+    /// `GameHighlight` – dort laesst er sich bauen, ohne ein ganzes
+    /// ViewModel zu bauen.
+    typealias Highlight = GameHighlight
 }
