@@ -23,6 +23,8 @@ struct TwoTruthsView: View {
     @State private var deck: [String] = TwoTruthsDeck.shuffled()
     @State private var index = 0
     @State private var outcome: Outcome?
+    /// Wie oft weitergegeben wurde. Wer das ist, rechnet `TurnRow`.
+    @State private var turn = 0
 
     private var theme: String { deck.indices.contains(index) ? deck[index] : deck.first ?? "" }
 
@@ -36,10 +38,11 @@ struct TwoTruthsView: View {
 
             ScrollView {
                 VStack(spacing: 18) {
+                    TurnRow(turn: turn)
                     themeCard
                     if let outcome {
                         resultCard(outcome)
-                        PrimaryButton(title: "Nächster ist dran", systemImage: "arrow.right") { advance() }
+                        PrimaryButton(title: "Nächster ist dran", systemImage: "arrow.right") { nextPerson() }
                     } else {
                         instructions
                         outcomeButtons
@@ -159,6 +162,11 @@ struct TwoTruthsView: View {
         case .nobody: return "Alle anderen trinken \(groupPenalty.text)."
         case .mixed: return "Wer danebenlag, trinkt \(wrongPenalty.text)."
         }
+    }
+
+    private func nextPerson() {
+        turn += 1
+        advance()
     }
 
     private func advance() {

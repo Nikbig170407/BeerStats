@@ -44,6 +44,38 @@ enum PlayerNames {
         participant(at: index)?.name ?? "Spieler \(index + 1)"
     }
 
+    /// Weiss die App ueberhaupt, wer mitspielt?
+    ///
+    /// Fuer Anzeigen, die ohne Namen nichts aussagen. "Spieler 3 ist dran"
+    /// hilft niemandem, der nicht weiss, wer die Drei ist – eine solche
+    /// Zeile gehoert dann weggelassen, nicht mit einer Nummer gefuellt.
+    static var knowsNames: Bool { knownCount > 0 }
+
+    /// Wie viele Leute feststehen – aus derselben Quelle wie die Namen.
+    static var knownCount: Int {
+        if let abend = EveningLog.current, abend.isRunning {
+            return abend.participants.count
+        }
+        return TableRoster.seats.count
+    }
+
+    /// Wer bei fortlaufendem Zaehler `turn` dran ist – oder `nil`, wenn
+    /// niemand feststeht.
+    ///
+    /// Die Spiele zaehlen nur, wie oft sie weitergegangen sind; wer das ist,
+    /// rechnet diese Funktion. Das ist mehr als Bequemlichkeit: Die Zahl der
+    /// Leute kann sich zwischen zwei Runden aendern (jemand kommt dazu), und
+    /// dann muss der Rest reihum weiterlaufen, ohne dass jedes Spiel seinen
+    /// Zaehler anfasst.
+    static func nameForTurn(_ turn: Int) -> String? {
+        let anzahl = knownCount
+        guard anzahl > 0 else { return nil }
+        // Negative Zaehler kommen nicht vor, kosten aber nichts: Ein
+        // Rueckwaerts-Modulo waere in Swift negativ und griffe ins Leere.
+        let position = ((turn % anzahl) + anzahl) % anzahl
+        return name(for: position)
+    }
+
     /// Wie viele Leute der laufende Abend kennt. Spiele koennen ihre
     /// Spielerzahl damit vorbelegen, statt sie jedes Mal neu einstellen zu
     /// lassen.

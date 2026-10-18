@@ -36,6 +36,48 @@ final class PlayerNamesTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Reihum
+
+    /// Der Zaehler der Spiele laeuft hoch und hoert nie auf; wer dran ist,
+    /// ergibt sich daraus modulo der Leute. Ohne Leute gibt es keine
+    /// Antwort – und dann gehoert die Zeile weggelassen, nicht mit
+    /// "Spieler 1" gefuellt.
+    func testTheTurnWrapsAroundTheTable() {
+        TableRoster.remember([
+            profil("Lena", "🔥", id: "p1"),
+            profil("Jan", "🐢", id: "p2"),
+            profil("Tim", "🐙", id: "p3")
+        ])
+
+        XCTAssertEqual(PlayerNames.nameForTurn(0), PlayerNames.name(for: 0))
+        XCTAssertEqual(PlayerNames.nameForTurn(3), PlayerNames.name(for: 0))
+        XCTAssertEqual(PlayerNames.nameForTurn(4), PlayerNames.name(for: 1))
+        XCTAssertEqual(PlayerNames.nameForTurn(100), PlayerNames.name(for: 1))
+    }
+
+    func testWithoutAnybodyThereIsNoTurn() {
+        XCTAssertNil(PlayerNames.nameForTurn(0))
+        XCTAssertNil(PlayerNames.nameForTurn(7))
+        XCTAssertFalse(PlayerNames.knowsNames)
+    }
+
+    /// Kommt jemand dazu, laeuft der Rest reihum weiter – ohne dass ein
+    /// Spiel seinen Zaehler anfassen muesste.
+    func testSomebodyJoiningShiftsTheRestAlong() {
+        TableRoster.remember([
+            profil("Lena", "🔥", id: "p1"),
+            profil("Jan", "🐢", id: "p2")
+        ])
+        XCTAssertEqual(PlayerNames.nameForTurn(2), PlayerNames.name(for: 0))
+
+        TableRoster.remember([
+            profil("Lena", "🔥", id: "p1"),
+            profil("Jan", "🐢", id: "p2"),
+            profil("Tim", "🐙", id: "p3")
+        ])
+        XCTAssertEqual(PlayerNames.nameForTurn(2), PlayerNames.name(for: 2))
+    }
+
     private func restore(_ data: Data?, forKey key: String) {
         if let data {
             UserDefaults.standard.set(data, forKey: key)

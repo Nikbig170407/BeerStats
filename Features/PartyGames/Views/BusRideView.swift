@@ -71,6 +71,10 @@ struct BusRideView: View {
     @State private var ride: [PlayingCard] = []
     @State private var ridePosition = 0
 
+    /// Wie oft weitergegeben wurde. Wer dran ist, rechnet `TurnRow` – und
+    /// auf der Busfahrt bleibt es derselbe, der fahren muss.
+    @State private var turn = 0
+
     /// Die laufende Frage. Bewusst gedeckelt: Nach der vierten richtigen
     /// Antwort steht `drawn.count` auf 4, und ein Zugriff auf `questions[4]`
     /// wuerde abstuerzen, falls die Ansicht in genau dem Moment noch einmal
@@ -95,6 +99,9 @@ struct BusRideView: View {
             // leer.
             GeometryReader { geometry in
                 VStack(spacing: 14) {
+                    if !isRiding {
+                        TurnRow(turn: turn, tint: BeerStatsColor.accentSecondary)
+                    }
                     cardRow(in: geometry.size.width)
                     statusPanel
                     controls
@@ -417,6 +424,14 @@ struct BusRideView: View {
 
     private func restartHand() {
         if deck.count < 8 { deck = PlayingCardDeck.shuffled() }
+        // Nach einer geschafften Hand ist der Naechste dran. Nach einem
+        // Fehler faengt DIESELBE Person von vorne an – so steht es in der
+        // Anleitung, und der Zug darf dann nicht weiterlaufen.
+        switch phase {
+        case .wrong, .busted: break
+        default: turn += 1
+        }
+
         withAnimation(AppAnimation.standard) {
             drawn.removeAll()
             ride.removeAll()

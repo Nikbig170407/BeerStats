@@ -27,6 +27,8 @@ struct NeverHaveIEverView: View {
     @State private var isFlashingPenalty = false
     @State private var flashPulse = false
     @State private var flashTask: Task<Void, Never>?
+    /// Wie oft weitergegeben wurde. Wer das ist, rechnet `TurnRow`.
+    @State private var turn = 0
 
     private var currentCard: NeverHaveIEverCard? {
         deck.indices.contains(index) ? deck[index] : nil
@@ -43,6 +45,7 @@ struct NeverHaveIEverView: View {
                     setup
                 } else if let card = currentCard {
                     progressLine
+                    turnLine
                     cardView(card)
                     nextButton(for: card)
                 } else {
@@ -213,6 +216,12 @@ struct NeverHaveIEverView: View {
         }
     }
 
+    /// Steht ueber der Karte: Wer vorliest, liest zuerst, wer dran ist.
+    private var turnLine: some View {
+        TurnRow(turn: turn, tint: BeerStatsColor.success)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private func cardView(_ card: NeverHaveIEverCard) -> some View {
         let isPenalty = card.isPenalty
         let tint = isPenalty ? BeerStatsColor.accentSecondary : BeerStatsColor.success
@@ -275,7 +284,12 @@ struct NeverHaveIEverView: View {
             // Was gleich kommt, entscheidet ueber Ton und Einblendung – nicht
             // die Karte, die gerade weggeht.
             let upcoming = deck.indices.contains(index + 1) ? deck[index + 1] : nil
-            withAnimation(AppAnimation.standard) { index += 1 }
+            withAnimation(AppAnimation.standard) {
+                index += 1
+                // Strafkarten treffen alle – danach ist weiter dieselbe
+                // Person dran, die vorlesen wollte.
+                if !card.isPenalty { turn += 1 }
+            }
 
             if upcoming?.isPenalty == true {
                 startPenaltyFlash()

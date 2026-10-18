@@ -72,6 +72,9 @@ struct RingOfFireView: View {
     @State private var drinkingMates = 0
     @State private var houseRules: [String] = []
 
+    /// Wie oft gezogen wurde. Wer dran ist, rechnet `TurnRow`.
+    @State private var turn = 0
+
     @State private var isAskingForRule = false
     @State private var ruleDraft = ""
 
@@ -147,6 +150,7 @@ struct RingOfFireView: View {
                 VStack(spacing: 18) {
                     ringOfCards
                     emptyRingPanel
+                    TurnRow(turn: turn, tint: BeerStatsColor.error)
                     drawButton
                     roleBoard
                 }
@@ -481,6 +485,7 @@ struct RingOfFireView: View {
 
         current = card
         currentTore = reisst
+        turn += 1
         apply(RingOfFireRules.rule(for: card.rank), rank: card.rank)
 
         if reisst {
@@ -560,6 +565,7 @@ struct RingOfFireView: View {
         layout = RingLayout.random(count: ring.count)
         current = nil
         currentTore = false
+        turn = 0
         spotlight = nil
         tornAt = nil
         tearPulse = false

@@ -358,6 +358,26 @@ den nachgespielten Wurf-Log alter Partien.
   `BeerpongActivityAttributes.swift` gehört zum **Widget-Ziel** und sieht
   `DesignSystem` nicht – dort geht `scaled` nicht.
 
+- **„Wer ist dran?" steht in `TurnRow`** (18. Oktober). Sechs Spiele sagten
+  es nicht – die App reichte das Handy weiter und die Runde diskutierte, wer
+  jetzt muss; bei „Ich hab noch nie" ist das nach drei Karten eine echte
+  Frage. Die Spiele zählen nur, wie oft sie weitergegangen sind;
+  `PlayerNames.nameForTurn` macht daraus einen Namen (modulo der Leute,
+  gleiche Quellen-Reihenfolge wie überall). **Steht niemand fest, ist die
+  Zeile weg** – nicht „Spieler 3 ist dran", das hilft niemandem, der nicht
+  weiß, wer die Drei ist. Zwei Feinheiten, die beide in einem Kommentar am
+  Zähler stehen: Bei „Ich hab noch nie" zählt eine **Strafkarte nicht**
+  weiter (sie trifft alle, danach liest dieselbe Person), und beim
+  Bussfahrer zählt sie nur nach einer **geschafften** Hand – nach einem
+  Fehler fängt dieselbe Person von vorne an.
+
+- **Beerpong nennt seine Teams nach den Leuten** (18. Oktober), nicht
+  „Team 1". Die Zeichenarbeit liegt in `Team` und ist getestet, weil mit den
+  Namen die **Grammatik** dazukommt: „Lena wirft nochmal", aber „Lena & Jan
+  WERFEN nochmal". Alle zehn Sätze gehen über `teamVerb(_:_:_:)`. Für enge
+  Stellen – die Team-Leiste neben dem Fortschrittsbalken und den
+  Sperrbildschirm – gibt es `shortDisplayName` („Maximilian & K.").
+
 - **Namen in Partyspielen laufen über `PlayerNames`**, und die Reihenfolge
   der Quellen ist Pflicht, nicht Geschmack: **laufender Abend, sonst Tisch,
   sonst „Spieler 3"**. Die Trinkbilanz ist auf die Positionen des Abends
@@ -699,6 +719,14 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   ist neu und nie gelaufen. Und der eigentliche Test: In einem Spiel hart
   einstellen, zurück, Beerpong starten – die Extreme-Karten müssen wieder
   in der Vorgabe dastehen.
+- **„Wer ist dran?" (18. Oktober)**: In Ring of Fire, Ich hab noch nie,
+  Wahrheit oder Pflicht, Zwei Wahrheiten, Kategorien und Bussfahrer. Zeigt
+  die Zeile die richtige Person, und läuft sie im selben Takt wie der Kreis
+  am Tisch? Ohne Abend und ohne Aufstellung muss sie **ganz weg** sein.
+- **Beerpong mit Namen (18. Oktober)**: Die Einblendungen sagen jetzt
+  „Lena & Jan werfen nochmal". Zu prüfen, ob in der schmalen Team-Leiste
+  und auf dem Sperrbildschirm nichts abgeschnitten wird – da steht die
+  Kurzform.
 - **Bussfahrer vom 17. Oktober**: Die Busfahrt ist neu und nie gelaufen.
   Fünf Karten, jede Bildkarte zurück an den Anfang – gerechnet kommt der
   Bussfahrer in etwa jedem sechsten Versuch durch. Fühlt sich das am Tisch

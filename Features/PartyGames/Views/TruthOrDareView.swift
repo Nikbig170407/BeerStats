@@ -19,6 +19,8 @@ struct TruthOrDareView: View {
     @State private var current: TruthOrDareCard?
     @State private var isRefusing = false
     @State private var refusalTask: Task<Void, Never>?
+    /// Wie oft weitergegeben wurde. Wer das ist, rechnet `TurnRow`.
+    @State private var turn = 0
 
     private var tint: Color {
         current?.kind == .dare ? BeerStatsColor.accentSecondary : BeerStatsColor.accent
@@ -59,9 +61,12 @@ struct TruthOrDareView: View {
         VStack(spacing: 18) {
             Text("🎭").font(.system(size: 56))
 
-            Text("Wer dran ist, wählt.")
+            TurnRow(turn: turn)
+
+            Text(PlayerNames.knowsNames ? "Wahrheit oder Pflicht?" : "Wer dran ist, wählt.")
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
+                .multilineTextAlignment(.center)
 
             Text("Verweigern ist erlaubt und kostet \(TruthOrDareDeck.refusal.text).")
                 .font(BeerStatsFont.caption)
@@ -141,7 +146,10 @@ struct TruthOrDareView: View {
             PrimaryButton(title: "Gemacht", systemImage: "checkmark") {
                 HapticManager.success()
                 SoundManager.play(.ballsBack)
-                withAnimation(AppAnimation.standard) { current = nil }
+                withAnimation(AppAnimation.standard) {
+                    current = nil
+                    turn += 1
+                }
             }
 
             Button {

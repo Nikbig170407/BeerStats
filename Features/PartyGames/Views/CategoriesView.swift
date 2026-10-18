@@ -42,6 +42,10 @@ struct CategoriesView: View {
             AmbientBackdrop(glow: BeerStatsColor.warning)
 
             VStack(spacing: 22) {
+                // Dieselbe Zahl zaehlt hier zwei Dinge: die Runde (daran
+                // haengt die Bedenkzeit) und wer dran ist. Das geht auf,
+                // weil eine Runde eine Person ist.
+                TurnRow(turn: turns, tint: BeerStatsColor.warning)
                 categoryCard
                 timerRing
                 Spacer(minLength: 0)
@@ -195,6 +199,9 @@ struct CategoriesView: View {
 
     private func nextTurn() {
         turns += 1
+        // Dieselbe Zahl zaehlt zwei Dinge: wie viele Runden gespielt sind
+        // (die Bedenkzeit haengt daran) und wer dran ist. Das geht auf, weil
+        // beides im selben Takt laeuft – eine Runde ist eine Person.
         // Jede Runde ein Stück knapper, bis zur Untergrenze.
         turnLimit = max(Self.minimumLimit, turnLimit - Self.step)
         HapticManager.lightImpact()
