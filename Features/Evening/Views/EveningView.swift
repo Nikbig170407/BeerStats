@@ -24,6 +24,8 @@ struct EveningView: View {
     @State private var evening: Evening?
     @State private var summary: Evening?
     @State private var chosen: Set<String> = []
+    /// Der Abend als Bild – einmal gerendert, wenn der Rueckblick steht.
+    @State private var eveningImageURL: URL?
 
     var body: some View {
         ZStack {
@@ -287,6 +289,41 @@ struct EveningView: View {
         .buttonStyle(PressableButtonStyle())
     }
 
+    // MARK: - Der Abend als Bild
+
+    /// Einmal gerendert, wenn der Rueckblick steht.
+    private func renderEveningImage(_ abend: Evening) {
+        guard eveningImageURL == nil else { return }
+        Task { @MainActor in
+            eveningImageURL = ShareImage.file(named: "beerstats-abend") {
+                shareCard(for: abend)
+            }
+        }
+    }
+
+    private func shareCard(for abend: Evening) -> ShareCard {
+        var rows: [ShareCard.Row] = [
+            .init(label: abend.entries.count == 1 ? "Spiel" : "Spiele", value: "\(abend.entries.count)"),
+            .init(label: "Gespielt", value: abend.readableDuration)
+        ]
+        if let durstig = abend.mostDrinks {
+            rows.append(.init(label: "Durstigste Person", value: "\(durstig.emoji) \(durstig.name)"))
+        }
+
+        let datum = Date.FormatStyle.dateTime.day().month(.wide).year()
+
+        return ShareCard(
+            title: "UNSER ABEND",
+            // Die Ueberschrift ist der Sieger des Abends, nicht das Datum:
+            // Das Datum steht unten und interessiert niemanden als Erstes.
+            headline: abend.mostWins.map { "\($0.name) hat den Abend gewonnen" } ?? "Unser Abend",
+            subline: abend.mostWins.map { "\($0.count)× gewonnen" },
+            rows: rows,
+            footnote: abend.startedAt.formatted(datum),
+            tint: BeerStatsColor.accentSecondary
+        )
+    }
+
     private func standText(_ teilnehmer: EveningParticipant) -> String {
         if teilnehmer.sips == 0 && teilnehmer.shots == 0 { return "noch nichts" }
         var teile: [String] = []
@@ -359,12 +396,14 @@ struct EveningView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .padding(.top, 4)
 
-            // Teilen als Text, nicht als Bild: Text laesst sich in jede
-            // Gruppe schicken, vorlesen und in zehn Jahren noch oeffnen.
+            // Zwei Wege nach draussen, und beide haben ihren Grund: Text
+            // laesst sich vorlesen, suchen und in zehn Jahren noch oeffnen –
+            // ein Bild landet in der Gruppe. Der Text bleibt deshalb, das
+            // Bild kommt dazu.
             ShareLink(item: abend.shareText) {
                 HStack(spacing: 10) {
-                    Image(systemName: "square.and.arrow.up")
-                    Text("Abend teilen")
+                    Image(systemName: "text.alignleft")
+                    Text("Als Text teilen")
                         .font(BeerStatsFont.headline)
                 }
                 .foregroundStyle(BeerStatsColor.textPrimary)
@@ -374,15 +413,33 @@ struct EveningView: View {
                 .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
             }
 
+            if let url = eveningImageURL {
+                ShareLink(item: url) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Als Bild teilen")
+                            .font(BeerStatsFont.headline)
+                    }
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .glassPanel(cornerRadius: 15)
+                    .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                }
+            }
+
             PrimaryButton(title: "Fertig", systemImage: "checkmark") {
                 summary = nil
                 chosen = []
+                // Sonst verschickt der naechste Abend das Bild von diesem.
+                eveningImageURL = nil
             }
 
             Text("Bleibt unter „Frühere Abende“ gespeichert.")
                 .font(.scaled(10, weight: .medium, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textSecondary)
         }
+        .onAppear { renderEveningImage(abend) }
     }
 
     /// Plaketten fuer den Abend und fuer jeden, der eine bekommen hat.

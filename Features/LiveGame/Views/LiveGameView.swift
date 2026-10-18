@@ -24,6 +24,9 @@ struct LiveGameView: View {
     @State private var abortProgress: CGFloat = 0
     @State private var isHoldingAbort = false
     @State private var isOpponentViewOn = false
+    /// Das fertige Ergebnis-Bild. Wird einmal gerendert, wenn der
+    /// Sieger-Screen steht.
+    @State private var resultImageURL: URL?
 
     private static let abortHoldDuration: Double = 1.5
 
@@ -566,6 +569,8 @@ struct LiveGameView: View {
             matchAchievements
 
             VStack(spacing: 10) {
+                shareResultButton
+
                 // Erst hier wird das Ergebnis festgeschrieben – vorher bleibt
                 // „Rückgängig" gefahrlos möglich.
                 // Erst schliessen, wenn wirklich geschrieben wurde. Vorher
@@ -632,6 +637,7 @@ struct LiveGameView: View {
         .background(BeerStatsColor.backgroundPrimary.opacity(0.97))
         .ignoresSafeArea()
         .transition(.opacity)
+        .onAppear { renderResultImage() }
     }
 
     /// Was in dieser Partie gelungen ist – berechnet, nicht gespeichert.
@@ -688,6 +694,71 @@ struct LiveGameView: View {
                 .font(BeerStatsFont.statLabel)
                 .foregroundStyle(BeerStatsColor.textSecondary)
         }
+    }
+
+    // MARK: - Ergebnis teilen
+
+    /// Teilen steht UEBER "Ergebnis übernehmen".
+    ///
+    /// Danach ist der Screen weg, und mit ihm die Zahlen – wer das Bild erst
+    /// hinterher haben will, kommt nicht mehr dran. Der Knopf ist deshalb da,
+    /// wo der Moment ist.
+    @ViewBuilder
+    private var shareResultButton: some View {
+        if let url = resultImageURL {
+            ShareLink(item: url) {
+                HStack(spacing: 10) {
+                    Image(systemName: "square.and.arrow.up")
+                    Text("Ergebnis als Bild teilen")
+                        .font(BeerStatsFont.headline)
+                }
+                .foregroundStyle(BeerStatsColor.textPrimary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .glassPanel(cornerRadius: 15)
+                .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+            }
+        }
+    }
+
+    /// Das Bild wird gerendert, sobald der Sieger-Screen steht – nicht beim
+    /// Antippen. `ShareLink` braucht seinen Gegenstand vorher, und ein
+    /// Teilen-Blatt, das erst eine Sekunde rechnet, fuehlt sich kaputt an.
+    ///
+    /// Scheitert das Rendern, bleibt der Knopf weg. Eine Partie anzuhalten,
+    /// weil ein Bild nicht geschrieben werden konnte, waere die falsche
+    /// Reihenfolge.
+    private func renderResultImage() {
+        guard resultImageURL == nil else { return }
+        Task { @MainActor in
+            resultImageURL = ShareImage.file(named: "beerstats-ergebnis") {
+                resultShareCard
+            }
+        }
+    }
+
+    private var resultShareCard: some View {
+        let winner = viewModel.state.winnerTeamIndex
+        let becher = (0..<2).map { viewModel.state.racks[$0].remainingCount }
+
+        var rows: [ShareCard.Row] = []
+        if let winner {
+            rows.append(.init(label: "Becher", value: "\(viewModel.state.cupsKnockedDown(by: winner))"))
+            rows.append(.init(label: "Quote", value: accuracyText(for: winner)))
+            if let mvp = viewModel.matchMVP {
+                rows.append(.init(label: "Bester Werfer", value: viewModel.playerName(mvp.player)))
+            }
+        }
+
+        return ShareCard(
+            title: "BEERPONG",
+            headline: winner.map {
+                "\(viewModel.teamName($0)) \(viewModel.teamVerb($0, "gewinnt", "gewinnen"))"
+            } ?? "Unentschieden",
+            subline: "\(viewModel.teamName(0)) \(becher[0]) : \(becher[1]) \(viewModel.teamName(1))",
+            rows: rows,
+            footnote: Date().formatted(date: .long, time: .shortened)
+        )
     }
 
     private func accuracyText(for teamIndex: Int) -> String {

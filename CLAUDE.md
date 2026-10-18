@@ -440,6 +440,27 @@ den nachgespielten Wurf-Log alter Partien.
   zusammengelegt wurden – unterschiedliche Größen, Radien, Ausrichtungen.
   Wer ein Spiel baut, das eines von beidem braucht, nimmt die Komponente.
 
+- **Das Ergebnis als Bild** (`ShareCard`, 18. Oktober). Alles, was die App
+  nach außen gab, war Text. Ein Bild landet dagegen in der Gruppe – und das
+  holt die Runde am nächsten Abend wieder in die App. Zwei Stellen haben es:
+  der Sieger-Screen und der Abend-Rückblick (dort **zusätzlich** zum Text,
+  denn Text lässt sich vorlesen, suchen und in zehn Jahren noch öffnen).
+  Drei Entscheidungen, die man beim Nachbauen wissen muss:
+  - **Feste Schriftgrößen** – die einzige Stelle, an der das richtig ist.
+    Mit `Font.scaled` würde die Systemeinstellung des Absenders bestimmen,
+    wie der Empfänger das Bild sieht.
+  - **Kein `AmbientBackdrop`**, sondern ein einfacher Verlauf: Der
+    App-Hintergrund streut zufällige Blasen und liest Einstellungen; beides
+    gehört nicht in ein Bild, das Bestand haben soll. Die `CupShape` bleibt
+    als Wasserzeichen.
+  - **Einmal rendern, nicht im `body`.** Das Bild ist 1620 × 2025 Pixel, und
+    der Sieger-Screen zeichnet beim Übernehmen neu. Gerendert wird in
+    `onAppear`, in einem `Task { @MainActor in … }` – `ImageRenderer` ist
+    main-actor-isoliert und aus einer Ansichts-Eigenschaft heraus gar nicht
+    aufrufbar. Scheitert es, bleibt der Knopf weg; eine Partie anzuhalten,
+    weil ein Bild nicht geschrieben werden konnte, wäre die falsche
+    Reihenfolge.
+
 - **Die Sicherungsdatei hat ein eigenes Format**, absichtlich getrennt von
   den Firestore-Modellen (`Services/DataExportService.swift`). Technisch,
   weil `@DocumentID` und `@ServerTimestamp` sich nicht mit einem normalen
@@ -535,7 +556,7 @@ wenn die App auf mehreren Geräten läuft. Nicht löschen.
    trocken, statt sie einzeln zu jagen.
 
 Weiter denkbar, aber ohne konkreten Anlass: Cloud Functions (bräuchte
-Blaze), Ergebnis als Bild teilen.
+Blaze).
 
 **Die Live Activity steht hier nicht mehr – sie ist gebaut.** Sie stand
 monatelang als Idee in dieser Liste, obwohl `LiveGameActivity` samt Start,
@@ -719,6 +740,11 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   ist neu und nie gelaufen. Und der eigentliche Test: In einem Spiel hart
   einstellen, zurück, Beerpong starten – die Extreme-Karten müssen wieder
   in der Vorgabe dastehen.
+- **Ergebnis als Bild (18. Oktober)**: Im Sieger-Screen und im
+  Abend-Rückblick. Sieht das Bild in einer Chat-Vorschau gut aus, und
+  stimmen die Zahlen darauf mit dem Screen überein? Beides nie auf Hardware
+  gelaufen – auf dem Simulator gibt es kein Teilen-Blatt, das etwas
+  verschickt.
 - **„Wer ist dran?" (18. Oktober)**: In Ring of Fire, Ich hab noch nie,
   Wahrheit oder Pflicht, Zwei Wahrheiten, Kategorien und Bussfahrer. Zeigt
   die Zeile die richtige Person, und läuft sie im selben Takt wie der Kreis
