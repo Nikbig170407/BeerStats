@@ -772,6 +772,13 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Farben jetzt normal aussehen.
 - **Sechs Kacheln im Hauptmenü** (17. Oktober): Beerpong oben links, Turnier
   unten rechts. Passt das Raster auf dem Gerät, auch mit großer Schrift?
+- **Inhalt in den Kacheln** (18. Oktober): Jede Kachel trägt jetzt einen
+  halben Satz und eine Emoji-Reihe – die Spiele der Gruppe, bei Beerpong die
+  Leute am Tisch. Zu prüfen: Bleiben zehn Emoji bei „Raten & reden" in einer
+  Zeile lesbar, stehen die beiden Kacheln einer Reihe gleich hoch, und
+  stimmt die Zahl unter Beerpong mit der Reihe darüber überein? Dazu die
+  Ordner: „Läuft nebenher" hat zwei Spiele – sind die Kacheln dort jetzt zu
+  groß, statt dass der Platz darunter leer bleibt?
 - **Knöpfe vom 12. Oktober**: Der Daumen nach unten muss jetzt bei **jeder**
   Karte gehen, nicht nur bei der ersten – zweimal hintereinander in „Ich hab
   noch nie" ausprobieren. Dazu „Wer würde eher?", das ihn neu hat, und einmal
