@@ -230,6 +230,13 @@ den nachgespielten Wurf-Log alter Partien.
   Tisch. Reißt ein Zug den Ring, kostet er einen Shot. Vorher lagen sie in
   gleichen Abständen mit Luft dazwischen und die Regel gab es nicht: ein
   Stapel, den jemand im Kreis angeordnet hatte.
+- **„Was spielen wir?"** (18. Oktober): ein Würfel unter dem Raster im
+  Hauptmenü. Zweiundzwanzig Spiele heißen am Tisch nicht Auswahl, sondern
+  fünf Minuten Diskussion, in denen niemand spielt. Gelost wird aus dem,
+  was zur Runde **passt**: Die Spielerzahl ist eine Bedingung, keine
+  Empfehlung – „Der Spion" zu zweit wäre kein Vorschlag, sondern ein
+  Fehler. Dazu kommt eine Filterung nach Dauer. Was nebenher läuft, ist nie
+  dabei: Auf „was spielen wir jetzt" ist Trinkbingo keine Antwort.
 - **Nochmal dieselben**: die letzte Aufstellung als Zeile im Beerpong-Menü,
   gestartet mit den aktuellen Hausregeln.
 - **Abende bleiben erhalten**: die letzten zwanzig unter „Frühere Abende",
@@ -289,7 +296,14 @@ den nachgespielten Wurf-Log alter Partien.
   neuer Fall in der Aufzählung – und zwar der einzige nötige Eingriff: Am
   Katalog hängen inzwischen Ordner, Anleitung, Turnier-Eignung und die
   Härte. Wer ein Spiel stattdessen in die View schreibt, hat es nirgends
-  davon.
+  davon. **Seit dem Würfel sind es zwei Angaben mehr**: `length` (wie lange
+  eine Runde dauert) und `players` (mit wie vielen es funktioniert). Beide
+  sind vollständige `switch` ohne `default` – der Compiler erzwingt also,
+  dass ein neues Spiel eingeordnet wird, und ein Test hält fest, dass für
+  jede Spielerzahl etwas übrig bleibt. Die Untergrenze ist dabei keine
+  Geschmacksfrage: „Wer würde eher?" braucht jemanden, auf den man zeigen
+  kann. Mit zu wenigen Leuten ist so ein Spiel nicht schwächer, sondern
+  kaputt.
 
 - **Ein Spiel umbenennen heißt: den Titel ändern, nicht den Fall.**
   „Wer würde eher?" heißt im Code weiter `mostLikely` (`MostLikelyDeck`,
@@ -816,6 +830,13 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Revanche starten, Netz an, „Nachreichen" drücken – die Würfe müssen in der
   **alten** Partie landen, der Spielverlauf der Revanche darf sie nicht
   zeigen.
+- **„Was spielen wir?" (18. Oktober)**: Lost der Würfel etwas aus, das am
+  Tisch gerade wirklich passt – oder landet dreimal hintereinander dasselbe
+  Spiel? Die halbe Sekunde Blättern ist geschätzt, nicht gemessen: zu kurz,
+  um zu zeigen, dass gelost wird, oder zu lang zum Warten? Und stimmen die
+  Dauer-Angaben („2 Minuten", „10 Minuten") ungefähr mit dem überein, was
+  eine Runde tatsächlich braucht? Sie stehen jetzt auch auf jeder
+  Spielkachel im Ordner.
 - **Inhalt in den Kacheln** (18. Oktober): Jede Kachel trägt jetzt einen
   halben Satz und eine Emoji-Reihe – die Spiele der Gruppe, bei Beerpong die
   Leute am Tisch. Zu prüfen: Bleiben zehn Emoji bei „Raten & reden" in einer

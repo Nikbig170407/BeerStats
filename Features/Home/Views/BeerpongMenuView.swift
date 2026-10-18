@@ -137,16 +137,7 @@ struct BeerpongMenuView: View {
         NavigationLink {
             NewGameView(container: container, currentUserId: viewModel.currentUserId)
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "plus")
-                Text("Neues Spiel")
-            }
-            .font(BeerStatsFont.headline)
-            .foregroundStyle(BeerStatsColor.textOnAccent)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(BeerStatsColor.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            PrimaryButtonLabel(title: "Neues Spiel", systemImage: "plus")
         }
         .buttonStyle(PressableButtonStyle())
     }

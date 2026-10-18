@@ -288,6 +288,125 @@ enum PartyGame: String, CaseIterable, Identifiable {
         }
     }
 
+    // MARK: - Wie lange und mit wie vielen
+
+    /// Wie lange eine Runde dauert.
+    ///
+    /// Steht hier und nicht im Spiel, weil die Frage am Tisch VOR dem
+    /// Antippen gestellt wird: "Haben wir noch zehn Minuten oder reicht es
+    /// nur fuer eine schnelle?" Im Spiel selbst waere die Antwort zu spaet.
+    enum Length: Hashable, CaseIterable {
+        /// Zwei Minuten – eine Runde zwischendurch.
+        case quick
+        /// Eine Viertelstunde, grob.
+        case round
+        /// Laeuft, bis alle durch sind.
+        case long
+        /// Hat keine Dauer, sondern begleitet den Abend.
+        case alongside
+
+        var label: String {
+            switch self {
+            case .quick: return "2 Minuten"
+            case .round: return "10 Minuten"
+            case .long: return "eine Viertelstunde"
+            case .alongside: return "läuft nebenher"
+            }
+        }
+
+        /// Kurzform fuer die Auswahl – dort stehen vier nebeneinander.
+        var shortLabel: String {
+            switch self {
+            case .quick: return "Kurz"
+            case .round: return "Mittel"
+            case .long: return "Lang"
+            case .alongside: return "Nebenher"
+            }
+        }
+    }
+
+    var length: Length {
+        switch self {
+        case .bombPass, .reactionDuel, .drinkRoulette, .twoTruths:
+            return .quick
+        case .schocken, .maexchen, .countTo21, .estimation, .categories,
+             .mostLikely, .knowYourPeople, .headsUp, .charades, .truthOrDare,
+             .spy:
+            return .round
+        case .ringOfFire, .horseRace, .busRide, .neverHaveIEver:
+            return .long
+        case .forbiddenWords, .drinkBingo, .eveningRule:
+            return .alongside
+        }
+    }
+
+    /// Ab so vielen ist mehr nicht mehr unbedingt besser.
+    static let manyPlayers = 12
+
+    /// Mit wie vielen das Spiel funktioniert.
+    ///
+    /// Die Untergrenze ist die interessante Zahl, und sie ist keine
+    /// Geschmacksfrage: "Wer würde eher?" braucht jemanden, auf den man
+    /// zeigen kann, und der Spion braucht ausser ihm noch zwei, die sich
+    /// einig werden koennen. Mit zu wenigen Leuten ist das Spiel nicht
+    /// schwaecher, sondern kaputt – deshalb taucht es in der Auslosung
+    /// erst gar nicht auf.
+    var players: ClosedRange<Int> {
+        switch self {
+        // Zu zweit spielbar.
+        case .ringOfFire, .horseRace, .busRide, .truthOrDare, .neverHaveIEver,
+             .maexchen, .countTo21, .estimation, .knowYourPeople,
+             .reactionDuel, .drinkRoulette, .forbiddenWords, .drinkBingo,
+             .eveningRule:
+            return 2...Self.manyPlayers
+
+        // Schocken wird mit Deckeln gespielt; ab zehn dauert eine Runde
+        // laenger als die Aufmerksamkeit reicht.
+        case .schocken:
+            return 2...10
+
+        // Brauchen eine Runde, nicht ein Gegenueber: jemanden zum
+        // Draufzeigen, zum Beschreiben, zum Ueberstimmen.
+        case .twoTruths, .spy, .headsUp, .categories, .mostLikely,
+             .bombPass, .charades:
+            return 3...Self.manyPlayers
+        }
+    }
+
+    /// "ab 3" oder "2–10" – was davon stimmt.
+    var playersLabel: String {
+        players.upperBound >= Self.manyPlayers
+            ? "ab \(players.lowerBound)"
+            : "\(players.lowerBound)–\(players.upperBound)"
+    }
+
+    // MARK: - Auslosen
+
+    /// Die Spiele, die zu dieser Runde passen.
+    ///
+    /// Was **nebenher** laeuft, ist nie dabei. Die Frage lautet "was
+    /// spielen wir jetzt", und darauf ist "Trinkbingo" keine Antwort – das
+    /// laeuft mit, waehrend etwas anderes gespielt wird.
+    static func fitting(players count: Int, length: Length? = nil) -> [PartyGame] {
+        allCases.filter { game in
+            guard game.length != .alongside else { return false }
+            guard game.players.contains(count) else { return false }
+            guard let length else { return true }
+            return game.length == length
+        }
+    }
+
+    /// Lost ein Spiel aus.
+    ///
+    /// `excluding` ist das zuletzt gezogene: Wer noch einmal wuerfelt, will
+    /// etwas anderes sehen. Bleibt dadurch nichts uebrig, zaehlt die Auswahl
+    /// mehr als die Abwechslung.
+    static func draw(players count: Int, length: Length? = nil, excluding last: PartyGame? = nil) -> PartyGame? {
+        let passend = fitting(players: count, length: length)
+        let offen = passend.filter { $0 != last }
+        return (offen.isEmpty ? passend : offen).randomElement()
+    }
+
     // MARK: - Turnier
 
     /// Taugt dieses Spiel fuer eine Turnierrunde?

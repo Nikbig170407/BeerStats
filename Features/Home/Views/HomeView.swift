@@ -47,6 +47,7 @@ struct HomeView: View {
                     // Trink-Roulette, und von hier oben aus ist das nicht zu
                     // treffen.
                     menuGrid
+                    gamePickerLink
                     customCardsLink
                 }
                 .padding(20)
@@ -70,6 +71,46 @@ struct HomeView: View {
                 TableRoster.remember(tablePlayers)
             }
         }
+    }
+
+    // MARK: - Der Würfel
+
+    /// Steht UNTER dem Raster, nicht darin.
+    ///
+    /// Als siebte Kachel haette er die Ordnung zerschossen, die das Raster
+    /// ausmacht – Beerpong oben links, Turnier unten rechts, vier Gruppen
+    /// dazwischen. Und er ist auch nichts davon: kein Ort mit Spielen
+    /// dahinter, sondern eine Abkuerzung fuer den Fall, dass die Runde sich
+    /// nicht einigen kann.
+    private var gamePickerLink: some View {
+        NavigationLink {
+            GamePickerView()
+        } label: {
+            HStack(spacing: 12) {
+                Text("🎲").font(.system(size: 24))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Was spielen wir?")
+                        .font(BeerStatsFont.headline)
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                    Text("Die App sucht eins aus, das zur Runde passt")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            .padding(.horizontal, 15)
+            .padding(.vertical, 13)
+            .glassPanel(cornerRadius: 16)
+            .neonEdge(BeerStatsColor.accent, cornerRadius: 16, intensity: 0.35)
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Eigene Karten

@@ -147,6 +147,14 @@ struct PartyGameCard: View {
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.textSecondary)
                         .lineLimit(2)
+
+                    // Die zwei Angaben, nach denen am Tisch gefragt wird,
+                    // bevor jemand antippt: Wie lange dauert das, und
+                    // reichen wir dafuer?
+                    Text("\(game.length.label) · \(game.playersLabel)")
+                        .font(.scaled(11, weight: .heavy, design: .rounded))
+                        .foregroundStyle(game.tint)
+                        .padding(.top, 2)
                 }
 
                 Spacer(minLength: 0)
