@@ -6,10 +6,15 @@
 //  offen liegt. Passiert eines, wird es angetippt.
 //
 //  Ein gemeinsames Blatt fuer die ganze Runde, nicht eines pro Person.
-//  Sechzehn Felder pro Kopf zu verteilen hiesse, das Handy erst reihum zu
-//  schicken und danach staendig weiterzureichen – bei einem Spiel, das
-//  nebenher laufen soll, ist das genau falsch. Ein Blatt in der Tischmitte
-//  sehen alle, und jeder darf ankreuzen.
+//  Sechzehn Felder pro Kopf AUF DIESEM GERAET zu verteilen hiesse, das
+//  Handy erst reihum zu schicken und danach staendig weiterzureichen – bei
+//  einem Spiel, das nebenher laufen soll, ist das genau falsch. Ein Blatt
+//  in der Tischmitte sehen alle, und jeder darf ankreuzen.
+//
+//  Den anderen Weg gibt es seit dem 22. Oktober trotzdem: „Blätter
+//  verteilen" schickt jedem sein eigenes Blatt als BILD aufs eigene Handy
+//  (`BingoHandoutView`). Das umgeht das Weiterreichen, ohne dass jemand
+//  die App braucht – und das ist der Punkt, denn niemand sonst hat sie.
 //
 //  Getrunken wird zweimal: sofort von dem, der das Ereignis ausgeloest hat,
 //  und noch einmal, wenn eine Reihe voll wird. Ohne den Sofort-Schluck
@@ -27,6 +32,7 @@ struct DrinkBingoView: View {
     @State private var completedLines = 0
     @State private var showBingo = false
     @State private var bingoTask: Task<Void, Never>?
+    @State private var showsHandout = false
 
     private let spotPenalty = DrinkAmount.sips(1)
     private let bingoReward = DrinkAmount.sips(5)
@@ -56,6 +62,12 @@ struct DrinkBingoView: View {
         .navigationTitle("Trinkbingo")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear { bingoTask?.cancel() }
+        .sheet(isPresented: $showsHandout) {
+            BingoHandoutView(
+                spotPenalty: spotPenalty.text,
+                bingoReward: bingoReward.text
+            )
+        }
     }
 
     // MARK: - Regeln
@@ -122,6 +134,12 @@ struct DrinkBingoView: View {
             Text("\(marked.count) von \(fields.count) · \(completedLines) Reihen")
                 .font(BeerStatsFont.statLabel)
                 .foregroundStyle(BeerStatsColor.textSecondary)
+
+            // Steht unter dem Blatt und nicht darueber: Erst spielt man,
+            // dann merkt man, dass jeder ein eigenes haben will.
+            PrimaryButton(title: "Blätter an alle verteilen", systemImage: "paperplane.fill") {
+                showsHandout = true
+            }
 
             QuietButton(title: "Neues Blatt") { reset() }
         }
