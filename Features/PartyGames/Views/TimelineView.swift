@@ -112,9 +112,17 @@ struct TimelineView: View {
 
     /// Bei vielen Leuten dauert dieselbe Zahl deutlich laenger – das soll
     /// vorher dastehen und nicht nach vierzig Minuten auffallen.
+    ///
+    /// Gerechnet mit gut einer Minute je Lied, und die ist nicht gegriffen:
+    /// Handy weitergeben, Titel in Spotify eintippen, anspielen, raten
+    /// lassen, auflösen. Die erste Schaetzung hier stand bei einer halben
+    /// Minute – das waere die reine Hoerzeit ohne alles drumherum gewesen,
+    /// und bei fuenf Zielkarten haette die Zeile zwanzig Minuten
+    /// versprochen, wo vierzig gebraucht werden.
     private var dauerHinweis: String {
         let runden = target * playerCount
-        return "Mit \(playerCount) Leuten sind das ungefähr \(runden) Lieder, also gut \(max(5, runden / 2)) Minuten."
+        let minuten = max(5, runden * 6 / 5)
+        return "Mit \(playerCount) Leuten sind das ungefähr \(runden) Lieder, also gut \(minuten) Minuten."
     }
 
     private func label(_ text: String) -> some View {
