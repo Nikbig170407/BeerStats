@@ -68,12 +68,24 @@ enum PlayerNames {
     /// dann muss der Rest reihum weiterlaufen, ohne dass jedes Spiel seinen
     /// Zaehler anfasst.
     static func nameForTurn(_ turn: Int) -> String? {
+        guard let position = position(forTurn: turn) else { return nil }
+        return name(for: position)
+    }
+
+    /// Welche Position der fortlaufende Zaehler meint – oder `nil`, wenn
+    /// niemand feststeht.
+    ///
+    /// Steht getrennt vom Namen, weil die Trinkbilanz dieselbe Rechnung
+    /// braucht: Sie wird ueber die POSITION gebucht, nicht ueber den
+    /// Zaehler. Ein Spiel, das seinen Zaehler direkt bucht, schreibt ab der
+    /// zweiten Runde ins Leere – die Bilanz kennt nur so viele Plaetze, wie
+    /// Leute da sind, und merkt den Fehler nicht an.
+    static func position(forTurn turn: Int) -> Int? {
         let anzahl = knownCount
         guard anzahl > 0 else { return nil }
         // Negative Zaehler kommen nicht vor, kosten aber nichts: Ein
         // Rueckwaerts-Modulo waere in Swift negativ und griffe ins Leere.
-        let position = ((turn % anzahl) + anzahl) % anzahl
-        return name(for: position)
+        return ((turn % anzahl) + anzahl) % anzahl
     }
 
     /// Wie viele Leute der laufende Abend kennt. Spiele koennen ihre

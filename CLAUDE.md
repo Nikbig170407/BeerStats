@@ -278,11 +278,11 @@ den nachgespielten Wurf-Log alter Partien.
   Fleiß: Ring of Fire hat dreizehn Ränge, Bussfahrer und Pferderennen ein
   Skatblatt, Trink-Roulette acht Felder auf dem Rad. Mehr Karten wären dort
   ein anderes Spiel.
-- Dreiundzwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
+- Vierundzwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
   Pflicht, Ich hab noch nie, Zeitstrahl. *Raten & reden* – Schocken, Mäxchen, Zwei
   Wahrheiten, Der Spion, Wer bin ich?, 21, Schätzmeister, Kategorien,
-  Wer würde eher?, Kennst du deine Leute?, Pantomime. *Schnell
+  Wer würde eher?, Kennst du deine Leute?, Pantomime, Die Skala. *Schnell
   zwischendurch* – Bombe, Reaktionsduell, Trink-Roulette. *Läuft nebenher* –
   Verbotene Wörter, Trinkbingo, Regel des Abends.
   Die Zahl im Text und die Fälle in `PartyGame` müssen zusammenpassen –
@@ -440,6 +440,13 @@ den nachgespielten Wurf-Log alter Partien.
   dass es auffiele. Ein Test hält das fest. Die Namen des Tisches liegen als
   Schnappschuss in UserDefaults, weil ein Partyspiel kein Repository kennt
   und auch keins bekommen soll.
+  **Gebucht wird über `EveningLog.record(_:forPlayer:)`** – die Funktion
+  steht zwar in der Datei `PlayerNames.swift`, gehört aber zu `EveningLog`.
+  Wer nach dem Dateinamen greift, schreibt `PlayerNames.record` und merkt
+  es erst im Actions-Lauf; `check.py` ist kein Compiler. Und gebucht wird
+  die **Position**, nicht der fortlaufende Zähler eines Spiels –
+  `PlayerNames.position(forTurn:)` rechnet das um. Ein Spiel, das seinen
+  Zähler direkt bucht, schreibt ab der zweiten Runde ins Leere.
 
 - **Einstellungen vor dem Spiel gehören in `GameSetupScreen`**, die Auswahl
   aus wenigen Werten in `ChoiceRow`, eine Spielkachel in `PartyGameCard`,
@@ -845,6 +852,11 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   und sie mir nennen. Dann: Reicht die Übergabe ans Handy, oder sieht der
   Ratende doch den Titel? Und mit sieben Leuten: Dauert eine Runde mit fünf
   Zielkarten zu lange? (Gerechnet: etwa 35 Lieder.)
+- **Die Skala (22. Oktober)**: Trifft die Runde die Zone oft genug, dass
+  es sich nach Können anfühlt? Die Trefferzone ist 15 Prozent breit, der
+  straffreie Ring 36 – beides gerechnet, nicht erprobt. Zu schmal heißt
+  Lotterie, zu breit heißt, jeder Hinweis gewinnt. Und: Lässt sich der
+  Regler am Tisch gemeinsam bedienen, oder reißt ihn einer an sich?
 - **„Was spielen wir?" (18. Oktober)**: Lost der Würfel etwas aus, das am
   Tisch gerade wirklich passt – oder landet dreimal hintereinander dasselbe
   Spiel? Die halbe Sekunde Blättern ist geschätzt, nicht gemessen: zu kurz,

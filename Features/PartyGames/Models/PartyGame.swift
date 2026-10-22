@@ -37,6 +37,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
     case mostLikely
     case knowYourPeople
     case charades
+    case spectrum
 
     case bombPass
     case reactionDuel
@@ -119,7 +120,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return .cards
         case .schocken, .maexchen, .twoTruths, .spy, .headsUp,
              .countTo21, .estimation, .categories, .mostLikely, .knowYourPeople,
-             .charades:
+             .charades, .spectrum:
             return .talking
         case .bombPass, .reactionDuel, .drinkRoulette:
             return .quick
@@ -149,6 +150,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .mostLikely: return "Wer würde eher?"
         case .knowYourPeople: return "Kennst du deine Leute?"
         case .charades: return "Pantomime"
+        case .spectrum: return "Die Skala"
         case .bombPass: return "Bombe weitergeben"
         case .reactionDuel: return "Reaktionsduell"
         case .drinkRoulette: return "Trink-Roulette"
@@ -177,6 +179,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .mostLikely: return "👉"
         case .knowYourPeople: return "🧠"
         case .charades: return "🤸"
+        case .spectrum: return "🎚️"
         case .bombPass: return "💣"
         case .reactionDuel: return "⚡️"
         case .drinkRoulette: return "🎯"
@@ -210,6 +213,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .mostLikely: return "Alle zeigen gleichzeitig – die meisten Finger trinken"
         case .knowYourPeople: return "Fragen aus euren echten Beerpong-Zahlen – wer danebenliegt, trinkt"
         case .charades: return "Vorspielen ohne ein Wort – 90 Sekunden gegen die Runde"
+        case .spectrum:
+            return "\(SpectrumDeck.count) Gegensätze – wie weit links liegt dein Hinweis?"
         case .bombPass: return "Zünden, herumreichen, nicht drauf sitzen bleiben"
         case .reactionDuel: return "Zwei Daumen, ein Signal – wer zu früh tippt, verliert"
         case .drinkRoulette: return "Acht Felder, ein Zeiger – keine Einrichtung nötig"
@@ -264,6 +269,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return "Die App stellt eine Frage – „wer von uns würde am ehesten …“. Auf drei zeigen alle gleichzeitig auf eine Person. Wer die meisten Finger abbekommt, trinkt."
         case .knowYourPeople:
             return "Die App nimmt zwei von euch und fragt, wer besser trifft, wer mehr Airballs geworfen hat oder öfter gewonnen hat. Wer dran ist, antwortet; danach steht das echte Ergebnis daneben. Falsch geraten kostet. Gefragt wird nur, wo die Zahlen eindeutig sind – bei fast gleichauf gäbe es keine richtige Antwort, und solche Fragen stellt die App gar nicht."
+        case .spectrum:
+            return "Zwischen zwei Begriffen („harmlos“ und „gefährlich“) liegt eine Skala. Einer sieht eine Stelle darauf, die sonst niemand sieht, und gibt einen Hinweis, der genau dorthin führt – ein Wort oder ein Beispiel, niemals eine Zahl. Die Runde schiebt dann gemeinsam einen Regler dahin, wo sie ihn vermutet. Volltreffer heißt verteilen, knapp daneben geht straffrei durch, weit daneben trinkt der Hinweisgeber. Die Strafe trifft mit Absicht ihn: Der Hinweis ist die Leistung des Spiels."
         case .charades:
             return "Einer spielt vor, ohne ein Wort und ohne Geräusch – die Runde ruft, was sie erkennt. Nur die vorspielende Person sieht die Begriffe, deshalb wandert das Handy vorher zu ihr. Neunzig Sekunden, so viele Begriffe wie möglich. Jeder erratene Begriff ist ein Schluck, den sie verteilen darf; jeder liegen gebliebene einer, den sie selbst trinkt. Auf Dinge im Raum zeigen gilt nicht."
         case .bombPass:
@@ -292,7 +299,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return BeerStatsColor.accentSecondary
         case .schocken, .categories, .forbiddenWords:
             return BeerStatsColor.warning
-        case .truthOrDare, .twoTruths, .headsUp, .mostLikely, .reactionDuel:
+        case .truthOrDare, .twoTruths, .headsUp, .mostLikely, .reactionDuel,
+             .spectrum:
             return BeerStatsColor.accent
         }
     }
@@ -340,7 +348,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return .quick
         case .schocken, .maexchen, .countTo21, .estimation, .categories,
              .mostLikely, .knowYourPeople, .headsUp, .charades, .truthOrDare,
-             .spy:
+             .spy, .spectrum:
             return .round
         case .ringOfFire, .horseRace, .busRide, .neverHaveIEver, .timeline:
             return .long
@@ -377,7 +385,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // Brauchen eine Runde, nicht ein Gegenueber: jemanden zum
         // Draufzeigen, zum Beschreiben, zum Ueberstimmen.
         case .twoTruths, .spy, .headsUp, .categories, .mostLikely,
-             .bombPass, .charades:
+             .bombPass, .charades, .spectrum:
             return 3...Self.manyPlayers
         }
     }
@@ -434,7 +442,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return true
         case .ringOfFire, .horseRace, .truthOrDare, .neverHaveIEver,
              .twoTruths, .spy, .mostLikely, .drinkRoulette,
-             .forbiddenWords, .drinkBingo, .knowYourPeople, .eveningRule:
+             .forbiddenWords, .drinkBingo, .knowYourPeople, .eveningRule,
+             .spectrum:
             return false
         }
     }
@@ -479,7 +488,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // aus, die Haerte muss also vorher stehen.
         case .busRide, .twoTruths, .countTo21, .estimation, .categories,
              .drinkRoulette, .drinkBingo, .knowYourPeople, .horseRace,
-             .truthOrDare, .mostLikely, .bombPass, .reactionDuel:
+             .truthOrDare, .mostLikely, .bombPass, .reactionDuel, .spectrum:
             return .ownScreen
         }
     }
@@ -536,6 +545,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .mostLikely: return AnyView(MostLikelyView())
         case .knowYourPeople: return AnyView(KnowYourPeopleView())
         case .charades: return AnyView(CharadesView())
+        case .spectrum: return AnyView(SpectrumView())
         case .bombPass: return AnyView(BombPassView())
         case .reactionDuel: return AnyView(ReactionDuelView())
         case .drinkRoulette: return AnyView(DrinkRouletteView())
