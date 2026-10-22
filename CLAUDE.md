@@ -278,9 +278,9 @@ den nachgespielten Wurf-Log alter Partien.
   Fleiß: Ring of Fire hat dreizehn Ränge, Bussfahrer und Pferderennen ein
   Skatblatt, Trink-Roulette acht Felder auf dem Rad. Mehr Karten wären dort
   ein anderes Spiel.
-- Zweiundzwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
+- Dreiundzwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
-  Pflicht, Ich hab noch nie. *Raten & reden* – Schocken, Mäxchen, Zwei
+  Pflicht, Ich hab noch nie, Zeitstrahl. *Raten & reden* – Schocken, Mäxchen, Zwei
   Wahrheiten, Der Spion, Wer bin ich?, 21, Schätzmeister, Kategorien,
   Wer würde eher?, Kennst du deine Leute?, Pantomime. *Schnell
   zwischendurch* – Bombe, Reaktionsduell, Trink-Roulette. *Läuft nebenher* –
@@ -319,6 +319,16 @@ den nachgespielten Wurf-Log alter Partien.
   Abweichungs-Zeile bauen sich daraus. Wer den Schalter stattdessen in die
   View schreibt, taucht in der Zusammenfassung nicht auf – und dann steht
   „Standard“ über einer Partie, die keiner ist.
+
+- **Beim Zeitstrahl muss der Inhalt stimmen** (22. Oktober). Für jeden
+  anderen Stapel gilt: Eine erfundene Karte ist eine Karte. Hier ist ein
+  falsches Jahr eine falsche Entscheidung, für die jemand trinkt, ohne
+  dass es auffällt. Deshalb stehen in `SongDeck` nur Lieder mit bekanntem
+  Jahr – lieber 174 sichere als 300 geschätzte –, und wo Album und Single
+  oder Original und Remix auseinanderliegen, steht das Lied gar nicht erst
+  drin. Dazu gibt es im Spiel den Knopf **„Jahr stimmt nicht"**: Weiß die
+  Runde es besser als die App, gewinnt die Runde. Ohne ihn tränke jemand
+  für einen Tippfehler.
 
 - **Was nebenher läuft, gehört nicht in den View-Zustand** (18. Oktober).
   Die Regeln des Abends stapeln sich und gelten weiter, während die Runde
@@ -830,6 +840,11 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Revanche starten, Netz an, „Nachreichen" drücken – die Würfe müssen in der
   **alten** Partie landen, der Spielverlauf der Revanche darf sie nicht
   zeigen.
+- **Zeitstrahl (22. Oktober)**: Das Wichtigste – stimmen die Jahreszahlen?
+  Beim ersten Durchgang auf Lieder achten, bei denen die Runde widerspricht,
+  und sie mir nennen. Dann: Reicht die Übergabe ans Handy, oder sieht der
+  Ratende doch den Titel? Und mit sieben Leuten: Dauert eine Runde mit fünf
+  Zielkarten zu lange? (Gerechnet: etwa 35 Lieder.)
 - **„Was spielen wir?" (18. Oktober)**: Lost der Würfel etwas aus, das am
   Tisch gerade wirklich passt – oder landet dreimal hintereinander dasselbe
   Spiel? Die halbe Sekunde Blättern ist geschätzt, nicht gemessen: zu kurz,

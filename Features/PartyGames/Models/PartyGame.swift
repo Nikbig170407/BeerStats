@@ -24,6 +24,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
     case busRide
     case truthOrDare
     case neverHaveIEver
+    case timeline
 
     case schocken
     case maexchen
@@ -113,7 +114,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
 
     var group: Group {
         switch self {
-        case .ringOfFire, .horseRace, .busRide, .truthOrDare, .neverHaveIEver:
+        case .ringOfFire, .horseRace, .busRide, .truthOrDare, .neverHaveIEver,
+             .timeline:
             return .cards
         case .schocken, .maexchen, .twoTruths, .spy, .headsUp,
              .countTo21, .estimation, .categories, .mostLikely, .knowYourPeople,
@@ -135,6 +137,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .busRide: return "Bussfahrer"
         case .truthOrDare: return "Wahrheit oder Pflicht"
         case .neverHaveIEver: return "Ich hab noch nie"
+        case .timeline: return "Zeitstrahl"
         case .schocken: return "Schocken"
         case .maexchen: return "Mäxchen"
         case .twoTruths: return "Zwei Wahrheiten"
@@ -162,6 +165,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .busRide: return "🚌"
         case .truthOrDare: return "🎭"
         case .neverHaveIEver: return "🍻"
+        case .timeline: return "🎵"
         case .schocken: return "🎲"
         case .maexchen: return "🎲"
         case .twoTruths: return "🎭"
@@ -192,6 +196,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return "\(karten) Karten – verweigern kostet"
         case .neverHaveIEver:
             return "\(NeverHaveIEverDeck.statements.count) Fragen in drei Stufen, dazu Strafen"
+        case .timeline:
+            return "\(SongDeck.count) Lieder – in welches Jahr gehört das?"
         case .schocken: return "Drei Würfel, drei Würfe – der schlechteste Wurf trinkt"
         case .maexchen: return "Verdeckt würfeln und lügen – die App weiß, wer geflunkert hat"
         case .twoTruths: return "Drei Sätze, einer erfunden – wer danebenliegt, trinkt"
@@ -236,6 +242,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return "Wahrheit oder Pflicht, wie immer – nur dass die App die Karten stellt. Wer verweigert, trinkt die Menge, die auf der Karte steht. Eigene Karten lassen sich im Hauptmenü dazumischen."
         case .neverHaveIEver:
             return "Die App liest vor, was du noch nie getan hast. Wer es doch getan hat, trinkt. Drei Härtestufen – harmlos, deftig, und was man danach besser vergisst."
+        case .timeline:
+            return "Jeder sammelt Lieder und legt sie nach Jahr nebeneinander. Wer dran ist, gibt das Handy dem Nachbarn – der sieht Titel und Interpret, sucht das Lied und spielt es über die Box an, ohne den Titel vorzulesen. Du hörst es und sagst, zwischen welche deiner Karten es gehört („nach 1991, vor 2003“). Der Nachbar tippt die Lücke an. Stimmt es, bleibt die Karte bei dir; sonst trinkst du. Das Jahr sieht übrigens niemand vorher – auch der Nachbar nicht. Wer zuerst genug Karten hat, gewinnt."
         case .schocken:
             return "Drei Würfel, bis zu drei Würfe pro Person. Wer in der Runde den schlechtesten Wurf hat, bekommt einen Deckel; wer alle Deckel hat, trinkt. Die App kennt die Rangfolge – Schock Aus schlägt alles."
         case .maexchen:
@@ -279,7 +287,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return BeerStatsColor.error
         case .horseRace, .neverHaveIEver, .estimation, .drinkBingo, .charades:
             return BeerStatsColor.success
-        case .busRide, .maexchen, .spy, .bombPass, .knowYourPeople, .eveningRule:
+        case .busRide, .maexchen, .spy, .bombPass, .knowYourPeople, .eveningRule,
+             .timeline:
             return BeerStatsColor.accentSecondary
         case .schocken, .categories, .forbiddenWords:
             return BeerStatsColor.warning
@@ -333,7 +342,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
              .mostLikely, .knowYourPeople, .headsUp, .charades, .truthOrDare,
              .spy:
             return .round
-        case .ringOfFire, .horseRace, .busRide, .neverHaveIEver:
+        case .ringOfFire, .horseRace, .busRide, .neverHaveIEver, .timeline:
             return .long
         case .forbiddenWords, .drinkBingo, .eveningRule:
             return .alongside
@@ -357,7 +366,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .ringOfFire, .horseRace, .busRide, .truthOrDare, .neverHaveIEver,
              .maexchen, .countTo21, .estimation, .knowYourPeople,
              .reactionDuel, .drinkRoulette, .forbiddenWords, .drinkBingo,
-             .eveningRule:
+             .eveningRule, .timeline:
             return 2...Self.manyPlayers
 
         // Schocken wird mit Deckeln gespielt; ab zehn dauert eine Runde
@@ -420,7 +429,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
     var isTournamentReady: Bool {
         switch self {
         case .busRide, .schocken, .maexchen, .headsUp, .countTo21,
-             .estimation, .categories, .bombPass, .reactionDuel, .charades:
+             .estimation, .categories, .bombPass, .reactionDuel, .charades,
+             .timeline:
             return true
         case .ringOfFire, .horseRace, .truthOrDare, .neverHaveIEver,
              .twoTruths, .spy, .mostLikely, .drinkRoulette,
@@ -459,7 +469,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // Diese sieben fragen vorher schon etwas – Spielerzahl, Kartenzahl,
         // Stufen, Kategorie. Die Haerte steht in demselben Vorspann.
         case .ringOfFire, .neverHaveIEver, .schocken, .maexchen, .spy,
-             .headsUp, .forbiddenWords, .eveningRule, .charades:
+             .headsUp, .forbiddenWords, .eveningRule, .charades, .timeline:
             return .inSetup
 
         // Alle anderen fangen sofort an. Pferderennen und Wahrheit oder
@@ -514,6 +524,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .busRide: return AnyView(BusRideView())
         case .truthOrDare: return AnyView(TruthOrDareView())
         case .neverHaveIEver: return AnyView(NeverHaveIEverView())
+        case .timeline: return AnyView(TimelineView())
         case .schocken: return AnyView(SchockenView())
         case .maexchen: return AnyView(MaexchenView())
         case .twoTruths: return AnyView(TwoTruthsView())
