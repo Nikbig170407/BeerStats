@@ -710,6 +710,21 @@ enthält, kostet beim nächsten Mal genau die Zeit, die sie sparen soll.
     es trifft ausgerechnet die wichtigen Nebenhandlungen – auch
     „Rückgängig" im Sieger-Screen. Liegt jetzt in `QuietButton`.
 
+13. **Ein `@ViewBuilder`-Parameter darf nicht in einen `GeometryReader`.**
+    Zwei der neuen Spiele hatten einen gemeinsamen Rahmen als Funktion –
+    `panel(content:buttons:)`, Inhalt mittig, Knöpfe unten. Darin steht ein
+    `GeometryReader`, und dessen Closure ist **escaping**: „escaping closure
+    captures non-escaping parameter 'content'". Der Fehler kostet einen
+    ganzen Actions-Lauf, weil `check.py` ihn nicht sehen kann – er ist kein
+    Syntaxfehler, sondern eine Regel des Typsystems. Die Lösung ist eine
+    Zeile: die Closures **vor** dem `GeometryReader` auswerten
+    (`let inhalt = content()`) und die fertige Ansicht hineinreichen. Eine
+    Ansicht ist ein Wert und darf überall mit.
+
+    Dasselbe gilt für jede Hilfsfunktion mit `@ViewBuilder`-Parameter, die
+    innen eine escaping Closure benutzt – auch `Task`, `onAppear` oder eine
+    Animation mit Abschluss.
+
 ---
 
 ## 8. Arbeitsweise

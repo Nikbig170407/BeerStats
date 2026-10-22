@@ -237,16 +237,23 @@ struct HerdView: View {
         @ViewBuilder content: () -> Content,
         @ViewBuilder buttons: () -> Buttons
     ) -> some View {
-        ZStack {
+        // Die beiden Closures werden HIER ausgewertet und nicht erst im
+        // GeometryReader: Der ist escaping, und ein nicht-escaping
+        // ViewBuilder darf dort nicht hinein. Fertige Ansichten sind
+        // dagegen Werte und duerfen ueberall mit.
+        let inhalt = content()
+        let knoepfe = buttons()
+
+        return ZStack {
             AmbientBackdrop(glow: BeerStatsColor.success)
 
             GeometryReader { geometry in
                 ScrollView {
                     VStack(spacing: 16) {
                         Spacer(minLength: 0)
-                        content()
+                        inhalt
                         Spacer(minLength: 0)
-                        buttons()
+                        knoepfe
                     }
                     .padding(24)
                     .frame(minHeight: geometry.size.height)
