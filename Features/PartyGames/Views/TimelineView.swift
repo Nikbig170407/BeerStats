@@ -386,7 +386,7 @@ struct TimelineView: View {
             HapticManager.success()
             SoundManager.play(.cupHit)
         } else {
-            PlayerNames.record(penalty, forPlayer: guesser)
+            EveningLog.record(penalty, forPlayer: guesser)
             HapticManager.error()
             SoundManager.play(.miss)
         }
