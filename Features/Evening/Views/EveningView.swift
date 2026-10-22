@@ -26,6 +26,8 @@ struct EveningView: View {
     @State private var chosen: Set<String> = []
     /// Der Abend als Bild – einmal gerendert, wenn der Rueckblick steht.
     @State private var eveningImageURL: URL?
+    /// Der Eintrag, fuer den gerade ein Sieger eingetragen wird.
+    @State private var winnerEntry: EveningEntry?
 
     var body: some View {
         ZStack {
@@ -48,6 +50,17 @@ struct EveningView: View {
         .navigationTitle("Abend")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { evening = EveningLog.current }
+        .sheet(item: $winnerEntry) { eintrag in
+            WinnerPickerView(
+                entry: eintrag,
+                participants: evening?.participants ?? []
+            ) { ids in
+                EveningLog.setWinner(ids, forEntry: eintrag.id)
+                // Aus dem Speicher nachladen: Die Ansicht haelt eine Kopie
+                // des Abends, und die weiss von der Aenderung nichts.
+                evening = EveningLog.current
+            }
+        }
     }
 
     // MARK: - Frueher
@@ -207,22 +220,12 @@ struct EveningView: View {
                         .foregroundStyle(BeerStatsColor.textSecondary)
 
                     ForEach(abend.entries.reversed()) { eintrag in
-                        HStack(spacing: 10) {
-                            Text(eintrag.emoji)
-                            Text(eintrag.title)
-                                .font(BeerStatsFont.caption)
-                                .foregroundStyle(BeerStatsColor.textPrimary)
-                            Spacer()
-                            if let winner = eintrag.winner {
-                                Text(winner)
-                                    .font(BeerStatsFont.caption)
-                                    .foregroundStyle(BeerStatsColor.success)
-                            }
-                        }
-                        .padding(.horizontal, 13)
-                        .padding(.vertical, 9)
-                        .glassPanel(cornerRadius: 12)
+                        gespieltZeile(eintrag)
                     }
+
+                    Text("Antippen, um den Sieger einzutragen – die meisten Spiele rechnen nur aus, wer verloren hat.")
+                        .font(.scaled(10, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeerStatsColor.textSecondary)
                 }
             }
 
@@ -242,6 +245,39 @@ struct EveningView: View {
     }
 
     /// Eine Zeile der Bilanz: Name, Stand, und drei Knoepfe.
+    /// Eine Zeile unter "Gespielt" – antippbar, um den Sieger einzutragen.
+    private func gespieltZeile(_ eintrag: EveningEntry) -> some View {
+        Button {
+            winnerEntry = eintrag
+            HapticManager.lightImpact()
+        } label: {
+            HStack(spacing: 10) {
+                Text(eintrag.emoji)
+                Text(eintrag.title)
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+
+                Spacer(minLength: 0)
+
+                if let winner = eintrag.winner {
+                    Text("🏆 \(winner)")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.success)
+                        .lineLimit(1)
+                } else {
+                    Text("Sieger?")
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+            }
+            .padding(.horizontal, 13)
+            .padding(.vertical, 11)
+            .glassPanel(cornerRadius: 12)
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(PressableButtonStyle())
+    }
+
     private func tallyRow(_ teilnehmer: EveningParticipant) -> some View {
         HStack(spacing: 10) {
             Text(teilnehmer.emoji).font(.system(size: 22))

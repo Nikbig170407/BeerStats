@@ -166,6 +166,50 @@ final class EveningTrophyTests: XCTestCase {
         XCTAssertNil(EveningLog.current)
     }
 
+    // MARK: - Von Hand eingetragen
+
+    /// Der Weg fuer die Verlierer-Spiele: Schocken rechnet aus, wer alle
+    /// Deckel hat – wer gewonnen hat, weiss nur der Tisch.
+    func testAWinnerCanBeSetByHand() {
+        EveningLog.current = abend(["p1", "p2"], [])
+        EveningLog.record(partyGame: .schocken)
+        let eintrag = EveningLog.current!.entries[0]
+
+        EveningLog.setWinner(["p1"], forEntry: eintrag.id)
+
+        let gespielt = EveningLog.current
+        XCTAssertEqual(gespielt?.entries.first?.winnerIds, ["p1"])
+        // Schocken ist ein mittleres Spiel – zwei Punkte.
+        XCTAssertEqual(gespielt?.entries.first?.points, PartyGame.Length.round.points)
+        XCTAssertEqual(gespielt?.trophyWinner?.participant.id, "p1")
+    }
+
+    func testTwoPeopleCanWinTogether() {
+        EveningLog.current = abend(["p1", "p2", "p3"], [])
+        EveningLog.record(partyGame: .categories)
+        EveningLog.setWinner(["p1", "p2"], forEntry: EveningLog.current!.entries[0].id)
+
+        let wertung = EveningLog.current!.trophyBoard
+        XCTAssertEqual(wertung.first(where: { $0.participant.id == "p1" })?.points, 2)
+        XCTAssertEqual(wertung.first(where: { $0.participant.id == "p2" })?.points, 2)
+        XCTAssertEqual(wertung.first(where: { $0.participant.id == "p3" })?.points, 0)
+    }
+
+    /// Vertippt ist am Tisch die Regel, nicht die Ausnahme – der Sieger muss
+    /// sich genauso einfach zuruecknehmen lassen wie eintragen.
+    func testAWinnerCanBeTakenBack() {
+        EveningLog.current = abend(["p1"], [])
+        EveningLog.record(partyGame: .schocken)
+        let id = EveningLog.current!.entries[0].id
+
+        EveningLog.setWinner(["p1"], forEntry: id)
+        EveningLog.setWinner([], forEntry: id)
+
+        XCTAssertNil(EveningLog.current?.entries.first?.winnerIds)
+        XCTAssertNil(EveningLog.current?.entries.first?.points)
+        XCTAssertNil(EveningLog.current?.trophyWinner)
+    }
+
     /// Eine Position, die es am Tisch nicht gibt, darf nichts buchen.
     func testAPositionOutsideTheTableIsIgnored() {
         EveningLog.current = abend(["p1"], [])

@@ -358,6 +358,45 @@ enum EveningLog {
         current = abend
     }
 
+    /// Traegt den Sieger eines Eintrags von Hand ein – oder nimmt ihn
+    /// zurueck, wenn die Liste leer ist.
+    ///
+    /// Der Weg, den es braucht, weil die Partyspiele fast alle
+    /// LOSER-Spiele sind: Schocken rechnet aus, wer alle Deckel hat, die
+    /// Bombe, wer draufsitzt, das Turnier, wer die Runde verloren hat. Wer
+    /// gewonnen hat, weiss von diesen Spielen keines – wohl aber der Tisch.
+    /// Deshalb wird es dort angetippt, wo der Abend ohnehin steht, statt es
+    /// in vierundzwanzig Ansichten einzeln zu erfinden.
+    ///
+    /// Was der Sieg wert ist, kommt aus dem Katalog, wenn der Eintrag sein
+    /// Spiel kennt – sonst gilt die mittlere Laenge. Ein Eintrag ohne
+    /// Zuordnung (Beerpong, oder ein Spiel von vor dieser Version) soll
+    /// nicht mehr zaehlen als eine Runde, die niemand einordnen kann.
+    static func setWinner(_ participantIds: [String], forEntry entryId: String) {
+        guard var abend = current, abend.isRunning,
+              let stelle = abend.entries.firstIndex(where: { $0.id == entryId })
+        else { return }
+
+        guard !participantIds.isEmpty else {
+            abend.entries[stelle].winnerIds = nil
+            abend.entries[stelle].points = nil
+            abend.entries[stelle].winner = nil
+            current = abend
+            return
+        }
+
+        let punkte = abend.entries[stelle].gameId
+            .flatMap(PartyGame.init(rawValue:))?
+            .length.points ?? PartyGame.Length.round.points
+
+        abend.entries[stelle].winnerIds = participantIds
+        abend.entries[stelle].points = punkte
+        abend.entries[stelle].winner = participantIds
+            .compactMap { id in abend.participants.first { $0.id == id }?.name }
+            .joined(separator: " & ")
+        current = abend
+    }
+
     // MARK: Trinkbilanz
 
     static func addSips(_ count: Int, to participantId: String) {

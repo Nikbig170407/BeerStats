@@ -339,6 +339,16 @@ den nachgespielten Wurf-Log alter Partien.
   Runde es besser als die App, gewinnt die Runde. Ohne ihn tränke jemand
   für einen Tippfehler.
 
+- **Die Partyspiele sind Verlierer-Spiele** (22. Oktober). Schocken
+  rechnet aus, wer alle Deckel hat, die Bombe, wer draufsitzt, das Turnier,
+  wer die Runde verloren hat – wer *gewonnen* hat, weiß keines von ihnen.
+  Ein Pokal, der Siege zählt, hätte deshalb fast nichts zu zählen. Der Weg
+  dorthin ist **nicht**, in vierundzwanzig Ansichten einen Sieger zu
+  erfinden, sondern ihn dort anzutippen, wo der Abend ohnehin steht: Jede
+  Zeile unter „Gespielt" öffnet `WinnerPickerView`. Spiele, die ihren
+  Sieger selbst kennen (Beerpong, Zeitstrahl), melden ihn weiterhin von
+  allein; dort lässt er sich nur korrigieren.
+
 - **Ein Sieg gehört einer PERSON, nicht einem Text** (22. Oktober).
   `EveningEntry.winner` ist eine Zeile zum Anzeigen („Lena & Jan"); für die
   Wertung zählt `winnerIds`. Vorher zählte die App den Text, und ein
@@ -890,12 +900,11 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Ratende doch den Titel? Und mit sieben Leuten: Dauert eine Runde mit fünf
   Zielkarten zu lange? (Gerechnet: etwa 35 Lieder.)
 - **Pokal (22. Oktober)**: Stimmt die Wertung am Ende mit dem überein, was
-  ihr im Kopf habt? Melden tun bisher nur **Beerpong** und **Zeitstrahl** –
-  die anderen zehn Spiele mit Sieger (Schocken, Mäxchen, Bussfahrer, 21,
-  Schätzmeister, Kategorien, Bombe, Reaktionsduell, Wer bin ich?,
-  Pantomime) kennen ihren Sieger, geben ihn aber noch nicht weiter. Sag
-  mir nach dem Abend, welche ihr wirklich gespielt habt, dann ziehe ich
-  genau die nach.
+  ihr im Kopf habt? Von allein melden nur **Zeitstrahl** und **Beerpong**;
+  bei allen anderen tippt ihr den Sieger im Abend-Screen an. Zu prüfen, ob
+  das am Tisch tatsächlich jemand macht – wenn es vergessen wird, bleibt
+  der Pokal leer, und dann gehört er näher ans Spielende statt in den
+  Abend.
 - **Blätter verteilen (22. Oktober)**: Kommen die Bilder in WhatsApp
   lesbar an, oder sind sechzehn Felder auf einem Handybild zu klein? Und
   geht AirDrop an mehrere gleichzeitig?
