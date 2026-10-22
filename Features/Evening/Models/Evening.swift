@@ -49,8 +49,34 @@ struct EveningEntry: Codable, Identifiable, Equatable {
     var title: String
     var emoji: String
     var at: Date
-    /// Wer gewonnen hat, sofern das Spiel einen Sieger kennt.
-    var winner: String?
+    /// Wer gewonnen hat, sofern das Spiel einen Sieger kennt – als Text,
+    /// zum Anzeigen.
+    var winner: String? = nil
+
+    /// Welches Spiel das war (`PartyGame.rawValue`), um den Sieger spaeter
+    /// an genau diesen Eintrag zu haengen.
+    ///
+    /// Ein Eintrag entsteht beim BETRETEN des Spiels, der Sieger steht erst
+    /// am Ende fest. Ohne diese Kennung muesste das Nachtragen den Eintrag
+    /// ueber seinen Titel suchen – und Titel aendern sich.
+    var gameId: String? = nil
+
+    /// Wer gewonnen hat, als Teilnehmer-IDs. Fuer den Pokal.
+    ///
+    /// Getrennt von `winner`: Dort steht "Lena & Jan" als ein Text, hier
+    /// stehen zwei Personen. Ohne die Trennung zaehlte ein 2-gegen-2-Sieg
+    /// fuer niemanden einzeln.
+    var winnerIds: [String]? = nil
+
+    /// Was dieser Sieg wert ist.
+    ///
+    /// Steht IM Eintrag und wird nicht spaeter aus dem Katalog geholt: Ein
+    /// Abend von letztem Monat soll so ausgewertet werden, wie er gespielt
+    /// wurde – dieselbe Entscheidung wie bei der Sicherungsdatei.
+    var points: Int? = nil
+
+    /// Alte Abende haben keine Punkte; sie zaehlen deshalb auch nicht mit.
+    var trophyPoints: Int { winnerIds == nil ? 0 : (points ?? 0) }
 }
 
 struct Evening: Codable, Equatable {
@@ -93,6 +119,60 @@ struct Evening: Codable, Equatable {
         return (best.key, best.value)
     }
 
+    // MARK: - Der Pokal
+
+    /// Ein Platz in der Siegerwertung.
+    struct TrophyRank: Identifiable, Equatable {
+        let participant: EveningParticipant
+        let points: Int
+        let wins: Int
+
+        var id: String { participant.id }
+    }
+
+    /// Die Siegerwertung: Punkte je gewonnenem Spiel, gewichtet nach seiner
+    /// Laenge.
+    ///
+    /// Die Gewichtung ist der Kern. Ohne sie gewinnt den Abend, wer am
+    /// meisten Reaktionsduell gespielt hat – eine Runde dauert zwei
+    /// Minuten, eine Partie Beerpong eine Viertelstunde. Was das einzelne
+    /// Spiel wert ist, steht im Eintrag und nicht hier.
+    ///
+    /// Wer nichts gewonnen hat, steht trotzdem in der Liste: Eine Wertung,
+    /// aus der man verschwindet, sobald man verliert, erzaehlt vom Abend
+    /// die halbe Wahrheit.
+    var trophyBoard: [TrophyRank] {
+        var punkte: [String: Int] = [:]
+        var siege: [String: Int] = [:]
+
+        for eintrag in entries {
+            guard let gewinner = eintrag.winnerIds else { continue }
+            for id in gewinner {
+                punkte[id, default: 0] += eintrag.trophyPoints
+                siege[id, default: 0] += 1
+            }
+        }
+
+        return participants
+            .map { TrophyRank(participant: $0, points: punkte[$0.id] ?? 0, wins: siege[$0.id] ?? 0) }
+            .sorted { links, rechts in
+                // Bei Punktgleichstand entscheidet, wer dafuer weniger
+                // Spiele gebraucht hat.
+                if links.points != rechts.points { return links.points > rechts.points }
+                return links.wins < rechts.wins
+            }
+    }
+
+    /// Der Sieger des Abends – oder niemand, solange nichts gewonnen wurde.
+    var trophyWinner: TrophyRank? {
+        guard let bester = trophyBoard.first, bester.points > 0 else { return nil }
+        // Gleichstand an der Spitze ist kein Sieg. Zwei Namen unter einem
+        // Pokal waeren am Tisch der Anfang einer Diskussion, und die
+        // entscheidet die Runde besser selbst.
+        let gleichauf = trophyBoard.filter { $0.points == bester.points }
+        return gleichauf.count == 1 ? bester : nil
+    }
+
     /// Der Abend in Worten – zum Vorlesen und zum Teilen.
     ///
     /// Bewusst Text und kein Bild: Text laesst sich in jede Gruppe schicken,
@@ -106,7 +186,9 @@ struct Evening: Codable, Equatable {
         var zeilen = ["🌅 Unser Abend am \(datum.string(from: startedAt))"]
         zeilen.append("\(readableDuration) · \(entries.count) \(entries.count == 1 ? "Spiel" : "Spiele")")
 
-        if let sieger = mostWins {
+        if let pokal = trophyWinner {
+            zeilen.append("🏆 Sieger des Abends: \(pokal.participant.name) (\(pokal.points) Punkte)")
+        } else if let sieger = mostWins {
             zeilen.append("🏆 Meiste Siege: \(sieger.name) (\(sieger.count)×)")
         }
         if let durstig = mostDrinks {
@@ -218,16 +300,62 @@ enum EveningLog {
     /// Vermerkt ein gespieltes Spiel. Tut nichts, wenn kein Abend laeuft –
     /// so darf der Aufruf ueberall stehen, ohne dass jede Aufrufstelle
     /// vorher fragen muss.
-    static func record(title: String, emoji: String, winner: String? = nil) {
+    static func record(
+        title: String,
+        emoji: String,
+        winner: String? = nil,
+        gameId: String? = nil,
+        winnerIds: [String] = [],
+        points: Int = 0
+    ) {
         guard var abend = current, abend.isRunning else { return }
         abend.entries.append(
-            EveningEntry(id: UUID().uuidString, title: title, emoji: emoji, at: Date(), winner: winner)
+            EveningEntry(
+                id: UUID().uuidString,
+                title: title,
+                emoji: emoji,
+                at: Date(),
+                winner: winner,
+                gameId: gameId,
+                winnerIds: winnerIds.isEmpty ? nil : winnerIds,
+                points: winnerIds.isEmpty ? nil : points
+            )
         )
         current = abend
     }
 
     static func record(partyGame: PartyGame) {
-        record(title: partyGame.title, emoji: partyGame.emoji)
+        record(title: partyGame.title, emoji: partyGame.emoji, gameId: partyGame.rawValue)
+    }
+
+    /// Traegt den Sieger in den Eintrag nach, der beim Betreten entstanden
+    /// ist.
+    ///
+    /// Nicht als neuer Eintrag: Der Abend zeigt sonst dasselbe Spiel
+    /// zweimal – einmal beim Aufmachen und einmal beim Gewinnen. Gesucht
+    /// wird von hinten, weil ein Spiel mehrmals am Abend laufen kann, und
+    /// nur ein Eintrag ohne Sieger kommt in Frage.
+    ///
+    /// Die Positionen sind Plaetze am Tisch, keine Profil-IDs – dieselbe
+    /// Zaehlung, mit der die Partyspiele auch ihre Schluecke buchen.
+    static func recordWinner(positions: [Int], for game: PartyGame) {
+        guard var abend = current, abend.isRunning, !positions.isEmpty else { return }
+
+        let ids = positions.compactMap { platz -> String? in
+            abend.participants.indices.contains(platz) ? abend.participants[platz].id : nil
+        }
+        guard !ids.isEmpty else { return }
+
+        guard let stelle = abend.entries.lastIndex(where: {
+            $0.gameId == game.rawValue && $0.winnerIds == nil
+        }) else { return }
+
+        abend.entries[stelle].winnerIds = ids
+        abend.entries[stelle].points = game.length.points
+        abend.entries[stelle].winner = ids
+            .compactMap { id in abend.participants.first { $0.id == id }?.name }
+            .joined(separator: " & ")
+        current = abend
     }
 
     // MARK: Trinkbilanz

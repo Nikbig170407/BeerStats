@@ -302,10 +302,14 @@ struct EveningView: View {
     }
 
     private func shareCard(for abend: Evening) -> ShareCard {
+        let pokal = abend.trophyWinner
+
         var rows: [ShareCard.Row] = [
             .init(label: abend.entries.count == 1 ? "Spiel" : "Spiele", value: "\(abend.entries.count)"),
             .init(label: "Gespielt", value: abend.readableDuration)
         ]
+        // Beide Kronen aufs Bild – das sind die zwei Titel, um die am Tisch
+        // gespielt wurde, und sie gehoeren verschiedenen Leuten.
         if let durstig = abend.mostDrinks {
             rows.append(.init(label: "Durstigste Person", value: "\(durstig.emoji) \(durstig.name)"))
         }
@@ -316,8 +320,11 @@ struct EveningView: View {
             title: "UNSER ABEND",
             // Die Ueberschrift ist der Sieger des Abends, nicht das Datum:
             // Das Datum steht unten und interessiert niemanden als Erstes.
-            headline: abend.mostWins.map { "\($0.name) hat den Abend gewonnen" } ?? "Unser Abend",
-            subline: abend.mostWins.map { "\($0.count)× gewonnen" },
+            headline: pokal.map { "\($0.participant.name) gewinnt den Abend" }
+                ?? abend.mostWins.map { "\($0.name) hat den Abend gewonnen" }
+                ?? "Unser Abend",
+            subline: pokal.map { "\($0.wins)× gewonnen · \($0.points) Punkte" }
+                ?? abend.mostWins.map { "\($0.count)× gewonnen" },
             rows: rows,
             footnote: abend.startedAt.formatted(datum),
             tint: BeerStatsColor.accentSecondary
@@ -336,6 +343,62 @@ struct EveningView: View {
         return teile.joined(separator: " · ")
     }
 
+    // MARK: - Der Pokal
+
+    /// Die Siegerwertung – getrennt von der Trinkbilanz.
+    ///
+    /// Beides in einer Zahl zu verrechnen ("Punkte minus Schluecke") waere
+    /// naheliegend und falsch: Dann lohnt es sich, wenig zu spielen, und
+    /// ein Trinkspiel, das Nichttrinken belohnt, ist kaputt. Am Tisch sind
+    /// das ohnehin zwei Titel, und beide will jemand haben.
+    ///
+    /// Die Tabelle bleibt weg, solange niemand etwas gewonnen hat – eine
+    /// Liste mit lauter Nullen sagt nur, dass die App etwas zaehlt, was
+    /// nicht stattgefunden hat.
+    @ViewBuilder
+    private func pokalTabelle(_ abend: Evening) -> some View {
+        let wertung = abend.trophyBoard
+
+        if wertung.contains(where: { $0.points > 0 }) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("POKAL")
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
+                    .kerning(1.8)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+
+                ForEach(Array(wertung.enumerated()), id: \.element.id) { platz, rang in
+                    HStack(spacing: 10) {
+                        Text("\(platz + 1).")
+                            .font(.scaled(13, weight: .heavy, design: .rounded))
+                            .foregroundStyle(platz == 0 ? BeerStatsColor.warning : BeerStatsColor.textSecondary)
+                            .monospacedDigit()
+                            .frame(width: 24, alignment: .leading)
+
+                        Text(rang.participant.emoji)
+                        Text(rang.participant.name)
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(BeerStatsColor.textPrimary)
+                            .lineLimit(1)
+
+                        Spacer(minLength: 0)
+
+                        Text("\(rang.wins)× · \(rang.points) P")
+                            .font(BeerStatsFont.caption)
+                            .foregroundStyle(rang.points > 0 ? BeerStatsColor.warning : BeerStatsColor.textSecondary)
+                            .monospacedDigit()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .glassPanel(cornerRadius: 12)
+                }
+
+                Text("Punkte je Sieg nach Spiellänge: kurz 1, mittel 2, lang 3.")
+                    .font(.scaled(10, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+        }
+    }
+
     // MARK: - Auswertung
 
     private func summaryView(_ abend: Evening) -> some View {
@@ -350,7 +413,16 @@ struct EveningView: View {
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
-            if let sieger = abend.mostWins {
+            if let pokal = abend.trophyWinner {
+                highlight(
+                    "🏆",
+                    "Sieger des Abends",
+                    "\(pokal.participant.name) — \(pokal.points) \(pokal.points == 1 ? "Punkt" : "Punkte")",
+                    BeerStatsColor.warning
+                )
+            } else if let sieger = abend.mostWins {
+                // Frueher Abende kennen nur den Namen des Siegers, keine
+                // Punkte. Sie sollen trotzdem etwas zeigen.
                 highlight("🏆", "Meiste Siege", "\(sieger.name) — \(sieger.count)×", BeerStatsColor.warning)
             }
 
@@ -362,6 +434,8 @@ struct EveningView: View {
                     BeerStatsColor.error
                 )
             }
+
+            pokalTabelle(abend)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("ENDSTAND")

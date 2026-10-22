@@ -282,17 +282,27 @@ final class LiveGameViewModel: ObservableObject {
             // In den Abend geht die Partie IMMER ein, auch Extreme: Dort
             // zaehlt, was gespielt wurde, nicht ob es die Trefferquote
             // verfaelscht. Die Statistiken darueber bleiben getrennt.
+            let siegerTeam = finishedState.winnerTeamIndex.flatMap { index in
+                teams.indices.contains(index) ? teams[index] : nil
+            }
+
             EveningLog.record(
                 title: dealer.isEnabled ? "Beerpong Extreme" : "Beerpong",
                 emoji: "🍺",
                 // Die Namen der Gewinner, nicht "Team 1". Die Aufstellung
                 // wechselt zwischen den Partien eines Abends, ein Platzhalter
                 // wuerde also zaehlen, wie oft der linke Platz gewonnen hat.
-                winner: finishedState.winnerTeamIndex.flatMap { index in
-                    teams.indices.contains(index)
-                        ? teams[index].playerNames.joined(separator: " & ")
-                        : nil
-                }
+                winner: siegerTeam?.playerNames.joined(separator: " & "),
+                // Fuer den Pokal zaehlt die PERSON, nicht der Text: Bei
+                // einem 2-gegen-2 stuende sonst "Lena & Jan" als ein
+                // Schluessel in der Wertung und beide gingen leer aus. Die
+                // Spieler-IDs eines Teams sind Profil-IDs, und genau die
+                // tragen auch die Teilnehmer des Abends.
+                winnerIds: siegerTeam?.playerIds ?? [],
+                // So viel wie ein langes Partyspiel – eine Partie Beerpong
+                // dauert eine Viertelstunde und ist das Spiel, um das es
+                // in dieser App geht.
+                points: PartyGame.Length.long.points
             )
         } catch {
             AppLogger.firestore.error("Ergebnis nicht gespeichert: \(error.localizedDescription)")

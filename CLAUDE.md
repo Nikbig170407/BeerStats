@@ -239,6 +239,15 @@ den nachgespielten Wurf-Log alter Partien.
   dabei: Auf „was spielen wir jetzt" ist Trinkbingo keine Antwort.
 - **Nochmal dieselben**: die letzte Aufstellung als Zeile im Beerpong-Menü,
   gestartet mit den aktuellen Hausregeln.
+- **Der Pokal des Abends** (22. Oktober): zwei Kronen statt einer. **🏆
+  Pokal** zählt gewonnene Spiele, gewichtet nach Länge (kurz 1, mittel 2,
+  lang 3); **🍺 Bilanz** zählt wie bisher, wer trinken musste. Bewusst
+  getrennt und **nicht** verrechnet: „Punkte minus Schlücke" würde
+  belohnen, wenig zu spielen – und ein Trinkspiel, das Nichttrinken
+  belohnt, ist kaputt. Am Tisch sind das ohnehin zwei Titel.
+- **Trinkbingo-Blätter verteilen** (22. Oktober): für jeden ein eigenes,
+  anders gemischtes Blatt als **Bild** ans Teilen-Blatt. Kein Link: Die App
+  läuft auf genau einem Gerät, ein Link öffnet bei den Gästen nichts.
 - **Abende bleiben erhalten**: die letzten zwanzig unter „Frühere Abende",
   teilbar als Text.
 - **Erinnerung an die Sicherung**: die Karte sagt, wann zuletzt gesichert
@@ -329,6 +338,19 @@ den nachgespielten Wurf-Log alter Partien.
   drin. Dazu gibt es im Spiel den Knopf **„Jahr stimmt nicht"**: Weiß die
   Runde es besser als die App, gewinnt die Runde. Ohne ihn tränke jemand
   für einen Tippfehler.
+
+- **Ein Sieg gehört einer PERSON, nicht einem Text** (22. Oktober).
+  `EveningEntry.winner` ist eine Zeile zum Anzeigen („Lena & Jan"); für die
+  Wertung zählt `winnerIds`. Vorher zählte die App den Text, und ein
+  2-gegen-2-Sieg ging damit an einen Namen, den es nicht gibt – beide
+  Spieler standen bei null. Was ein Sieg wert ist, steht als `points`
+  **im Eintrag** und wird nicht später aus dem Katalog geholt: Ein Abend
+  von letztem Monat soll so ausgewertet werden, wie er gespielt wurde
+  (dieselbe Regel wie bei der Sicherungsdatei). Nachgetragen wird über
+  `EveningLog.recordWinner(positions:for:)` an den Eintrag, der beim
+  **Betreten** des Spiels entstanden ist – deshalb trägt der Eintrag auch
+  `gameId`. Ein zweiter Eintrag beim Gewinnen würde dasselbe Spiel doppelt
+  in den Abend schreiben.
 
 - **Was nebenher läuft, gehört nicht in den View-Zustand** (18. Oktober).
   Die Regeln des Abends stapeln sich und gelten weiter, während die Runde
@@ -867,6 +889,16 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   und sie mir nennen. Dann: Reicht die Übergabe ans Handy, oder sieht der
   Ratende doch den Titel? Und mit sieben Leuten: Dauert eine Runde mit fünf
   Zielkarten zu lange? (Gerechnet: etwa 35 Lieder.)
+- **Pokal (22. Oktober)**: Stimmt die Wertung am Ende mit dem überein, was
+  ihr im Kopf habt? Melden tun bisher nur **Beerpong** und **Zeitstrahl** –
+  die anderen zehn Spiele mit Sieger (Schocken, Mäxchen, Bussfahrer, 21,
+  Schätzmeister, Kategorien, Bombe, Reaktionsduell, Wer bin ich?,
+  Pantomime) kennen ihren Sieger, geben ihn aber noch nicht weiter. Sag
+  mir nach dem Abend, welche ihr wirklich gespielt habt, dann ziehe ich
+  genau die nach.
+- **Blätter verteilen (22. Oktober)**: Kommen die Bilder in WhatsApp
+  lesbar an, oder sind sechzehn Felder auf einem Handybild zu klein? Und
+  geht AirDrop an mehrere gleichzeitig?
 - **Die Herde (22. Oktober)**: Treffen die Fragen die Mitte zwischen „zu
   offen" (zehn Antworten, keine Mehrheit) und „zu geschlossen" (alle sagen
   dasselbe, niemand trinkt)? Das ist die einzige Stelle, an der der Stapel

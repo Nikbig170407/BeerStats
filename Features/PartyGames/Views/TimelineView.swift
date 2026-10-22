@@ -412,6 +412,9 @@ struct TimelineView: View {
 
     private func nextTurn(skipWinCheck: Bool = false) {
         if !skipWinCheck, timelines.indices.contains(guesser), timelines[guesser].count >= target {
+            // Haengt den Sieger an den Eintrag, der beim Betreten entstanden
+            // ist – kein zweiter Eintrag fuer dasselbe Spiel.
+            EveningLog.recordWinner(positions: [guesser], for: .timeline)
             withAnimation(AppAnimation.standard) { phase = .won(player: guesser) }
             HapticManager.success()
             SoundManager.play(.victory)

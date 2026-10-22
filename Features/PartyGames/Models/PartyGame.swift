@@ -339,6 +339,22 @@ enum PartyGame: String, CaseIterable, Identifiable {
             }
         }
 
+        /// Was ein Sieg in einem Spiel dieser Laenge im Pokal wert ist.
+        ///
+        /// Die Gewichtung ist der Kern der Siegerwertung: Ohne sie gewinnt
+        /// den Abend, wer am meisten Reaktionsduell gespielt hat – eine
+        /// Runde dauert zwei Minuten, eine Partie Beerpong eine
+        /// Viertelstunde. Was nebenher laeuft, kennt keinen Sieger und
+        /// bringt deshalb nichts.
+        var points: Int {
+            switch self {
+            case .quick: return 1
+            case .round: return 2
+            case .long: return 3
+            case .alongside: return 0
+            }
+        }
+
         /// Kurzform fuer die Auswahl – dort stehen vier nebeneinander.
         var shortLabel: String {
             switch self {
