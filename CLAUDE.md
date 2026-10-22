@@ -278,12 +278,12 @@ den nachgespielten Wurf-Log alter Partien.
   Fleiß: Ring of Fire hat dreizehn Ränge, Bussfahrer und Pferderennen ein
   Skatblatt, Trink-Roulette acht Felder auf dem Rad. Mehr Karten wären dort
   ein anderes Spiel.
-- Vierundzwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
+- Fünfundzwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
   Pflicht, Ich hab noch nie, Zeitstrahl. *Raten & reden* – Schocken, Mäxchen, Zwei
   Wahrheiten, Der Spion, Wer bin ich?, 21, Schätzmeister, Kategorien,
   Wer würde eher?, Kennst du deine Leute?, Pantomime, Die Skala. *Schnell
-  zwischendurch* – Bombe, Reaktionsduell, Trink-Roulette. *Läuft nebenher* –
+  zwischendurch* – Bombe, Reaktionsduell, Trink-Roulette, Die Herde. *Läuft nebenher* –
   Verbotene Wörter, Trinkbingo, Regel des Abends.
   Die Zahl im Text und die Fälle in `PartyGame` müssen zusammenpassen –
   hier standen eine Zeit lang neunzehn, aufgezählt waren siebzehn.
@@ -852,6 +852,11 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   und sie mir nennen. Dann: Reicht die Übergabe ans Handy, oder sieht der
   Ratende doch den Titel? Und mit sieben Leuten: Dauert eine Runde mit fünf
   Zielkarten zu lange? (Gerechnet: etwa 35 Lieder.)
+- **Die Herde (22. Oktober)**: Treffen die Fragen die Mitte zwischen „zu
+  offen" (zehn Antworten, keine Mehrheit) und „zu geschlossen" (alle sagen
+  dasselbe, niemand trinkt)? Das ist die einzige Stelle, an der der Stapel
+  scheitern kann, und sie fällt nur am Tisch auf. Dazu: Ist das Antippen,
+  wer allein stand, mit sieben Leuten schnell genug, oder bremst es?
 - **Die Skala (22. Oktober)**: Trifft die Runde die Zone oft genug, dass
   es sich nach Können anfühlt? Die Trefferzone ist 15 Prozent breit, der
   straffreie Ring 36 – beides gerechnet, nicht erprobt. Zu schmal heißt

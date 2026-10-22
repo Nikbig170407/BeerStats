@@ -96,7 +96,7 @@ struct HerdView: View {
     // MARK: - Die Frage
 
     private var askingView: some View {
-        frame {
+        screen {
             Text("🐄").font(.system(size: 44))
 
             Text("Runde \(round)")
@@ -128,7 +128,7 @@ struct HerdView: View {
     // MARK: - Wer stand allein?
 
     private var pickingView: some View {
-        frame {
+        screen {
             Text("Wer war allein?")
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
@@ -186,7 +186,7 @@ struct HerdView: View {
     // MARK: - Auflösung
 
     private func resultView(alone: [Int], cow: [Int]) -> some View {
-        frame {
+        screen {
             Text(alone.isEmpty ? "🤝" : "🍺").font(.system(size: 54))
 
             if alone.isEmpty {
@@ -211,7 +211,7 @@ struct HerdView: View {
                     .foregroundStyle(BeerStatsColor.error)
 
                 if !cow.isEmpty {
-                    Text("🐄 \(namesText(cow)) steht zum zweiten Mal allein – \(cowPenalty.text) statt der Schlücke.")
+                    Text("🐄 \(namesText(cow)) \(cow.count == 1 ? "steht" : "stehen") zum zweiten Mal allein – \(cowPenalty.text) statt der Schlücke.")
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.warning)
                         .multilineTextAlignment(.center)
@@ -229,8 +229,11 @@ struct HerdView: View {
         return namen.dropLast().joined(separator: ", ") + " & " + (namen.last ?? "")
     }
 
-    /// Inhalt mittig, Knoepfe unten.
-    private func frame<Content: View, Buttons: View>(
+    /// Inhalt mittig, Knoepfe unten. Heisst bewusst nicht `frame` –
+    /// SwiftUI hat einen Modifier dieses Namens, und zwei gleich benannte
+    /// Dinge in derselben Ansicht sind eine Einladung an den Compiler,
+    /// sich das falsche auszusuchen.
+    private func screen<Content: View, Buttons: View>(
         @ViewBuilder content: () -> Content,
         @ViewBuilder buttons: () -> Buttons
     ) -> some View {

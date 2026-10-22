@@ -42,6 +42,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
     case bombPass
     case reactionDuel
     case drinkRoulette
+    case herd
 
     case forbiddenWords
     case drinkBingo
@@ -122,7 +123,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
              .countTo21, .estimation, .categories, .mostLikely, .knowYourPeople,
              .charades, .spectrum:
             return .talking
-        case .bombPass, .reactionDuel, .drinkRoulette:
+        case .bombPass, .reactionDuel, .drinkRoulette, .herd:
             return .quick
         case .forbiddenWords, .drinkBingo, .eveningRule:
             return .alongside
@@ -154,6 +155,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .bombPass: return "Bombe weitergeben"
         case .reactionDuel: return "Reaktionsduell"
         case .drinkRoulette: return "Trink-Roulette"
+        case .herd: return "Die Herde"
         case .forbiddenWords: return "Verbotene Wörter"
         case .drinkBingo: return "Trinkbingo"
         case .eveningRule: return "Regel des Abends"
@@ -183,6 +185,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .bombPass: return "💣"
         case .reactionDuel: return "⚡️"
         case .drinkRoulette: return "🎯"
+        case .herd: return "🐄"
         case .forbiddenWords: return "🤐"
         case .drinkBingo: return "🎉"
         case .eveningRule: return "📜"
@@ -218,6 +221,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .bombPass: return "Zünden, herumreichen, nicht drauf sitzen bleiben"
         case .reactionDuel: return "Zwei Daumen, ein Signal – wer zu früh tippt, verliert"
         case .drinkRoulette: return "Acht Felder, ein Zeiger – keine Einrichtung nötig"
+        case .herd:
+            return "\(HerdDeck.count) Fragen – wer nicht wie die Mehrheit denkt, trinkt"
         case .forbiddenWords: return "Jeder zieht ein Wort, das er den Abend über nicht sagen darf"
         case .drinkBingo: return "Sechzehn Felder, die von selbst passieren"
         case .eveningRule:
@@ -277,6 +282,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return "Zünden und weiterreichen. Die App zählt, aber nicht sichtbar – irgendwann geht sie hoch. Wer sie dann in der Hand hält, trinkt."
         case .reactionDuel:
             return "Zwei Daumen auf dem Bildschirm, beide warten auf das Signal. Wer zuerst tippt, gewinnt – wer zu früh tippt, verliert sofort."
+        case .herd:
+            return "Die App stellt eine Frage, auf die es keine richtige Antwort gibt, sondern nur eine häufige – „Nenne eine Pizza“. Auf drei sagen alle gleichzeitig ihre Antwort laut. Wer dasselbe gesagt hat wie die Mehrheit, hat gewonnen; wer allein dasteht, trinkt. Danach tippt ihr an, wer allein war – mehr rechnet die App nicht, sie kann ja nicht hören, was gesagt wurde. Wer zweimal hintereinander allein steht, bekommt die Kuh und zahlt mehr."
         case .drinkRoulette:
             return "Rad drehen, Feld abwarten, machen was dasteht. Keine Einrichtung, keine Erklärung – das Spiel für zwischendurch."
         case .forbiddenWords:
@@ -292,7 +299,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
         switch self {
         case .ringOfFire, .drinkRoulette, .countTo21:
             return BeerStatsColor.error
-        case .horseRace, .neverHaveIEver, .estimation, .drinkBingo, .charades:
+        case .horseRace, .neverHaveIEver, .estimation, .drinkBingo, .charades,
+             .herd:
             return BeerStatsColor.success
         case .busRide, .maexchen, .spy, .bombPass, .knowYourPeople, .eveningRule,
              .timeline:
@@ -344,7 +352,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
 
     var length: Length {
         switch self {
-        case .bombPass, .reactionDuel, .drinkRoulette, .twoTruths:
+        case .bombPass, .reactionDuel, .drinkRoulette, .twoTruths, .herd:
             return .quick
         case .schocken, .maexchen, .countTo21, .estimation, .categories,
              .mostLikely, .knowYourPeople, .headsUp, .charades, .truthOrDare,
@@ -385,7 +393,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // Brauchen eine Runde, nicht ein Gegenueber: jemanden zum
         // Draufzeigen, zum Beschreiben, zum Ueberstimmen.
         case .twoTruths, .spy, .headsUp, .categories, .mostLikely,
-             .bombPass, .charades, .spectrum:
+             .bombPass, .charades, .spectrum, .herd:
             return 3...Self.manyPlayers
         }
     }
@@ -443,7 +451,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .ringOfFire, .horseRace, .truthOrDare, .neverHaveIEver,
              .twoTruths, .spy, .mostLikely, .drinkRoulette,
              .forbiddenWords, .drinkBingo, .knowYourPeople, .eveningRule,
-             .spectrum:
+             .spectrum, .herd:
             return false
         }
     }
@@ -478,7 +486,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // Diese sieben fragen vorher schon etwas – Spielerzahl, Kartenzahl,
         // Stufen, Kategorie. Die Haerte steht in demselben Vorspann.
         case .ringOfFire, .neverHaveIEver, .schocken, .maexchen, .spy,
-             .headsUp, .forbiddenWords, .eveningRule, .charades, .timeline:
+             .headsUp, .forbiddenWords, .eveningRule, .charades, .timeline,
+             .herd:
             return .inSetup
 
         // Alle anderen fangen sofort an. Pferderennen und Wahrheit oder
@@ -549,6 +558,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .bombPass: return AnyView(BombPassView())
         case .reactionDuel: return AnyView(ReactionDuelView())
         case .drinkRoulette: return AnyView(DrinkRouletteView())
+        case .herd: return AnyView(HerdView())
         case .forbiddenWords: return AnyView(ForbiddenWordsView())
         case .drinkBingo: return AnyView(DrinkBingoView())
         case .eveningRule: return AnyView(EveningRuleView())
