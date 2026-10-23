@@ -125,7 +125,7 @@ struct RingOfFireView: View {
                     tint: BeerStatsColor.error
                 )
 
-                Text("Die Karten kommen aus dem gemischten Stapel. In einer kurzen Runde kommt deshalb nicht jede Regel vor – welche fehlt, weiß vorher niemand.")
+                Text("Von jedem Rang liegen immer alle vier Karten im Ring. In einer kurzen Runde kommt deshalb nicht jede Regel vor – welche fehlt, weiß vorher niemand. Was dabei ist, ist aber vollständig.")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -262,11 +262,17 @@ struct RingOfFireView: View {
 
     /// Eine Karte im Ring.
     ///
-    /// `isEmpty` ist der freie Platz einer gezogenen Karte. Er bleibt
-    /// stehen, statt zu verschwinden: Die Luecken sind die Anzeige des
-    /// Spielstands – man sieht auf einen Blick, wie viel schon durch ist.
-    /// Ein Ring, der sich beim Ziehen zusammenschiebt, verliert genau diese
-    /// Information.
+    /// `isEmpty` ist der freie Platz einer gezogenen Karte – und der ist
+    /// seit dem 23. Oktober LEER, nicht gestrichelt umrandet.
+    ///
+    /// Der gestrichelte Platz stammte aus der Zeit, als die Karten in
+    /// gleichen Abstaenden mit Luft dazwischen lagen; dort war er die
+    /// Anzeige des Spielstands. Im geschuppten Ring hat er die Regel
+    /// unsichtbar gemacht, die das Spiel ausmacht: Gerissen ist der Ring,
+    /// wenn die beiden NACHBARN sich nicht mehr beruehren. Mit einem
+    /// Platzhalter an der Stelle der gezogenen Karte sieht aber jeder Zug
+    /// gleich aus – mal kommt eine Strafe, mal nicht, und am Tisch wirkt
+    /// das wie Willkuer. Wie viel noch liegt, steht ohnehin in der Mitte.
     ///
     /// `isLit` ist der Lichtpunkt, der beim Ziehen herumwandert. Die Karten
     /// sind nicht antippbar: Gezogen wird ausgelost.
@@ -304,11 +310,8 @@ struct RingOfFireView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
                     .strokeBorder(
-                        BeerStatsColor.error.opacity(isEmpty ? 0.22 : (isLit ? 1 : 0.7)),
-                        style: StrokeStyle(
-                            lineWidth: isEmpty ? 1 : (isLit ? 1.8 : 1.1),
-                            dash: isEmpty ? [2.5, 2.5] : []
-                        )
+                        BeerStatsColor.error.opacity(isEmpty ? 0 : (isLit ? 1 : 0.7)),
+                        lineWidth: isLit ? 1.8 : 1.1
                     )
             )
             .overlay(
@@ -328,6 +331,9 @@ struct RingOfFireView: View {
             )
             .frame(width: width, height: height)
             .scaleEffect(isLit ? 1.45 : 1)
+            // Der leere Platz ist unsichtbar – ausser im Moment des Risses,
+            // damit man die Stelle findet, an der es gerade gekracht hat.
+            .opacity(isEmpty && !isTorn ? 0 : 1)
     }
 
     // MARK: - Ring durch

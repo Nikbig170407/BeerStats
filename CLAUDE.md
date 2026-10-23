@@ -219,7 +219,8 @@ den nachgespielten Wurf-Log alter Partien.
   (`AppAppearance`). Kein Hell-Modus, siehe unten.
 - **Ring of Fire in zwei Screens**: der Ring für sich, die gezogene Karte
   als Vollbild mit „Verstanden". Karten tragen Dauer und Strafe wie die
-  Extreme-Karten; Lücken bleiben als gestrichelter Platz stehen.
+  Extreme-Karten. **Von jedem Rang liegen immer alle vier Karten im Ring**
+  (23. Oktober) – gelost werden ganze Ränge, nicht einzelne Karten.
 - **Bussfahrer hat sein Ende** (17. Oktober): Zwei Hälften, wie am Tisch –
   erst die Fragerunde, dann **die Busfahrt**. Die hatte gefehlt: Das Spiel
   hörte nach der vierten richtigen Antwort auf („Das Handy geht weiter"),
@@ -608,6 +609,23 @@ den nachgespielten Wurf-Log alter Partien.
   niemand für dieselbe Lücke). Die **Kartenbreite folgt dem Layout**, nicht
   umgekehrt: Was man an Überlappung sieht, ist genau das, womit gerechnet
   wird. Wer die Breite frei wählt, baut ein Bild, das lügt.
+
+  **Die Lücke muss eine Lücke sein** (23. Oktober). Der freie Platz einer
+  gezogenen Karte stand als gestrichelter Umriss weiter da – ein Erbe aus
+  der Zeit, als die Karten in gleichen Abständen mit Luft dazwischen lagen.
+  Im geschuppten Ring hat er die Regel unsichtbar gemacht: Gerissen ist der
+  Ring, wenn die beiden **Nachbarn** sich nicht mehr berühren, aber mit
+  einem Platzhalter an der Stelle der gezogenen Karte sieht jeder Zug
+  gleich aus. Am Tisch kam deshalb mal eine Strafe und mal nicht, ohne
+  erkennbaren Unterschied – es wirkte wie Willkür. Wie viel noch liegt,
+  steht ohnehin in der Mitte.
+
+  **Vier von jedem Rang** (23. Oktober): `PlayingCardDeck.shuffled(count:)`
+  schnitt vorher einfach den gemischten Stapel ab. Bei zwanzig Karten lagen
+  dann drei Buben und ein König im Ring. Regeln, die vom Zählen leben,
+  gehen daran kaputt – ein Daumenmeister, den es nur einmal gibt, ist keine
+  Rolle, sondern ein Zufall. Jetzt werden ganze **Ränge** ausgelost: fünf
+  bei 20 Karten, acht bei 32, alle dreizehn bei 52. Was fehlt, fehlt ganz.
 
 - **Die Härte gehört zum Spiel, nicht zum Gerät.** Sie stand bis Oktober
   2026 einmal über den Partyspielen und galt für alle. Am Tisch ist sie

@@ -88,14 +88,32 @@ enum PlayingCardDeck {
     /// Wie viele Karten ein vollstaendiger Stapel hat.
     static var fullSize: Int { ranks.count * PlayingCard.Suit.allCases.count }
 
-    /// Ein gemischter Stapel mit hoechstens `count` Karten.
+    /// Ein gemischter Stapel mit `count` Karten – und IMMER vier von jedem
+    /// Rang, der darin vorkommt.
     ///
-    /// Bewusst vom gemischten Stapel abgeschnitten und nicht nach Raengen
-    /// zusammengestellt: In einem kurzen Ring soll ueberraschen, was fehlt.
-    /// Die Folge muss aber dastehen, wo man es einstellt – bei zwanzig
-    /// Karten kommt nicht jede Regel vor.
+    /// Vorher wurde der gemischte Stapel einfach abgeschnitten. Das sah
+    /// harmlos aus und war der Grund, warum ein kurzer Ring sich falsch
+    /// anfuehlte: Bei zwanzig Karten lagen dann drei Buben und ein Koenig
+    /// darin, mal zwei Asse, mal keins. Regeln, die vom Zaehlen leben,
+    /// gehen daran kaputt – ein Daumenmeister, den es nur einmal gibt, ist
+    /// keine Rolle, sondern ein Zufall.
+    ///
+    /// Jetzt werden ganze RAENGE ausgelost: fuenf bei zwanzig Karten, acht
+    /// bei zweiunddreissig, alle dreizehn beim vollen Blatt. Was fehlt,
+    /// fehlt ganz – und was dabei ist, ist vollstaendig. Welche Raenge es
+    /// werden, bleibt wie vorher eine Ueberraschung.
+    ///
+    /// Geht `count` nicht glatt durch vier, wird abgerundet: Lieber ein
+    /// Rang weniger als ein unvollstaendiger.
     static func shuffled(count: Int) -> [PlayingCard] {
-        Array(shuffled().prefix(max(1, count)))
+        let farben = PlayingCard.Suit.allCases
+        let gewuenscht = max(farben.count, min(count, fullSize))
+        let anzahlRaenge = max(1, gewuenscht / farben.count)
+
+        return ranks.shuffled()
+            .prefix(anzahlRaenge)
+            .flatMap { rang in farben.map { PlayingCard(rank: rang, suit: $0) } }
+            .shuffled()
     }
 
     static func shuffled() -> [PlayingCard] {

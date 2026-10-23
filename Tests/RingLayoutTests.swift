@@ -180,4 +180,42 @@ final class RingLayoutTests: XCTestCase {
         XCTAssertGreaterThan(anteil, 0.02, "Es reisst praktisch nie – die Regel wäre unsichtbar")
         XCTAssertLessThan(anteil, 0.25, "Es reisst zu oft – die Runde ist nach zehn Karten blau")
     }
+
+    // MARK: - Der Stapel
+
+    /// Die Regel, die der Nutzer am 23. Oktober verlangt hat: Von jedem
+    /// Rang, der im Ring liegt, liegen ALLE VIER Karten darin.
+    ///
+    /// Vorher wurde der gemischte Stapel abgeschnitten, und bei zwanzig
+    /// Karten lagen dann drei Buben und ein Koenig im Ring. Regeln, die vom
+    /// Zaehlen leben, gehen daran kaputt: Ein Daumenmeister, den es nur
+    /// einmal gibt, ist keine Rolle, sondern ein Zufall.
+    func testEveryRankInTheRingIsComplete() {
+        for anzahl in [20, 32, PlayingCardDeck.fullSize] {
+            let stapel = PlayingCardDeck.shuffled(count: anzahl)
+            XCTAssertEqual(stapel.count, anzahl, "Bei \(anzahl) Karten kamen \(stapel.count) heraus.")
+
+            let proRang = Dictionary(grouping: stapel, by: \.rank)
+            for (rang, karten) in proRang {
+                XCTAssertEqual(karten.count, 4, "Rang \(rang) liegt \(karten.count)× im Ring.")
+                XCTAssertEqual(
+                    Set(karten.map(\.suit)).count, 4,
+                    "Rang \(rang) hat nicht alle vier Farben."
+                )
+            }
+            XCTAssertEqual(proRang.count, anzahl / 4)
+        }
+    }
+
+    /// Das volle Blatt ist das volle Blatt – alle dreizehn Raenge.
+    func testTheFullDeckKeepsEveryRank() {
+        let stapel = PlayingCardDeck.shuffled(count: PlayingCardDeck.fullSize)
+        XCTAssertEqual(Set(stapel.map(\.rank)), Set(PlayingCardDeck.ranks))
+    }
+
+    /// Mehr als ein volles Blatt gibt es nicht.
+    func testMoreThanAFullDeckIsStillAFullDeck() {
+        XCTAssertEqual(PlayingCardDeck.shuffled(count: 99).count, PlayingCardDeck.fullSize)
+    }
+
 }
