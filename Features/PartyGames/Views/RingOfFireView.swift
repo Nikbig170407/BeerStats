@@ -125,7 +125,7 @@ struct RingOfFireView: View {
                     tint: BeerStatsColor.error
                 )
 
-                Text("Von jedem Rang liegen immer alle vier Karten im Ring. In einer kurzen Runde kommt deshalb nicht jede Regel vor – welche fehlt, weiß vorher niemand. Was dabei ist, ist aber vollständig.")
+                Text(stapelHinweis)
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -252,6 +252,26 @@ struct RingOfFireView: View {
         // der Screen, nicht eine Zeile darin.
         .aspectRatio(1, contentMode: .fit)
         .animation(AppAnimation.standard, value: remaining)
+    }
+
+    /// Welche Karten bei dieser Einstellung im Ring liegen.
+    ///
+    /// Gerechnet und nicht getippt: Die Auswahl steht in
+    /// `PlayingCardDeck.highestRanks` – staende sie hier als Satz, waere
+    /// sie nach der naechsten Aenderung falsch.
+    private var stapelHinweis: String {
+        let raenge = PlayingCardDeck.highestRanks(count: cardCount)
+            .map(\.rank)
+            .reduce(into: Set<Int>()) { $0.insert($1) }
+            .sorted()
+
+        guard let kleinster = raenge.first else { return "" }
+        let name = PlayingCard(rank: kleinster, suit: .hearts).rankName
+
+        if raenge.count == PlayingCardDeck.ranks.count {
+            return "Das ganze Blatt: alle dreizehn Ränge, von jedem alle vier Karten."
+        }
+        return "Die \(raenge.count) höchsten Ränge – ab \(name) aufwärts, von jedem alle vier Karten. Die kleinen Karten sagen nur Mengen an; was den Tisch beschäftigt, steht oben."
     }
 
     /// Kommt aus dem Layout, nicht aus der Position: Die Karten liegen
@@ -564,7 +584,7 @@ struct RingOfFireView: View {
     private func start() {
         drawTask?.cancel()
         tearTask?.cancel()
-        ring = PlayingCardDeck.shuffled(count: cardCount).map { Optional($0) }
+        ring = PlayingCardDeck.highestRanks(count: cardCount).map { Optional($0) }
         // Jede Runde wird neu ausgelegt: Dieselben Karten an denselben
         // Stellen hiesse, dass auch dieselben Stellen reissen – und nach
         // zwei Abenden wuesste man, wo.

@@ -17,6 +17,12 @@
 //  den Zeilen: Der Shot ist in dem Moment die Nachricht, die Karte nur noch
 //  der Anlass.
 //
+//  Hinter der Karte laeuft seit dem 24. Oktober eine Bewegung, die zum Rang
+//  gehoert (`RingCardFlourish`) – Kronen regnen bei der Dame, Daumen
+//  steigen beim Buben. Sie liegt bewusst HINTER dem Text: Wer quer ueber
+//  den Tisch schaut, erkennt die Karte daran, bevor er sie liest; wer sie
+//  liest, soll dabei nicht gestoert werden.
+//
 
 import SwiftUI
 
@@ -40,6 +46,11 @@ struct RingOfFireActionView: View {
     var body: some View {
         ZStack {
             AmbientBackdrop(glow: tint)
+
+            // Hinter allem und ueber dem Hintergrund: die Bewegung, die zu
+            // dieser Karte gehoert. Sie liegt NICHT ueber der Karte – was
+            // zu tun ist, darf nichts verdecken.
+            RingCardFlourish(rank: card.rank)
 
             ScrollView {
                 VStack(spacing: 16) {

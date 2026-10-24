@@ -4,6 +4,12 @@
 //
 //  Das Regelwerk von Ring of Fire: Jeder Rang bedeutet etwas anderes.
 //
+//  Die Fuenf und die Sechs treffen GRUPPEN, nicht Nachbarn: "Five is Guys",
+//  "Six is Chicks" – die gelaeufige Fassung am Tisch. Vorher standen dort
+//  linker und rechter Nachbar; das ist dieselbe Mechanik wie die Zwei
+//  (einer trinkt) und damit eine Karte, die man schon kennt, wenn sie
+//  kommt.
+//
 //  Vier Raenge wirken ueber den Moment hinaus – Bube, Dame, Acht und Zehn.
 //  Am echten Tisch legt man diese Karte vor sich hin, und genau das ist ihr
 //  Sinn: Sie erinnert alle daran, dass die Rolle noch laeuft. Die App fuehrt
@@ -99,17 +105,17 @@ enum RingOfFireRules {
             )
         case 5:
             return RingOfFireRule(
-                title: "Deine Linke",
-                nickname: "FIVE – LEFT",
-                text: "Dein linker Nachbar trinkt \(DrinkAmount.sips(3).text).",
-                emoji: "⬅️"
+                title: "Die Jungs",
+                nickname: "FIVE IS GUYS",
+                text: "Alle Männer am Tisch trinken \(DrinkAmount.sips(3).text).",
+                emoji: "🙋‍♂️"
             )
         case 6:
             return RingOfFireRule(
-                title: "Deine Rechte",
-                nickname: "SIX – RIGHT",
-                text: "Dein rechter Nachbar trinkt \(DrinkAmount.sips(3).text).",
-                emoji: "➡️"
+                title: "Die Mädels",
+                nickname: "SIX IS CHICKS",
+                text: "Alle Frauen am Tisch trinken \(DrinkAmount.sips(3).text).",
+                emoji: "🙋‍♀️"
             )
         case 7:
             return RingOfFireRule(

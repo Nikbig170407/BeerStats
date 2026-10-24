@@ -88,29 +88,33 @@ enum PlayingCardDeck {
     /// Wie viele Karten ein vollstaendiger Stapel hat.
     static var fullSize: Int { ranks.count * PlayingCard.Suit.allCases.count }
 
-    /// Ein gemischter Stapel mit `count` Karten – und IMMER vier von jedem
-    /// Rang, der darin vorkommt.
+    /// Ein gemischter Stapel aus den HOECHSTEN Raengen – immer vier von
+    /// jedem, der vorkommt.
     ///
-    /// Vorher wurde der gemischte Stapel einfach abgeschnitten. Das sah
-    /// harmlos aus und war der Grund, warum ein kurzer Ring sich falsch
-    /// anfuehlte: Bei zwanzig Karten lagen dann drei Buben und ein Koenig
-    /// darin, mal zwei Asse, mal keins. Regeln, die vom Zaehlen leben,
-    /// gehen daran kaputt – ein Daumenmeister, den es nur einmal gibt, ist
-    /// keine Rolle, sondern ein Zufall.
+    /// Zwei Entscheidungen stecken darin, und beide kamen vom Tisch:
     ///
-    /// Jetzt werden ganze RAENGE ausgelost: fuenf bei zwanzig Karten, acht
-    /// bei zweiunddreissig, alle dreizehn beim vollen Blatt. Was fehlt,
-    /// fehlt ganz – und was dabei ist, ist vollstaendig. Welche Raenge es
-    /// werden, bleibt wie vorher eine Ueberraschung.
+    /// **Vier von jedem Rang.** Vorher wurde der gemischte Stapel einfach
+    /// abgeschnitten; bei zwanzig Karten lagen dann drei Buben und ein
+    /// Koenig darin, mal zwei Asse, mal keins. Regeln, die vom Zaehlen
+    /// leben, gehen daran kaputt – ein Daumenmeister, den es nur einmal
+    /// gibt, ist keine Rolle, sondern ein Zufall.
+    ///
+    /// **Von oben, nicht gelost.** Kurz gespielt wird mit den fuenf
+    /// hoechsten Raengen (Zehn bis Ass), mittel mit den acht hoechsten
+    /// (Sieben bis Ass), lang mit allen. Unten im Blatt stehen die Karten,
+    /// die nur eine Menge ansagen; oben stehen die, die etwas mit dem Tisch
+    /// machen. Eine kurze Runde soll nicht die zahme sein, sondern die
+    /// dichte – und sie ist dadurch auch planbar: Was im Ring liegt, weiss
+    /// man vorher.
     ///
     /// Geht `count` nicht glatt durch vier, wird abgerundet: Lieber ein
     /// Rang weniger als ein unvollstaendiger.
-    static func shuffled(count: Int) -> [PlayingCard] {
+    static func highestRanks(count: Int) -> [PlayingCard] {
         let farben = PlayingCard.Suit.allCases
         let gewuenscht = max(farben.count, min(count, fullSize))
         let anzahlRaenge = max(1, gewuenscht / farben.count)
 
-        return ranks.shuffled()
+        return ranks.sorted(by: >)
             .prefix(anzahlRaenge)
             .flatMap { rang in farben.map { PlayingCard(rank: rang, suit: $0) } }
             .shuffled()

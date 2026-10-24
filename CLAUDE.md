@@ -220,7 +220,9 @@ den nachgespielten Wurf-Log alter Partien.
 - **Ring of Fire in zwei Screens**: der Ring für sich, die gezogene Karte
   als Vollbild mit „Verstanden". Karten tragen Dauer und Strafe wie die
   Extreme-Karten. **Von jedem Rang liegen immer alle vier Karten im Ring**
-  (23. Oktober) – gelost werden ganze Ränge, nicht einzelne Karten.
+  (23. Oktober), und zwar die höchsten (24. Oktober). Hinter der Karte
+  läuft eine Bewegung, die zum Rang gehört (`RingCardFlourish`): Kronen
+  regnen bei der Dame, Daumen steigen beim Buben, beim Ass brennt es.
 - **Bussfahrer hat sein Ende** (17. Oktober): Zwei Hälften, wie am Tisch –
   erst die Fragerunde, dann **die Busfahrt**. Die hatte gefehlt: Das Spiel
   hörte nach der vierten richtigen Antwort auf („Das Handy geht weiter"),
@@ -600,8 +602,11 @@ den nachgespielten Wurf-Log alter Partien.
   der mittlere Abstand zur Nachbarin, `jitter` (0,6) streut die Abstände.
   Ohne Streuung lägen alle Karten gleich dicht, und Ziehen wäre entweder nie
   oder immer gefährlich; mit Streuung gibt es dichte Stellen und dünne – und
-  **man kann es sehen**. Ergebnis: Solange der Ring geschlossen daliegt,
-  reißt etwa jeder sechste Zug, über eine Runde mit 52 Karten drei bis vier.
+  **man kann es sehen**. Nachgerechnet am 24. Oktober (zwanzigtausend
+  simulierte Runden): Solange der Ring ganz daliegt, reißt **jeder fünfte**
+  Zug (21,7 %); über eine ganze Runde sind es 7,2 % der Züge, also **3,8
+  Risse auf 52 Karten**, 2,3 auf 32 und 1,4 auf 20. Hier stand vorher
+  „jeder sechste" – die Größenordnung stimmte, die Zahl nicht.
   Zwei Feinheiten, die beide einen Shot wert sind: Die Abstände werden auf
   genau 360 Grad **normiert** (sonst klafft zwischen der letzten und der
   ersten Karte eine Naht, die nie jemand gezogen hat), und neben einer
@@ -620,12 +625,16 @@ den nachgespielten Wurf-Log alter Partien.
   erkennbaren Unterschied – es wirkte wie Willkür. Wie viel noch liegt,
   steht ohnehin in der Mitte.
 
-  **Vier von jedem Rang** (23. Oktober): `PlayingCardDeck.shuffled(count:)`
-  schnitt vorher einfach den gemischten Stapel ab. Bei zwanzig Karten lagen
-  dann drei Buben und ein König im Ring. Regeln, die vom Zählen leben,
-  gehen daran kaputt – ein Daumenmeister, den es nur einmal gibt, ist keine
-  Rolle, sondern ein Zufall. Jetzt werden ganze **Ränge** ausgelost: fünf
-  bei 20 Karten, acht bei 32, alle dreizehn bei 52. Was fehlt, fehlt ganz.
+  **Vier von jedem Rang, und zwar die höchsten** (23./24. Oktober):
+  `PlayingCardDeck.highestRanks(count:)` – vorher wurde der gemischte
+  Stapel abgeschnitten, und bei zwanzig Karten lagen dann drei Buben und
+  ein König im Ring. Regeln, die vom Zählen leben, gehen daran kaputt: ein
+  Daumenmeister, den es nur einmal gibt, ist keine Rolle, sondern ein
+  Zufall. Jetzt kommen ganze **Ränge von oben**: kurz die fünf höchsten
+  (Zehn bis Ass), mittel die acht höchsten (Sieben bis Ass), lang alle.
+  Unten im Blatt stehen die Karten, die nur eine Menge ansagen; oben die,
+  die etwas mit dem Tisch machen – eine kurze Runde soll die dichte sein,
+  nicht die zahme, und sie ist dadurch planbar.
 
 - **Die Härte gehört zum Spiel, nicht zum Gerät.** Sie stand bis Oktober
   2026 einmal über den Partyspielen und galt für alle. Am Tisch ist sie
@@ -893,6 +902,12 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   nie auf Hardware gelaufen. Und bei **zwanzig** Karten wird der Kranz dicht
   und das Loch in der Mitte klein – dort steht dann nur die Zahl, ohne
   Flasche und ohne „übrig". Passt das?
+- **Ring of Fire vom 24. Oktober**: Die dreizehn Bewegungen hinter der
+  Karte – stören sie beim Lesen, oder erkennt man die Karte damit schon
+  von der anderen Tischseite? Besonders bei großer Schrift, wo der Text
+  mehr Platz braucht. Dazu: Eine kurze Runde besteht jetzt aus Zehn bis
+  Ass, also fast nur Rollenkarten – vier Daumenmeister, vier Question
+  Queens, vier Hausregeln. Ist das dicht oder zu viel auf einmal?
 - **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.
