@@ -636,6 +636,23 @@ den nachgespielten Wurf-Log alter Partien.
   die etwas mit dem Tisch machen – eine kurze Runde soll die dichte sein,
   nicht die zahme, und sie ist dadurch planbar.
 
+  **Drei Risse, dann ist die Regel durch** (24. Oktober). Der Riss kostete
+  bis dahin unbegrenzt oft einen Shot – und genau das ist zu viel: Solange
+  der Ring ganz daliegt, reißt **jeder fünfte** Zug, auf 52 Karten sind es
+  knapp vier. Wer das den ganzen Abend zahlt, spielt nicht mehr mit. Jetzt
+  hat die Runde drei Shots; nach den ersten beiden wird **eingesammelt und
+  neu gelegt** (`relayout()`), nach dem dritten bleibt der Ring liegen, wie
+  er liegt, und die Lücken sind nur noch Spielstand. Drei Feinheiten, die
+  alle einen Fehler verhindern: Neu gelegt wird erst, wenn der
+  Aktionsscreen **zu** ist – sonst läge der Ring schon anders, während man
+  noch die Karte liest, und niemand hätte gesehen, wo es gerissen hat.
+  Dabei wird auch **gemischt**, denn sonst wäre nur der Abstand neu und wer
+  die Reihenfolge gemerkt hat, wüßte weiter, was kommt. Und der Shot geht
+  an die Person, die **vor** dem Hochzählen dran war (`let zieher = turn`)
+  – danach ist `turn` schon der Nächste. Ist die Regel aufgebraucht, wird
+  `tearsRing` gar nicht mehr gefragt: Was nichts kostet, soll auch nicht
+  blitzen.
+
 - **Die Härte gehört zum Spiel, nicht zum Gerät.** Sie stand bis Oktober
   2026 einmal über den Partyspielen und galt für alle. Am Tisch ist sie
   aber eine Eigenschaft der Runde: Mäxchen wird anders getrunken als
@@ -898,7 +915,8 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
 - **Ring of Fire vom 17. Oktober**: Das Wichtigste zuerst – liegen die
   Karten erkennbar geschuppt, und sieht man die dünnen Stellen? Dann: reißt
   der Ring ungefähr so oft, dass es Spannung macht statt Ärger (gerechnet:
-  drei bis vier Shots auf 52 Karten)? Blitz, Ruck und Knall beim Riss sind
+  drei bis vier Risse auf 52 Karten – die Runde endet also meist genau an
+  ihren drei Shots)? Blitz, Ruck und Knall beim Riss sind
   nie auf Hardware gelaufen. Und bei **zwanzig** Karten wird der Kranz dicht
   und das Loch in der Mitte klein – dort steht dann nur die Zahl, ohne
   Flasche und ohne „übrig". Passt das?
@@ -908,6 +926,13 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   mehr Platz braucht. Dazu: Eine kurze Runde besteht jetzt aus Zehn bis
   Ass, also fast nur Rollenkarten – vier Daumenmeister, vier Question
   Queens, vier Hausregeln. Ist das dicht oder zu viel auf einmal?
+- **Drei Risse in Ring of Fire (24. Oktober)**: Der wichtigste Punkt –
+  fühlen sich drei Shots pro Runde richtig an, oder sind sie schon nach
+  fünf Minuten weg? Zu prüfen: Landet der Shot bei der Person, die gezogen
+  hat (nicht bei der nächsten), liegt der Ring nach dem „Verstanden"
+  sichtbar **neu**, zählt die Kapsel richtig mit, und bleiben nach dem
+  dritten Riss die Lücken wirklich ohne Folge – also kein Blitz, kein
+  Knall, kein Banner mehr?
 - **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.

@@ -22,6 +22,13 @@
 //  der Gefahr: Wo schon ein Loch ist, kann nichts mehr reissen, und das
 //  sieht man.
 //
+//  Drei Risse kostet eine Runde, dann ist die Regel durch (24. Oktober).
+//  Nach jedem der ersten beiden wird eingesammelt und neu gelegt – wie am
+//  Tisch. Das muss begrenzt sein: Solange der Ring ganz daliegt, reisst
+//  jeder fuenfte Zug, und ein Spiel, das dreissig Shots verteilt, spielt
+//  niemand zu Ende. Nach dem dritten bleibt der Ring liegen, wie er liegt,
+//  und die Luecken sind nur noch Spielstand.
+//
 //  Vier Raenge wirken weiter, nachdem die Karte gezogen wurde. Sie landen in
 //  der Merkliste unter dem Ring, weil sie sonst mit der naechsten Karte aus
 //  dem Blick und aus dem Sinn waeren.
@@ -52,6 +59,21 @@ struct RingOfFireView: View {
     @State private var currentTore = false
     @State private var tearPulse = false
     @State private var tearTask: Task<Void, Never>?
+
+    /// Wie oft der Ring in dieser Runde schon gerissen ist.
+    ///
+    /// Drei Shots hat eine Runde – danach ist die Regel durch. Ohne diese
+    /// Grenze waere der Riss eine Steuer, die den ganzen Abend mitlaeuft:
+    /// Am Anfang reisst jeder fuenfte Zug, und wer das dreissigmal zahlt,
+    /// spielt nicht mehr mit.
+    @State private var tears = 0
+    /// Steht das Neulegen noch aus? Es passiert erst, wenn der
+    /// Aktionsscreen zu ist – sonst waere der Ring schon anders, waehrend
+    /// man noch die Karte liest, und niemand saehe, wo es gerissen hat.
+    @State private var needsRelayout = false
+
+    /// So viele Risse kostet eine Runde. Danach sind Luecken egal.
+    private static let shotsPerRound = 3
 
     /// Der zweite Screen – die gezogene Karte in Gross.
     @State private var showsAction = false
@@ -130,7 +152,7 @@ struct RingOfFireView: View {
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("Die Karten liegen geschuppt im Kreis, jede ein Stück unter der nächsten. Reißt dein Zug den Ring – berühren sich die Nachbarn danach nicht mehr –, kostet dich das \(DrinkAmount.shot.text). Wo schon eine Lücke ist, kann nichts mehr reißen.")
+                Text("Die Karten liegen geschuppt im Kreis, jede ein Stück unter der nächsten. Reißt dein Zug den Ring – berühren sich die Nachbarn danach nicht mehr –, kostet dich das \(DrinkAmount.shot.text), und der Ring wird neu gelegt. Drei Risse hat die Runde; danach sind Lücken egal. Wo schon eine Lücke ist, kann ohnehin nichts reißen.")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -149,6 +171,7 @@ struct RingOfFireView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     ringOfCards
+                    tearStatus
                     emptyRingPanel
                     TurnRow(turn: turn, tint: BeerStatsColor.error)
                     drawButton
@@ -165,7 +188,8 @@ struct RingOfFireView: View {
                 RingOfFireActionView(
                     card: current,
                     rule: RingOfFireRules.rule(for: current.rank),
-                    tore: currentTore
+                    tore: currentTore,
+                    tornNote: currentTore ? tearNote : nil
                 ) {
                     showsAction = false
                 }
@@ -174,7 +198,14 @@ struct RingOfFireView: View {
         // Die Hausregel wird erst danach eingetippt – ein Textfeld ueber der
         // Karte haette man gelesen, bevor man die Karte gelesen hat.
         .onChange(of: showsAction) { istOffen in
-            guard !istOffen, needsRulePrompt else { return }
+            guard !istOffen else { return }
+
+            // Erst neu legen, dann die Hausregel fragen: Das Textfeld legt
+            // sich ueber den Ring, und man soll vorher gesehen haben, dass
+            // er neu liegt.
+            if needsRelayout { relayout() }
+
+            guard needsRulePrompt else { return }
             needsRulePrompt = false
             isAskingForRule = true
         }
@@ -252,6 +283,51 @@ struct RingOfFireView: View {
         // der Screen, nicht eine Zeile darin.
         .aspectRatio(1, contentMode: .fit)
         .animation(AppAnimation.standard, value: remaining)
+    }
+
+    /// Wie viele Risse die Runde noch kostet.
+    ///
+    /// Steht erst da, wenn der erste passiert ist: Vorher waere es eine
+    /// Regel ohne Anlass, und der Vorspann erklaert sie ohnehin. Ab dem
+    /// ersten Riss ist es dagegen die Zahl, die am Tisch zaehlt.
+    @ViewBuilder
+    private var tearStatus: some View {
+        if hasStarted, tears > 0 {
+            HStack(spacing: 8) {
+                Text("💥")
+                Text(tearStatusText)
+                    .font(.scaled(12, weight: .heavy, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(ruleIsSpent ? BeerStatsColor.textSecondary : BeerStatsColor.warning)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(
+                (ruleIsSpent ? BeerStatsColor.textSecondary : BeerStatsColor.warning).opacity(0.14),
+                in: Capsule()
+            )
+        }
+    }
+
+    /// Die Regel ist aufgebraucht – ab jetzt sind Luecken egal.
+    private var ruleIsSpent: Bool { tears >= Self.shotsPerRound }
+
+    private var tearStatusText: String {
+        ruleIsSpent
+            ? "\(Self.shotsPerRound) von \(Self.shotsPerRound) – Lücken sind jetzt egal"
+            : "\(tears) von \(Self.shotsPerRound) Rissen"
+    }
+
+    /// Was auf dem Aktionsscreen unter dem Riss steht.
+    private var tearNote: String {
+        if ruleIsSpent {
+            return "Das war der dritte Riss. Ab jetzt sind Lücken egal – der Ring bleibt liegen, wie er liegt."
+        }
+        let offen = Self.shotsPerRound - tears
+        return offen == 1
+            ? "Der Ring wird neu gelegt. Der nächste Riss ist der letzte."
+            : "Der Ring wird neu gelegt. Danach kosten noch \(offen) Risse einen Shot."
     }
 
     /// Welche Karten bei dieser Einstellung im Ring liegen.
@@ -503,14 +579,29 @@ struct RingOfFireView: View {
     private func draw(at position: Int) {
         guard let card = ring[position] else { return }
 
+        // Wer zieht, steht VOR dem Hochzaehlen fest – danach ist `turn`
+        // schon der Naechste, und der Shot landete bei der falschen Person.
+        let zieher = turn
+
         // Vor dem Entfernen fragen: Danach liegt die Karte nicht mehr, und
         // die Frage "reisst das den Ring?" waere nicht mehr zu stellen.
-        let reisst = layout.tearsRing(at: position, present: ring.map { $0 != nil })
+        // Nach dem dritten Riss gar nicht mehr fragen – die Regel ist durch.
+        let reisst = !ruleIsSpent
+            && layout.tearsRing(at: position, present: ring.map { $0 != nil })
 
         withAnimation(AppAnimation.standard) { ring[position] = nil }
 
         current = card
         currentTore = reisst
+        if reisst {
+            tears += 1
+            // Erst neu legen, wenn noch Risse offen sind. Nach dem dritten
+            // bleibt der Ring liegen, wie er liegt.
+            needsRelayout = !ruleIsSpent
+            if let platz = PlayerNames.position(forTurn: zieher) {
+                EveningLog.record(.shot, forPlayer: platz)
+            }
+        }
         turn += 1
         apply(RingOfFireRules.rule(for: card.rank), rank: card.rank)
 
@@ -553,6 +644,31 @@ struct RingOfFireView: View {
         }
     }
 
+    /// Legt die uebrigen Karten neu aus.
+    ///
+    /// Wie am Tisch: Nach einem Riss sammelt man ein, was noch da ist, und
+    /// legt es neu im Kreis. Gemischt wird dabei auch – laegen dieselben
+    /// Karten in derselben Reihenfolge, waere nur der Abstand neu, und wer
+    /// die Reihenfolge gemerkt hat, wuesste weiter, was kommt.
+    private func relayout() {
+        needsRelayout = false
+
+        let uebrig = ring.compactMap { $0 }
+        guard !uebrig.isEmpty else { return }
+
+        tearTask?.cancel()
+        withAnimation(AppAnimation.standard) {
+            ring = uebrig.shuffled().map { Optional($0) }
+            layout = RingLayout.random(count: ring.count)
+        }
+        spotlight = nil
+        tornAt = nil
+        tearPulse = false
+
+        HapticManager.mediumImpact()
+        SoundManager.play(.reRack)
+    }
+
     private func apply(_ rule: RingOfFireRule, rank: Int) {
         HapticManager.mediumImpact()
 
@@ -591,6 +707,8 @@ struct RingOfFireView: View {
         layout = RingLayout.random(count: ring.count)
         current = nil
         currentTore = false
+        tears = 0
+        needsRelayout = false
         turn = 0
         spotlight = nil
         tornAt = nil
@@ -609,6 +727,7 @@ struct RingOfFireView: View {
         spotlight = nil
         tornAt = nil
         tearPulse = false
+        needsRelayout = false
         hasStarted = false
     }
 

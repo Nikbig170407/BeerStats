@@ -33,6 +33,12 @@ struct RingOfFireActionView: View {
     /// Hat dieser Zug den Ring gerissen? Dann kostet er zusaetzlich einen
     /// Shot – unabhaengig davon, was auf der Karte steht.
     var tore = false
+    /// Was nach dem Riss passiert: neu legen, oder war es der letzte?
+    ///
+    /// Steht im Banner und nicht nur im Ring dahinter: Wer gerade einen
+    /// Shot bekommt, schaut auf diesen Screen – und die Frage "kommt das
+    /// noch mal?" stellt sich genau jetzt.
+    var tornNote: String?
     let onDone: () -> Void
 
     @State private var hasAppeared = false
@@ -132,6 +138,14 @@ struct RingOfFireActionView: View {
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if let tornNote {
+                Text(tornNote)
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.warning)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(18)
