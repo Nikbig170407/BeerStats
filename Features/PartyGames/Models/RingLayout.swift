@@ -22,12 +22,17 @@
 //  oder immer gefaehrlich. Mit Streuung gibt es dichte Stellen, an denen man
 //  gefahrlos zieht, und duenne, an denen es reisst – und man kann es sehen.
 //
-//  Beides zusammen ist durchgerechnet, nicht geraten: Solange der Ring noch
-//  geschlossen daliegt, reisst etwa jeder sechste Zug – und ueber eine ganze
-//  Runde mit 52 Karten sind es drei bis vier Risse. Dass es gegen Ende
-//  seltener wird, ist richtig so: Wo schon Luecken sind, ist nichts mehr zu
-//  reissen. Oefter waere die Runde nach zehn Karten blau, seltener wuerde
-//  niemand mehr hinsehen.
+//  Beides zusammen ist durchgerechnet, nicht geraten (zwanzigtausend
+//  simulierte Runden, 24. Oktober): Solange der Ring noch geschlossen
+//  daliegt, reisst jeder FUENFTE Zug (21,7 %); ueber eine ganze Runde sind
+//  es 7,2 % der Zuege, also 3,8 Risse auf 52 Karten, 2,3 auf 32 und 1,4 auf
+//  20. Hier stand vorher "etwa jeder sechste" – die Groessenordnung stimmte,
+//  die Zahl nicht. Dass es gegen Ende seltener wird, ist richtig so: Wo
+//  schon Luecken sind, ist nichts mehr zu reissen.
+//
+//  Bezahlt werden davon nur die ersten drei Risse (`RingOfFireView`), und
+//  dazwischen wird neu gelegt – als Dauerregel waeren vier Shots auf eine
+//  Runde zu viel.
 //
 
 import Foundation
