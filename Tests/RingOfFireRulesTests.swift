@@ -31,7 +31,7 @@ final class RingOfFireRulesTests: XCTestCase {
     /// Grund, warum die App ueberhaupt buchen darf – sie darf nicht wachsen,
     /// ohne dass jemand darueber nachgedacht hat.
     func testOnlyTheThreeAndTheAceChargeTheDrawer() {
-        let buchbar = PlayingCard.ranks.filter {
+        let buchbar = PlayingCardDeck.ranks.filter {
             RingOfFireRules.rule(for: $0).drawerDrinks != nil
         }
 
@@ -41,7 +41,7 @@ final class RingOfFireRulesTests: XCTestCase {
     /// Die gebuchte Menge muss auf der Karte stehen. Sonst trinkt der Tisch
     /// das eine und die Bilanz zaehlt das andere.
     func testTheBookedAmountIsTheOneOnTheCard() {
-        for rank in PlayingCard.ranks {
+        for rank in PlayingCardDeck.ranks {
             let regel = RingOfFireRules.rule(for: rank)
             guard let menge = regel.drawerDrinks else { continue }
 
@@ -56,7 +56,7 @@ final class RingOfFireRulesTests: XCTestCase {
     /// Entscheidung wie bei den Extreme-Karten. Eine Strafe daneben waere
     /// eine zweite Menge, die niemand trinkt.
     func testACardThatChargesTheDrawerHasNoPenalty() {
-        for rank in PlayingCard.ranks {
+        for rank in PlayingCardDeck.ranks {
             let regel = RingOfFireRules.rule(for: rank)
             guard regel.drawerDrinks != nil else { continue }
 
@@ -67,7 +67,7 @@ final class RingOfFireRulesTests: XCTestCase {
     /// Umgekehrt: Karten, die eine Runde laufen lassen, duerfen nicht
     /// gebucht werden. Der Verlierer steht erst am Tisch fest.
     func testCardsWithAPenaltyAreNeverBooked() {
-        for rank in PlayingCard.ranks {
+        for rank in PlayingCardDeck.ranks {
             let regel = RingOfFireRules.rule(for: rank)
             guard regel.penalty != nil else { continue }
 
