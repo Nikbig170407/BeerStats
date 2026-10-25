@@ -115,6 +115,18 @@ struct BombPassView: View {
 
     private var bomb: some View {
         ZStack {
+            // Der Knall: Druckwelle und Funken, aber erst wenn es knallt.
+            // Vorher soll nichts ablenken – die Spannung kommt daraus,
+            // dass man die Restzeit NICHT sieht.
+            if phase == .exploded {
+                EffectShockwave(tint: BeerStatsColor.warning, rings: 3, duration: 1.1)
+                EffectParticles(
+                    symbol: "💥", count: 10, flight: .burst,
+                    tint: BeerStatsColor.warning, duration: 1.3,
+                    stagger: 0.07, sizeRange: 20...40, opacity: 0.6
+                )
+            }
+
             Circle()
                 .fill(
                     RadialGradient(

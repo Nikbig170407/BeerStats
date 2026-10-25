@@ -456,6 +456,13 @@ struct EveningView: View {
                     "\(pokal.participant.name) — \(pokal.points) \(pokal.points == 1 ? "Punkt" : "Punkte")",
                     BeerStatsColor.warning
                 )
+                // Nur beim Pokal und nur hier: Der Rueckblick ist eine
+                // Liste, und eine Liste, in der an mehreren Stellen etwas
+                // fliegt, liest sich nicht mehr.
+                .background(
+                    EffectConfetti(count: 14, duration: 3.4)
+                        .frame(height: 140)
+                )
             } else if let sieger = abend.mostWins {
                 // Frueher Abende kennen nur den Namen des Siegers, keine
                 // Punkte. Sie sollen trotzdem etwas zeigen.

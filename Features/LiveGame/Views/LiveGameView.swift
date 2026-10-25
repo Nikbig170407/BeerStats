@@ -634,7 +634,20 @@ struct LiveGameView: View {
             .padding(.horizontal, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(BeerStatsColor.backgroundPrimary.opacity(0.97))
+        // Die Szene liegt im Hintergrund und damit UNTER dem Ergebnis:
+        // Konfetti ueber den Zahlen waere dasselbe Bild, nur unlesbar.
+        // Bei einem Unentschieden bleibt es aus – es gibt nichts zu
+        // feiern, und ein Screen, der trotzdem feiert, wirkt kaputt.
+        .background(
+            ZStack {
+                BeerStatsColor.backgroundPrimary.opacity(0.97)
+
+                if winner != nil {
+                    EffectRays(tint: BeerStatsColor.accent, spokes: 14, duration: 13, opacity: 0.16)
+                    EffectConfetti()
+                }
+            }
+        )
         .ignoresSafeArea()
         .transition(.opacity)
         .onAppear { renderResultImage() }

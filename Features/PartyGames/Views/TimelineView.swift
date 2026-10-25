@@ -310,7 +310,14 @@ struct TimelineView: View {
 
     private func wonView(player: Int) -> some View {
         panel {
-            Text("🏆").font(.system(size: 62))
+            // Hinter dem Pokal, nicht darueber: Wer gewonnen hat, soll man
+            // lesen koennen.
+            Text("🏆")
+                .font(.system(size: 62))
+                .background(
+                    EffectRays(tint: BeerStatsColor.warning, spokes: 12, duration: 11, opacity: 0.3)
+                        .frame(width: 220, height: 220)
+                )
 
             Text("\(PlayerNames.name(for: player)) gewinnt")
                 .font(BeerStatsFont.title)

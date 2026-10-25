@@ -191,6 +191,11 @@ struct RingOfFireView: View {
                 .padding(20)
             }
         }
+        // Der Blitz liegt UEBER allem und haengt am Zaehler, nicht an einem
+        // Ja/Nein: Ein `Bool` blitzte genau einmal pro Screen (Lessons
+        // Learned Nr. 11). Er nimmt keine Tipps an, liegt also auch nicht
+        // auf dem Knopf.
+        .overlay(EffectFlash(trigger: tears, tint: BeerStatsColor.warning))
         // Vollbild statt Blatt: In dem Moment zaehlt nur, was auf der Karte
         // steht. Der Ring darunter wuerde nur ablenken.
         .fullScreenCover(isPresented: $showsAction) {
@@ -284,6 +289,14 @@ struct RingOfFireView: View {
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
+            // Die Druckwelle geht von der Mitte aus und nicht von der
+            // Luecke: Gerissen ist der RING, nicht die Karte – und die
+            // Stelle zeigt ohnehin schon der Blitz dort.
+            .overlay {
+                if tornAt != nil {
+                    EffectShockwave(tint: BeerStatsColor.warning, rings: 2, duration: 1.0)
+                }
+            }
             // Der Ruck beim Reissen. Kurz und klein – der Ring soll zucken,
             // nicht wegfliegen.
             .scaleEffect(tearPulse ? 1.04 : 1)

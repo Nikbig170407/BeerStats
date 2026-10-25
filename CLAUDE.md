@@ -446,6 +446,42 @@ den nachgespielten Wurf-Log alter Partien.
   Ausfüllen in der Breite. `verticalScrollOnly()` steckt im Baustein; an
   den umgestellten Aufrufstellen ist es deshalb weg.
 
+- **Bewegung kommt aus Bausteinen, nicht aus einer Animation mit
+  Einstellungen** (`DesignSystem/Components/VisualEffects.swift`,
+  25. Oktober). Hier stand eine einzige Bewegung mit dreizehn
+  Einstellungen – Zeichen, Anzahl, Richtung – und das war als Sparmaßnahme
+  richtig gedacht und als Ergebnis falsch: Dreizehn Mal dieselbe Flugbahn
+  sieht dreizehn Mal gleich aus, egal wie verschieden die Emoji sind. Am
+  Tisch unterscheidet man sie dann nicht, und damit ist der Sinn weg.
+  Jetzt gibt es sechs Bausteine (`EffectParticles`, `EffectShockwave`,
+  `EffectRays`, `EffectSlam`, `EffectConfetti`, `EffectFlash`), und eine
+  Szene ist eine **Schichtung** daraus. Der gute Teil des alten Ansatzes
+  bleibt: eine neue Szene ist eine Kombination und kein neuer Entwurf.
+  Vier Regeln, jede mit Grund:
+  - **Zierde, kein Inhalt.** Alles liegt hinter dem Text, nimmt keine
+    Tipps an und ist für VoiceOver unsichtbar. Deckkraft ist dabei keine
+    Geschmacksfrage, sondern die Bedingung: Strahlen um 0,2, Einschläge um
+    0,3. Was man sucht, findet man; was man liest, stört es nicht.
+  - **Gerechneter Zufall** (`EffectNoise`). Mit `Double.random` springen
+    die Teilchen bei jedem Neuzeichnen woandershin – und SwiftUI zeichnet
+    öfter neu, als man denkt.
+  - **Ein Zustand, der in `onAppear` umkippt**, und die Bewegung in den
+    Modifiern. Kein Timer und keine Task-Schleife: Beides läuft weiter,
+    wenn der Screen schon weg ist.
+  - **`EffectFlash` hängt an einem WERT von draußen**, nicht an
+    `onAppear` – ein Blitz gehört zu einem Ereignis. Und er merkt sich den
+    Wert statt ein Ja/Nein, sonst blitzt er genau einmal pro Screen
+    (Lessons Learned Nr. 11).
+  `RingCardFlourish` liefert `AnyView` je Rang und kein `@ViewBuilder`:
+  Dreizehn Fälle mit je mehreren Schichten bauen sonst einen Typ aus
+  verschachtelten Entweder-Oder-Hüllen, den der Compiler erst in Minuten
+  prüft – dieselbe Entscheidung wie bei `PartyGame.destination`. Szenen
+  gibt es inzwischen auch im Sieger-Screen (Konfetti nur bei einem Sieger,
+  nie beim Unentschieden), beim Riss in Ring of Fire, in der Bombe, im
+  Trink-Roulette (die Szene hängt an der **Kostenart**, damit auch ein
+  selbst gebautes Rad sie bekommt), beim Zeitstrahl-Sieg und am Pokal des
+  Abends.
+
 - **Kartengrößen rechnen, nicht tippen.** Bussfahrer zeigte seine Karten in
   festen 68 Punkten, egal wie breit das Gerät war. Jetzt teilen sie sich die
   verfügbare Breite (mit Deckel bei einem Viertel, sonst wird die Reihe
@@ -1065,6 +1101,13 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   und sagt der Knopf „Anderes Rad" sauber zurück in die Auswahl? Dazu die
   Vorschau im Editor: Steht dort derselbe Satz, der nach der Drehung
   erscheint?
+- **Die neuen Szenen (25. Oktober)**: Der wichtigste Punkt ist die
+  Lesbarkeit – stört irgendwo eine Schicht den Text, besonders bei großer
+  Schrift? Dann die Bilder pro Sekunde: Die Dame und das Ass haben vier
+  bis fünf Schichten, das ist das Maximum. Ruckelt es? Dazu einmal mit
+  **„Bewegung reduzieren"** an durch Ring of Fire, Sieger-Screen und
+  Roulette: Es muss still, aber nicht leer sein. Und der Blitz beim Riss
+  muss bei **jedem** Riss kommen, nicht nur beim ersten.
 - **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.
