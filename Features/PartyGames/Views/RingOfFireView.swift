@@ -179,7 +179,7 @@ struct RingOfFireView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.error)
 
-            ScrollView {
+            FillingScrollView {
                 VStack(spacing: 18) {
                     ringOfCards
                     tearStatus
@@ -190,7 +190,6 @@ struct RingOfFireView: View {
                 }
                 .padding(20)
             }
-            .verticalScrollOnly()
         }
         // Vollbild statt Blatt: In dem Moment zaehlt nur, was auf der Karte
         // steht. Der Ring darunter wuerde nur ablenken.

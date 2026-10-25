@@ -50,7 +50,7 @@ struct SpyView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.accentSecondary)
 
-            ScrollView {
+            FillingScrollView {
                 VStack(spacing: 20) {
                     switch phase {
                     case .setup: setupView

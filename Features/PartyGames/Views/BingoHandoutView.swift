@@ -49,7 +49,7 @@ struct BingoHandoutView: View {
             ZStack {
                 AmbientBackdrop(glow: BeerStatsColor.success)
 
-                ScrollView {
+                FillingScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         intro
 
@@ -61,7 +61,6 @@ struct BingoHandoutView: View {
                     }
                     .padding(22)
                 }
-                .verticalScrollOnly()
             }
             .navigationTitle("Blätter verteilen")
             .navigationBarTitleDisplayMode(.inline)

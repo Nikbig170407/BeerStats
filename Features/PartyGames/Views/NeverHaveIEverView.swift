@@ -105,10 +105,9 @@ struct NeverHaveIEverView: View {
     /// Strafen-Zeile und die Haerte sind mehr, als auf ein kleines Geraet
     /// mit grosser Schrift passt.
     private var setup: some View {
-        ScrollView {
+        FillingScrollView {
             setupContent
         }
-        .verticalScrollOnly()
     }
 
     private var setupContent: some View {

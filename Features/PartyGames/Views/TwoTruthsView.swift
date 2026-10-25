@@ -36,7 +36,7 @@ struct TwoTruthsView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.accent)
 
-            ScrollView {
+            FillingScrollView {
                 VStack(spacing: 18) {
                     TurnRow(turn: turn)
                     themeCard

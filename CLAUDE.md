@@ -428,6 +428,20 @@ den nachgespielten Wurf-Log alter Partien.
   `frame(minHeight: geometry.size.height)` – ohne eine bestimmte Höhe hat
   `maxHeight: .infinity` nichts, in das es wachsen könnte.
 
+  **Und eine Ebene höher: `FillingScrollView`** (25. Oktober). Siebzehn
+  Screens standen als `ScrollView { VStack { … } }` da, und ein ScrollView
+  legt seinen Inhalt nach **oben**. Bei langem Inhalt fällt das nicht auf;
+  bei kurzem – der Spion in der Vorbereitung, Schocken zwischen zwei
+  Würfen, der Sieger im Turnier – klebte alles am oberen Rand und die
+  untere Hälfte blieb leer. Der Baustein macht genau das, was oben als
+  Rezept steht (GeometryReader plus `minHeight`), aber **an einer Stelle**:
+  An der Aufrufstelle steht nur ein anderer Name als `ScrollView`, sonst
+  nichts. Wer das siebzehnmal selbst tippt, tippt es irgendwo nur halb.
+  Zwei Listen, die von oben gelesen werden, geben `alignment: .top` an (der
+  Abend-Rückblick und die eigenen Karten) – die gewinnen nur das
+  Ausfüllen in der Breite. `verticalScrollOnly()` steckt im Baustein; an
+  den umgestellten Aufrufstellen ist es deshalb weg.
+
 - **Kartengrößen rechnen, nicht tippen.** Bussfahrer zeigte seine Karten in
   festen 68 Punkten, egal wie breit das Gerät war. Jetzt teilen sie sich die
   verfügbare Breite (mit Deckel bei einem Viertel, sonst wird die Reihe
@@ -1014,6 +1028,14 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
 - **Das Rad tickt sofort (25. Oktober)**: Beim Druck auf „Karte ziehen"
   muss sofort etwas zu hören sein, und das Ticken in der schnellen Phase
   darf kein Rauschen sein.
+- **Alle Screens füllen (25. Oktober)**: Siebzehn Spiele haben jetzt
+  `FillingScrollView` statt `ScrollView`. Einmal durch alle und schauen, ob
+  irgendwo das Gegenteil passiert – ein Screen, der mit kurzem Inhalt
+  mittig hängt, wo man ihn oben erwartet, oder eine Liste, die beim
+  Scrollen springt. Besonders: Spion (der gemeldete Fall), Schocken,
+  Wer bin ich?, Turnier, die gezogene Karte in Ring of Fire (dort liegt
+  unten der „Verstanden"-Knopf über dem Inhalt) und die beiden Listen mit
+  `.top` (Abend-Rückblick, eigene Karten).
 - **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.

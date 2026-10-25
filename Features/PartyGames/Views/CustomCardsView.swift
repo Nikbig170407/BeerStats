@@ -27,7 +27,7 @@ struct CustomCardsView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.accentSecondary)
 
-            ScrollView {
+            FillingScrollView(alignment: .top) {
                 VStack(spacing: 18) {
                     header
                     deckPicker

@@ -39,10 +39,9 @@ struct HeadsUpView: View {
 
             switch phase {
             case .setup:
-                ScrollView {
+                FillingScrollView {
                     setupView.padding(24)
                 }
-                .verticalScrollOnly()
             case .playing: playingView
             case .finished: finishedView.padding(24)
             }

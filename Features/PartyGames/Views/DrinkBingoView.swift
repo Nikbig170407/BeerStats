@@ -46,7 +46,7 @@ struct DrinkBingoView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.success)
 
-            ScrollView {
+            FillingScrollView {
                 VStack(spacing: 16) {
                     rules
                     board

@@ -34,7 +34,7 @@ struct CountTo21View: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.accent)
 
-            ScrollView {
+            FillingScrollView {
                 VStack(spacing: 18) {
                     header
                     numberGrid

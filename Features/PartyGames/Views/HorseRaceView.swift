@@ -60,7 +60,7 @@ struct HorseRaceView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.success)
 
-            ScrollView {
+            FillingScrollView {
                 VStack(spacing: 16) {
                     sideTrack
                     track

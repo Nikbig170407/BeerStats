@@ -58,7 +58,7 @@ struct RingOfFireActionView: View {
             // zu tun ist, darf nichts verdecken.
             RingCardFlourish(rank: card.rank)
 
-            ScrollView {
+            FillingScrollView {
                 VStack(spacing: 16) {
                     if tore {
                         tornBanner
@@ -94,7 +94,6 @@ struct RingOfFireActionView: View {
                 }
                 .padding(24)
             }
-            .verticalScrollOnly()
         }
         .safeAreaInset(edge: .bottom) {
             PrimaryButton(title: "Verstanden", systemImage: "checkmark") {

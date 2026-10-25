@@ -33,7 +33,7 @@ struct EveningView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.accentSecondary)
 
-            ScrollView {
+            FillingScrollView(alignment: .top) {
                 VStack(spacing: 20) {
                     if let summary {
                         summaryView(summary)

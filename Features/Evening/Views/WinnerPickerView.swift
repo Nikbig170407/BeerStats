@@ -37,7 +37,7 @@ struct WinnerPickerView: View {
             ZStack {
                 AmbientBackdrop(glow: BeerStatsColor.warning)
 
-                ScrollView {
+                FillingScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         kopf
 
@@ -71,7 +71,6 @@ struct WinnerPickerView: View {
                     }
                     .padding(22)
                 }
-                .verticalScrollOnly()
             }
             .navigationTitle("Wer hat gewonnen?")
             .navigationBarTitleDisplayMode(.inline)
