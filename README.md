@@ -80,6 +80,37 @@ Für den Anfang reicht Option 1 – wir kommen darauf zurück, sobald es in Schr
 3. GitHub Actions baut automatisch neu (Reiter „Actions“ beobachten)
 4. Neue `.ipa` herunterladen → mit Sideloadly erneut installieren
 
+## Falls Sideloadly nicht startet
+
+Fehlermeldung: **„Der Prozedureinsprungpunkt `PyInit_sideloadly_wrap` wurde
+in der DLL `…\Sideloadly\sideloadly.exe` nicht gefunden."**
+
+Sideloadly ist ein Python-Programm; die Meldung heißt, dass ein
+mitgeliefertes Hilfsmodul (`sideloadly_wrap.pyd`) nicht zur `sideloadly.exe`
+passt. Zwei Ursachen, und die zweite ist die, wegen der es **wiederkommt**:
+
+1. Reste einer alten Version – der Installer überschreibt den Ordner, löscht
+   aber nicht.
+2. **Der Virenscanner.** Windows Defender erkennt Sideloadly regelmäßig
+   falsch-positiv (es signiert fremde Apps) und nimmt die `.pyd` in
+   Quarantäne. Danach fehlt genau dieser Einsprungpunkt – nach *jeder*
+   Neuinstallation wieder.
+
+Deshalb in dieser Reihenfolge:
+
+1. Windows-Sicherheit → Viren- & Bedrohungsschutz → **Schutzverlauf**: Steht
+   dort etwas mit Sideloadly? → **Zulassen/Wiederherstellen**
+2. Dort unter *Einstellungen verwalten → Ausschlüsse* den Ordner
+   `%LocalAppData%\Sideloadly` ausschließen. Ohne diesen Schritt war der
+   Rest umsonst.
+3. Sideloadly deinstallieren, dann im Explorer über `%LocalAppData%` den
+   Ordner **`Sideloadly` ganz löschen** (Drüberinstallieren reicht nicht).
+4. Neustart, 64-bit-Version neu laden, als Administrator installieren.
+
+Kommt es ein drittes Mal: **AltStore/SideStore** statt Sideloadly. Der
+AltServer signiert die App automatisch über WLAN nach, bevor die 7 Tage
+ablaufen – damit entfällt auch das wöchentliche Kabelsuchen.
+
 ## Falls der Build fehlschlägt
 Am häufigsten:
 - `GoogleService-Info.plist` fehlt oder liegt im falschen Ordner
