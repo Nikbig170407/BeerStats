@@ -107,6 +107,15 @@ Deshalb in dieser Reihenfolge:
    Ordner **`Sideloadly` ganz löschen** (Drüberinstallieren reicht nicht).
 4. Neustart, 64-bit-Version neu laden, als Administrator installieren.
 
+**Als Skript:** `scripts/fix-sideloadly.ps1` macht die Schritte 1 bis 4 in
+der richtigen Reihenfolge. PowerShell **als Administrator** öffnen (der
+Defender-Ausschluss geht nicht ohne), dann:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass -Force
+.\scripts\fix-sideloadly.ps1
+```
+
 Kommt es ein drittes Mal: **AltStore/SideStore** statt Sideloadly. Der
 AltServer signiert die App automatisch über WLAN nach, bevor die 7 Tage
 ablaufen – damit entfällt auch das wöchentliche Kabelsuchen.
