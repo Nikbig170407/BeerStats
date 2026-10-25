@@ -75,6 +75,21 @@ struct RingOfFireRule: Equatable {
     /// Trinken die Handlung, es gibt nichts zu verlieren. Eine Strafe dort
     /// hinzuschreiben waere eine zweite Menge, die niemand trinkt.
     var penalty: String?
+
+    /// Was die Karte den KOSTET, der sie gezogen hat – und nur den.
+    ///
+    /// Gibt es ueberhaupt nur bei der Drei und beim Ass: Beide sagen dem
+    /// Zieher eine Menge an, ohne Wenn und Aber. Damit ist es die einzige
+    /// Angabe des Spiels, die die App in die Trinkbilanz des Abends buchen
+    /// darf. Alles andere trifft andere (die Zwei bestimmt jemanden), eine
+    /// Gruppe (Fuenf und Sechs) oder den Verlierer einer Runde (Sieben,
+    /// Neun, Koenig) – und wer das ist, weiss nur der Tisch. Eine geratene
+    /// Buchung waere schlimmer als keine: Sie stuende in der Bilanz, als
+    /// haette jemand sie bestaetigt.
+    ///
+    /// `nil` heisst also nicht "trinkt nichts", sondern "nicht die App
+    /// entscheidet, wer".
+    var drawerDrinks: DrinkAmount?
 }
 
 enum RingOfFireRules {
@@ -89,11 +104,17 @@ enum RingOfFireRules {
                 emoji: "👉"
             )
         case 3:
+            // Die Menge steht EINMAL da und geht in beides: in den Satz auf
+            // der Karte und in die Bilanz. Zwei getrennte Angaben liefen
+            // irgendwann auseinander, und dann trinkt der Tisch etwas
+            // anderes, als die Bilanz mitschreibt.
+            let eigene = DrinkAmount.sips(3)
             return RingOfFireRule(
                 title: "Du selbst",
                 nickname: "THREE FOR ME",
-                text: "Pech gehabt: Du trinkst \(DrinkAmount.sips(3).text).",
-                emoji: "🙋"
+                text: "Pech gehabt: Du trinkst \(eigene.text).",
+                emoji: "🙋",
+                drawerDrinks: eigene
             )
         case 4:
             return RingOfFireRule(
@@ -183,12 +204,45 @@ enum RingOfFireRules {
                 penalty: DrinkAmount.sips(3).text
             )
         default:
+            let eigene = DrinkAmount.shot
             return RingOfFireRule(
                 title: "Ass",
                 nickname: "ACE – SHOT",
-                text: "Du trinkst \(DrinkAmount.shot.text).",
-                emoji: "🥃"
+                text: "Du trinkst \(eigene.text).",
+                emoji: "🥃",
+                drawerDrinks: eigene
             )
         }
+    }
+}
+
+/// Die Merkliste der laufenden Rollen: welche Zeile zu welcher Rolle steht.
+///
+/// Steht als reine Rechnung neben der Ansicht, nicht darin. Vorher zaehlte
+/// der Spielscreen nur mit ("Daumenmeister ×2") – wer die Rolle hat, stand
+/// nirgends, obwohl die App es weiss. Am echten Tisch liegt die Karte vor
+/// der Person, und genau das ist ihr Sinn.
+enum RingOfFireRoleBoard {
+
+    /// Die Zeile zu einer Rolle. `holders` ist ein Eintrag je vergebener
+    /// Karte, in der Reihenfolge des Ziehens; `nil` heisst, dass die App zu
+    /// dieser Karte niemanden kennt.
+    ///
+    /// Namen stehen nur da, wenn ALLE Halter einen haben. Eine gemischte
+    /// Zeile ("Lena, Spieler 2") waere die schlechteste Fassung: Sie liest
+    /// sich wie eine Auskunft und ist eine halbe – und "Spieler 2" hilft
+    /// niemandem, der nicht weiss, wer die Zwei ist (dieselbe Entscheidung
+    /// wie in `TurnRow`).
+    static func label(for role: RingOfFireRole, holders: [String?]) -> String {
+        guard !holders.isEmpty else { return role.title }
+
+        let namen = holders.compactMap { $0 }
+        guard namen.count == holders.count else {
+            // Ohne Namen bleibt es bei der Zahl – die sagt immerhin, dass
+            // die Rolle zweimal im Spiel ist.
+            return holders.count > 1 ? "\(role.title) ×\(holders.count)" : role.title
+        }
+
+        return "\(role.title) · \(namen.joined(separator: ", "))"
     }
 }

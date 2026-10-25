@@ -86,13 +86,24 @@ struct RingOfFireView: View {
     @State private var isDrawing = false
     @State private var drawTask: Task<Void, Never>?
 
-    // Laufende Rollen. Als Zaehler, weil jede weitere Karte desselben Rangs
-    // eine weitere Person in dieselbe Rolle bringt – am Tisch liegen dann
-    // eben zwei Buben vor zwei Leuten.
-    @State private var thumbMasters = 0
-    @State private var questionQueens = 0
-    @State private var drinkingMates = 0
-    @State private var houseRules: [String] = []
+    // Laufende Rollen – ein Eintrag je vergebener Karte, weil jede weitere
+    // Karte desselben Rangs eine weitere Person in dieselbe Rolle bringt:
+    // Am Tisch liegen dann eben zwei Buben vor zwei Leuten.
+    //
+    // Hier standen bis zum 25. Oktober drei Zaehler. Die Merkliste sagte
+    // damit "Daumenmeister ×2", aber nicht WER – und am echten Tisch liegt
+    // die Karte sichtbar vor der Person. Die App weiss es: Wer gezogen hat,
+    // rechnet `PlayerNames`.
+    //
+    // Gespeichert wird der NAME und nicht der Zaehlerstand des Zuges. Kommt
+    // jemand dazu, verschiebt `position(forTurn:)` sich – und die Rolle
+    // saesse ploetzlich bei jemand anderem, ohne dass es auffiele.
+    @State private var roleHolders: [RingRoleHolder] = []
+    @State private var houseRules: [RingHouseRule] = []
+    /// Wer die Regel aufstellt, die gleich eingetippt wird. Muss beim Ziehen
+    /// gemerkt werden: Gefragt wird erst, wenn der Aktionsscreen zu ist, und
+    /// bis dahin ist `turn` schon weiter.
+    @State private var ruleAuthor: String?
 
     /// Wie oft gezogen wurde. Wer dran ist, rechnet `TurnRow`.
     @State private var turn = 0
@@ -412,8 +423,9 @@ struct RingOfFireView: View {
             )
             .overlay(
                 // Der Riss: ein kurzer heller Blitz genau dort, wo die Karte
-                // lag. Liegt ueber der gestrichelten Luecke, damit man die
-                // Stelle findet, ohne sie zu suchen.
+                // lag. Die Luecke selbst ist unsichtbar – der Blitz ist
+                // das Einzige, was die Stelle zeigt, und man soll sie
+                // finden, ohne zu suchen.
                 RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
                     .fill(BeerStatsColor.warning)
                     .blur(radius: width * 0.3)
@@ -473,30 +485,50 @@ struct RingOfFireView: View {
 
     @ViewBuilder
     private var roleBoard: some View {
-        if thumbMasters + questionQueens + drinkingMates + houseRules.count > 0 {
+        if !roleHolders.isEmpty || !houseRules.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Text("LÄUFT NOCH")
                     .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
-                HStack(spacing: 8) {
-                    if thumbMasters > 0 { roleChip(.thumbMaster, count: thumbMasters) }
-                    if questionQueens > 0 { roleChip(.questionQueen, count: questionQueens) }
-                    if drinkingMates > 0 { roleChip(.drinkingMate, count: drinkingMates) }
-                    Spacer(minLength: 0)
+                // Eine Zeile je Rolle, in der Reihenfolge der Aufzaehlung und
+                // nicht in der des Ziehens: Sonst springt die Liste bei jeder
+                // neuen Karte um. Untereinander statt nebeneinander, weil mit
+                // Namen ("Trink-Duo · Lena, Jan") keine drei Kapseln mehr in
+                // eine Zeile passen.
+                //
+                // Die Hausregel-Rolle fehlt hier mit Absicht: Sie steht
+                // ausgeschrieben darunter, und eine Kapsel "Regeln · Lena"
+                // ueber dem Text der Regel waere dieselbe Auskunft zweimal.
+                ForEach(RingOfFireRole.allCases.filter { $0 != .houseRule }) { role in
+                    let halter = roleHolders.filter { $0.role == role }
+                    if !halter.isEmpty {
+                        roleChip(role, holders: halter.map(\.name))
+                    }
                 }
 
-                ForEach(Array(houseRules.enumerated()), id: \.offset) { number, text in
+                ForEach(houseRules) { regel in
                     HStack(alignment: .top, spacing: 8) {
                         Text("📜")
-                        Text(text)
-                            .font(BeerStatsFont.caption)
-                            .foregroundStyle(BeerStatsColor.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(regel.text)
+                                .font(BeerStatsFont.caption)
+                                .foregroundStyle(BeerStatsColor.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let author = regel.author {
+                                Text("von \(author)")
+                                    .font(BeerStatsFont.statLabel)
+                                    .foregroundStyle(BeerStatsColor.textSecondary)
+                            }
+                        }
                         Spacer(minLength: 0)
+                        // Ueber die ID und nicht ueber den Platz in der
+                        // Liste: Mit dem Index trifft ein zweiter Druck,
+                        // bevor die Ansicht neu gezeichnet ist, die falsche
+                        // Regel.
                         Button {
-                            houseRules.remove(at: number)
+                            houseRules.removeAll { $0.id == regel.id }
                             HapticManager.lightImpact()
                         } label: {
                             Image(systemName: "xmark.circle.fill")
@@ -513,12 +545,15 @@ struct RingOfFireView: View {
         }
     }
 
-    private func roleChip(_ role: RingOfFireRole, count: Int) -> some View {
+    /// Eine Zeile der Merkliste. Was darauf steht, rechnet
+    /// `RingOfFireRoleBoard` – reine Zeichenarbeit, ohne Ansicht pruefbar.
+    private func roleChip(_ role: RingOfFireRole, holders: [String?]) -> some View {
         HStack(spacing: 5) {
             Text(role.emoji)
-            Text(count > 1 ? "\(role.title) ×\(count)" : role.title)
+            Text(RingOfFireRoleBoard.label(for: role, holders: holders))
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
@@ -568,8 +603,9 @@ struct RingOfFireView: View {
     private func saveRule() {
         let text = ruleDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        houseRules.append(text)
+        houseRules.append(RingHouseRule(author: ruleAuthor, text: text))
         ruleDraft = ""
+        ruleAuthor = nil
         isAskingForRule = false
         HapticManager.success()
     }
@@ -593,17 +629,29 @@ struct RingOfFireView: View {
 
         current = card
         currentTore = reisst
+
+        let regel = RingOfFireRules.rule(for: card.rank)
+
         if reisst {
             tears += 1
             // Erst neu legen, wenn noch Risse offen sind. Nach dem dritten
             // bleibt der Ring liegen, wie er liegt.
             needsRelayout = !ruleIsSpent
-            if let platz = PlayerNames.position(forTurn: zieher) {
-                EveningLog.record(.shot, forPlayer: platz)
-            }
         }
+
+        // Beides kann denselben Zug treffen: Ein Ass, das den Ring reisst,
+        // kostet zwei Shots – einen fuer die Karte, einen fuer die Luecke.
+        // Das ist am Tisch auch so und darf sich nicht zu einem verrechnen.
+        if let platz = PlayerNames.position(forTurn: zieher) {
+            if reisst { EveningLog.record(.shot, forPlayer: platz) }
+            if let menge = regel.drawerDrinks { EveningLog.record(menge, forPlayer: platz) }
+        }
+
+        // Noch mit `zieher` gerechnet, nicht mit dem schon erhoehten Zaehler:
+        // Die Rolle bekommt der, der die Karte gezogen hat.
+        let halter = holderName(forTurn: zieher)
         turn += 1
-        apply(RingOfFireRules.rule(for: card.rank), rank: card.rank)
+        apply(regel, rank: card.rank, holder: halter)
 
         if reisst {
             tear(at: position)
@@ -669,24 +717,25 @@ struct RingOfFireView: View {
         SoundManager.play(.reRack)
     }
 
-    private func apply(_ rule: RingOfFireRule, rank: Int) {
+    private func apply(_ rule: RingOfFireRule, rank: Int, holder: String?) {
         HapticManager.mediumImpact()
 
         switch rule.role {
         case .thumbMaster:
-            thumbMasters += 1
+            roleHolders.append(RingRoleHolder(role: .thumbMaster, name: holder))
             SoundManager.play(.onFire)
         case .questionQueen:
-            questionQueens += 1
+            roleHolders.append(RingRoleHolder(role: .questionQueen, name: holder))
             SoundManager.play(.onFire)
         case .drinkingMate:
-            drinkingMates += 1
+            roleHolders.append(RingRoleHolder(role: .drinkingMate, name: holder))
             SoundManager.play(.ballsBack)
         case .houseRule:
             SoundManager.play(.reRack)
             // Nicht sofort: Erst liest man die Karte zu Ende, dann tippt
             // man. Ausgeloest wird die Frage beim Schliessen des
             // Aktionsscreens.
+            ruleAuthor = holder
             needsRulePrompt = true
         case .none:
             // Das Ass ist der einzige Rang mit einem Shot – dafür der harte
@@ -795,9 +844,38 @@ struct RingOfFireView: View {
     }
 
     private func clearRoles() {
-        thumbMasters = 0
-        questionQueens = 0
-        drinkingMates = 0
+        roleHolders.removeAll()
         houseRules.removeAll()
+        ruleAuthor = nil
     }
+
+    /// Der Name dessen, der bei Zaehlerstand `turn` gezogen hat – oder
+    /// `nil`, wenn die App niemanden kennt.
+    ///
+    /// Ohne Emoji: In der Merkliste steht schon das Symbol der Rolle davor,
+    /// und zwei Zeichen vor einem Namen sind eins zu viel. Der Rueckfall
+    /// laeuft ueber `position(forTurn:)`, weil nur der `nil` liefert –
+    /// `plainName` wuerde "Spieler 3" zurueckgeben, und das hilft in einer
+    /// Merkliste niemandem.
+    private func holderName(forTurn turn: Int) -> String? {
+        guard let position = PlayerNames.position(forTurn: turn) else { return nil }
+        return PlayerNames.plainName(for: position)
+    }
+}
+
+/// Eine vergebene Rolle. Eigener Typ und nicht nur ein Name, weil dieselbe
+/// Rolle mehrfach im Spiel sein kann und jeder Eintrag seine eigene Identitaet
+/// braucht – sonst fasst `ForEach` zwei gleich benannte Halter zusammen.
+private struct RingRoleHolder: Identifiable {
+    let id = UUID()
+    let role: RingOfFireRole
+    /// `nil`, wenn die App zu dieser Karte niemanden kennt.
+    let name: String?
+}
+
+/// Eine Regel, die jemand mit der Zehn aufgestellt hat.
+private struct RingHouseRule: Identifiable {
+    let id = UUID()
+    let author: String?
+    let text: String
 }

@@ -653,6 +653,35 @@ den nachgespielten Wurf-Log alter Partien.
   `tearsRing` gar nicht mehr gefragt: Was nichts kostet, soll auch nicht
   blitzen.
 
+  **Nur die Drei und das Ass werden gebucht** (25. Oktober). Ring of Fire
+  schrieb bis dahin ausschließlich den Riss in die Trinkbilanz – das Ass
+  („einen Shot") und die Drei („3 Schlücke") landeten nirgends, obwohl sie
+  eindeutig den treffen, der gezogen hat. Jetzt tragen genau diese zwei
+  Karten ihre Menge als `drawerDrinks` im Katalog, und `draw` bucht sie.
+  Die Grenze ist nicht Bequemlichkeit, sondern Pflicht: Zwei, Fünf, Sechs,
+  Sieben, Neun und König treffen **andere**, eine Gruppe oder den
+  Verlierer einer Runde – und wen, weiß nur der Tisch. Eine geratene
+  Buchung wäre schlimmer als keine, weil sie in der Bilanz aussieht wie
+  eine bestätigte. Vier Tests halten die Liste fest, einer davon: Die
+  gebuchte Menge muss die sein, die auch auf der Karte steht – sonst
+  trinkt der Tisch das eine und die Bilanz zählt das andere. Ein Ass, das
+  den Ring reißt, kostet **zwei** Shots; das wird nicht verrechnet.
+
+  **Die Merkliste sagt, WER die Rolle hat** (25. Oktober). Dort standen
+  drei Zähler, und die Liste sagte „Daumenmeister ×2" – am echten Tisch
+  liegt die Karte aber sichtbar vor der Person, und genau das ist ihr Sinn.
+  Die App weiß es ohnehin: Wer gezogen hat, rechnet `PlayerNames`.
+  Gespeichert wird der **Name** und nicht der Zählerstand des Zuges –
+  kommt jemand dazu, verschiebt `position(forTurn:)` sich, und die Rolle
+  säße plötzlich bei jemand anderem. Die Zeile selbst rechnet
+  `RingOfFireRoleBoard.label(for:holders:)`, reine Zeichenarbeit neben der
+  Ansicht und deshalb geprüft. Entscheidend ist der Fall, in dem nur die
+  Hälfte feststeht: Dann gibt es **keine halbe Zeile**, sondern wieder die
+  Zahl. „Lena, Spieler 2" liest sich wie eine Auskunft und ist eine halbe –
+  dieselbe Entscheidung wie in `TurnRow`. Die Zehn trägt ihren Urheber mit
+  („von Lena"), gemerkt beim **Ziehen**: Gefragt wird erst, wenn der
+  Aktionsscreen zu ist, und bis dahin ist `turn` schon weiter.
+
 - **Die Härte gehört zum Spiel, nicht zum Gerät.** Sie stand bis Oktober
   2026 einmal über den Partyspielen und galt für alle. Am Tisch ist sie
   aber eine Eigenschaft der Runde: Mäxchen wird anders getrunken als
@@ -933,6 +962,13 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   sichtbar **neu**, zählt die Kapsel richtig mit, und bleiben nach dem
   dritten Riss die Lücken wirklich ohne Folge – also kein Blitz, kein
   Knall, kein Banner mehr?
+- **Ring of Fire bucht mit (25. Oktober)**: Einen Abend starten, Ring of
+  Fire spielen, bis ein Ass und eine Drei gezogen sind – stehen beide
+  danach in der Trinkbilanz der richtigen Person? Und steht dort **nichts**
+  von einer Fünf oder einer Zwei (die trifft andere, und das soll die App
+  nicht raten)? Dazu die Merkliste: Sagt sie „Daumenmeister · Lena" statt
+  „×1", steht bei der Zehn „von Lena" unter der Regel, und ist die Zeile
+  ohne Abend und ohne Aufstellung wieder nur die Rolle?
 - **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.
