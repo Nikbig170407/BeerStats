@@ -220,7 +220,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
             return "\(SpectrumDeck.count) Gegensätze – wie weit links liegt dein Hinweis?"
         case .bombPass: return "Zünden, herumreichen, nicht drauf sitzen bleiben"
         case .reactionDuel: return "Zwei Daumen, ein Signal – wer zu früh tippt, verliert"
-        case .drinkRoulette: return "Acht Felder, ein Zeiger – keine Einrichtung nötig"
+        case .drinkRoulette: return "Vier Räder, ein Zeiger – eins davon baust du selbst"
         case .herd:
             return "\(HerdDeck.count) Fragen – wer nicht wie die Mehrheit denkt, trinkt"
         case .forbiddenWords: return "Jeder zieht ein Wort, das er den Abend über nicht sagen darf"
@@ -285,7 +285,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .herd:
             return "Die App stellt eine Frage, auf die es keine richtige Antwort gibt, sondern nur eine häufige – „Nenne eine Pizza“. Auf drei sagen alle gleichzeitig ihre Antwort laut. Wer dasselbe gesagt hat wie die Mehrheit, hat gewonnen; wer allein dasteht, trinkt. Danach tippt ihr an, wer allein war – mehr rechnet die App nicht, sie kann ja nicht hören, was gesagt wurde. Wer zweimal hintereinander allein steht, bekommt die Kuh und zahlt mehr."
         case .drinkRoulette:
-            return "Rad drehen, Feld abwarten, machen was dasteht. Keine Einrichtung, keine Erklärung – das Spiel für zwischendurch."
+            return "Rad drehen, Feld abwarten, machen was dasteht. Vorher wählt ihr das Rad: klassisch, zahm, hart – oder ein eigenes, in das ihr eure Felder schreibt. Die besten sind die, die nur eure Runde versteht („Der Gastgeber trinkt“). Die Menge wählt ihr dazu aus, damit sie der eingestellten Härte folgt."
         case .forbiddenWords:
             return "Jeder zieht ein Wort, das er den ganzen Abend nicht sagen darf, und merkt es sich. Wer sein Wort trotzdem sagt und dabei erwischt wird, trinkt. Das Handy wandert einmal rum, damit niemand die Wörter der anderen sieht."
         case .drinkBingo:
@@ -501,9 +501,12 @@ enum PartyGame: String, CaseIterable, Identifiable {
         switch self {
         // Diese sieben fragen vorher schon etwas – Spielerzahl, Kartenzahl,
         // Stufen, Kategorie. Die Haerte steht in demselben Vorspann.
+        // Trink-Roulette steht seit dem 25. Oktober hier: Es fragt jetzt
+        // nach dem Rad und hat damit einen Vorspann, in dem die Haerte mit
+        // Platz hat.
         case .ringOfFire, .neverHaveIEver, .schocken, .maexchen, .spy,
              .headsUp, .forbiddenWords, .eveningRule, .charades, .timeline,
-             .herd:
+             .herd, .drinkRoulette:
             return .inSetup
 
         // Alle anderen fangen sofort an. Pferderennen und Wahrheit oder
@@ -512,7 +515,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // Einstellungs-Screen – und beide sprechen ihre Mengen bereits dort
         // aus, die Haerte muss also vorher stehen.
         case .busRide, .twoTruths, .countTo21, .estimation, .categories,
-             .drinkRoulette, .drinkBingo, .knowYourPeople, .horseRace,
+             .drinkBingo, .knowYourPeople, .horseRace,
              .truthOrDare, .mostLikely, .bombPass, .reactionDuel, .spectrum:
             return .ownScreen
         }

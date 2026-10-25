@@ -242,6 +242,10 @@ den nachgespielten Wurf-Log alter Partien.
   dabei: Auf „was spielen wir jetzt" ist Trinkbingo keine Antwort.
 - **Nochmal dieselben**: die letzte Aufstellung als Zeile im Beerpong-Menü,
   gestartet mit den aktuellen Hausregeln.
+- **Vier Räder im Trink-Roulette** (25. Oktober): klassisch, zahm, hart –
+  und ein **eigenes**, in das die Runde ihre Felder schreibt. Ein Rad mit
+  acht festen Feldern ist beim zweiten Abend dasselbe Rad; ab dem dritten
+  weiß jeder, was draufsteht.
 - **Der Pokal des Abends** (22. Oktober): zwei Kronen statt einer. **🏆
   Pokal** zählt gewonnene Spiele, gewichtet nach Länge (kurz 1, mittel 2,
   lang 3); **🍺 Bilanz** zählt wie bisher, wer trinken musste. Bewusst
@@ -601,6 +605,23 @@ den nachgespielten Wurf-Log alter Partien.
   (`EveningLog.record(_:forProfileId:)`), nicht über die Position – die
   Aufstellung und die Teilnehmerliste des Abends müssen nicht dieselbe
   Reihenfolge haben.
+
+- **Die Räder des Trink-Roulettes stehen im Katalog `RouletteWheel`**
+  (25. Oktober), nicht in der Ansicht – dieselbe Entscheidung wie bei
+  `PartyGame`. Ein fünftes Rad ist ein neuer Fall und sonst nichts. Zwei
+  Dinge, die man beim Anfassen wissen muss. Erstens trägt ein Feld seine
+  Menge als **`RouletteCost`** und nicht als Zahl im Text: Eine eingetippte
+  „3 Schlücke" ignoriert die Härte stillschweigend. `RouletteCost` ist ein
+  eigener, speicherbarer Typ, weil `DrinkAmount` einen zugeordneten Wert
+  trägt und deshalb nicht `Codable` ist – und weil ein gespeichertes Format
+  nicht am Anzeigetyp hängen soll (dieselbe Regel wie bei der
+  Sicherungsdatei). Zweitens landet die Menge im Satz dort, wo **`{}`**
+  steht; fehlt der Platzhalter, kommt sie als Anhang. Genau deshalb braucht
+  der Editor für eigene Felder keine Schreibweise zu erklären – aber die
+  **ausgelieferten** Felder müssen `{}` enthalten, und ein Test hält das
+  fest: Der Anhang ist für die eigenen Felder gedacht, in einem fertigen
+  Rad ist er Schlamperei. Das eigene Rad liegt in UserDefaults und ist erst
+  **ab drei Feldern** spielbar: Mit zwei ist es eine Münze.
 
 - **Partyspiele zahlen nicht auf die Beerpong-Statistiken ein.** Eine Runde
   Bombe hat keine Trefferquote. Wer dort eine Wertung will, braucht einen
@@ -1036,6 +1057,14 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Wer bin ich?, Turnier, die gezogene Karte in Ring of Fire (dort liegt
   unten der „Verstanden"-Knopf über dem Inhalt) und die beiden Listen mit
   `.top` (Abend-Rückblick, eigene Karten).
+- **Trink-Roulette mit Rädern (25. Oktober)**: Der Vorspann ist neu – vier
+  Zeilen plus Härte, und die Härte steht jetzt dort statt in einem eigenen
+  Screen davor. Zu prüfen: Baut sich ein eigenes Rad mit drei, fünf und
+  zehn Feldern ordentlich auf (Beschriftung im Tortenstück lesbar, keine
+  zwei gleichfarbigen Nachbarn), bleibt es nach dem App-Start erhalten,
+  und sagt der Knopf „Anderes Rad" sauber zurück in die Auswahl? Dazu die
+  Vorschau im Editor: Steht dort derselbe Satz, der nach der Drehung
+  erscheint?
 - **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.
