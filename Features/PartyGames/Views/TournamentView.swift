@@ -208,7 +208,12 @@ struct TournamentView: View {
                                 .font(BeerStatsFont.headline)
                                 .foregroundStyle(BeerStatsColor.textPrimary)
                             Spacer()
-                            if strikes[player] > 0 {
+                            // Mit Bereichsprüfung, wie in der Endtabelle
+                            // auch: `playerCount` und `strikes` werden an
+                            // verschiedenen Stellen gesetzt, und ein Zugriff
+                            // daneben ist in SwiftUI kein leeres Feld,
+                            // sondern ein Absturz mitten im Abend.
+                            if strikes.indices.contains(player), strikes[player] > 0 {
                                 Text(String(repeating: "×", count: strikes[player]))
                                     .font(BeerStatsFont.caption)
                                     .foregroundStyle(BeerStatsColor.error)

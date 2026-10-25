@@ -310,7 +310,16 @@ struct DataExportView: View {
             )
             importPreview = nil
             self.importData = nil
-            importStep = "\(ergebnis.profiles) Profile, \(ergebnis.games) Partien wiederhergestellt"
+            // Die uebersprungenen gehoeren dazu: Wer nur die Erfolgszahl
+            // liest, haelt eine Sicherung fuer vollstaendig, die es nicht
+            // ist – und merkt es erst, wenn eine Partie im Verlauf fehlt.
+            var zeile = "\(ergebnis.profiles) Profile, \(ergebnis.games) Partien wiederhergestellt"
+            if ergebnis.skippedGames > 0 {
+                zeile += ergebnis.skippedGames == 1
+                    ? " – 1 Partie liess sich nicht anlegen"
+                    : " – \(ergebnis.skippedGames) Partien liessen sich nicht anlegen"
+            }
+            importStep = zeile
             HapticManager.success()
             SoundManager.play(.victory)
         } catch {

@@ -42,6 +42,30 @@ struct EveningParticipant: Codable, Identifiable, Equatable {
     /// Schluecke – dieselbe Umrechnung, die `DrinkAmount` benutzt, wenn ohne
     /// Shots gespielt wird.
     var weight: Int { sips + shots * 5 }
+
+    /// Was diese Person getrunken hat, als Satzteil.
+    ///
+    /// Stand bis zum 26. Oktober zweimal fast gleich im Projekt – einmal im
+    /// Teilen-Text und einmal im Abend-Screen, mit verschiedenen Trennzeichen
+    /// und verschiedenen Woertern fuer "nichts". Dieselbe Falle wie bei
+    /// `TermRow`: Zwei Fassungen desselben Satzes laufen auseinander, und
+    /// dann sagt der geteilte Text etwas anderes als der Screen, von dem er
+    /// stammt.
+    ///
+    /// Die Mengen werden hier NICHT durch `DrinkAmount` ausformuliert: Das
+    /// sind gezaehlte Schluecke aus der Bilanz, keine angesagte Menge. Die
+    /// Haerte galt beim Buchen und darf einen alten Abend nicht
+    /// nachtraeglich umrechnen.
+    func tallyText(separator: String, whenEmpty: String) -> String {
+        var teile: [String] = []
+        if sips > 0 {
+            teile.append(sips == 1 ? "1 Schluck" : "\(sips) Schlücke")
+        }
+        if shots > 0 {
+            teile.append(shots == 1 ? "1 Shot" : "\(shots) Shots")
+        }
+        return teile.isEmpty ? whenEmpty : teile.joined(separator: separator)
+    }
 }
 
 struct EveningEntry: Codable, Identifiable, Equatable {
@@ -197,14 +221,8 @@ struct Evening: Codable, Equatable {
 
         zeilen.append("")
         for teilnehmer in participants.sorted(by: { $0.weight > $1.weight }) {
-            var menge: [String] = []
-            if teilnehmer.sips > 0 {
-                menge.append(teilnehmer.sips == 1 ? "1 Schluck" : "\(teilnehmer.sips) Schlücke")
-            }
-            if teilnehmer.shots > 0 {
-                menge.append(teilnehmer.shots == 1 ? "1 Shot" : "\(teilnehmer.shots) Shots")
-            }
-            zeilen.append("\(teilnehmer.emoji) \(teilnehmer.name): \(menge.isEmpty ? "nichts" : menge.joined(separator: ", "))")
+            let menge = teilnehmer.tallyText(separator: ", ", whenEmpty: "nichts")
+            zeilen.append("\(teilnehmer.emoji) \(teilnehmer.name): \(menge)")
         }
 
         return zeilen.joined(separator: "\n")

@@ -49,6 +49,10 @@ struct DataImportSummary {
     let profiles: Int
     let games: Int
     let throwEntries: Int
+    /// Partien, die sich nicht anlegen liessen. Steht im Ergebnis, weil der
+    /// Nutzer sonst glaubt, alles sei zurueck – und das waere eine
+    /// Sicherung, der man nicht trauen kann.
+    var skippedGames: Int = 0
 }
 
 // MARK: - Dienst
@@ -150,33 +154,30 @@ struct DataImportService: DataImportServiceProtocol {
 
         var wiederhergestellteSpiele = 0
         var wiederhergestellteWuerfe = 0
+        var uebersprungeneSpiele = 0
 
         for (nummer, spiel) in payload.games.enumerated() {
             await progress("Partie \(nummer + 1) von \(payload.games.count)")
 
-            let teams = spiel.teams.map { team in
-                Team(
-                    id: team.id,
-                    // Durch die Uebersetzungstabelle: Ein Profil, das nicht
-                    // mitgesichert wurde, faellt hier heraus statt auf eine
-                    // Kennung zu zeigen, die es nicht gibt.
-                    playerIds: team.playerIds.compactMap { profileIds[$0] },
-                    playerNames: team.playerNames,
-                    score: team.score,
-                    ballsInPlay: team.playerIds.count
-                )
-            }
+            let teams = spiel.teams.map { Self.remapped($0, with: profileIds) }
 
-            let neueSpielId = try await gameRepository.createGame(
-                type: GameType(rawValue: spiel.type) ?? .twoVsTwo,
-                teams: teams,
-                // Mitsamt der Sonderregeln, sonst spielt die Engine den Log
-                // spaeter unter anderen Regeln nach als denen, unter denen er
-                // entstanden ist.
-                format: spiel.gameFormat,
-                createdBy: ownerId,
-                accessUserIds: [ownerId]
-            )
+            // Jede Partie fuer sich: Eine, die sich nicht anlegen laesst
+            // (eine Datei aus einer anderen Fassung, ein Team mit der
+            // falschen Spielerzahl), darf nicht die uebrigen mitnehmen.
+            // Wiederherstellen ist nicht umkehrbar – wer hier abbricht,
+            // laesst ein halb beschriebenes Konto zurueck.
+            let neueSpielId: String
+            do {
+                neueSpielId = try await createGame(
+                    createdBy: ownerId,
+                    accessUserIds: [ownerId],
+                    spiel: spiel,
+                    teams: teams
+                )
+            } catch {
+                uebersprungeneSpiele += 1
+                continue
+            }
 
             for eintrag in spiel.throwLog {
                 guard let action = eintrag.action else { continue }
@@ -224,7 +225,61 @@ struct DataImportService: DataImportServiceProtocol {
         return DataImportSummary(
             profiles: wiederhergestellteProfile,
             games: wiederhergestellteSpiele,
-            throwEntries: wiederhergestellteWuerfe
+            throwEntries: wiederhergestellteWuerfe,
+            skippedGames: uebersprungeneSpiele
+        )
+    }
+
+    /// Uebersetzt ein gesichertes Team auf die neuen Profil-Kennungen.
+    ///
+    /// Steht als eigene, reine Funktion daneben, weil daran ein Fehler hing,
+    /// den man nur am Ergebnis sieht: Hier stand `compactMap`, und das hat
+    /// die Liste VERKUERZT. Eine Sicherung enthaelt aber nur die Profile, die
+    /// es beim Sichern noch gab – wer vorher geloescht wurde, steht in seinen
+    /// alten Partien weiter als Kennung, aber nicht mehr in der Profilliste.
+    /// Aus einem 2-gegen-2 wurde dann ein Team mit einem Spieler, und
+    /// `GameRepository.createGame` lehnt genau das ab ("Jedes Team braucht
+    /// genau 2 Spieler"): Die Wiederherstellung brach mitten im Lauf ab, mit
+    /// einer Meldung, die auf nichts zeigt, und einem halb beschriebenen
+    /// Konto.
+    ///
+    /// Wer nicht in der Tabelle steht, behaelt deshalb seine ALTE Kennung –
+    /// dasselbe, was der Wurf-Log ohnehin tut. Sie zeigt auf kein Profil
+    /// mehr, aber das schadet nicht: Angezeigt werden die mitgesicherten
+    /// Namen, und jede Auswertung sucht ihre Profil-ID in der Liste statt sie
+    /// nachzuschlagen. Entscheidend sind Laenge und Reihenfolge: Der Platz in
+    /// `playerIds` IST der Platz im Team (`ThrowRepository` leitet daraus den
+    /// Slot ab), und ein verschobener Platz bucht die Wuerfe auf die falsche
+    /// Person.
+    static func remapped(_ team: ExportedTeam, with profileIds: [String: String]) -> Team {
+        Team(
+            id: team.id,
+            playerIds: team.playerIds.map { profileIds[$0] ?? $0 },
+            playerNames: team.playerNames,
+            score: team.score,
+            ballsInPlay: team.playerIds.count
+        )
+    }
+
+    /// Legt eine Partie an. Steht getrennt, damit der `do`-Block um den
+    /// Aufruf kurz bleibt und nicht versehentlich die Wuerfe mit einfaengt:
+    /// Ein Fehler beim Schreiben eines Wurfs ist etwas anderes als eine
+    /// Partie, die gar nicht anzulegen ist.
+    private func createGame(
+        createdBy ownerId: String,
+        accessUserIds: [String],
+        spiel: ExportedGame,
+        teams: [Team]
+    ) async throws -> String {
+        try await gameRepository.createGame(
+            type: GameType(rawValue: spiel.type) ?? .twoVsTwo,
+            teams: teams,
+            // Mitsamt der Sonderregeln, sonst spielt die Engine den Log
+            // spaeter unter anderen Regeln nach als denen, unter denen er
+            // entstanden ist.
+            format: spiel.gameFormat,
+            createdBy: ownerId,
+            accessUserIds: accessUserIds
         )
     }
 

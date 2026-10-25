@@ -640,6 +640,16 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Alles, was die Engine zum Nachspielen braucht, muss dort stehen. Sonst
   läuft der wiederhergestellte Log unter anderen Regeln als der echte.
 
+- **Beim Wiederherstellen ist der PLATZ im Team eine Aussage.**
+  `DataImportService.remapped` übersetzt die alten Profil-Kennungen auf die
+  neuen und behält dabei Länge und Reihenfolge – wer nicht in der Tabelle
+  steht, behält seine alte Kennung. Sie zeigt dann auf kein Profil mehr,
+  und das ist richtig so: Angezeigt werden die mitgesicherten Namen, und
+  jede Auswertung sucht ihre Profil-ID in der Liste statt sie
+  nachzuschlagen. Warum das keine Geschmacksfrage ist, steht in Lessons
+  Learned Nr. 14. Dazu: Eine Partie, die sich nicht anlegen lässt, wird
+  **übersprungen und gezählt**, nicht zum Abbruch des ganzen Laufs.
+
 - **Zeitraum-Statistiken werden gerechnet, nicht gespeichert.** Die Werte am
   Profil sind Lebenszeit-Summen. Für „letzter Monat" spielt
   `ThrowRepository.aggregateStatistics` die Wurf-Logs der betroffenen
@@ -908,6 +918,31 @@ Regel gilt für Abschnitt 9.
     innen eine escaping Closure benutzt – auch `Task`, `onAppear` oder eine
     Animation mit Abschluss.
 
+14. **Ein `compactMap` in einer Übersetzung verkürzt die Liste – und
+    manchmal ist die Länge die Aussage.** Das Wiederherstellen übersetzte
+    die alten Profil-Kennungen eines Teams mit
+    `team.playerIds.compactMap { profileIds[$0] }`. Wer nicht in der Tabelle
+    stand, fiel heraus. Das klingt sauber („lieber keine Kennung als eine
+    falsche") und bricht zwei Dinge auf einmal: Aus einem 2-gegen-2 wurde
+    ein Team mit einem Spieler, und `GameRepository.createGame` lehnt genau
+    das ab – die **ganze** Wiederherstellung brach mitten im Lauf ab, mit
+    der Meldung „Jedes Team braucht genau 2 Spieler" und einem halb
+    beschriebenen Konto. Dazu ist der Platz in `playerIds` der Platz im
+    Team: `ThrowRepository` leitet den Slot daraus ab, ein verschobener
+    Platz hätte die Würfe auf die falsche Person gebucht.
+    Der Fall ist nicht gesucht, sondern der Normalfall nach einem Jahr: Wer
+    aus der Truppe gelöscht wird, steht in seinen alten Partien weiter als
+    Kennung, aber nicht mehr in der Profilliste – und die Sicherung enthält
+    beides so. Eine Zeile tiefer machte der Wurf-Log es übrigens schon
+    richtig (`profileIds[alt] ?? alt`): Dieselbe Funktion widersprach sich
+    selbst.
+    **Die Regel:** Wo eine Position etwas bedeutet, darf eine Übersetzung
+    die Länge nicht ändern – `map` mit Rückfall statt `compactMap`. Und ein
+    Vorgang, der schreibt und nicht umkehrbar ist, bricht nicht beim ersten
+    Fehler ab, sondern überspringt das kaputte Stück und **sagt am Ende, wie
+    viel übersprungen wurde**. Eine Sicherung, die halb durchläuft und
+    „fertig" meldet, ist schlimmer als eine, die scheitert.
+
 ---
 
 ## 8. Arbeitsweise
@@ -961,7 +996,11 @@ oben; was schief aussieht, unten.
 - **Datensicherung** samt Teilen-Blatt – und vor allem das
   **Wiederherstellen**, weil es als einziges schreibt. Beim ersten Versuch
   „Nur Profile und Werte" auf einem frischen Konto, nicht „Alles" auf dem
-  echten.
+  echten. Seit dem 26. Oktober gibt es dort einen Fall, der vorher
+  **abgebrochen** wäre: eine Sicherung mit einer Partie, deren Spieler
+  inzwischen gelöscht ist. Die muss jetzt durchlaufen, und wenn eine
+  Partie wirklich nicht anzulegen ist, muss die Ergebniszeile sagen, wie
+  viele übersprungen wurden.
 - **Ohne Netz:** Flugmodus, App killen, ganze Partie spielen, Netz an. Der
   Firestore-Cache ist nirgends im Code konfiguriert – auf iOS ist er
   standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.

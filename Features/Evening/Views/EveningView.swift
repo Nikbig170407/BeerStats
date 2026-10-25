@@ -368,15 +368,7 @@ struct EveningView: View {
     }
 
     private func standText(_ teilnehmer: EveningParticipant) -> String {
-        if teilnehmer.sips == 0 && teilnehmer.shots == 0 { return "noch nichts" }
-        var teile: [String] = []
-        if teilnehmer.sips > 0 {
-            teile.append(teilnehmer.sips == 1 ? "1 Schluck" : "\(teilnehmer.sips) Schlücke")
-        }
-        if teilnehmer.shots > 0 {
-            teile.append(teilnehmer.shots == 1 ? "1 Shot" : "\(teilnehmer.shots) Shots")
-        }
-        return teile.joined(separator: " · ")
+        teilnehmer.tallyText(separator: " · ", whenEmpty: "noch nichts")
     }
 
     // MARK: - Der Pokal
