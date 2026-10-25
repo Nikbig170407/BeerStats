@@ -789,6 +789,10 @@ struct RingOfFireView: View {
         guard let ziel = liegende.randomElement() else { return }
 
         isDrawing = true
+        // Sofort beim Druck, nicht erst beim ersten Tick: Der Knopf muss
+        // antworten, bevor das Licht ueberhaupt losgelaufen ist.
+        HapticManager.mediumImpact()
+        SoundManager.play(.cardFlip)
         drawTask?.cancel()
         drawTask = Task { @MainActor in
             await runSpotlight(to: ziel, over: liegende)
@@ -830,12 +834,18 @@ struct RingOfFireView: View {
             let dauer: Double
             if restlich > 14 {
                 dauer = 0.012
+                // Auch die schnelle Phase tickt – nur jeden vierten
+                // Schritt. Auf jedem waere es bei 12 Millisekunden ein
+                // Rauschen, auf keinem war das Rad die erste Sekunde lang
+                // STUMM: Man druckt, es dreht sich, und man hoert nichts.
+                // Genau das ist am 25. Oktober am Tisch aufgefallen.
+                if schritt % 4 == 0 { SoundManager.play(.tap) }
             } else {
                 dauer = 0.05 + 0.25 * (Double(14 - restlich) / 14)
                 HapticManager.lightImpact()
-                // Das Ticken der letzten Schritte. Leise (`tap` ist auf ein
-                // Drittel abgemischt) und nur im Auslaufen – auf jedem der
-                // schnellen Schritte waere es ein Rauschen.
+                // Das Ticken des Auslaufens, jetzt auf jedem Schritt: Hier
+                // sind die Abstaende lang genug, dass man einzelne Schlaege
+                // hoert statt eines Rauschens.
                 SoundManager.play(.tap)
             }
 

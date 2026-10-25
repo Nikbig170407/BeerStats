@@ -23,16 +23,16 @@
 //  gefahrlos zieht, und duenne, an denen es reisst – und man kann es sehen.
 //
 //  Beides zusammen ist durchgerechnet, nicht geraten (zwanzigtausend
-//  simulierte Runden, 24. Oktober): Solange der Ring noch geschlossen
-//  daliegt, reisst jeder FUENFTE Zug (21,7 %); ueber eine ganze Runde sind
-//  es 7,2 % der Zuege, also 3,8 Risse auf 52 Karten, 2,3 auf 32 und 1,4 auf
-//  20. Hier stand vorher "etwa jeder sechste" – die Groessenordnung stimmte,
-//  die Zahl nicht. Dass es gegen Ende seltener wird, ist richtig so: Wo
-//  schon Luecken sind, ist nichts mehr zu reissen.
+//  simulierte Runden): Auf einem vollstaendig ausgelegten Ring reisst jeder
+//  FUENFTE Zug – 20,8 % bei zwanzig Karten, 21,6 % bei zweiundfuenfzig.
+//  Danach steigt es, denn jede Luecke macht die naechste wahrscheinlicher.
 //
-//  Bezahlt werden davon nur die ersten drei Risse (`RingOfFireView`), und
-//  dazwischen wird neu gelegt – als Dauerregel waeren vier Shots auf eine
-//  Runde zu viel.
+//  Bezahlt werden nur die ersten drei Risse (`RingOfFireView`), und nach den
+//  ersten beiden wird neu gelegt. Mit der korrigierten Rechnung vom
+//  25. Oktober sind die drei Shots nach rund zehn Zuegen vergeben
+//  (Median 10, in neun von zehn Runden zwischen 6 und 16) – bei zwanzig
+//  Karten also etwa zur Haelfte der Runde, bei zweiundfuenfzig nach einem
+//  Fuenftel.
 //
 
 import Foundation
@@ -98,44 +98,65 @@ struct RingLayout: Equatable {
 
     /// Reisst das Ziehen dieser Karte den Ring auf?
     ///
-    /// Zwei Bedingungen, und die zweite ist die, auf die es ankommt:
+    /// Gerissen heisst: Von oben ist der Kreis danach nicht mehr durchgehend
+    /// – zwischen zwei Karten klafft eine Luecke, die breiter ist als eine
+    /// Karte. Gerechnet wird deshalb mit den naechsten noch LIEGENDEN
+    /// Nachbarinnen und nicht mit den Nachbarplaetzen.
     ///
-    /// Beide Nachbarinnen muessen noch liegen. Ist dort schon eine Luecke,
-    /// wird sie durch diesen Zug nur groesser – gerissen hat sie jemand
-    /// anderes, und zweimal zahlt niemand fuer dieselbe Luecke.
+    /// Genau daran ist es bis zum 25. Oktober vorbeigelaufen: Die Funktion
+    /// schaute auf die beiden Nachbarplaetze und gab `false` zurueck, sobald
+    /// einer davon leer war – "neben einer Luecke reisst nichts". Am Tisch
+    /// ist aber das Gegenteil richtig. Liegt links schon ein Loch und man
+    /// zieht die Karte daneben, entsteht eine Luecke von zwei Kartenbreiten,
+    /// und der Kreis ist sichtbar durch. Die App sagte dazu nichts, und weil
+    /// jeder zweite Zug irgendwann neben einem Loch liegt, blieb die Regel
+    /// nach den ersten Karten fast ganz aus. So sah es am Tisch nach Willkuer
+    /// aus: Mal kam ein Shot, mal nicht, ohne erkennbaren Unterschied.
     ///
-    /// Und die beiden Nachbarinnen duerfen sich nach dem Zug nicht mehr
-    /// beruehren. Lagen sie dicht genug, schliesst sich der Ring hinter der
-    /// gezogenen Karte von selbst – dann ist nichts passiert.
+    /// Zweimal fuer dieselbe Luecke zahlt trotzdem niemand. Deshalb die
+    /// Gegenprobe VOR dem Zug: Beruehrte die Karte ihre beiden Nachbarinnen
+    /// ueberhaupt noch? Wenn nicht, war der Ring an dieser Stelle schon
+    /// offen, und das hat jemand anderes bezahlt.
     func tearsRing(at position: Int, present: [Bool]) -> Bool {
-        let anzahl = angles.count
-        guard anzahl >= 3,
-              present.count == anzahl,
+        guard present.count == angles.count,
               present.indices.contains(position),
               present[position]
         else { return false }
 
-        let links = (position - 1 + anzahl) % anzahl
-        let rechts = (position + 1) % anzahl
-        guard present[links], present[rechts] else { return false }
+        // Vier liegende Karten mindestens: Was nach dem Zug uebrig bleibt,
+        // muss noch ein Kreis sein koennen. Drei Karten sind einer, zwei
+        // sind keiner mehr – und am Ende der Runde ist ohnehin nichts mehr
+        // zu reissen.
+        guard present.lazy.filter({ $0 }).count >= 4,
+              let links = nearestPresent(from: position, step: -1, present: present),
+              let rechts = nearestPresent(from: position, step: 1, present: present)
+        else { return false }
+
+        // War hier schon offen? Dann reisst es nicht noch einmal.
+        guard arc(from: links, to: position) <= cardSpan,
+              arc(from: position, to: rechts) <= cardSpan
+        else { return false }
 
         return arc(from: links, to: rechts) > cardSpan
+    }
+
+    /// Die naechste liegende Karte in eine Richtung (`step` ist -1 oder 1).
+    ///
+    /// Laeuft rundherum, haelt aber nach einer vollen Runde an: Sonst liefe
+    /// die Suche endlos, wenn ausser `position` nichts mehr liegt.
+    private func nearestPresent(from position: Int, step: Int, present: [Bool]) -> Int? {
+        let anzahl = angles.count
+        var index = position
+        for _ in 1..<max(anzahl, 2) {
+            index = ((index + step) % anzahl + anzahl) % anzahl
+            if present[index] { return index }
+        }
+        return nil
     }
 
     /// Der Bogen von einer Karte zur anderen, in Laufrichtung des Rings.
     private func arc(from: Int, to: Int) -> Double {
         let differenz = angles[to] - angles[from]
         return differenz < 0 ? differenz + 360 : differenz
-    }
-
-    /// Nur fuer die Anzeige: Liegt der Ring noch ohne offene Stelle da?
-    ///
-    /// Gezaehlt wird, wo zwei benachbarte liegende Karten sich nicht mehr
-    /// beruehren – und jede fehlende Karte ist ohnehin eine offene Stelle.
-    func isClosed(present: [Bool]) -> Bool {
-        guard present.count == angles.count, !present.contains(false) else { return false }
-        return (0..<angles.count).allSatisfy { position in
-            arc(from: position, to: (position + 1) % angles.count) <= cardSpan
-        }
     }
 }

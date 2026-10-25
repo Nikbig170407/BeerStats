@@ -103,24 +103,64 @@ final class RingLayoutTests: XCTestCase {
     /// Der Rundlauf: Karte 0 grenzt an die letzte. Diese eine Stelle muss
     /// genauso gerechnet werden wie jede andere.
     func testThePositionZeroIsTreatedLikeEveryOther() {
-        let duenn = gleichmaessig(count: 12, span: 25)   // 30 Grad Abstand
+        // 30 Grad Abstand. Bei 45 Grad Kartenbreite beruehren sich die
+        // Nachbarinnen (30 ≤ 45), nach dem Zug liegen 60 Grad frei – das
+        // reisst. Die Breite muss UEBER dem Abstand liegen, sonst ist der
+        // Ring nirgends geschlossen und es kann auch nichts reissen.
+        let duenn = gleichmaessig(count: 12, span: 45)
         XCTAssertTrue(duenn.tearsRing(at: 0, present: alleDa(12)))
 
         let dicht = gleichmaessig(count: 12, span: 65)
         XCTAssertFalse(dicht.tearsRing(at: 0, present: alleDa(12)))
     }
 
-    /// Neben einer Luecke zu ziehen kostet nichts: Offen war sie vorher.
-    func testDrawingNextToAHoleCostsNothing() {
-        let layout = gleichmaessig(count: 36, span: 15)   // reisst sonst immer
+    /// Liegt der Ring so weit auseinander, dass sich nirgends zwei Karten
+    /// beruehren, ist er nie geschlossen – und dann kann ihn auch niemand
+    /// reissen. Im Spiel kommt das nicht vor (`cardSpan` ist das 2,4-fache
+    /// des mittleren Abstands), aber die Rechnung muss es aushalten.
+    func testARingThatNeverTouchesCannotTear() {
+        let offen = gleichmaessig(count: 12, span: 25)   // 30 Grad Abstand
+        for position in 0..<12 {
+            XCTAssertFalse(offen.tearsRing(at: position, present: alleDa(12)))
+        }
+    }
+
+    /// Der Fehler, den der Nutzer am 25. Oktober am Tisch gesehen hat.
+    ///
+    /// Hier stand vorher das Gegenteil: "Neben einer Luecke reisst nichts."
+    /// Das war falsch. Liegt links ein Loch, dessen Nachbarinnen sich noch
+    /// beruehrten, und man zieht die Karte daneben, dann liegen danach zwei
+    /// Kartenbreiten frei – von oben ist der Kreis durch. Und weil
+    /// irgendwann jeder zweite Zug neben einem Loch liegt, blieb die Regel
+    /// nach den ersten Karten fast ganz aus.
+    func testDrawingNextToAHoleTearsTheRing() {
+        // Abstand 10 Grad, Karte 25 Grad breit: Ein einzelnes Loch schliesst
+        // sich noch (20 Grad), zwei nebeneinander nicht mehr (30 Grad).
+        let layout = gleichmaessig(count: 36, span: 25)
 
         var liegt = alleDa(36)
+        XCTAssertFalse(layout.tearsRing(at: 5, present: liegt), "ein Loch schliesst sich")
         liegt[5] = false
 
-        XCTAssertFalse(layout.tearsRing(at: 4, present: liegt), "links der Luecke")
-        XCTAssertFalse(layout.tearsRing(at: 6, present: liegt), "rechts der Luecke")
-        // Zwei weiter ist der Ring noch zu – dort reisst es.
-        XCTAssertTrue(layout.tearsRing(at: 8, present: liegt))
+        XCTAssertTrue(layout.tearsRing(at: 4, present: liegt), "links der Luecke")
+        XCTAssertTrue(layout.tearsRing(at: 6, present: liegt), "rechts der Luecke")
+        // Weit weg vom Loch liegt der Ring unberuehrt dicht.
+        XCTAssertFalse(layout.tearsRing(at: 20, present: liegt))
+    }
+
+    /// Fuer dieselbe Luecke zahlt aber niemand zweimal: War der Ring an
+    /// dieser Stelle schon offen, reisst er dort nicht noch einmal.
+    func testAnAlreadyOpenSpotDoesNotTearTwice() {
+        // Karte 15 Grad breit bei 10 Grad Abstand: Hier reisst der erste Zug
+        // ueberall, die Stelle ist danach also offen.
+        let layout = gleichmaessig(count: 36, span: 15)
+
+        var liegt = alleDa(36)
+        XCTAssertTrue(layout.tearsRing(at: 5, present: liegt))
+        liegt[5] = false
+
+        XCTAssertFalse(layout.tearsRing(at: 4, present: liegt), "zahlt zweimal")
+        XCTAssertFalse(layout.tearsRing(at: 6, present: liegt), "zahlt zweimal")
     }
 
     /// Eine schon gezogene Karte kann nichts mehr reissen. Ohne diese Sperre
@@ -152,38 +192,66 @@ final class RingLayoutTests: XCTestCase {
     // MARK: - Die Spannungskurve
 
     /// Die beiden Konstanten entscheiden, wie oft es reisst. Dieser Test
-    /// haelt die Groessenordnung fest: ueber eine ganze Runde drei bis vier
-    /// Risse auf 52 Karten, also grob jeder vierzehnte Zug. Am Anfang ist es
-    /// haeufiger, gegen Ende seltener – wo schon Luecken sind, ist nichts
-    /// mehr zu reissen.
+    /// haelt die Groessenordnung fest, damit niemand `overlapFactor` oder
+    /// `jitter` unbemerkt so verstellt, dass jede zweite Karte einen Shot
+    /// kostet – oder gar keine mehr.
     ///
-    /// Die Toleranz ist weit genug, dass kein Zufall sie sprengt. Es geht
-    /// darum, dass niemand `overlapFactor` oder `jitter` unbemerkt so
-    /// verstellt, dass jede zweite Karte einen Shot kostet.
-    func testTheRingTearsAFewTimesPerRound() {
-        var gezogen = 0
+    /// Erste Zahl: Auf einem vollstaendig ausgelegten Ring reisst jeder
+    /// fuenfte Zug (nachgerechnet 20,8 bis 21,6 %, je nach Kartenzahl).
+    func testEveryFifthDrawTearsAFreshRing() {
         var gerissen = 0
+        let runden = 3000
 
-        for _ in 0..<200 {
+        for _ in 0..<runden {
             let layout = RingLayout.random(count: 52)
-            var liegt = alleDa(52)
+            let position = Int.random(in: 0..<52)
+            if layout.tearsRing(at: position, present: alleDa(52)) { gerissen += 1 }
+        }
 
-            // Eine ganze Runde durchspielen, in zufaelliger Reihenfolge.
-            for position in Array(0..<52).shuffled() {
-                if layout.tearsRing(at: position, present: liegt) { gerissen += 1 }
+        let anteil = Double(gerissen) / Double(runden)
+        XCTAssertGreaterThan(anteil, 0.15, "Es reisst praktisch nie – die Regel wäre unsichtbar")
+        XCTAssertLessThan(anteil, 0.29, "Es reisst zu oft – der erste Zug kostet fast immer")
+    }
+
+    /// Zweite Zahl: wie lange die drei Shots einer Runde halten. Gespielt
+    /// wird wie in `RingOfFireView` – nach den ersten beiden Rissen wird
+    /// neu gelegt, nach dem dritten ist die Regel durch.
+    ///
+    /// Nachgerechnet kommt der dritte Riss nach rund zehn Zuegen. Das ist
+    /// die Zahl, an der das Spielgefuehl haengt: Deutlich weniger, und die
+    /// Regel ist vorbei, bevor jemand sie bemerkt hat.
+    func testTheThreeShotsLastAboutTenDraws() {
+        var summe = 0
+        let runden = 300
+
+        for _ in 0..<runden {
+            var anzahl = 52
+            var layout = RingLayout.random(count: anzahl)
+            var liegt = alleDa(anzahl)
+            var risse = 0
+
+            while anzahl > 0, risse < 3 {
+                let liegende = liegt.indices.filter { liegt[$0] }
+                guard let position = liegende.randomElement() else { break }
+
+                let reisst = layout.tearsRing(at: position, present: liegt)
                 liegt[position] = false
-                gezogen += 1
+                anzahl -= 1
+                summe += 1
+
+                guard reisst else { continue }
+                risse += 1
+                if risse < 3, anzahl > 0 {
+                    // Einsammeln und neu legen, genau wie im Spiel.
+                    layout = RingLayout.random(count: anzahl)
+                    liegt = alleDa(anzahl)
+                }
             }
         }
 
-        // Nachgerechnet am 24. Oktober mit zwanzigtausend Runden: 7,2 % der
-        // Zuege reissen, also 3,8 Risse auf 52 Karten. Die Grenzen liegen
-        // eng genug um diesen Wert, dass eine Aenderung an `overlapFactor`
-        // oder `jitter` hier auffaellt, und weit genug, dass kein Zufall
-        // sie sprengt.
-        let anteil = Double(gerissen) / Double(gezogen)
-        XCTAssertGreaterThan(anteil, 0.04, "Es reisst praktisch nie – die Regel wäre unsichtbar")
-        XCTAssertLessThan(anteil, 0.11, "Es reisst zu oft – die Runde ist nach zehn Karten blau")
+        let zuege = Double(summe) / Double(runden)
+        XCTAssertGreaterThan(zuege, 6, "Die drei Shots sind weg, bevor es jemand merkt")
+        XCTAssertLessThan(zuege, 17, "Es reisst zu selten – die Regel kommt kaum vor")
     }
 
     // MARK: - Der Stapel

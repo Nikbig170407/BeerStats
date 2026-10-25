@@ -609,9 +609,10 @@ den nachgespielten Wurf-Log alter Partien.
   „jeder sechste" – die Größenordnung stimmte, die Zahl nicht.
   Zwei Feinheiten, die beide einen Shot wert sind: Die Abstände werden auf
   genau 360 Grad **normiert** (sonst klafft zwischen der letzten und der
-  ersten Karte eine Naht, die nie jemand gezogen hat), und neben einer
-  bestehenden Lücke reißt **nichts** (dort war schon offen – zweimal zahlt
-  niemand für dieselbe Lücke). Die **Kartenbreite folgt dem Layout**, nicht
+  ersten Karte eine Naht, die nie jemand gezogen hat), und für **dieselbe**
+  Lücke zahlt niemand zweimal – berührte die gezogene Karte ihre Nachbarin
+  schon vorher nicht, war der Ring dort offen, und das hat jemand anderes
+  bezahlt. Die **Kartenbreite folgt dem Layout**, nicht
   umgekehrt: Was man an Überlappung sieht, ist genau das, womit gerechnet
   wird. Wer die Breite frei wählt, baut ein Bild, das lügt.
 
@@ -652,6 +653,39 @@ den nachgespielten Wurf-Log alter Partien.
   – danach ist `turn` schon der Nächste. Ist die Regel aufgebraucht, wird
   `tearsRing` gar nicht mehr gefragt: Was nichts kostet, soll auch nicht
   blitzen.
+
+  **Gerissen wird an den liegenden Nachbarn gemessen, nicht an den
+  Nachbarplätzen** (25. Oktober). Das war der Fehler, den der Nutzer zweimal
+  am Tisch gesehen hat. `tearsRing` schaute auf `position ± 1` und gab
+  `false` zurück, sobald einer dieser Plätze leer war – „neben einer Lücke
+  reißt nichts". Am Tisch ist das Gegenteil richtig: Liegt links ein Loch,
+  dessen Nachbarn sich noch berührten, und man zieht die Karte daneben,
+  liegen danach **zwei Kartenbreiten** frei, und von oben ist der Kreis
+  durch. Weil irgendwann fast jeder Zug neben einem Loch liegt, blieb die
+  Regel nach den ersten Karten praktisch aus – und genau so sah es aus:
+  mal ein Shot, mal keiner, ohne erkennbaren Unterschied. Jetzt sucht die
+  Rechnung die nächste noch **liegende** Karte in beide Richtungen. Die
+  Gegenprobe gegen das doppelte Zahlen steht davor, nicht in der
+  Nachbarschaft: Berührte die gezogene Karte ihre beiden Nachbarn vorher
+  überhaupt noch? Wenn nicht, war dort schon offen.
+  Das ändert die Zahlen: Auf einem frisch ausgelegten Ring reißt weiter
+  **jeder fünfte** Zug (20,8 % bei zwanzig Karten, 21,6 % bei
+  zweiundfünfzig), aber jede Lücke macht die nächste wahrscheinlicher –
+  die **drei Shots sind nach rund zehn Zügen** vergeben (Median 10, in neun
+  von zehn Runden zwischen 6 und 16). Bei zwanzig Karten ist das etwa die
+  halbe Runde, bei zweiundfünfzig ein Fünftel. Wenn das am Tisch zu früh
+  vorbei ist, gehört der Deckel an die Kartenzahl gekoppelt und nicht auf
+  drei festgenagelt.
+  Mit dieser Änderung ist `isClosed(present:)` **weg**: Die Funktion hat
+  nie jemand aufgerufen, und sie trug dieselbe Rechnung in einer zweiten,
+  jetzt falschen Fassung. Zwei Wahrheiten zu einer Frage sind eine zu viel.
+
+  **Das Rad tickt von der ersten Sekunde** (25. Oktober). Die Auslosung
+  ticke nur im Auslaufen – die ersten rund zwanzig Schritte liefen mit
+  12 Millisekunden Abstand und ohne Klang. Am Tisch heißt das: Man drückt,
+  es dreht sich, und man hört nichts. Jetzt kommt beim Druck sofort ein
+  Kartenklang, und die schnelle Phase tickt auf jedem **vierten** Schritt;
+  auf jedem wäre es bei 12 Millisekunden ein Rauschen.
 
   **Nur die Drei und das Ass werden gebucht** (25. Oktober). Ring of Fire
   schrieb bis dahin ausschließlich den Riss in die Trinkbilanz – das Ass
@@ -944,8 +978,8 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
 - **Ring of Fire vom 17. Oktober**: Das Wichtigste zuerst – liegen die
   Karten erkennbar geschuppt, und sieht man die dünnen Stellen? Dann: reißt
   der Ring ungefähr so oft, dass es Spannung macht statt Ärger (gerechnet:
-  drei bis vier Risse auf 52 Karten – die Runde endet also meist genau an
-  ihren drei Shots)? Blitz, Ruck und Knall beim Riss sind
+  jeder fünfte Zug auf frisch gelegtem Ring, drei Shots nach rund zehn
+  Zügen)? Blitz, Ruck und Knall beim Riss sind
   nie auf Hardware gelaufen. Und bei **zwanzig** Karten wird der Kranz dicht
   und das Loch in der Mitte klein – dort steht dann nur die Zahl, ohne
   Flasche und ohne „übrig". Passt das?
@@ -969,6 +1003,17 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   nicht raten)? Dazu die Merkliste: Sagt sie „Daumenmeister · Lena" statt
   „×1", steht bei der Zehn „von Lena" unter der Regel, und ist die Zeile
   ohne Abend und ohne Aufstellung wieder nur die Rolle?
+- **Der Riss, dritter Versuch (25. Oktober)**: Jetzt zählen die liegenden
+  Nachbarn, nicht die Nachbarplätze. Zu prüfen ist genau der Fall, der
+  vorher schwieg: eine Karte ziehen, die **neben einer schon offenen
+  Stelle** liegt – das muss reißen, und man muss die zwei Kartenbreiten
+  sehen. Und umgekehrt: dieselbe Stelle darf nicht zweimal zahlen. Dazu die
+  Folge aus der Rechnung: Die drei Shots sind nach rund zehn Zügen weg –
+  fühlt sich das richtig an, oder soll der Deckel mit der Kartenzahl
+  wachsen (etwa einer je sieben Karten: 3 / 5 / 7)?
+- **Das Rad tickt sofort (25. Oktober)**: Beim Druck auf „Karte ziehen"
+  muss sofort etwas zu hören sein, und das Ticken in der schnellen Phase
+  darf kein Rauschen sein.
 - **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.
