@@ -67,5 +67,12 @@ struct UserStatsSnapshot: Codable, Equatable {
     var gamesPlayed: Int = 0
     var gamesWon: Int = 0
     var hitRate: Double = 0
-    var eloRating: Int = 1000 // Startwert, Feature selbst folgt später (siehe Roadmap)
+    /// Steht hier, wird aber nicht gerechnet – und soll es auch nicht.
+    ///
+    /// Der Kommentar sagte bis zum 25. Oktober "Feature folgt spaeter (siehe
+    /// Roadmap)". Es gibt keine Roadmap, und Elo ist im September 2026
+    /// ausdruecklich abgelehnt worden. Ein Kommentar, der eine Zukunft
+    /// verspricht, die niemand plant, ist dieselbe Falle wie bei
+    /// `Game.cupsRemaining`: Der Naechste liest ihn und glaubt ihm.
+    var eloRating: Int = 1000
 }

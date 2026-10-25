@@ -8,6 +8,25 @@ nicht ohne Rücksprache umgeworfen werden.
 Ausführliche Begründungen zu einzelnen Änderungen stehen in den
 Commit-Nachrichten – `git log` ist das eigentliche Gedächtnis des Projekts.
 
+**Was hier hingehört und was nicht.** Diese Datei war im Oktober 2026 auf
+tausendzweihundert Zeilen gewachsen, weil jede Änderung ihren Hergang
+hineingeschrieben hat – „vorher stand hier X, dann Y, jetzt Z". Das ist
+genau das, was `git log` ohnehin erzählt, und doppelt geführte Geschichte
+läuft auseinander: Beim Umschreiben am 25. Oktober standen drei
+verschiedene Zahlen für dieselbe Rechnung in derselben Datei. Deshalb gilt:
+
+- **Hier hin**: was gilt, was man nicht brechen darf, und **warum** –
+  Rahmenbedingungen, Verträge zwischen den Bausteinen, Entscheidungen des
+  Nutzers, Fallen, in die schon jemand getreten ist.
+- **Nicht hier hin**: der Hergang einer einzelnen Änderung, Datumsangaben
+  zu jedem Schritt, und **Zahlen, die veralten** (Stapelgrößen,
+  Spielerzahlen, „sieben Spiele machen X"). Zahlen gehören in den Code und
+  werden von Tests festgehalten; ein Satz, der sie nachspricht, ist beim
+  nächsten Nachlegen falsch.
+
+Ein Datum steht nur dort, wo es die Aussage trägt – etwa bei einer
+Entscheidung des Nutzers, die man kennen muss, bevor man sie umwirft.
+
 ---
 
 ## 1. Projektüberblick
@@ -173,7 +192,9 @@ den nachgespielten Wurf-Log alter Partien.
 
 ## 6. Stand
 
-**Läuft auf dem iPhone.** Alle Kernfunktionen sind gebaut:
+**Läuft auf dem iPhone.** Alle Kernfunktionen sind gebaut.
+
+### Was die App kann
 
 - Login (E-Mail/Passwort), Mitspieler-Profile mit Emoji und Farbe
 - **Hauptmenü als Spielauswahl.** `HomeView` zeigt nur Spiele. Alles rund um
@@ -219,22 +240,17 @@ den nachgespielten Wurf-Log alter Partien.
   (`AppAppearance`). Kein Hell-Modus, siehe unten.
 - **Ring of Fire in zwei Screens**: der Ring für sich, die gezogene Karte
   als Vollbild mit „Verstanden". Karten tragen Dauer und Strafe wie die
-  Extreme-Karten. **Von jedem Rang liegen immer alle vier Karten im Ring**
-  (23. Oktober), und zwar die höchsten (24. Oktober). Hinter der Karte
-  läuft eine Bewegung, die zum Rang gehört (`RingCardFlourish`): Kronen
-  regnen bei der Dame, Daumen steigen beim Buben, beim Ass brennt es.
+  Extreme-Karten, und hinter der Karte läuft eine eigene Szene je Rang
+  (`RingCardFlourish`). Der Ring liegt **geschuppt** und spielt mit – wer
+  ihn reißt, trinkt. Das ganze Regelwerk dazu steht unten als Vertrag; es
+  ist die am häufigsten missverstandene Stelle im Projekt.
 - **Bussfahrer hat sein Ende** (17. Oktober): Zwei Hälften, wie am Tisch –
   erst die Fragerunde, dann **die Busfahrt**. Die hatte gefehlt: Das Spiel
   hörte nach der vierten richtigen Antwort auf („Das Handy geht weiter"),
   und der Bussfahrer, der dem Spiel den Namen gibt, kam nie vor. Jetzt deckt
   er fünf Karten auf, und jede Bildkarte schickt ihn zurück an den Anfang.
-- **Der Ring spielt mit** (17. Oktober): Die Karten liegen zufällig gestreut
-  und **geschuppt** – jede ein Stück unter der nächsten, wie am echten
-  Tisch. Reißt ein Zug den Ring, kostet er einen Shot. Vorher lagen sie in
-  gleichen Abständen mit Luft dazwischen und die Regel gab es nicht: ein
-  Stapel, den jemand im Kreis angeordnet hatte.
 - **„Was spielen wir?"** (18. Oktober): ein Würfel unter dem Raster im
-  Hauptmenü. Zweiundzwanzig Spiele heißen am Tisch nicht Auswahl, sondern
+  Hauptmenü. Fünfundzwanzig Spiele heißen am Tisch nicht Auswahl, sondern
   fünf Minuten Diskussion, in denen niemand spielt. Gelost wird aus dem,
   was zur Runde **passt**: Die Spielerzahl ist eine Bedingung, keine
   Empfehlung – „Der Spion" zu zweit wäre kein Vorschlag, sondern ein
@@ -284,16 +300,14 @@ den nachgespielten Wurf-Log alter Partien.
   nichts: Auf einem Konto mit vorhandenen Profilen steht danach alles
   doppelt.
 - Turniermodus: lost geeignete Spiele aus, Strafe steigt je Runde
-- **Die Stapel sind groß** (Stand 16. Oktober): 225 Aussagen bei „Ich hab
-  noch nie" (drei Stufen à 75), 140 Karten bei „Wahrheit oder Pflicht",
-  125 Begriffe beim Spion, 100 Karten bei „Wer würde eher?", 100 verbotene
-  Wörter, 90 Kategorien, 80 Schätzfragen, 70 Begriffe je Kategorie bei „Wer
-  bin ich?" (die auch die Pantomime benutzt), 64 Bingo-Felder, 60 Themen bei
-  „Zwei Wahrheiten", 45 Regeln des Abends, 45 Strafkarten.
+- **Die Stapel sind groß, und wie groß steht im Code.** Die Zahlen hier
+  nachzusprechen hat zweimal nicht funktioniert – `DeckContentTests` hält
+  Mindestzahlen fest, und die Untertitel rechnen ihre Größe aus dem Stapel
+  selbst (`TruthOrDareDeck.count` und so weiter).
   Wo **nicht** nachgelegt werden kann, liegt es am Spiel und nicht am
   Fleiß: Ring of Fire hat dreizehn Ränge, Bussfahrer und Pferderennen ein
-  Skatblatt, Trink-Roulette acht Felder auf dem Rad. Mehr Karten wären dort
-  ein anderes Spiel.
+  Skatblatt, Trink-Roulette so viele Felder, wie das gewählte Rad hat.
+  Mehr Karten wären dort ein anderes Spiel.
 - Fünfundzwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
   Pflicht, Ich hab noch nie, Zeitstrahl. *Raten & reden* – Schocken, Mäxchen, Zwei
@@ -304,7 +318,10 @@ den nachgespielten Wurf-Log alter Partien.
   Die Zahl im Text und die Fälle in `PartyGame` müssen zusammenpassen –
   hier standen eine Zeit lang neunzehn, aufgezählt waren siebzehn.
 
-**Was man beim Weiterbauen wissen muss:**
+### Verträge, die man nicht brechen darf
+
+Das Folgende ist der eigentliche Zweck dieser Datei: Regeln, die man aus
+dem Code allein erst sieht, wenn man sie schon gebrochen hat.
 
 - **Partyspiele stehen im Katalog `PartyGame`, nicht im Hauptmenü.**
   Titel, Emoji, Untertitel, Farbe, Gruppe und Ziel-Ansicht liegen dort
@@ -350,7 +367,7 @@ den nachgespielten Wurf-Log alter Partien.
   rechnet aus, wer alle Deckel hat, die Bombe, wer draufsitzt, das Turnier,
   wer die Runde verloren hat – wer *gewonnen* hat, weiß keines von ihnen.
   Ein Pokal, der Siege zählt, hätte deshalb fast nichts zu zählen. Der Weg
-  dorthin ist **nicht**, in vierundzwanzig Ansichten einen Sieger zu
+  dorthin ist **nicht**, in jeder einzelnen Ansicht einen Sieger zu
   erfinden, sondern ihn dort anzutippen, wo der Abend ohnehin steht: Jede
   Zeile unter „Gespielt" öffnet `WinnerPickerView`. Spiele, die ihren
   Sieger selbst kennen (Beerpong, Zeitstrahl), melden ihn weiterhin von
@@ -382,8 +399,8 @@ den nachgespielten Wurf-Log alter Partien.
 
 - **Wer heute mitspielt, steht in `TableRoster`** – und kommt über
   `\.tablePlayers` in der SwiftUI-Umgebung bei den Spielen an, nicht als
-  Parameter an `PartyGame.destination`. Sonst müssten alle zwanzig Spiele
-  die Liste annehmen, auch die achtzehn, die sie nicht brauchen. Wichtig:
+  Parameter an `PartyGame.destination`. Sonst müsste jedes Spiel die Liste
+  annehmen, auch die große Mehrheit, die sie nicht braucht. Wichtig:
   **Leer ist ein gültiger Zustand** – wer keine Profile hat, spielt ohne
   Namen weiter. Beide Wege müssen im Spiel stehen, nicht nur der schöne.
   Nicht zu verwechseln mit `PlayerProfile.isActive`: Das heißt „gehört noch
@@ -548,8 +565,8 @@ den nachgespielten Wurf-Log alter Partien.
   jedes Mal ohne Trefferfläche (siehe Lessons Learned Nr. 12).
 
 - **Anleitung und Untertitel stehen im Katalog**, nicht im Spiel
-  (`PartyGame.howToPlay`). Im Spiel stünden sie in zwanzig verschiedenen
-  Formen, und ein neues Spiel hätte sie garantiert nicht.
+  (`PartyGame.howToPlay`). Im Spiel stünden sie in so vielen Formen, wie
+  es Spiele gibt, und ein neues hätte sie garantiert nicht.
 
 - **Extreme-Karten tragen Dauer und Strafe als eigene Felder**, nicht im
   Text. Die Dauer steht auf jeder Karte, auch wenn sie „Sofort" lautet; die
@@ -668,124 +685,82 @@ den nachgespielten Wurf-Log alter Partien.
   Einstellung stillschweigend – und genau so etwas fällt erst am Tisch auf.
 
 - **Der Riss in Ring of Fire ist Rechnerei, nicht Zufall** (`RingLayout`).
-  Zwei Konstanten machen das Spiel, beide durchgerechnet und per Test
-  gedeckelt: `overlapFactor` (2,4) sagt, wie viel breiter eine Karte ist als
-  der mittlere Abstand zur Nachbarin, `jitter` (0,6) streut die Abstände.
-  Ohne Streuung lägen alle Karten gleich dicht, und Ziehen wäre entweder nie
-  oder immer gefährlich; mit Streuung gibt es dichte Stellen und dünne – und
-  **man kann es sehen**. Nachgerechnet am 24. Oktober (zwanzigtausend
-  simulierte Runden): Solange der Ring ganz daliegt, reißt **jeder fünfte**
-  Zug (21,7 %); über eine ganze Runde sind es 7,2 % der Züge, also **3,8
-  Risse auf 52 Karten**, 2,3 auf 32 und 1,4 auf 20. Hier stand vorher
-  „jeder sechste" – die Größenordnung stimmte, die Zahl nicht.
-  Zwei Feinheiten, die beide einen Shot wert sind: Die Abstände werden auf
-  genau 360 Grad **normiert** (sonst klafft zwischen der letzten und der
-  ersten Karte eine Naht, die nie jemand gezogen hat), und für **dieselbe**
-  Lücke zahlt niemand zweimal – berührte die gezogene Karte ihre Nachbarin
-  schon vorher nicht, war der Ring dort offen, und das hat jemand anderes
-  bezahlt. Die **Kartenbreite folgt dem Layout**, nicht
-  umgekehrt: Was man an Überlappung sieht, ist genau das, womit gerechnet
-  wird. Wer die Breite frei wählt, baut ein Bild, das lügt.
+  Das ist die Regel, die dem Spiel den Namen gibt, und sie hat drei
+  Anläufe gebraucht – was dabei schiefging, steht in `git log`. Was gilt:
 
-  **Die Lücke muss eine Lücke sein** (23. Oktober). Der freie Platz einer
-  gezogenen Karte stand als gestrichelter Umriss weiter da – ein Erbe aus
-  der Zeit, als die Karten in gleichen Abständen mit Luft dazwischen lagen.
-  Im geschuppten Ring hat er die Regel unsichtbar gemacht: Gerissen ist der
-  Ring, wenn die beiden **Nachbarn** sich nicht mehr berühren, aber mit
-  einem Platzhalter an der Stelle der gezogenen Karte sieht jeder Zug
-  gleich aus. Am Tisch kam deshalb mal eine Strafe und mal nicht, ohne
-  erkennbaren Unterschied – es wirkte wie Willkür. Wie viel noch liegt,
-  steht ohnehin in der Mitte.
+  **Gerissen ist der Ring, wenn von oben kein durchgehender Kreis mehr da
+  ist.** Gerechnet wird mit den nächsten noch **liegenden** Nachbarn, nicht
+  mit den Nachbarplätzen: Liegt links schon ein Loch und man zieht die
+  Karte daneben, liegen danach zwei Kartenbreiten frei – und das ist ein
+  Riss, auch wenn der Nachbarplatz leer war. Für **dieselbe** Lücke zahlt
+  aber niemand zweimal, deshalb die Gegenprobe vor dem Zug: Berührte die
+  gezogene Karte ihre beiden Nachbarn überhaupt noch? Wenn nicht, war dort
+  schon offen.
 
-  **Vier von jedem Rang, und zwar die höchsten** (23./24. Oktober):
-  `PlayingCardDeck.highestRanks(count:)` – vorher wurde der gemischte
-  Stapel abgeschnitten, und bei zwanzig Karten lagen dann drei Buben und
-  ein König im Ring. Regeln, die vom Zählen leben, gehen daran kaputt: ein
-  Daumenmeister, den es nur einmal gibt, ist keine Rolle, sondern ein
-  Zufall. Jetzt kommen ganze **Ränge von oben**: kurz die fünf höchsten
-  (Zehn bis Ass), mittel die acht höchsten (Sieben bis Ass), lang alle.
-  Unten im Blatt stehen die Karten, die nur eine Menge ansagen; oben die,
-  die etwas mit dem Tisch machen – eine kurze Runde soll die dichte sein,
-  nicht die zahme, und sie ist dadurch planbar.
+  **Drei Risse kostet eine Runde, dann ist die Regel durch.** Nach den
+  ersten beiden wird eingesammelt und neu gelegt (`relayout()`); danach
+  bleibt der Ring liegen, wie er liegt, und die Lücken sind nur noch
+  Spielstand. Der Deckel ist nötig, weil jede Lücke die nächste
+  wahrscheinlicher macht – ohne ihn wäre der Riss eine Steuer, die den
+  ganzen Abend mitläuft.
 
-  **Drei Risse, dann ist die Regel durch** (24. Oktober). Der Riss kostete
-  bis dahin unbegrenzt oft einen Shot – und genau das ist zu viel: Solange
-  der Ring ganz daliegt, reißt **jeder fünfte** Zug, auf 52 Karten sind es
-  knapp vier. Wer das den ganzen Abend zahlt, spielt nicht mehr mit. Jetzt
-  hat die Runde drei Shots; nach den ersten beiden wird **eingesammelt und
-  neu gelegt** (`relayout()`), nach dem dritten bleibt der Ring liegen, wie
-  er liegt, und die Lücken sind nur noch Spielstand. Drei Feinheiten, die
-  alle einen Fehler verhindern: Neu gelegt wird erst, wenn der
-  Aktionsscreen **zu** ist – sonst läge der Ring schon anders, während man
-  noch die Karte liest, und niemand hätte gesehen, wo es gerissen hat.
-  Dabei wird auch **gemischt**, denn sonst wäre nur der Abstand neu und wer
-  die Reihenfolge gemerkt hat, wüßte weiter, was kommt. Und der Shot geht
-  an die Person, die **vor** dem Hochzählen dran war (`let zieher = turn`)
-  – danach ist `turn` schon der Nächste. Ist die Regel aufgebraucht, wird
-  `tearsRing` gar nicht mehr gefragt: Was nichts kostet, soll auch nicht
-  blitzen.
+  **Zwei Konstanten machen das Spiel**, beide durchgerechnet und per Test
+  gedeckelt: `overlapFactor` (2,4) sagt, wie viel breiter eine Karte ist
+  als der mittlere Abstand zur Nachbarin, `jitter` (0,6) streut die
+  Abstände. Ohne Streuung lägen alle Karten gleich dicht, und Ziehen wäre
+  entweder nie oder immer gefährlich; mit Streuung gibt es dichte Stellen
+  und dünne – und **man kann es sehen**. Die Größenordnung hält
+  `RingLayoutTests` fest: Auf frisch gelegtem Ring reißt jeder fünfte Zug,
+  die drei Shots sind nach rund zehn Zügen vergeben. Wenn das am Tisch zu
+  früh vorbei ist, gehört der Deckel an die Kartenzahl gekoppelt.
 
-  **Gerissen wird an den liegenden Nachbarn gemessen, nicht an den
-  Nachbarplätzen** (25. Oktober). Das war der Fehler, den der Nutzer zweimal
-  am Tisch gesehen hat. `tearsRing` schaute auf `position ± 1` und gab
-  `false` zurück, sobald einer dieser Plätze leer war – „neben einer Lücke
-  reißt nichts". Am Tisch ist das Gegenteil richtig: Liegt links ein Loch,
-  dessen Nachbarn sich noch berührten, und man zieht die Karte daneben,
-  liegen danach **zwei Kartenbreiten** frei, und von oben ist der Kreis
-  durch. Weil irgendwann fast jeder Zug neben einem Loch liegt, blieb die
-  Regel nach den ersten Karten praktisch aus – und genau so sah es aus:
-  mal ein Shot, mal keiner, ohne erkennbaren Unterschied. Jetzt sucht die
-  Rechnung die nächste noch **liegende** Karte in beide Richtungen. Die
-  Gegenprobe gegen das doppelte Zahlen steht davor, nicht in der
-  Nachbarschaft: Berührte die gezogene Karte ihre beiden Nachbarn vorher
-  überhaupt noch? Wenn nicht, war dort schon offen.
-  Das ändert die Zahlen: Auf einem frisch ausgelegten Ring reißt weiter
-  **jeder fünfte** Zug (20,8 % bei zwanzig Karten, 21,6 % bei
-  zweiundfünfzig), aber jede Lücke macht die nächste wahrscheinlicher –
-  die **drei Shots sind nach rund zehn Zügen** vergeben (Median 10, in neun
-  von zehn Runden zwischen 6 und 16). Bei zwanzig Karten ist das etwa die
-  halbe Runde, bei zweiundfünfzig ein Fünftel. Wenn das am Tisch zu früh
-  vorbei ist, gehört der Deckel an die Kartenzahl gekoppelt und nicht auf
-  drei festgenagelt.
-  Mit dieser Änderung ist `isClosed(present:)` **weg**: Die Funktion hat
-  nie jemand aufgerufen, und sie trug dieselbe Rechnung in einer zweiten,
-  jetzt falschen Fassung. Zwei Wahrheiten zu einer Frage sind eine zu viel.
+  Vier Feinheiten, die beim Anfassen alle einen Shot wert sind:
+  - Die Abstände werden auf genau **360 Grad normiert**, sonst klafft
+    zwischen der letzten und der ersten Karte eine Naht, die nie jemand
+    gezogen hat.
+  - Die **Kartenbreite folgt dem Layout**, nicht umgekehrt. Was man an
+    Überlappung sieht, ist genau das, womit gerechnet wird – wer die
+    Breite frei wählt, baut ein Bild, das lügt.
+  - Der freie Platz einer gezogenen Karte ist **unsichtbar**. Als
+    gestrichelter Umriss hat er die Regel unsichtbar gemacht: Mit einem
+    Platzhalter an der Stelle sieht jeder Zug gleich aus, und am Tisch kam
+    mal eine Strafe und mal nicht, ohne erkennbaren Unterschied.
+  - Neu gelegt wird erst, wenn der **Aktionsscreen zu ist**, und dabei
+    wird **gemischt**. Sonst läge der Ring schon anders, während man noch
+    die Karte liest – und wer die Reihenfolge gemerkt hat, wüsste weiter,
+    was kommt.
 
-  **Das Rad tickt von der ersten Sekunde** (25. Oktober). Die Auslosung
-  ticke nur im Auslaufen – die ersten rund zwanzig Schritte liefen mit
-  12 Millisekunden Abstand und ohne Klang. Am Tisch heißt das: Man drückt,
-  es dreht sich, und man hört nichts. Jetzt kommt beim Druck sofort ein
-  Kartenklang, und die schnelle Phase tickt auf jedem **vierten** Schritt;
-  auf jedem wäre es bei 12 Millisekunden ein Rauschen.
-
-  **Nur die Drei und das Ass werden gebucht** (25. Oktober). Ring of Fire
-  schrieb bis dahin ausschließlich den Riss in die Trinkbilanz – das Ass
-  („einen Shot") und die Drei („3 Schlücke") landeten nirgends, obwohl sie
-  eindeutig den treffen, der gezogen hat. Jetzt tragen genau diese zwei
-  Karten ihre Menge als `drawerDrinks` im Katalog, und `draw` bucht sie.
-  Die Grenze ist nicht Bequemlichkeit, sondern Pflicht: Zwei, Fünf, Sechs,
-  Sieben, Neun und König treffen **andere**, eine Gruppe oder den
-  Verlierer einer Runde – und wen, weiß nur der Tisch. Eine geratene
-  Buchung wäre schlimmer als keine, weil sie in der Bilanz aussieht wie
-  eine bestätigte. Vier Tests halten die Liste fest, einer davon: Die
-  gebuchte Menge muss die sein, die auch auf der Karte steht – sonst
-  trinkt der Tisch das eine und die Bilanz zählt das andere. Ein Ass, das
-  den Ring reißt, kostet **zwei** Shots; das wird nicht verrechnet.
-
-  **Die Merkliste sagt, WER die Rolle hat** (25. Oktober). Dort standen
-  drei Zähler, und die Liste sagte „Daumenmeister ×2" – am echten Tisch
-  liegt die Karte aber sichtbar vor der Person, und genau das ist ihr Sinn.
-  Die App weiß es ohnehin: Wer gezogen hat, rechnet `PlayerNames`.
-  Gespeichert wird der **Name** und nicht der Zählerstand des Zuges –
-  kommt jemand dazu, verschiebt `position(forTurn:)` sich, und die Rolle
-  säße plötzlich bei jemand anderem. Die Zeile selbst rechnet
-  `RingOfFireRoleBoard.label(for:holders:)`, reine Zeichenarbeit neben der
-  Ansicht und deshalb geprüft. Entscheidend ist der Fall, in dem nur die
-  Hälfte feststeht: Dann gibt es **keine halbe Zeile**, sondern wieder die
-  Zahl. „Lena, Spieler 2" liest sich wie eine Auskunft und ist eine halbe –
-  dieselbe Entscheidung wie in `TurnRow`. Die Zehn trägt ihren Urheber mit
-  („von Lena"), gemerkt beim **Ziehen**: Gefragt wird erst, wenn der
-  Aktionsscreen zu ist, und bis dahin ist `turn` schon weiter.
+- **Ring of Fire: was die App weiß und was sie bucht.**
+  - **Von jedem Rang liegen alle vier Karten im Ring**, und zwar von oben:
+    `PlayingCardDeck.highestRanks(count:)` – kurz die fünf höchsten Ränge,
+    mittel die acht, lang alle. Vorher wurde der gemischte Stapel
+    abgeschnitten, und bei zwanzig Karten lagen dann drei Buben und ein
+    König im Ring. Regeln, die vom Zählen leben, gehen daran kaputt: Ein
+    Daumenmeister, den es nur einmal gibt, ist keine Rolle, sondern ein
+    Zufall. Unten im Blatt stehen die Karten, die nur eine Menge ansagen;
+    oben die, die etwas mit dem Tisch machen – eine kurze Runde soll die
+    dichte sein, nicht die zahme.
+  - **Gebucht werden nur die Drei und das Ass** (`drawerDrinks` im
+    Katalog). Beide sagen dem Zieher selbst eine Menge an. Alles andere
+    trifft andere, eine Gruppe oder den Verlierer einer Runde – und wen,
+    weiß nur der Tisch. Eine geratene Buchung wäre schlimmer als keine,
+    weil sie in der Bilanz aussieht wie eine bestätigte. Ein Ass, das den
+    Ring reißt, kostet **zwei** Shots; das wird nicht verrechnet. Der Shot
+    geht an die Person, die **vor** dem Hochzählen dran war – danach ist
+    `turn` schon der Nächste.
+  - **Die Merkliste sagt, WER die Rolle hat.** Gespeichert wird der Name
+    und nicht der Zählerstand: Kommt jemand dazu, verschiebt
+    `position(forTurn:)` sich, und die Rolle säße plötzlich bei jemand
+    anderem. Die Zeile rechnet `RingOfFireRoleBoard.label(for:holders:)`,
+    reine Zeichenarbeit neben der Ansicht und deshalb geprüft. Steht nur
+    die Hälfte fest, gibt es **keine halbe Zeile**, sondern wieder die
+    Zahl – „Lena, Spieler 2" liest sich wie eine Auskunft und ist eine
+    halbe.
+  - **Das Rad tickt von der ersten Sekunde.** Die Auslosung tickte nur im
+    Auslaufen; man drückte, es drehte sich, und man hörte nichts. Jetzt
+    kommt beim Druck sofort ein Klang, und die schnelle Phase tickt auf
+    jedem vierten Schritt – auf jedem wäre es bei 12 Millisekunden ein
+    Rauschen.
 
 - **Die Härte gehört zum Spiel, nicht zum Gerät.** Sie stand bis Oktober
   2026 einmal über den Partyspielen und galt für alle. Am Tisch ist sie
@@ -803,8 +778,9 @@ den nachgespielten Wurf-Log alter Partien.
     Extreme nach einer harten Runde Schocken auch hart, und nichts auf dem
     Bildschirm sagt, warum.
   - **Wo** gewählt wird, steht im Katalog (`PartyGame.intensityStep`):
-    sieben Spiele fragen vorher ohnehin etwas und haben die Härte in
-    demselben Vorspann, dreizehn bekommen einen eigenen (`IntensityGate`).
+    Spiele, die vorher ohnehin etwas fragen, haben die Härte in demselben
+    Vorspann; alle anderen bekommen einen eigenen (`IntensityGate`). Wie
+    viele es gerade sind, sagt der `switch` und nicht dieser Satz.
     **Jedes** Partyspiel nennt inzwischen eine Menge und hat damit eine
     Härte – Bombe, Reaktionsduell und „Wer würde eher?" sagten bis zum
     13. Oktober bloßes „du trinkst", und was die Runde dann aushandelte,
@@ -814,26 +790,23 @@ den nachgespielten Wurf-Log alter Partien.
     eingeordnet – wer es vergisst, hat ein Spiel ohne Härte-Wahl, und ein
     Test hält das fest.
 
-**Bewusst dormant:** Das Freundesystem (`Features/Friends/`) und
-`LobbyView` sind gebaut, aber nicht verlinkt. Sie sind der Weg für später,
-wenn die App auf mehreren Geräten läuft. Nicht löschen.
+### Bewusst dormant
 
-**Offen / denkbar:** nichts mit konkretem Anlass. Denkbar bleiben Cloud
-Functions – die bräuchten Blaze.
+Das Freundesystem (`Features/Friends/`) und `LobbyView` sind gebaut, aber
+nicht verlinkt. Sie sind der Weg für später, wenn die App auf mehreren
+Geräten läuft. **Nicht löschen.**
 
-**`LiveGameViewModel` ist geteilt** (18. Oktober). Es stand hier als
-wichtigster offener Punkt: 899 Zeilen, zwölf `@Published`, und vier der
-acht Funde aus der Cloud-Prüfung vom 15. August lagen dort, alle mit
-derselben Ursache – derselbe Zustand an zwei Stellen gehalten. Geschnitten
-ist entlang der Frage, was man zum Prüfen braucht; was dabei herauskam,
-steht unten bei „Was man beim Weiterbauen wissen muss". Geblieben sind 662
-Zeilen Klammer.
+### Offen und denkbar
 
-**Die Live Activity steht hier nicht mehr – sie ist gebaut.** Sie stand
-monatelang als Idee in dieser Liste, obwohl `LiveGameActivity` samt Start,
-Aktualisieren und Beenden im `LiveGameViewModel` liegt und `LiveGameView`
-sie beim Erscheinen startet. Eine Liste offener Punkte, die Fertiges
-enthält, kostet beim nächsten Mal genau die Zeit, die sie sparen soll.
+Nichts mit konkretem Anlass. Denkbar bleiben Cloud Functions – die
+bräuchten Blaze, und den gibt es nicht.
+
+**Was hier NICHT mehr steht**, weil es gebaut ist: die Live Activity
+(`LiveGameActivity`, gestartet von `LiveGameView`) und die Aufteilung des
+`LiveGameViewModel`. Beide standen monatelang als offene Punkte da, obwohl
+sie fertig waren – und eine Liste offener Punkte, die Fertiges enthält,
+kostet beim nächsten Mal genau die Zeit, die sie sparen soll. Dieselbe
+Regel gilt für Abschnitt 9.
 
 ---
 
@@ -959,114 +932,51 @@ enthält, kostet beim nächsten Mal genau die Zeit, die sie sparen soll.
 Vom 15. August bis Ende September 2026 wurde **ohne Testgerät** gearbeitet:
 gebaut wurde nur, was die Cloud-Kette allein bestätigen kann – reine Logik,
 Auswertungen, Tests, Oberfläche über vorhandenen Daten. „Grün" hieß in
-dieser Zeit ausschließlich „übersetzt sich, Tests laufen durch".
+dieser Zeit ausschließlich „übersetzt sich, Tests laufen durch". Seit Ende
+Oktober spielt der Nutzer wieder auf dem Gerät; die Funde von dort stehen
+in `git log`.
 
-Alles hier ist deshalb **nie auf Hardware gelaufen**. Abgearbeitete Punkte
-bitte streichen – die Liste nützt nur, solange sie stimmt.
+**Diese Liste ist deshalb keine Liste von Fehlern, sondern von
+Behauptungen** – alles hier ist gerechnet, gelesen oder gedacht, aber nicht
+beobachtet. Zwei Regeln dazu, beide schon schmerzhaft gelernt:
 
-- **Hausregeln**: Eine Partie mit abgeschalteter Redemption zu Ende spielen –
-  der letzte Becher muss direkt in den Sieger-Screen führen, ohne Nachwurf.
-  Das Regelwerk selbst deckt `HouseRulesTests` ab, den Weg dorthin nicht:
-  dass der Schalter das Spiel erreicht, dass die Einstellung den App-Start
-  überlebt, und dass die Abweichungs-Zeile mit sieben Einträgen nicht
-  auseinanderfällt.
-- **Alles vom 29. September**: Aufstellung („am Tisch"), Vorbereitung bei
-  Ring of Fire samt ausgeloster Karte, Setzen beim Pferderennen, Dauer und
-  Strafe auf den Extreme-Karten, die Frage nach der offenen Partie, der neue
-  Hintergrund. Nichts davon lief je auf Hardware. Besonders zu prüfen: die
-  Auslosung bei Ring of Fire dauert etwa drei Sekunden – das ist geschätzt,
-  nicht gemessen.
-- **Alles vom 6. bis 8. Oktober**: Ring of Fire in zwei Screens, die vier
-  Ordner, der Einstellungs-Screen, die vier Farbschemata (Minze, Beere und
-  Eis sind gerechnet, nicht gesehen – besonders die Statusfarben auf dem
-  neuen Grund), „Nochmal dieselben", frühere Abende samt Teilen, die
-  Sicherungs-Erinnerung, die Anleitungen. Und einmal mit großer Schrift
-  durch die App: 105 Größen folgen jetzt der Systemeinstellung.
-- **Nachreichen**: Flugmodus an, ein paar Würfe tippen, Netz an, „Nachreichen"
-  drücken – und danach die Partie fortsetzen und prüfen, ob der Stand
-  stimmt. Das ist der einzige Weg, an dem Daten verloren gehen können.
-- **Team-Chemie (2. Oktober)**: Stimmen bester Partner und schlimmster
-  Gegner mit dem überein, was ihr am Tisch sagen würdet? Die Rechnung ist
-  per Test abgedeckt, die Datenlage nicht – bei wenigen Partien kann ein
-  Name oben stehen, der sich falsch anfühlt.
-- **Alles vom 1. Oktober**: Endstand im Spielverlauf (alte Partien müssen
-  einen Strich zeigen, neue ein echtes Ergebnis), die Trefferquote nach
-  Tageszeit, und ob die Partyspiele die richtigen Namen sagen – besonders
-  mit laufendem Abend, wo seine Teilnehmer gelten und nicht der Tisch.
-- **Beerpong Extreme** insgesamt: Blitzt die Karte auf? Beim richtigen Team?
-  Die Zuordnung `.hit` → Gegner und `.cupChosen` → wählendes Team ist
-  durchdacht, nicht beobachtet.
-- **Letzter Becher geladen:** Karte und Sieger-Screen treffen gleichzeitig
-  aufeinander. Ungetestet, wahrscheinlichster Ärger.
-- **Abend, Trinkbilanz, Namen** in den Partyspielen – besonders, ob Position
-  3 im Spiel und Position 3 in der Teilnehmerliste dieselbe Person meinen.
+- **Abgearbeitete Punkte streichen.** Eine Liste, in der die Hälfte erledigt
+  ist, liest beim nächsten Mal niemand mehr – und kostet damit genau die
+  Zeit, die sie sparen soll.
+- **Nicht annehmen, dass etwas läuft, weil es drinsteht.** Wenn unklar ist,
+  ob ein Punkt erledigt ist: den Nutzer fragen, nicht raten.
+
+Geordnet ist nach **Folgen**, nicht nach Datum: Was Daten kostet, steht
+oben; was schief aussieht, unten.
+
+### Hier können Daten verloren gehen – zuerst
+
+- **Nachreichen, auch nach einer Revanche**: Flugmodus an, ein paar Würfe
+  tippen, Netz an, „Nachreichen" drücken – danach die Partie fortsetzen und
+  prüfen, ob der Stand stimmt. Das ist der einzige Weg, an dem Daten
+  verloren gehen. Und dann derselbe Weg über eine Revanche hinweg: Würfe
+  tippen, Partie zu Ende spielen, Revanche starten, erst dann nachreichen.
+  Die Würfe müssen in der **alten** Partie landen, der Spielverlauf der
+  Revanche darf sie nicht zeigen – genau das lief vorher falsch.
 - **Datensicherung** samt Teilen-Blatt – und vor allem das
   **Wiederherstellen**, weil es als einziges schreibt. Beim ersten Versuch
   „Nur Profile und Werte" auf einem frischen Konto, nicht „Alles" auf dem
   echten.
-- **„Kennst du deine Leute?" (8. Oktober)**: Stehen überhaupt Fragen da,
-  oder sagt das Spiel „noch zu wenig gespielt"? Die beiden Grenzen sind
-  getestet, die Datenlage nicht – mit wenigen Partien kann es gut sein, dass
-  nur zwei oder drei Fragen übrig bleiben. Und: Landet die Strafe beim
-  Richtigen, wenn ein Abend läuft?
-- **Hauptmenü vom 13. Oktober**: Die Ordner sind größer, und die Zahl steht
-  jetzt als „5 Spiele" in der Unterzeile statt fett und farbig am rechten
-  Rand – dort sah sie aus wie eine ungelesene Nachricht. „Zuletzt gespielt"
-  ist weg. Passt das Ganze noch, auch mit großer Schrift?
-- **Drei Spiele sagen jetzt eine Menge** (13. Oktober) und haben deshalb
-  eine Härte: „Wer würde eher?" („Die meisten Finger: 3 Schlücke"), Bombe
-  (4 Schlücke für den, der drauf sitzen bleibt) und Reaktionsduell
-  (2 Schlücke für den Verlierer, 4 für den Früh-Tipp – vorschnell tippen
-  ist ein Schummelversuch und soll mehr kosten als langsam sein). Die
-  Zahlen sind gesetzt, nicht erprobt: Fühlen sie sich am Tisch richtig an?
-- **Härte je Spiel (13. Oktober)**: In Schocken, Mäxchen, Spion, Verbotene
-  Wörter, Wer bin ich?, Ich hab noch nie und Ring of Fire steht sie im
-  Vorspann, den es schon gab – passt das Layout noch, auch mit großer
-  Schrift? Die anderen zehn haben jetzt einen eigenen Vorspann davor; der
-  ist neu und nie gelaufen. Und der eigentliche Test: In einem Spiel hart
-  einstellen, zurück, Beerpong starten – die Extreme-Karten müssen wieder
-  in der Vorgabe dastehen.
-- **Ergebnis als Bild (18. Oktober)**: Im Sieger-Screen und im
-  Abend-Rückblick. Sieht das Bild in einer Chat-Vorschau gut aus, und
-  stimmen die Zahlen darauf mit dem Screen überein? Beides nie auf Hardware
-  gelaufen – auf dem Simulator gibt es kein Teilen-Blatt, das etwas
-  verschickt.
-- **„Wer ist dran?" (18. Oktober)**: In Ring of Fire, Ich hab noch nie,
-  Wahrheit oder Pflicht, Zwei Wahrheiten, Kategorien und Bussfahrer. Zeigt
-  die Zeile die richtige Person, und läuft sie im selben Takt wie der Kreis
-  am Tisch? Ohne Abend und ohne Aufstellung muss sie **ganz weg** sein.
-- **Beerpong mit Namen (18. Oktober)**: Die Einblendungen sagen jetzt
-  „Lena & Jan werfen nochmal". Zu prüfen, ob in der schmalen Team-Leiste
-  und auf dem Sperrbildschirm nichts abgeschnitten wird – da steht die
-  Kurzform.
-- **Bussfahrer vom 17. Oktober**: Die Busfahrt ist neu und nie gelaufen.
-  Fünf Karten, jede Bildkarte zurück an den Anfang – gerechnet kommt der
-  Bussfahrer in etwa jedem sechsten Versuch durch. Fühlt sich das am Tisch
-  richtig an oder sitzt er zu lange? Und füllt der Screen jetzt?
-- **Mehr Platz in sechs Spielen** (17. Oktober): Die Karten wachsen in den
-  freien Raum. Zu prüfen, ob irgendwo das Gegenteil passiert – eine Karte,
-  die mit kurzem Text riesig und leer dasteht.
-- **Ring of Fire vom 17. Oktober**: Das Wichtigste zuerst – liegen die
-  Karten erkennbar geschuppt, und sieht man die dünnen Stellen? Dann: reißt
-  der Ring ungefähr so oft, dass es Spannung macht statt Ärger (gerechnet:
-  jeder fünfte Zug auf frisch gelegtem Ring, drei Shots nach rund zehn
-  Zügen)? Blitz, Ruck und Knall beim Riss sind
-  nie auf Hardware gelaufen. Und bei **zwanzig** Karten wird der Kranz dicht
-  und das Loch in der Mitte klein – dort steht dann nur die Zahl, ohne
-  Flasche und ohne „übrig". Passt das?
-- **Ring of Fire vom 24. Oktober**: Die dreizehn Bewegungen hinter der
-  Karte – stören sie beim Lesen, oder erkennt man die Karte damit schon
-  von der anderen Tischseite? Besonders bei großer Schrift, wo der Text
-  mehr Platz braucht. Dazu: Eine kurze Runde besteht jetzt aus Zehn bis
-  Ass, also fast nur Rollenkarten – vier Daumenmeister, vier Question
-  Queens, vier Hausregeln. Ist das dicht oder zu viel auf einmal?
-- **Drei Risse in Ring of Fire (24. Oktober)**: Der wichtigste Punkt –
-  fühlen sich drei Shots pro Runde richtig an, oder sind sie schon nach
-  fünf Minuten weg? Zu prüfen: Landet der Shot bei der Person, die gezogen
-  hat (nicht bei der nächsten), liegt der Ring nach dem „Verstanden"
-  sichtbar **neu**, zählt die Kapsel richtig mit, und bleiben nach dem
-  dritten Riss die Lücken wirklich ohne Folge – also kein Blitz, kein
-  Knall, kein Banner mehr?
+- **Ohne Netz:** Flugmodus, App killen, ganze Partie spielen, Netz an. Der
+  Firestore-Cache ist nirgends im Code konfiguriert – auf iOS ist er
+  standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.
+### Was zuletzt gebaut wurde und nie lief
+
+- **Der Riss zählt jetzt die liegenden Nachbarn.** Zu prüfen ist genau der
+  Fall, der vorher schwieg: eine Karte ziehen, die **neben einer schon
+  offenen Stelle** liegt – das muss reißen, und man muss die zwei
+  Kartenbreiten sehen. Umgekehrt darf dieselbe Stelle nicht zweimal zahlen.
+  Dazu die Folge aus der Rechnung: Die drei Shots sind nach rund zehn Zügen
+  weg – fühlt sich das richtig an, oder soll der Deckel mit der Kartenzahl
+  wachsen (etwa einer je sieben Karten: 3 / 5 / 7)? Und: Landet der Shot
+  bei der Person, die gezogen hat (nicht bei der nächsten), liegt der Ring
+  nach dem „Verstanden" sichtbar **neu**, und bleibt nach dem dritten Riss
+  wirklich alles still – kein Blitz, kein Knall, kein Banner?
 - **Ring of Fire bucht mit (25. Oktober)**: Einen Abend starten, Ring of
   Fire spielen, bis ein Ass und eine Drei gezogen sind – stehen beide
   danach in der Trinkbilanz der richtigen Person? Und steht dort **nichts**
@@ -1074,14 +984,6 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   nicht raten)? Dazu die Merkliste: Sagt sie „Daumenmeister · Lena" statt
   „×1", steht bei der Zehn „von Lena" unter der Regel, und ist die Zeile
   ohne Abend und ohne Aufstellung wieder nur die Rolle?
-- **Der Riss, dritter Versuch (25. Oktober)**: Jetzt zählen die liegenden
-  Nachbarn, nicht die Nachbarplätze. Zu prüfen ist genau der Fall, der
-  vorher schwieg: eine Karte ziehen, die **neben einer schon offenen
-  Stelle** liegt – das muss reißen, und man muss die zwei Kartenbreiten
-  sehen. Und umgekehrt: dieselbe Stelle darf nicht zweimal zahlen. Dazu die
-  Folge aus der Rechnung: Die drei Shots sind nach rund zehn Zügen weg –
-  fühlt sich das richtig an, oder soll der Deckel mit der Kartenzahl
-  wachsen (etwa einer je sieben Karten: 3 / 5 / 7)?
 - **Das Rad tickt sofort (25. Oktober)**: Beim Druck auf „Karte ziehen"
   muss sofort etwas zu hören sein, und das Ticken in der schnellen Phase
   darf kein Rauschen sein.
@@ -1108,25 +1010,57 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   **„Bewegung reduzieren"** an durch Ring of Fire, Sieger-Screen und
   Roulette: Es muss still, aber nicht leer sein. Und der Blitz beim Riss
   muss bei **jedem** Riss kommen, nicht nur beim ersten.
+### Ring of Fire sonst
+
+- **Der Ring selbst**: Liegen die Karten erkennbar geschuppt, und sieht man
+  die dünnen Stellen? Bei **zwanzig** Karten wird der Kranz dicht und das
+  Loch in der Mitte klein – dort steht dann nur die Zahl, ohne Flasche und
+  ohne „übrig". Passt das? Dazu die Auslosung: Sie dauert etwa drei
+  Sekunden, geschätzt und nicht gemessen.
+- **Eine kurze Runde ist fast nur Rollenkarten** – Zehn bis Ass, also vier
+  Daumenmeister, vier Question Queens, vier Hausregeln. Ist das dicht oder
+  zu viel auf einmal? Und mit vier Assen plus drei Riss-Shots sind das
+  sieben Shots auf zwanzig Züge: zu heiß?
 - **Schwarze Karten**: Pik und Kreuz waren weiß und damit unsichtbar. Einmal
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.
-- **„Regel des Abends" (18. Oktober)**: Zieht sie eine Regel, die wirklich
-  auffällt, oder eine, die den Abend lahmlegt? Besonders zu prüfen, dass die
-  Regeln **das Verlassen des Screens überleben** – ziehen, Ring of Fire
-  spielen, zurückgehen: Es müssen noch dieselben dastehen. Und ob fünf
-  gleichzeitig noch spielbar sind oder ob die Warnung früher kommen muss.
-- **Pantomime (18. Oktober)**: Reichen 90 Sekunden, oder ist die Runde
-  vorher durch? Die Begriffe sind die von „Wer bin ich?" – taugen sie zum
-  Vorspielen, oder sind gerade „Film & Serie" dafür zu schwer? Und ob die
-  beiden großen Flächen zu treffen sind, während man gleichzeitig spielt.
-- **Sechs Kacheln im Hauptmenü** (17. Oktober): Beerpong oben links, Turnier
-  unten rechts. Passt das Raster auf dem Gerät, auch mit großer Schrift?
-- **Nachreichen nach einer Revanche** (18. Oktober): Der Weg, der vorher
-  falsch lief. Flugmodus an, ein paar Würfe tippen, Partie zu Ende spielen,
-  Revanche starten, Netz an, „Nachreichen" drücken – die Würfe müssen in der
-  **alten** Partie landen, der Spielverlauf der Revanche darf sie nicht
-  zeigen.
+### Beerpong
+- **Hausregeln**: Eine Partie mit abgeschalteter Redemption zu Ende spielen –
+  der letzte Becher muss direkt in den Sieger-Screen führen, ohne Nachwurf.
+  Das Regelwerk selbst deckt `HouseRulesTests` ab, den Weg dorthin nicht:
+  dass der Schalter das Spiel erreicht, dass die Einstellung den App-Start
+  überlebt, und dass die Abweichungs-Zeile mit sieben Einträgen nicht
+  auseinanderfällt.
+- **Beerpong Extreme** insgesamt: Blitzt die Karte auf? Beim richtigen Team?
+  Die Zuordnung `.hit` → Gegner und `.cupChosen` → wählendes Team ist
+  durchdacht, nicht beobachtet.
+- **Letzter Becher geladen:** Karte und Sieger-Screen treffen gleichzeitig
+  aufeinander. Ungetestet, wahrscheinlichster Ärger.
+- **Beerpong mit Namen (18. Oktober)**: Die Einblendungen sagen jetzt
+  „Lena & Jan werfen nochmal". Zu prüfen, ob in der schmalen Team-Leiste
+  und auf dem Sperrbildschirm nichts abgeschnitten wird – da steht die
+  Kurzform.
+- **Ergebnis als Bild (18. Oktober)**: Im Sieger-Screen und im
+  Abend-Rückblick. Sieht das Bild in einer Chat-Vorschau gut aus, und
+  stimmen die Zahlen darauf mit dem Screen überein? Beides nie auf Hardware
+  gelaufen – auf dem Simulator gibt es kein Teilen-Blatt, das etwas
+  verschickt.
+- **Alles vom 1. Oktober**: Endstand im Spielverlauf (alte Partien müssen
+  einen Strich zeigen, neue ein echtes Ergebnis), die Trefferquote nach
+  Tageszeit, und ob die Partyspiele die richtigen Namen sagen – besonders
+  mit laufendem Abend, wo seine Teilnehmer gelten und nicht der Tisch.
+- **Team-Chemie (2. Oktober)**: Stimmen bester Partner und schlimmster
+  Gegner mit dem überein, was ihr am Tisch sagen würdet? Die Rechnung ist
+  per Test abgedeckt, die Datenlage nicht – bei wenigen Partien kann ein
+  Name oben stehen, der sich falsch anfühlt.
+- **Abend, Trinkbilanz, Namen** in den Partyspielen – besonders, ob Position
+  3 im Spiel und Position 3 in der Teilnehmerliste dieselbe Person meinen.
+- **„Kennst du deine Leute?" (8. Oktober)**: Stehen überhaupt Fragen da,
+  oder sagt das Spiel „noch zu wenig gespielt"? Die beiden Grenzen sind
+  getestet, die Datenlage nicht – mit wenigen Partien kann es gut sein, dass
+  nur zwei oder drei Fragen übrig bleiben. Und: Landet die Strafe beim
+  Richtigen, wenn ein Abend läuft?
+### Partyspiele: Inhalt, Mengen, Gefühl
 - **Zeitstrahl (22. Oktober)**: Das Wichtigste – stimmen die Jahreszahlen?
   Beim ersten Durchgang auf Lieder achten, bei denen die Runde widerspricht,
   und sie mir nennen. Dann: Reicht die Übergabe ans Handy, oder sieht der
@@ -1138,9 +1072,6 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   das am Tisch tatsächlich jemand macht – wenn es vergessen wird, bleibt
   der Pokal leer, und dann gehört er näher ans Spielende statt in den
   Abend.
-- **Blätter verteilen (22. Oktober)**: Kommen die Bilder in WhatsApp
-  lesbar an, oder sind sechzehn Felder auf einem Handybild zu klein? Und
-  geht AirDrop an mehrere gleichzeitig?
 - **Die Herde (22. Oktober)**: Treffen die Fragen die Mitte zwischen „zu
   offen" (zehn Antworten, keine Mehrheit) und „zu geschlossen" (alle sagen
   dasselbe, niemand trinkt)? Das ist die einzige Stelle, an der der Stapel
@@ -1158,6 +1089,49 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   Dauer-Angaben („2 Minuten", „10 Minuten") ungefähr mit dem überein, was
   eine Runde tatsächlich braucht? Sie stehen jetzt auch auf jeder
   Spielkachel im Ordner.
+- **Blätter verteilen (22. Oktober)**: Kommen die Bilder in WhatsApp
+  lesbar an, oder sind sechzehn Felder auf einem Handybild zu klein? Und
+  geht AirDrop an mehrere gleichzeitig?
+- **„Regel des Abends" (18. Oktober)**: Zieht sie eine Regel, die wirklich
+  auffällt, oder eine, die den Abend lahmlegt? Besonders zu prüfen, dass die
+  Regeln **das Verlassen des Screens überleben** – ziehen, Ring of Fire
+  spielen, zurückgehen: Es müssen noch dieselben dastehen. Und ob fünf
+  gleichzeitig noch spielbar sind oder ob die Warnung früher kommen muss.
+- **Pantomime (18. Oktober)**: Reichen 90 Sekunden, oder ist die Runde
+  vorher durch? Die Begriffe sind die von „Wer bin ich?" – taugen sie zum
+  Vorspielen, oder sind gerade „Film & Serie" dafür zu schwer? Und ob die
+  beiden großen Flächen zu treffen sind, während man gleichzeitig spielt.
+- **Bussfahrer vom 17. Oktober**: Die Busfahrt ist neu und nie gelaufen.
+  Fünf Karten, jede Bildkarte zurück an den Anfang – gerechnet kommt der
+  Bussfahrer in etwa jedem sechsten Versuch durch. Fühlt sich das am Tisch
+  richtig an oder sitzt er zu lange? Und füllt der Screen jetzt?
+- **„Wer ist dran?" (18. Oktober)**: In Ring of Fire, Ich hab noch nie,
+  Wahrheit oder Pflicht, Zwei Wahrheiten, Kategorien und Bussfahrer. Zeigt
+  die Zeile die richtige Person, und läuft sie im selben Takt wie der Kreis
+  am Tisch? Ohne Abend und ohne Aufstellung muss sie **ganz weg** sein.
+- **Drei Spiele sagen jetzt eine Menge** (13. Oktober) und haben deshalb
+  eine Härte: „Wer würde eher?" („Die meisten Finger: 3 Schlücke"), Bombe
+  (4 Schlücke für den, der drauf sitzen bleibt) und Reaktionsduell
+  (2 Schlücke für den Verlierer, 4 für den Früh-Tipp – vorschnell tippen
+  ist ein Schummelversuch und soll mehr kosten als langsam sein). Die
+  Zahlen sind gesetzt, nicht erprobt: Fühlen sie sich am Tisch richtig an?
+- **Härte je Spiel (13. Oktober)**: In Schocken, Mäxchen, Spion, Verbotene
+  Wörter, Wer bin ich?, Ich hab noch nie und Ring of Fire steht sie im
+  Vorspann, den es schon gab – passt das Layout noch, auch mit großer
+  Schrift? Die anderen zehn haben jetzt einen eigenen Vorspann davor; der
+  ist neu und nie gelaufen. Und der eigentliche Test: In einem Spiel hart
+  einstellen, zurück, Beerpong starten – die Extreme-Karten müssen wieder
+  in der Vorgabe dastehen.
+- **Mehr Platz in sechs Spielen** (17. Oktober): Die Karten wachsen in den
+  freien Raum. Zu prüfen, ob irgendwo das Gegenteil passiert – eine Karte,
+  die mit kurzem Text riesig und leer dasteht.
+### Oberfläche
+- **Hauptmenü vom 13. Oktober**: Die Ordner sind größer, und die Zahl steht
+  jetzt als „5 Spiele" in der Unterzeile statt fett und farbig am rechten
+  Rand – dort sah sie aus wie eine ungelesene Nachricht. „Zuletzt gespielt"
+  ist weg. Passt das Ganze noch, auch mit großer Schrift?
+- **Sechs Kacheln im Hauptmenü** (17. Oktober): Beerpong oben links, Turnier
+  unten rechts. Passt das Raster auf dem Gerät, auch mit großer Schrift?
 - **Inhalt in den Kacheln** (18. Oktober): Jede Kachel trägt jetzt einen
   halben Satz und eine Emoji-Reihe – die Spiele der Gruppe, bei Beerpong die
   Leute am Tisch. Zu prüfen: Bleiben zehn Emoji bei „Raten & reden" in einer
@@ -1171,12 +1145,18 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
   quer durch die Spiele die leisen Knöpfe („Neu mischen", „Spielerzahl
   ändern"): Sie sind jetzt höher, also auch im Layout zu prüfen. Und die
   Stapelwahl unter „Eigene Karten" hat vier Kacheln und bricht um.
+- **Aufstellung, Vorbereitung, Hintergrund**: „am Tisch", das Setzen beim
+  Pferderennen, Dauer und Strafe auf den Extreme-Karten, die Frage nach der
+  offenen Partie, der Hintergrund.
+- **Ordner, Einstellungen, Farbschemata**: die vier
+  Ordner, der Einstellungs-Screen, die vier Farbschemata (Minze, Beere und
+  Eis sind gerechnet, nicht gesehen – besonders die Statusfarben auf dem
+  neuen Grund), „Nochmal dieselben", frühere Abende samt Teilen, die
+  Sicherungs-Erinnerung, die Anleitungen. Und einmal mit großer Schrift
+  durch die App: 105 Größen folgen jetzt der Systemeinstellung.
+### Technik
 - **Widget-Extension:** Erst der Sideload zeigt, ob die `.ipa` installierbar
   bleibt (Lessons Learned Nr. 5).
-- **Ohne Netz:** Flugmodus, App killen, ganze Partie spielen, Netz an. Der
-  Firestore-Cache ist nirgends im Code konfiguriert – auf iOS ist er
-  standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.
-
 ---
 
 ## 10. Offene Entscheidungen des Nutzers
@@ -1185,7 +1165,19 @@ bitte streichen – die Liste nützt nur, solange sie stimmt.
 `LeaderboardEntry` und in der Sicherungsdatei – immer auf `1000`, nirgends
 gerechnet. Gerechnet werden soll es ausdrücklich nicht. Damit bleibt nur
 streichen oder so lassen; bitte nicht ungefragt wieder als Vorschlag
-aufwärmen.
+aufwärmen. Der Kommentar am Feld versprach bis zum 25. Oktober ein
+"Feature folgt später (siehe Roadmap)" – das ist korrigiert, denn es gibt
+keine Roadmap und die Entscheidung ist gefallen.
+
+**Zwei weitere Felder warten auf nichts.** `Game.currentTurnTeamId` und
+`Game.playerStreaks` warten laut Kommentar auf dieselbe Cloud Function, die
+es ohne Blaze nie geben wird – sie werden einmal beim Anlegen geschrieben
+und von keiner Logik gelesen (`GameInitializationTests` prüft, dass
+`playerStreaks` korrekt mit Nullen anfängt – also dass ein Feld, das
+niemand liest, richtig leer ist). Dasselbe gilt für
+`users/{uid}/stats/summary`. Streichen wäre richtig, ist aber eine
+Änderung am Datenmodell und an der Sicherungsdatei: Das entscheidet der
+Nutzer, nicht Claude.
 
 **Lokal-zuerst statt Firestore.** Firestore kauft genau eine Sache:
 Synchronisation über mehrere Geräte. Die ist dormant (`Features/Friends/`,
