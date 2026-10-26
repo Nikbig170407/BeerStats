@@ -8,19 +8,27 @@
 //  Der Ring ist nicht Deko, sondern spielt mit. Die Karten liegen zufaellig
 //  verteilt und GESCHUPPT – jede ein Stueck unter der naechsten, wie am
 //  echten Tisch. Daraus kommt die Regel, die dem Spiel seinen Namen gibt:
-//  Wer den Ring reisst, trinkt einen Shot. Gerissen ist er, wenn die beiden
-//  Nachbarinnen der gezogenen Karte sich danach nicht mehr beruehren
-//  (`RingLayout.tearsRing`).
+//  Wer den Ring reisst, trinkt einen Shot. Gerissen ist er, wenn zwischen
+//  den beiden naechsten noch liegenden Nachbarinnen danach eine SICHTBARE
+//  Luecke klafft (`RingLayout.tearsRing`).
+//
+//  Das Wort sichtbar ist die Lehre vom 26. Oktober und steht nicht aus
+//  Geschmack da: Vorher reichte "beruehren sich nicht mehr", und damit
+//  feuerte die Regel bei einer Luecke von genau null. Der Shot kam, der
+//  Ring sah aus wie vorher, und am Tisch war das nicht von Willkuer zu
+//  unterscheiden. Jetzt muss eine Viertelkarte Luft sein, und die Luecke
+//  wird GEZEICHNET – aus denselben Zahlen, mit denen gerechnet wird
+//  (`gapMarker`).
 //
 //  Vorher lagen die Karten in gleichen Abstaenden mit Luft dazwischen, und
 //  die Regel gab es gar nicht – es war ein Stapel, den jemand im Kreis
 //  angeordnet hatte. Der Ring sah aus wie der Ring und tat nichts.
 //
 //  Die Karten behalten ihren Platz, auch wenn sie gezogen sind – deshalb ein
-//  Feld fester Laenge mit Luecken statt eines schrumpfenden Stapels. Die
-//  Luecken sind gleichzeitig die Anzeige des Spielstands und die Landkarte
-//  der Gefahr: Wo schon ein Loch ist, kann nichts mehr reissen, und das
-//  sieht man.
+//  Feld fester Laenge mit Luecken statt eines schrumpfenden Stapels. Fuer
+//  dieselbe Luecke zahlt niemand zweimal; die Karte NEBEN einer Luecke
+//  reisst dagegen umso leichter, weil dort zwei Kartenbreiten frei werden.
+//  Beides steht als Markierung auf dem Schirm.
 //
 //  Drei Risse kostet eine Runde, dann ist die Regel durch (24. Oktober).
 //  Nach jedem der ersten beiden wird eingesammelt und neu gelegt – wie am
@@ -163,7 +171,7 @@ struct RingOfFireView: View {
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("Die Karten liegen geschuppt im Kreis, jede ein Stück unter der nächsten. Reißt dein Zug den Ring – berühren sich die Nachbarn danach nicht mehr –, kostet dich das \(DrinkAmount.shot.text), und der Ring wird neu gelegt. Drei Risse hat die Runde; danach sind Lücken egal. Wo schon eine Lücke ist, kann ohnehin nichts reißen.")
+                Text("Die Karten liegen geschuppt im Kreis, jede ein Stück unter der nächsten. Klafft nach deinem Zug zwischen den Nachbarn eine Lücke, ist der Ring gerissen: Das kostet dich \(DrinkAmount.shot.text), und der Ring wird neu gelegt. Die Lücke leuchtet auf – du siehst also, wofür du trinkst. Für dieselbe Lücke zahlt niemand zweimal, aber die Karte NEBEN einer Lücke reißt umso leichter. Drei Risse hat die Runde; danach sind Lücken egal.")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -287,6 +295,19 @@ struct RingOfFireView: View {
                         // das, was man sehen soll.
                         .zIndex(spotlight == position || tornAt == position ? 1 : 0)
                 }
+
+                // Die offenen Stellen. Sie liegen ueber den Karten, damit
+                // eine Nachbarkante den Schein nicht verdeckt – und sie
+                // kommen aus demselben Layout, mit dem gerechnet wird.
+                ForEach(layout.openings(present: ring.map { $0 != nil }), id: \.from) { opening in
+                    gapMarker(
+                        width: chord(degrees: opening.width, radius: radius),
+                        height: cardHeight
+                    )
+                        .offset(y: -radius)
+                        .rotationEffect(.degrees(opening.centerAngle))
+                        .zIndex(2)
+                }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             // Die Druckwelle geht von der Mitte aus und nicht von der
@@ -373,6 +394,63 @@ struct RingOfFireView: View {
         return "Die \(raenge.count) höchsten Ränge – ab \(name) aufwärts, von jedem alle vier Karten. Die kleinen Karten sagen nur Mengen an; was den Tisch beschäftigt, steht oben."
     }
 
+    /// Die Markierung einer offenen Stelle – das, was am 26. Oktober
+    /// gefehlt hat.
+    ///
+    /// Der Riss war vorher eine Rechnung ohne Bild: Der freie Platz der
+    /// gezogenen Karte ist bewusst unsichtbar (sonst sieht jeder Zug gleich
+    /// aus), die LUECKE zwischen den Nachbarinnen war es aber auch – und
+    /// damit gab es nichts, worauf man am Tisch zeigen konnte. Der Shot kam
+    /// aus dem Nichts.
+    ///
+    /// Gezeichnet wird deshalb genau die Strecke, mit der die Regel
+    /// rechnet: Was hier leuchtet, ist die Luecke, die den Shot gekostet
+    /// hat. Sie bleibt liegen, bis neu gelegt wird – nach dem
+    /// Aktionsscreen soll man die Stelle wiederfinden, ohne zu suchen.
+    private func gapMarker(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            // Der Schein. Breiter als die Luecke selbst, sonst ist eine
+            // schmale kaum zu sehen.
+            Capsule()
+                .fill(BeerStatsColor.warning)
+                .frame(width: max(width, 6), height: height * 0.92)
+                .blur(radius: max(width, 10) * 0.9)
+                .opacity(0.75)
+
+            // Der Spalt: heller Kern, nach aussen auslaufend. Kein Rahmen –
+            // eine Luecke hat keine Kante, sie ist das Fehlen einer.
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            BeerStatsColor.warning.opacity(0.35),
+                            BeerStatsColor.warning,
+                            BeerStatsColor.warning.opacity(0.35)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: max(width * 0.5, 3), height: height * 0.86)
+        }
+        .frame(width: max(width, 6), height: height)
+        // Zierde-Regeln wie bei den Effekten: nimmt keine Tipps an und
+        // steht VoiceOver nicht im Weg. Was offen ist, sagt die Zeile unter
+        // dem Ring.
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// Die Sehne zu einem Winkel – so wird aus einer Luecke in Grad eine
+    /// Breite in Punkten.
+    ///
+    /// Dieselbe Rechnung wie bei der Kartenbreite, und das ist Pflicht:
+    /// Wuerde die Markierung anders gerechnet, zeigte das Bild eine andere
+    /// Luecke als die, fuer die jemand getrunken hat.
+    private func chord(degrees: Double, radius: CGFloat) -> CGFloat {
+        2 * radius * CGFloat(sin(max(degrees, 0) / 2 * .pi / 180))
+    }
+
     /// Kommt aus dem Layout, nicht aus der Position: Die Karten liegen
     /// gestreut, nicht in gleichen Abstaenden.
     private func angle(for position: Int) -> Double {
@@ -387,11 +465,14 @@ struct RingOfFireView: View {
     /// Der gestrichelte Platz stammte aus der Zeit, als die Karten in
     /// gleichen Abstaenden mit Luft dazwischen lagen; dort war er die
     /// Anzeige des Spielstands. Im geschuppten Ring hat er die Regel
-    /// unsichtbar gemacht, die das Spiel ausmacht: Gerissen ist der Ring,
-    /// wenn die beiden NACHBARN sich nicht mehr beruehren. Mit einem
+    /// unsichtbar gemacht, die das Spiel ausmacht: Gerissen ist der Ring
+    /// zwischen den NACHBARN, nicht an der gezogenen Karte. Mit einem
     /// Platzhalter an der Stelle der gezogenen Karte sieht aber jeder Zug
     /// gleich aus – mal kommt eine Strafe, mal nicht, und am Tisch wirkt
     /// das wie Willkuer. Wie viel noch liegt, steht ohnehin in der Mitte.
+    ///
+    /// Gezeigt wird stattdessen die LUECKE selbst (`gapMarker`) – das ist
+    /// die Stelle, um die es in der Regel geht.
     ///
     /// `isLit` ist der Lichtpunkt, der beim Ziehen herumwandert. Die Karten
     /// sind nicht antippbar: Gezogen wird ausgelost.

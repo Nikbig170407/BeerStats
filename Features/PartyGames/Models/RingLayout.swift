@@ -11,28 +11,38 @@
 //  Luft dazwischen, und die Regel gab es gar nicht: Es war ein Stapel, der
 //  im Kreis angeordnet war.
 //
-//  Zwei Zahlen machen das Spiel, und beide stehen unten als Konstante:
+//  DREI Zahlen machen das Spiel, und alle drei stehen unten als Konstante.
+//  Sie haengen voneinander ab – wer eine anfasst, muss die Simulation in
+//  `RingLayoutTests` noch einmal lesen.
 //
 //  `overlapFactor` sagt, wie viel breiter eine Karte ist als der mittlere
-//  Abstand zur Nachbarin. 2,4 heisst: Im Schnitt steckt jede Karte zu gut
-//  der Haelfte unter ihren Nachbarinnen.
+//  Abstand zur Nachbarin. Ueber 1 heisst: Jede Karte steckt ein Stueck
+//  unter ihren Nachbarinnen.
 //
 //  `jitter` streut die Abstaende. Das ist der Spannungsregler: Ohne
 //  Streuung laegen alle Karten gleich dicht, und Ziehen waere entweder nie
 //  oder immer gefaehrlich. Mit Streuung gibt es dichte Stellen, an denen man
 //  gefahrlos zieht, und duenne, an denen es reisst – und man kann es sehen.
 //
-//  Beides zusammen ist durchgerechnet, nicht geraten (zwanzigtausend
-//  simulierte Runden): Auf einem vollstaendig ausgelegten Ring reisst jeder
-//  FUENFTE Zug – 20,8 % bei zwanzig Karten, 21,6 % bei zweiundfuenfzig.
-//  Danach steigt es, denn jede Luecke macht die naechste wahrscheinlicher.
+//  `visibleGap` ist die Mindestbreite einer Luecke, die zaehlt. Sie ist der
+//  Grund, warum die beiden anderen Zahlen am 26. Oktober gewandert sind:
+//  Ohne sie feuerte der Riss genau in dem Moment, in dem die Luecke NULL
+//  war – die Regel kostete einen Shot fuer etwas, das es noch nicht zu
+//  sehen gab. Mehr Ueberlappung half dagegen nicht, sie machte es
+//  schlimmer: Je dichter die Karten liegen, desto feiner ist die Luecke an
+//  der Schwelle. Deshalb liegt die Ueberlappung jetzt niedriger UND es
+//  muss eine Viertelkarte Luft sein.
 //
-//  Bezahlt werden nur die ersten drei Risse (`RingOfFireView`), und nach den
-//  ersten beiden wird neu gelegt. Mit der korrigierten Rechnung vom
-//  25. Oktober sind die drei Shots nach rund zehn Zuegen vergeben
-//  (Median 10, in neun von zehn Runden zwischen 6 und 16) – bei zwanzig
-//  Karten also etwa zur Haelfte der Runde, bei zweiundfuenfzig nach einem
-//  Fuenftel.
+//  Die Mischung ist durchgerechnet, nicht geraten (vierzigtausend
+//  simulierte Runden): Auf einem frisch gelegten Ring reisst etwa jeder
+//  FUENFTE Zug, und jede Luecke, die zaehlt, ist mindestens eine
+//  Viertelkarte breit – im Mittel eine halbe. Danach steigt die Quote,
+//  denn jede Luecke macht die naechste wahrscheinlicher.
+//
+//  Bezahlt werden nur die ersten drei Risse (`RingOfFireView`), und nach
+//  den ersten beiden wird neu gelegt. Die drei Shots sind nach rund zehn
+//  Zuegen vergeben – bei zwanzig Karten also etwa zur Haelfte der Runde,
+//  bei zweiundfuenfzig nach einem Fuenftel.
 //
 
 import Foundation
@@ -50,8 +60,23 @@ struct RingLayout: Equatable {
     /// als das.
     let cardSpan: Double
 
-    static let overlapFactor = 2.4
+    static let overlapFactor = 1.95
     static let jitter = 0.6
+
+    /// Wie viel Luft zwischen zwei Nachbarinnen liegen muss, damit die
+    /// Stelle als offen gilt – als Anteil einer Kartenbreite.
+    ///
+    /// Das ist die Lehre vom 26. Oktober. Vorher galt der Ring als
+    /// gerissen, sobald sich die Nachbarinnen nicht mehr beruehren – also
+    /// bei einer Luecke von GENAU NULL. Die Schwelle war damit
+    /// bauartbedingt unsichtbar: Der Shot kam in dem Moment, in dem es
+    /// noch nichts zu sehen gab, und die Luecke wuchs erst mit den
+    /// naechsten Zuegen. Am Tisch hiess das: Es kostet, und niemand
+    /// erkennt, warum.
+    ///
+    /// Jetzt zahlt nur, was man sieht – ein Viertel Karte ist der
+    /// Unterschied zwischen "liegt knapp an" und "da ist ein Loch".
+    static let visibleGap = 0.25
 
     // MARK: - Auslegen
 
@@ -94,29 +119,77 @@ struct RingLayout: Equatable {
         return RingLayout(angles: winkel, cardSpan: base * overlapFactor)
     }
 
+    // MARK: - Offene Stellen
+
+    /// Eine Stelle, an der der Ring offen ist.
+    ///
+    /// Sie wird GEZEICHNET, und zwar aus denselben Zahlen, mit denen
+    /// gerechnet wird. Das ist der Kern der Korrektur: Vorher war der Riss
+    /// eine Rechnung ohne Bild – man sah den freien Platz der gezogenen
+    /// Karte nicht (richtig so) und die Luecke zwischen den Nachbarinnen
+    /// auch nicht (falsch). Damit war die Regel am Tisch nicht
+    /// nachvollziehbar.
+    struct Opening: Equatable {
+
+        /// Die liegende Karte vor der Luecke.
+        let from: Int
+
+        /// Die liegende Karte dahinter.
+        let to: Int
+
+        /// Mitte der Luecke in Grad – wohin die Markierung gehoert.
+        let centerAngle: Double
+
+        /// Breite der Luecke in Grad, also die freie Strecke zwischen den
+        /// beiden Kartenkanten.
+        let width: Double
+    }
+
+    /// So viel Luft muss zwischen zwei Kartenkanten liegen, damit die
+    /// Stelle offen ist – in Grad.
+    var openingThreshold: Double { cardSpan * Self.visibleGap }
+
+    /// Alle offenen Stellen im Ring, in Laufrichtung.
+    ///
+    /// Gezeichnet wird daraus jede einzelne, nicht nur die letzte: Eine
+    /// Luecke bleibt liegen, und wer nach dem Aktionsscreen zurueckkommt,
+    /// soll sehen, wie der Ring gerade steht.
+    func openings(present: [Bool]) -> [Opening] {
+        guard present.count == angles.count else { return [] }
+        let liegende = present.indices.filter { present[$0] }
+        // Mit zwei Karten gibt es keinen Ring, also auch keine Luecke in
+        // ihm – sonst zaehlte dieselbe Strecke zweimal, einmal pro
+        // Richtung.
+        guard liegende.count >= 3 else { return [] }
+
+        return liegende.indices.compactMap { stelle in
+            let von = liegende[stelle]
+            let nach = liegende[(stelle + 1) % liegende.count]
+            let frei = freeSpan(from: von, to: nach)
+            guard frei >= openingThreshold else { return nil }
+            return Opening(
+                from: von,
+                to: nach,
+                centerAngle: angles[von] + arc(from: von, to: nach) / 2,
+                width: frei
+            )
+        }
+    }
+
     // MARK: - Reissen
 
     /// Reisst das Ziehen dieser Karte den Ring auf?
     ///
-    /// Gerissen heisst: Von oben ist der Kreis danach nicht mehr durchgehend
-    /// – zwischen zwei Karten klafft eine Luecke, die breiter ist als eine
-    /// Karte. Gerechnet wird deshalb mit den naechsten noch LIEGENDEN
-    /// Nachbarinnen und nicht mit den Nachbarplaetzen.
-    ///
-    /// Genau daran ist es bis zum 25. Oktober vorbeigelaufen: Die Funktion
-    /// schaute auf die beiden Nachbarplaetze und gab `false` zurueck, sobald
-    /// einer davon leer war – "neben einer Luecke reisst nichts". Am Tisch
-    /// ist aber das Gegenteil richtig. Liegt links schon ein Loch und man
-    /// zieht die Karte daneben, entsteht eine Luecke von zwei Kartenbreiten,
-    /// und der Kreis ist sichtbar durch. Die App sagte dazu nichts, und weil
-    /// jeder zweite Zug irgendwann neben einem Loch liegt, blieb die Regel
-    /// nach den ersten Karten fast ganz aus. So sah es am Tisch nach Willkuer
-    /// aus: Mal kam ein Shot, mal nicht, ohne erkennbaren Unterschied.
+    /// Gerissen heisst: Danach klafft zwischen den beiden naechsten noch
+    /// LIEGENDEN Nachbarinnen eine sichtbare Luecke – nicht blosses
+    /// Nicht-mehr-Beruehren, siehe `visibleGap`. Gerechnet wird mit den
+    /// liegenden Nachbarinnen und nicht mit den Nachbarplaetzen: Liegt
+    /// links schon ein Loch und man zieht die Karte daneben, entsteht eine
+    /// Luecke von zwei Kartenbreiten, und der Kreis ist sichtbar durch.
     ///
     /// Zweimal fuer dieselbe Luecke zahlt trotzdem niemand. Deshalb die
-    /// Gegenprobe VOR dem Zug: Beruehrte die Karte ihre beiden Nachbarinnen
-    /// ueberhaupt noch? Wenn nicht, war der Ring an dieser Stelle schon
-    /// offen, und das hat jemand anderes bezahlt.
+    /// Gegenprobe VOR dem Zug: War der Ring an einer der beiden Seiten
+    /// schon offen? Dann hat das jemand anderes bezahlt.
     func tearsRing(at position: Int, present: [Bool]) -> Bool {
         guard present.count == angles.count,
               present.indices.contains(position),
@@ -133,11 +206,24 @@ struct RingLayout: Equatable {
         else { return false }
 
         // War hier schon offen? Dann reisst es nicht noch einmal.
-        guard arc(from: links, to: position) <= cardSpan,
-              arc(from: position, to: rechts) <= cardSpan
+        guard !isOpen(from: links, to: position),
+              !isOpen(from: position, to: rechts)
         else { return false }
 
-        return arc(from: links, to: rechts) > cardSpan
+        return isOpen(from: links, to: rechts)
+    }
+
+    /// Klafft zwischen diesen beiden Karten eine sichtbare Luecke?
+    func isOpen(from: Int, to: Int) -> Bool {
+        freeSpan(from: from, to: to) >= openingThreshold
+    }
+
+    // MARK: - Rechnerei
+
+    /// Die freie Strecke zwischen zwei Kartenkanten, in Grad. Negativ
+    /// heisst: Die beiden ueberlappen sich noch.
+    private func freeSpan(from: Int, to: Int) -> Double {
+        arc(from: from, to: to) - cardSpan
     }
 
     /// Die naechste liegende Karte in eine Richtung (`step` ist -1 oder 1).

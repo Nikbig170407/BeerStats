@@ -20,6 +20,11 @@
 //  Drittens die schon offene Stelle. Zieht man neben einer Luecke, wird sie
 //  nur groesser – gerissen hat sie jemand anderes.
 //
+//  Viertens, und das ist die Lehre vom 26. Oktober: Eine Luecke, die
+//  niemand sieht, ist am Tisch keine. Die Regel darf nicht in dem Moment
+//  feuern, in dem der Spalt gerade null ist, sondern erst, wenn man ihn
+//  erkennt. `testEveryTearLeavesAGapYouCanSee` ist dafuer der Waechter.
+//
 
 import XCTest
 @testable import BeerStats
@@ -76,12 +81,13 @@ final class RingLayoutTests: XCTestCase {
     /// Liegen die Karten dicht, schliesst sich der Ring hinter der gezogenen
     /// von selbst.
     func testADenseRingDoesNotTear() {
-        // Abstand 10 Grad, Karte 25 Grad breit: Die Nachbarinnen liegen nach
-        // dem Zug 20 Grad auseinander und beruehren sich noch.
-        let layout = gleichmaessig(count: 36, span: 25)
-        for position in 0..<36 {
+        // Abstand 15 Grad, Karte 25 Grad breit: Nach dem Zug liegen die
+        // Nachbarinnen 30 Grad auseinander, es bleiben also 5 Grad frei –
+        // unter der Viertelkarte (6,25 Grad), die zaehlt.
+        let layout = gleichmaessig(count: 24, span: 25)
+        for position in 0..<24 {
             XCTAssertFalse(
-                layout.tearsRing(at: position, present: alleDa(36)),
+                layout.tearsRing(at: position, present: alleDa(24)),
                 "Position \(position) reisst, obwohl es dicht liegt"
             )
         }
@@ -114,14 +120,16 @@ final class RingLayoutTests: XCTestCase {
         XCTAssertFalse(dicht.tearsRing(at: 0, present: alleDa(12)))
     }
 
-    /// Liegt der Ring so weit auseinander, dass sich nirgends zwei Karten
-    /// beruehren, ist er nie geschlossen – und dann kann ihn auch niemand
-    /// reissen. Im Spiel kommt das nicht vor (`cardSpan` ist das 2,4-fache
-    /// des mittleren Abstands), aber die Rechnung muss es aushalten.
+    /// Liegt der Ring von Anfang an sichtbar offen, kann ihn niemand
+    /// reissen – er ist ja nirgends geschlossen. Im Spiel kommt das nicht
+    /// vor (`cardSpan` ist knapp das Doppelte des mittleren Abstands), aber
+    /// die Rechnung muss es aushalten.
     func testARingThatNeverTouchesCannotTear() {
-        let offen = gleichmaessig(count: 12, span: 25)   // 30 Grad Abstand
-        for position in 0..<12 {
-            XCTAssertFalse(offen.tearsRing(at: position, present: alleDa(12)))
+        // 40 Grad Abstand, Karte 25 Grad: zwischen je zwei Karten klaffen
+        // 15 Grad, also mehr als eine Viertelkarte.
+        let offen = gleichmaessig(count: 9, span: 25)
+        for position in 0..<9 {
+            XCTAssertFalse(offen.tearsRing(at: position, present: alleDa(9)))
         }
     }
 
@@ -134,18 +142,19 @@ final class RingLayoutTests: XCTestCase {
     /// irgendwann jeder zweite Zug neben einem Loch liegt, blieb die Regel
     /// nach den ersten Karten fast ganz aus.
     func testDrawingNextToAHoleTearsTheRing() {
-        // Abstand 10 Grad, Karte 25 Grad breit: Ein einzelnes Loch schliesst
-        // sich noch (20 Grad), zwei nebeneinander nicht mehr (30 Grad).
-        let layout = gleichmaessig(count: 36, span: 25)
+        // Abstand 15 Grad, Karte 25 Grad breit: Ein einzelnes Loch laesst
+        // 5 Grad frei und zaehlt noch nicht; zwei nebeneinander lassen
+        // 20 Grad frei, und das ist weit ueber der Viertelkarte.
+        let layout = gleichmaessig(count: 24, span: 25)
 
-        var liegt = alleDa(36)
+        var liegt = alleDa(24)
         XCTAssertFalse(layout.tearsRing(at: 5, present: liegt), "ein Loch schliesst sich")
         liegt[5] = false
 
         XCTAssertTrue(layout.tearsRing(at: 4, present: liegt), "links der Luecke")
         XCTAssertTrue(layout.tearsRing(at: 6, present: liegt), "rechts der Luecke")
         // Weit weg vom Loch liegt der Ring unberuehrt dicht.
-        XCTAssertFalse(layout.tearsRing(at: 20, present: liegt))
+        XCTAssertFalse(layout.tearsRing(at: 15, present: liegt))
     }
 
     /// Fuer dieselbe Luecke zahlt aber niemand zweimal: War der Ring an
@@ -189,15 +198,129 @@ final class RingLayoutTests: XCTestCase {
         XCTAssertFalse(layout.tearsRing(at: -1, present: alleDa(10)))
     }
 
+    // MARK: - Die Luecke muss man sehen
+
+    /// Der Fehler, den der Nutzer am 26. Oktober am Tisch gesehen hat:
+    /// "Es reisst, aber ich sehe keine Luecke."
+    ///
+    /// Die Ursache war die Schwelle selbst. "Gerissen" hiess bis dahin
+    /// "die Nachbarinnen beruehren sich nicht mehr" – und das ist der
+    /// Moment, in dem die Luecke GENAU NULL ist. Nachgerechnet lag die
+    /// Haelfte aller Risse unter einem Sechstel Kartenbreite, viele bei
+    /// wenigen Pixeln. Der Shot kam fuer etwas, das es noch nicht zu sehen
+    /// gab, und am Tisch war das von Willkuer nicht zu unterscheiden.
+    ///
+    /// Dieser Test ist die Gegenprobe: Wenn es reisst, ist die Luecke
+    /// mindestens eine Viertelkarte breit. Faellt er, ist die Regel wieder
+    /// unsichtbar – egal wie richtig sie rechnet.
+    func testEveryTearLeavesAGapYouCanSee() {
+        var kleinste = Double.infinity
+        var summe = 0.0
+        var risse = 0
+
+        for _ in 0..<2000 {
+            let layout = RingLayout.random(count: 52)
+            var liegt = alleDa(52)
+            let position = Int.random(in: 0..<52)
+            guard layout.tearsRing(at: position, present: liegt) else { continue }
+
+            liegt[position] = false
+            // Genau die Stelle, an der gezogen wurde, muss jetzt als offen
+            // gezeichnet werden – sonst rechnet die Regel mit einer Luecke,
+            // die das Bild nicht zeigt.
+            guard let luecke = layout.openings(present: liegt)
+                .first(where: { $0.from == (position + 51) % 52 && $0.to == (position + 1) % 52 })
+            else {
+                XCTFail("Riss an \(position), aber dort ist keine Luecke zu sehen")
+                continue
+            }
+
+            let anteil = luecke.width / layout.cardSpan
+            kleinste = min(kleinste, anteil)
+            summe += anteil
+            risse += 1
+        }
+
+        XCTAssertGreaterThan(risse, 100, "Zu wenige Risse für eine Aussage")
+        XCTAssertGreaterThanOrEqual(
+            kleinste, RingLayout.visibleGap - 0.0001,
+            "Eine Luecke war schmaler als eine Viertelkarte"
+        )
+        // Nicht nur knapp ueber der Schwelle: Nachgerechnet liegt der
+        // Mittelwert bei gut einer halben Karte. Deutlich darunter heisst,
+        // dass die Risse wieder an der unsichtbaren Kante kleben.
+        XCTAssertGreaterThan(
+            summe / Double(risse), 0.3,
+            "Die Luecken sind im Mittel zu schmal, um sie zu sehen"
+        )
+    }
+
+    /// Auf einem vollstaendig ausgelegten Ring ist nichts offen – sonst
+    /// stuenden Markierungen auf dem Schirm, bevor jemand gezogen hat.
+    func testAFullRingShowsNoGaps() {
+        for _ in 0..<200 {
+            let layout = RingLayout.random(count: 20)
+            XCTAssertTrue(layout.openings(present: alleDa(20)).isEmpty)
+        }
+    }
+
+    /// Dieselbe Luecke wird einmal gemeldet, nicht einmal pro Richtung.
+    /// Zweimal gezeichnet waere nur haesslich – zweimal gezaehlt waere
+    /// falsch.
+    func testAGapIsReportedOnce() {
+        let layout = gleichmaessig(count: 24, span: 25)
+        var liegt = alleDa(24)
+        liegt[5] = false
+        liegt[6] = false
+
+        let offen = layout.openings(present: liegt)
+        XCTAssertEqual(offen.count, 1, "\(offen)")
+        XCTAssertEqual(offen.first?.from, 4)
+        XCTAssertEqual(offen.first?.to, 7)
+    }
+
+    /// Die Markierung liegt in der MITTE der Luecke und ist so breit wie
+    /// die Luecke. Beides kommt aus derselben Rechnung wie die Regel – wer
+    /// das trennt, zeichnet ein Bild, das luegt.
+    func testTheGapIsDrawnWhereItIs() {
+        let layout = gleichmaessig(count: 24, span: 25)   // 15 Grad Abstand
+        var liegt = alleDa(24)
+        liegt[5] = false
+        liegt[6] = false
+
+        guard let luecke = layout.openings(present: liegt).first else {
+            return XCTFail("keine Luecke")
+        }
+        // Karte 4 liegt bei 60 Grad, Karte 7 bei 105 – Mitte also 82,5.
+        XCTAssertEqual(luecke.centerAngle, 82.5, accuracy: 0.0001)
+        // 45 Grad Abstand minus 25 Grad Karte = 20 Grad frei.
+        XCTAssertEqual(luecke.width, 20, accuracy: 0.0001)
+    }
+
+    /// Mit zwei liegenden Karten gibt es keinen Ring und damit keine Luecke
+    /// IN ihm: Dieselbe Strecke waere sonst zweimal offen, einmal pro
+    /// Richtung.
+    func testTwoCardsHaveNoGapBetweenThem() {
+        let layout = gleichmaessig(count: 24, span: 25)
+        var liegt = Array(repeating: false, count: 24)
+        liegt[0] = true
+        liegt[12] = true
+        XCTAssertTrue(layout.openings(present: liegt).isEmpty)
+    }
+
     // MARK: - Die Spannungskurve
 
-    /// Die beiden Konstanten entscheiden, wie oft es reisst. Dieser Test
-    /// haelt die Groessenordnung fest, damit niemand `overlapFactor` oder
-    /// `jitter` unbemerkt so verstellt, dass jede zweite Karte einen Shot
-    /// kostet – oder gar keine mehr.
+    /// Die drei Konstanten entscheiden, wie oft es reisst, und sie haengen
+    /// voneinander ab: Mehr `visibleGap` macht es seltener, mehr `jitter`
+    /// oefter, und `overlapFactor` wirkt in beide Richtungen. Dieser Test
+    /// haelt die Groessenordnung fest, damit niemand eine davon unbemerkt
+    /// so verstellt, dass jede zweite Karte einen Shot kostet – oder gar
+    /// keine mehr.
     ///
-    /// Erste Zahl: Auf einem vollstaendig ausgelegten Ring reisst jeder
-    /// fuenfte Zug (nachgerechnet 20,8 bis 21,6 %, je nach Kartenzahl).
+    /// Erste Zahl: Auf einem frisch gelegten Ring reisst jeder fuenfte Zug
+    /// (nachgerechnet rund 19 bis 20 %, je nach Kartenzahl). Die Grenzen
+    /// sind bewusst weit: Sie sollen ein Verstellen merken, nicht jede
+    /// Stelle hinter dem Komma.
     func testEveryFifthDrawTearsAFreshRing() {
         var gerissen = 0
         let runden = 3000
