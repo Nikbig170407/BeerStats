@@ -21,7 +21,12 @@ import SwiftUI
 struct SettingsView: View {
 
     let container: AppContainer
-    let ownerId: String
+    /// `nil`, wenn ohne Konto gespielt wird. Dann steht hier "Anmelden"
+    /// statt "Abmelden", und die Entwicklereinstellungen fehlen – sie
+    /// arbeiten auf Konto-Daten.
+    let ownerId: String?
+
+    @EnvironmentObject private var appState: AppState
 
     /// Spiegeln die dauerhaft gespeicherten Werte, damit der Schalter sofort
     /// umspringt – UserDefaults meldet sich nicht von selbst bei SwiftUI.
@@ -222,54 +227,88 @@ struct SettingsView: View {
 
     // MARK: - Entwickler
 
+    @ViewBuilder
     private var developerSection: some View {
-        section("ENTWICKLER") {
-            NavigationLink {
-                DeveloperSettingsView(
-                    repository: container.playerProfileRepository,
-                    ownerId: ownerId
-                )
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "wrench.and.screwdriver.fill")
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                        .frame(width: 24)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Entwicklereinstellungen")
-                            .font(BeerStatsFont.headline)
-                            .foregroundStyle(BeerStatsColor.textPrimary)
-                        Text("Passwortgeschützt")
-                            .font(BeerStatsFont.caption)
+        // Arbeitet auf Konto-Daten (Profile zuruecksetzen und aehnliches).
+        // Ohne Konto gibt es nichts zu tun, also steht der Abschnitt auch
+        // nicht da – ein passwortgeschuetzter Screen, hinter dem nichts ist,
+        // ist schlimmer als keiner.
+        if let ownerId {
+            section("ENTWICKLER") {
+                NavigationLink {
+                    DeveloperSettingsView(
+                        repository: container.playerProfileRepository,
+                        ownerId: ownerId
+                    )
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "wrench.and.screwdriver.fill")
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Entwicklereinstellungen")
+                                .font(BeerStatsFont.headline)
+                                .foregroundStyle(BeerStatsColor.textPrimary)
+                            Text("Passwortgeschützt")
+                                .font(BeerStatsFont.caption)
+                                .foregroundStyle(BeerStatsColor.textSecondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
                             .foregroundStyle(BeerStatsColor.textSecondary)
                     }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(BeerStatsColor.textSecondary)
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(PressableButtonStyle())
             }
-            .buttonStyle(PressableButtonStyle())
         }
     }
 
     // MARK: - Konto
 
+    @ViewBuilder
     private var accountSection: some View {
-        section("KONTO") {
-            Button {
-                showsSignOutConfirmation = true
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .frame(width: 24)
-                    Text("Abmelden")
-                        .font(BeerStatsFont.headline)
-                    Spacer()
+        if ownerId == nil {
+            section("KONTO") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Button {
+                        appState.leaveGuestMode()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "person.crop.circle.badge.plus")
+                                .frame(width: 24)
+                            Text("Konto anlegen oder anmelden")
+                                .font(BeerStatsFont.headline)
+                            Spacer()
+                        }
+                        .foregroundStyle(BeerStatsColor.accent)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressableButtonStyle())
+
+                    Text(GuestMode.explanation)
+                        .font(BeerStatsFont.caption)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .foregroundStyle(BeerStatsColor.error)
-                .contentShape(Rectangle())
             }
-            .buttonStyle(PressableButtonStyle())
+        } else {
+            section("KONTO") {
+                Button {
+                    showsSignOutConfirmation = true
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .frame(width: 24)
+                        Text("Abmelden")
+                            .font(BeerStatsFont.headline)
+                        Spacer()
+                    }
+                    .foregroundStyle(BeerStatsColor.error)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
         }
     }
 

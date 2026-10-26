@@ -24,7 +24,10 @@ struct HomeView: View {
     /// selbst, also beim Erscheinen neu lesen.
     @State private var tablePlayers: [PlayerProfile] = []
 
-    init(container: AppContainer, currentUserId: String) {
+    /// `currentUserId` ist `nil`, wenn ohne Konto gespielt wird. Dann
+    /// fehlen genau zwei Dinge: Beerpong und die Spieler-Zentrale. Alles
+    /// andere laeuft lokal weiter (siehe `GuestMode`).
+    init(container: AppContainer, currentUserId: String?) {
         self.container = container
         _viewModel = StateObject(
             wrappedValue: HomeViewModel(
@@ -233,14 +236,19 @@ struct HomeView: View {
     /// am Abend wirklich geht.
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            NavigationLink {
-                ProfilesView(container: container, ownerId: viewModel.currentUserId)
-            } label: {
-                Image(systemName: "person.2.fill")
-                    .foregroundStyle(BeerStatsColor.accent)
+        // Die Spieler-Zentrale haengt an den Profilen und damit am Konto.
+        // Ohne Konto ist sie weg statt grau: Ein Symbol, das nichts tut,
+        // probiert man am Tisch dreimal.
+        if let ownerId = viewModel.currentUserId {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    ProfilesView(container: container, ownerId: ownerId)
+                } label: {
+                    Image(systemName: "person.2.fill")
+                        .foregroundStyle(BeerStatsColor.accent)
+                }
+                .accessibilityLabel("Spieler")
             }
-            .accessibilityLabel("Spieler")
         }
         ToolbarItem(placement: .topBarTrailing) {
             NavigationLink {
@@ -276,18 +284,35 @@ struct HomeView: View {
             ],
             spacing: 14
         ) {
-            menuTile(
-                emoji: "🍺",
-                title: "Beerpong",
-                subtitle: "Werfen, treffen – die App schreibt mit",
-                detail: beerpongDetail,
-                // Wer heute am Tisch steht, statt der Spiele darin: Bei
-                // Beerpong ist die Frage vor dem Antippen nicht "was",
-                // sondern "mit wem".
-                preview: tablePlayers.map(\.emoji),
-                tint: BeerStatsColor.accent
-            ) {
-                BeerpongMenuView(container: container, viewModel: viewModel)
+            if viewModel.currentUserId != nil {
+                menuTile(
+                    emoji: "🍺",
+                    title: "Beerpong",
+                    subtitle: "Werfen, treffen – die App schreibt mit",
+                    detail: beerpongDetail,
+                    // Wer heute am Tisch steht, statt der Spiele darin: Bei
+                    // Beerpong ist die Frage vor dem Antippen nicht "was",
+                    // sondern "mit wem".
+                    preview: tablePlayers.map(\.emoji),
+                    tint: BeerStatsColor.accent
+                ) {
+                    BeerpongMenuView(container: container, viewModel: viewModel)
+                }
+            } else {
+                // Ohne Konto bleibt die Kachel stehen und sagt, was fehlt.
+                // Sie wegzulassen waere die schlechtere Wahl: Dann sieht
+                // niemand, dass die App ueberhaupt Beerpong kann, und das
+                // ist der Grund, warum es sie gibt.
+                menuTile(
+                    emoji: "🍺",
+                    title: "Beerpong",
+                    subtitle: "Werfen, treffen – die App schreibt mit",
+                    detail: "Braucht ein Konto",
+                    preview: [],
+                    tint: BeerStatsColor.textSecondary
+                ) {
+                    AccountNeededView()
+                }
             }
 
             // Die Gruppen kommen aus dem Katalog, nicht von Hand: Ein neues

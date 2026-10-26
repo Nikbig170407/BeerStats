@@ -29,14 +29,18 @@ final class HomeViewModel: ObservableObject {
 
     private let gameRepository: GameRepositoryProtocol
     private let profileRepository: PlayerProfileRepositoryProtocol
-    let currentUserId: String
+    /// `nil` heisst: ohne Konto. Dann laeuft KEIN Listener – das ist nicht
+    /// nur sparsam, sondern notwendig: Ohne Anmeldung verweigert Firestore
+    /// den Zugriff, und ein Listener, der dauernd abgewiesen wird, kostet
+    /// Strom und schreibt Fehler ins Log.
+    let currentUserId: String?
     private var observationTask: Task<Void, Never>?
     private var profileTask: Task<Void, Never>?
 
     init(
         gameRepository: GameRepositoryProtocol,
         profileRepository: PlayerProfileRepositoryProtocol,
-        currentUserId: String
+        currentUserId: String?
     ) {
         self.gameRepository = gameRepository
         self.profileRepository = profileRepository
@@ -71,6 +75,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     private func observeProfiles() {
+        guard let currentUserId else { return }
         profileTask = Task { [weak self] in
             guard let self else { return }
             for await profiles in profileRepository.observeProfiles(ownerId: currentUserId) {
@@ -80,6 +85,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     private func observe() {
+        guard let currentUserId else { return }
         observationTask = Task { [weak self] in
             guard let self else { return }
             for await games in gameRepository.observeUserGames(currentUserId: currentUserId) {

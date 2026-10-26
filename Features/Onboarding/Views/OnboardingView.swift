@@ -11,6 +11,8 @@ import SwiftUI
 
 struct OnboardingView: View {
 
+    @EnvironmentObject private var appState: AppState
+
     @StateObject private var viewModel: OnboardingViewModel
 
     init(authRepository: AuthRepositoryProtocol) {
@@ -92,6 +94,24 @@ struct OnboardingView: View {
             SecondaryButton(title: viewModel.toggleModeButtonTitle) {
                 viewModel.toggleMode()
             }
+
+            // Der Weg vorbei am Formular. Steht UNTER den beiden anderen
+            // und leise: Wer ein Konto will, soll es zuerst sehen. Wer
+            // keines will, findet trotzdem hier heraus, dass es auch ohne
+            // geht – und genau das ist die Tuer fuer jede fremde Runde, die
+            // sonst wieder zumacht (siehe `GuestMode`).
+            VStack(spacing: 6) {
+                QuietButton(title: "Ohne Konto loslegen") {
+                    appState.enterGuestMode()
+                }
+
+                Text("Alle Partyspiele laufen sofort. Beerpong kommt dazu, sobald du ein Konto hast.")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 8)
         }
     }
 }

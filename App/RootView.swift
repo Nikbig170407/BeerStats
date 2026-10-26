@@ -25,8 +25,17 @@ struct RootView: View {
                     LaunchView()
                         .transition(.opacity)
                 case .signedOut:
-                    OnboardingView(authRepository: container.authRepository)
-                        .transition(screenTransition)
+                    // Ohne Konto geht es ins Hauptmenue, nicht ins Formular:
+                    // Die Partyspiele brauchen Firestore nicht, und ein
+                    // fremdes Handy soll nicht nach einer E-Mail fragen,
+                    // bevor es gezeigt hat, was es kann (siehe `GuestMode`).
+                    if appState.isGuest {
+                        HomeView(container: container, currentUserId: nil)
+                            .transition(screenTransition)
+                    } else {
+                        OnboardingView(authRepository: container.authRepository)
+                            .transition(screenTransition)
+                    }
                 case .signedIn:
                     if let uid = container.authService.currentUserId {
                         HomeView(container: container, currentUserId: uid)
@@ -38,6 +47,7 @@ struct RootView: View {
             }
         }
         .animation(AppAnimation.standard, value: appState.authState)
+        .animation(AppAnimation.standard, value: appState.isGuest)
     }
 
     /// Sanftes Einblenden mit leichtem Hineinwachsen statt hartem Schnitt
