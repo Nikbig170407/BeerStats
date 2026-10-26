@@ -488,9 +488,21 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   bleibt: eine neue Szene ist eine Kombination und kein neuer Entwurf.
   Vier Regeln, jede mit Grund:
   - **Zierde, kein Inhalt.** Alles liegt hinter dem Text, nimmt keine
-    Tipps an und ist für VoiceOver unsichtbar. Deckkraft ist dabei keine
-    Geschmacksfrage, sondern die Bedingung: Strahlen um 0,2, Einschläge um
-    0,3. Was man sucht, findet man; was man liest, stört es nicht.
+    Tipps an und ist für VoiceOver unsichtbar. **Wie laut, hat der Nutzer
+    entschieden** (26. Oktober, zweimal verlangt): Die Vorgaben standen
+    auf „stört nicht" – Strahlen um 0,2, Einschläge um 0,3 – und waren auf
+    einem Handy in der Tischmitte aus anderthalb Metern praktisch
+    unsichtbar. Jetzt stehen sie auf „fällt auf" (Strahlen um 0,34,
+    Einschläge um 0,42). Die Grenze ist weiter hinten, aber dieselbe: Der
+    **Text muss lesbar bleiben**. Wer eine Schicht hochdreht, bis er
+    leidet, hat eine zu viel.
+  - **Prächtig wird es durch Schichtung, nicht durch Lautstärke.** Eine
+    Stelle mit einer Schicht wird durch stärkere Bausteine nur lauter.
+    Jede Lage muss sich ANDERS bewegen; die Reihenfolge ist nicht
+    beliebig (Strahlen am tiefsten, dann Einschlag, Teilchen, Konfetti).
+    Vier Schichten sind das Maximum. Der Pokal im Abend-Rückblick bleibt
+    bewusst bei einer: Er steht in einer **Liste**, und eine Liste, in der
+    an mehreren Stellen etwas fliegt, liest sich nicht mehr.
   - **Gerechneter Zufall** (`EffectNoise`). Mit `Double.random` springen
     die Teilchen bei jedem Neuzeichnen woandershin – und SwiftUI zeichnet
     öfter neu, als man denkt.
@@ -772,9 +784,32 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   mit den Nachbarplätzen: Liegt links schon ein Loch und man zieht die
   Karte daneben, liegen danach zwei Kartenbreiten frei – und das ist ein
   Riss, auch wenn der Nachbarplatz leer war. Für **dieselbe** Lücke zahlt
-  aber niemand zweimal, deshalb die Gegenprobe vor dem Zug: Berührte die
-  gezogene Karte ihre beiden Nachbarn überhaupt noch? Wenn nicht, war dort
-  schon offen.
+  aber niemand zweimal, deshalb die Gegenprobe vor dem Zug: War der Ring
+  an einer der beiden Seiten schon offen? Dann hat das jemand anderes
+  bezahlt.
+
+  **„Gerissen" heißt sichtbar gerissen** (26. Oktober, am Tisch gemeldet:
+  „Es reißt, aber ich sehe keine Lücke"). Vorher reichte „die Nachbarn
+  berühren sich nicht mehr" – und das ist genau der Moment, in dem die
+  Lücke **null** ist. Die Regel feuerte also bauartbedingt, bevor es etwas
+  zu sehen gab; nachgerechnet lag die Hälfte aller Risse unter einem
+  Sechstel Kartenbreite. Jetzt muss eine **Viertelkarte** Luft sein
+  (`visibleGap`). Der Trugschluss dabei: Mehr Überlappung hilft nicht,
+  sie macht es schlimmer – je dichter die Karten liegen, desto feiner ist
+  der Spalt an der Schwelle. Deshalb ist `overlapFactor` mit gesunken.
+  Die drei Zahlen hängen voneinander ab und werden nur zusammen angefasst;
+  `RingLayoutTests` hält die Folgen fest.
+
+  **Und die Lücke wird GEZEICHNET** (`RingLayout.openings`, `gapMarker`) –
+  aus derselben Sehnenrechnung wie die Kartenbreite. Eine Markierung, die
+  anders gerechnet wird, zeigt eine andere Lücke als die, für die jemand
+  getrunken hat. Gezeichnet wird **jede** offene Stelle und nicht nur die
+  letzte: Eine Lücke bleibt liegen, und wer vom Aktionsscreen zurückkommt,
+  soll sehen, wie der Ring steht. Das ist der Gegenpol zum unsichtbaren
+  Kartenplatz weiter unten – unsichtbar ist der Platz der **gezogenen
+  Karte**, sichtbar die **Lücke zwischen den Nachbarn**. Das eine macht
+  jeden Zug gleich aussehen, das andere ist die Stelle, um die es in der
+  Regel geht.
 
   **Drei Risse kostet eine Runde, dann ist die Regel durch.** Nach den
   ersten beiden wird eingesammelt und neu gelegt (`relayout()`); danach
@@ -783,15 +818,18 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   wahrscheinlicher macht – ohne ihn wäre der Riss eine Steuer, die den
   ganzen Abend mitläuft.
 
-  **Zwei Konstanten machen das Spiel**, beide durchgerechnet und per Test
-  gedeckelt: `overlapFactor` (2,4) sagt, wie viel breiter eine Karte ist
-  als der mittlere Abstand zur Nachbarin, `jitter` (0,6) streut die
-  Abstände. Ohne Streuung lägen alle Karten gleich dicht, und Ziehen wäre
+  **Drei Konstanten machen das Spiel**, alle durchgerechnet und per Test
+  gedeckelt: `overlapFactor` sagt, wie viel breiter eine Karte ist als der
+  mittlere Abstand zur Nachbarin, `jitter` streut die Abstände,
+  `visibleGap` ist die Mindestbreite einer Lücke, die zählt. Ohne Streuung lägen alle Karten gleich dicht, und Ziehen wäre
   entweder nie oder immer gefährlich; mit Streuung gibt es dichte Stellen
   und dünne – und **man kann es sehen**. Die Größenordnung hält
   `RingLayoutTests` fest: Auf frisch gelegtem Ring reißt jeder fünfte Zug,
-  die drei Shots sind nach rund zehn Zügen vergeben. Wenn das am Tisch zu
-  früh vorbei ist, gehört der Deckel an die Kartenzahl gekoppelt.
+  die drei Shots sind nach rund zehn Zügen vergeben, und **jede Lücke, die
+  zählt, ist mindestens eine Viertelkarte breit**. Der letzte Punkt ist
+  der Wächter: Fällt er, ist die Regel wieder unsichtbar, egal wie richtig
+  sie rechnet. Wenn das am Tisch zu früh vorbei ist, gehört der Deckel an
+  die Kartenzahl gekoppelt.
 
   Vier Feinheiten, die beim Anfassen alle einen Shot wert sind:
   - Die Abstände werden auf genau **360 Grad normiert**, sonst klafft
@@ -1075,16 +1113,25 @@ oben; was schief aussieht, unten.
   standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.
 ### Was zuletzt gebaut wurde und nie lief
 
-- **Der Riss zählt jetzt die liegenden Nachbarn.** Zu prüfen ist genau der
-  Fall, der vorher schwieg: eine Karte ziehen, die **neben einer schon
-  offenen Stelle** liegt – das muss reißen, und man muss die zwei
-  Kartenbreiten sehen. Umgekehrt darf dieselbe Stelle nicht zweimal zahlen.
-  Dazu die Folge aus der Rechnung: Die drei Shots sind nach rund zehn Zügen
-  weg – fühlt sich das richtig an, oder soll der Deckel mit der Kartenzahl
-  wachsen (etwa einer je sieben Karten: 3 / 5 / 7)? Und: Landet der Shot
-  bei der Person, die gezogen hat (nicht bei der nächsten), liegt der Ring
-  nach dem „Verstanden" sichtbar **neu**, und bleibt nach dem dritten Riss
-  wirklich alles still – kein Blitz, kein Knall, kein Banner?
+- **Der Riss muss jetzt zu SEHEN sein** (26. Oktober, dritter Anlauf –
+  die beiden davor haben die Rechnung repariert, nicht das Bild). Der
+  entscheidende Punkt: Wenn der Shot kommt, muss an der Stelle eine
+  leuchtende Lücke stehen, und zwar mindestens eine Viertelkarte breit.
+  Gerechnet ist das abgedeckt; am Tisch zählt, ob man sie **ohne Suchen**
+  findet und ob sie da steht, wo man sie erwartet. Dazu: Bleibt die
+  Markierung liegen, wenn man vom Aktionsscreen zurückkommt, und ist sie
+  nach dem Neulegen weg? Steht auf einem vollen Ring **keine**? Und
+  reißt die Karte **neben** einer Lücke – während dieselbe Stelle nicht
+  zweimal zahlt?
+  Zwei Zahlen sind dabei neu gesetzt und nur gerechnet: Die Überlappung
+  ist von 2,4 auf 1,95 gesunken, der Ring liegt also **weniger dicht** als
+  vorher. Sieht er noch geschuppt aus oder schon wie ein Kranz mit Luft?
+  Und die Quote soll gleich geblieben sein (jeder fünfte Zug, drei Shots
+  nach rund zehn Zügen) – stimmt das am Tisch, oder soll der Deckel mit
+  der Kartenzahl wachsen (etwa einer je sieben Karten: 3 / 5 / 7)?
+  Außerdem weiter offen: Landet der Shot bei der Person, die gezogen hat
+  (nicht bei der nächsten), liegt der Ring nach dem „Verstanden" sichtbar
+  **neu**, und bleibt nach dem dritten Riss wirklich alles still?
 - **Ring of Fire bucht mit (25. Oktober)**: Einen Abend starten, Ring of
   Fire spielen, bis ein Ass und eine Drei gezogen sind – stehen beide
   danach in der Trinkbilanz der richtigen Person? Und steht dort **nichts**
@@ -1111,13 +1158,18 @@ oben; was schief aussieht, unten.
   und sagt der Knopf „Anderes Rad" sauber zurück in die Auswahl? Dazu die
   Vorschau im Editor: Steht dort derselbe Satz, der nach der Drehung
   erscheint?
-- **Die neuen Szenen (25. Oktober)**: Der wichtigste Punkt ist die
-  Lesbarkeit – stört irgendwo eine Schicht den Text, besonders bei großer
-  Schrift? Dann die Bilder pro Sekunde: Die Dame und das Ass haben vier
-  bis fünf Schichten, das ist das Maximum. Ruckelt es? Dazu einmal mit
+- **Die Szenen sind laut gestellt** (26. Oktober, auf Wunsch): Alle
+  Bausteine sind kräftiger, und vier Stellen haben zusätzliche Schichten –
+  der Riss (Funken und Einschlag dazu), der Sieger-Screen (Pokal schlägt
+  ein, Becher steigen), der Zeitstrahl-Sieg und der Knall in der Bombe.
+  **Der wichtigste Punkt ist jetzt erst recht die Lesbarkeit**: Stört
+  irgendwo eine Schicht den Text, besonders bei großer Schrift oder im
+  Tischmodus? Wenn ja, sag welche Stelle – dann wird dort gedämpft, nicht
+  überall. Dazu die Bilder pro Sekunde: Der Sieger-Screen hat jetzt vier
+  Schichten, die Dame und das Ass auch. Ruckelt es? Und einmal mit
   **„Bewegung reduzieren"** an durch Ring of Fire, Sieger-Screen und
-  Roulette: Es muss still, aber nicht leer sein. Und der Blitz beim Riss
-  muss bei **jedem** Riss kommen, nicht nur beim ersten.
+  Roulette: Es muss still, aber nicht leer sein. Der Blitz beim Riss muss
+  bei **jedem** Riss kommen, nicht nur beim ersten.
 - **Ohne Konto (26. Oktober)**: Abmelden, dann „Ohne Konto loslegen" –
   laufen alle Partyspiele, bleibt die Beerpong-Kachel stehen und erklärt
   sich, ist das Personen-Symbol weg? Danach aus den Einstellungen heraus
