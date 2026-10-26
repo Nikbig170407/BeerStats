@@ -36,6 +36,7 @@ struct SettingsView: View {
     @AppStorage(AppAppearance.backdropKey) private var backdropRaw = BackdropStyle.bubbles.rawValue
     @AppStorage(AppAppearance.neonEdgesKey) private var neonEdgesOn = true
     @AppStorage(AppPalette.storageKey) private var paletteRaw = AppPalette.amber.rawValue
+    @AppStorage(TableMode.storageKey) private var isTableMode = false
 
     @State private var showsSignOutConfirmation = false
     /// Spiegelt die gespeicherte Wahl – UserDefaults meldet sich nicht von
@@ -83,6 +84,14 @@ struct SettingsView: View {
     /// den Bausteinen selbst gelesen, nicht von den einzelnen Ansichten.
     private var appearanceSection: some View {
         section("DARSTELLUNG") {
+            toggleRow(
+                title: "Tischmodus",
+                detail: isTableMode
+                    ? "Große Schrift, Bildschirm bleibt an"
+                    : "Für das Handy in der Tischmitte",
+                isOn: $isTableMode
+            )
+
             Text("FARBSCHEMA")
                 .font(.scaled(10, weight: .heavy, design: .rounded))
                 .kerning(1.2)

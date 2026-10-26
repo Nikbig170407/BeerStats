@@ -46,9 +46,14 @@ struct BeerStatsApp: App {
     /// Nur hier gelesen, damit ein Wechsel die ganze Oberflaeche neu baut.
     @AppStorage(AppPalette.storageKey) private var paletteRaw = AppPalette.amber.rawValue
 
+    /// Der Tischmodus gilt fuer alles – also steht er dort, wo die App
+    /// zusammengesetzt wird, und nicht in den einzelnen Ansichten.
+    @AppStorage(TableMode.storageKey) private var isTableMode = false
+
     var body: some Scene {
         WindowGroup {
             RootView()
+                .tableMode(isTableMode)
                 .environmentObject(appState)
                 .environment(\.appContainer, container)
                 .preferredColorScheme(.dark) // BeerStats ist primär als Dark-Mode-App konzipiert
