@@ -121,10 +121,13 @@ struct BombPassView: View {
             if phase == .exploded {
                 EffectShockwave(tint: BeerStatsColor.warning, rings: 3, duration: 1.1)
                 EffectParticles(
-                    symbol: "💥", count: 10, flight: .burst,
+                    symbol: "💥", count: 16, flight: .burst,
                     tint: BeerStatsColor.warning, duration: 1.3,
-                    stagger: 0.07, sizeRange: 20...40, opacity: 0.6
+                    stagger: 0.05, sizeRange: 26...52, opacity: 0.95
                 )
+                // Ein Knall darf knallen: Der Einschlag kommt NACH der
+                // Welle ins Bild und gibt ihr etwas, von dem sie ausgeht.
+                EffectSlam(symbol: "💣", from: .bottom, tint: BeerStatsColor.error, size: 210, opacity: 0.34)
             }
 
             Circle()

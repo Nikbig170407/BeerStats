@@ -315,7 +315,18 @@ struct RingOfFireView: View {
             // Stelle zeigt ohnehin schon der Blitz dort.
             .overlay {
                 if tornAt != nil {
-                    EffectShockwave(tint: BeerStatsColor.warning, rings: 2, duration: 1.0)
+                    // Drei Schichten uebereinander, und das ist hier
+                    // richtig: Der Riss ist der lauteste Moment des Spiels
+                    // – er kostet einen Shot und hat die Regel im Namen.
+                    // Mit einer Druckwelle allein sah er aus wie jede
+                    // andere Rueckmeldung.
+                    EffectShockwave(tint: BeerStatsColor.warning, rings: 3, duration: 1.0)
+                    EffectParticles(
+                        symbol: "💥", count: 14, flight: .burst,
+                        tint: BeerStatsColor.warning, duration: 1.1,
+                        stagger: 0.04, sizeRange: 26...52, opacity: 0.95
+                    )
+                    EffectSlam(symbol: "💥", from: .top, tint: BeerStatsColor.error, size: 200, opacity: 0.32)
                 }
             }
             // Der Ruck beim Reissen. Kurz und klein – der Ring soll zucken,

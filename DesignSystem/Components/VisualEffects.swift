@@ -33,6 +33,20 @@
 //     hat, bekommt das Bild ohne Flug – nicht nichts, sonst fehlt die
 //     Farbe, die zur Szene gehoert.
 //
+//  **Zur Lautstaerke** (26. Oktober, auf Wunsch des Nutzers): Die
+//  Vorgabewerte hier waren auf "stoert nicht" eingestellt – Strahlen um
+//  0,2, Einschlaege um 0,3, acht Teilchen. Am Tisch, auf einem Handy in
+//  der Mitte und aus anderthalb Metern, war davon fast nichts zu sehen.
+//  Jetzt liegen sie auf "faellt auf": Strahlen um 0,34, Einschlaege um
+//  0,42, zwoelf Teilchen, und die Druckwelle hat einen Schein.
+//
+//  Die Grenze bleibt dieselbe, nur weiter hinten: **Der Text muss lesbar
+//  bleiben.** Deshalb liegt weiter alles HINTER dem Text, und die
+//  Reihenfolge der Schichten ist nicht beliebig – Strahlen am tiefsten,
+//  dann Einschlag, dann Teilchen, dann Konfetti. Wer eine Schicht
+//  hochdreht, bis der Text leidet, hat eine zu viel: Praechtig wird es
+//  durch VERSCHIEDENE Bewegungen, nicht durch mehr vom Gleichen.
+//
 
 import SwiftUI
 
@@ -75,15 +89,15 @@ enum EffectFlight {
 struct EffectParticles: View {
 
     let symbol: String
-    var count: Int = 8
+    var count: Int = 12
     var flight: EffectFlight = .rise
     var tint: Color = BeerStatsColor.accent
     /// Wie lange ein Zeichen unterwegs ist.
     var duration: Double = 2.2
     /// Abstand zwischen zwei Zeichen.
-    var stagger: Double = 0.17
-    var sizeRange: ClosedRange<CGFloat> = 24...44
-    var opacity: Double = 0.75
+    var stagger: Double = 0.14
+    var sizeRange: ClosedRange<CGFloat> = 30...56
+    var opacity: Double = 0.92
     /// Seed trennt zwei Teilchenfelder in derselben Szene. Ohne ihn liegen
     /// Funken und Rauch genau uebereinander.
     var seed: Int = 0
@@ -92,7 +106,7 @@ struct EffectParticles: View {
     @State private var running = false
 
     /// Mehr als das bringt kein Bild, kostet aber Bilder pro Sekunde.
-    private static let maximum = 24
+    private static let maximum = 28
 
     private var anzahl: Int { min(max(count, 1), Self.maximum) }
 
@@ -140,7 +154,7 @@ struct EffectParticles: View {
             // Leicht ausfaechern, damit nicht alles auf einer Linie liegt.
             return start + (running ? EffectNoise.scatter(index, seed: seed + 7) * width * 0.14 : 0)
         case .burst:
-            return running ? richtung(index).dx * width * 0.48 : 0
+            return running ? richtung(index).dx * width * 0.56 : 0
         case .sweep:
             return running ? width * 0.5 : -width * 0.5
         case .orbit:
@@ -153,11 +167,11 @@ struct EffectParticles: View {
     private func offsetY(_ index: Int, height: CGFloat) -> CGFloat {
         switch flight {
         case .rise:
-            return running ? -height * 0.55 : height * 0.55
+            return running ? -height * 0.62 : height * 0.62
         case .fall:
-            return running ? height * 0.55 : -height * 0.55
+            return running ? height * 0.62 : -height * 0.62
         case .burst:
-            return running ? richtung(index).dy * height * 0.48 : 0
+            return running ? richtung(index).dy * height * 0.56 : 0
         case .sweep:
             return EffectNoise.scatter(index, seed: seed + 3) * height * 0.34
         case .orbit:
@@ -180,14 +194,14 @@ struct EffectParticles: View {
     private func drehung(_ index: Int) -> Double {
         switch flight {
         case .sweep, .orbit: return 0
-        default: return Double(EffectNoise.scatter(index, seed: seed + 23)) * 28
+        default: return Double(EffectNoise.scatter(index, seed: seed + 23)) * 40
         }
     }
 
     private func skalierung(_ index: Int) -> CGFloat {
         guard !reduceMotion else { return 1 }
         switch flight {
-        case .burst: return running ? 1.6 : 0.5
+        case .burst: return running ? 2.0 : 0.4
         case .orbit: return running ? 1.1 : 0.9
         default: return running ? 1.15 : 0.8
         }
@@ -203,7 +217,7 @@ struct EffectShockwave: View {
     var tint: Color = BeerStatsColor.warning
     var rings: Int = 3
     var duration: Double = 1.6
-    var lineWidth: CGFloat = 3
+    var lineWidth: CGFloat = 5
     /// Wartet, bevor der erste Ring laeuft – fuer den Einschlag, der ihn
     /// ausloest.
     var delay: Double = 0
@@ -219,9 +233,19 @@ struct EffectShockwave: View {
                 ForEach(0..<max(rings, 1), id: \.self) { index in
                     Circle()
                         .strokeBorder(tint, lineWidth: lineWidth)
+                        // Der Schein hinter dem Ring. Ein nackter Strich
+                        // wird beim Groesserwerden optisch duenner; der
+                        // weiche Rand haelt die Welle sichtbar, bis sie
+                        // aus dem Bild laeuft.
+                        .background(
+                            Circle()
+                                .strokeBorder(tint, lineWidth: lineWidth * 2.4)
+                                .blur(radius: lineWidth * 2)
+                                .opacity(0.8)
+                        )
                         .frame(width: seite * 0.3, height: seite * 0.3)
-                        .scaleEffect(running ? 2.6 : 0.2)
-                        .opacity(running ? 0 : 0.7)
+                        .scaleEffect(running ? 3.2 : 0.18)
+                        .opacity(running ? 0 : 1)
                         .animation(
                             reduceMotion
                                 ? nil
@@ -248,8 +272,8 @@ struct EffectRays: View {
 
     var tint: Color = BeerStatsColor.warning
     var spokes: Int = 12
-    var duration: Double = 14
-    var opacity: Double = 0.22
+    var duration: Double = 10
+    var opacity: Double = 0.34
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var running = false
@@ -268,7 +292,7 @@ struct EffectRays: View {
                                 endPoint: .bottom
                             )
                         )
-                        .frame(width: seite * 0.045, height: seite / 2)
+                        .frame(width: seite * 0.062, height: seite / 2)
                         .offset(y: -seite / 4)
                         .rotationEffect(.degrees(Double(index) / Double(max(spokes, 1)) * 360))
                 }
@@ -300,8 +324,8 @@ struct EffectSlam: View {
     let symbol: String
     var from: Edge = .top
     var tint: Color = BeerStatsColor.warning
-    var size: CGFloat = 150
-    var opacity: Double = 0.3
+    var size: CGFloat = 190
+    var opacity: Double = 0.42
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var landed = false
@@ -311,15 +335,15 @@ struct EffectSlam: View {
             .font(.system(size: size))
             .foregroundStyle(tint)
             .opacity(landed || reduceMotion ? opacity : 0)
-            .scaleEffect(landed || reduceMotion ? 1 : 2.2)
+            .scaleEffect(landed || reduceMotion ? 1 : 2.6)
             .offset(
                 x: landed || reduceMotion ? 0 : start.x,
                 y: landed || reduceMotion ? 0 : start.y
             )
-            .rotationEffect(.degrees(landed || reduceMotion ? 0 : -18))
+            .rotationEffect(.degrees(landed || reduceMotion ? 0 : -26))
             // Wenig Daempfung: Das Zeichen schiesst ueber und federt zurueck.
             // Genau das macht aus einem Einblenden einen Einschlag.
-            .animation(reduceMotion ? nil : .spring(response: 0.48, dampingFraction: 0.42), value: landed)
+            .animation(reduceMotion ? nil : .spring(response: 0.52, dampingFraction: 0.36), value: landed)
             .accessibilityHidden(true)
             .allowsHitTesting(false)
             .onAppear { landed = true }
@@ -344,7 +368,7 @@ struct EffectSlam: View {
 /// Sieg hat schon genug davon. Streifen sind reine Freude.
 struct EffectConfetti: View {
 
-    var count: Int = 22
+    var count: Int = 32
     var duration: Double = 2.8
     var colors: [Color] = [
         BeerStatsColor.accent,
@@ -357,7 +381,7 @@ struct EffectConfetti: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var running = false
 
-    private static let maximum = 40
+    private static let maximum = 52
 
     private var anzahl: Int { min(max(count, 1), Self.maximum) }
 
@@ -370,7 +394,7 @@ struct EffectConfetti: View {
                 ForEach(0..<anzahl, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
                         .fill(colors[index % max(colors.count, 1)])
-                        .frame(width: 7, height: 16 + EffectNoise.unit(index, seed: 5) * 12)
+                        .frame(width: 9, height: 20 + EffectNoise.unit(index, seed: 5) * 16)
                         .rotationEffect(.degrees(running ? 540 + Double(EffectNoise.scatter(index, seed: 9)) * 360 : 0))
                         .offset(
                             x: EffectNoise.scatter(index, seed: 2) * breite * 0.48,
@@ -382,7 +406,7 @@ struct EffectConfetti: View {
                                 ? nil
                                 : .easeIn(duration: duration + Double(EffectNoise.unit(index, seed: 4)) * 1.4)
                                     .repeatForever(autoreverses: false)
-                                    .delay(Double(index) * 0.09),
+                                    .delay(Double(index) * 0.06),
                             value: running
                         )
                 }
@@ -415,7 +439,7 @@ struct EffectFlash<Trigger: Equatable>: View {
     var body: some View {
         Rectangle()
             .fill(tint)
-            .opacity(bright ? 0.5 : 0)
+            .opacity(bright ? 0.8 : 0)
             .ignoresSafeArea()
             .accessibilityHidden(true)
             .allowsHitTesting(false)
@@ -423,7 +447,7 @@ struct EffectFlash<Trigger: Equatable>: View {
                 guard !reduceMotion, neu != shown else { return }
                 shown = neu
                 bright = true
-                withAnimation(.easeOut(duration: 0.45)) { bright = false }
+                withAnimation(.easeOut(duration: 0.65)) { bright = false }
             }
     }
 }
