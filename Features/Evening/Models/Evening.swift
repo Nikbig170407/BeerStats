@@ -57,14 +57,12 @@ struct EveningParticipant: Codable, Identifiable, Equatable {
     /// Haerte galt beim Buchen und darf einen alten Abend nicht
     /// nachtraeglich umrechnen.
     func tallyText(separator: String, whenEmpty: String) -> String {
-        var teile: [String] = []
-        if sips > 0 {
-            teile.append(sips == 1 ? "1 Schluck" : "\(sips) Schlücke")
-        }
-        if shots > 0 {
-            teile.append(shots == 1 ? "1 Shot" : "\(shots) Shots")
-        }
-        return teile.isEmpty ? whenEmpty : teile.joined(separator: separator)
+        PenaltyStyle.current.tallyText(
+            sips: sips,
+            shots: shots,
+            separator: separator,
+            whenEmpty: whenEmpty
+        )
     }
 }
 

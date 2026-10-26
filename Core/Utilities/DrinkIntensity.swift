@@ -174,7 +174,14 @@ enum DrinkAmount: Equatable {
     private static let shotInSips = 5
 
     /// Der ausgeschriebene Text in der aktuell gewaehlten Haerte.
+    ///
+    /// Wird nicht getrunken, formuliert `PenaltyStyle` – das ist der ganze
+    /// Eingriff fuer "Strafen, die kein Trinken sind". Moeglich nur, weil
+    /// Mengen nirgends als Zahl im Text stehen, sondern alle hier
+    /// durchlaufen.
     var text: String {
+        if let andere = PenaltyStyle.current.text(for: self) { return andere }
+
         let intensity = DrinkIntensity.current
 
         switch self {

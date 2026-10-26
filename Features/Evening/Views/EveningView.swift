@@ -206,7 +206,7 @@ struct EveningView: View {
             LastBookingRow(evening: abend) { evening = EveningLog.current }
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("TRINKBILANZ")
+                Text(PenaltyStyle.current.tallyTitle)
                     .font(.scaled(11, weight: .heavy, design: .rounded))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)

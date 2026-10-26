@@ -38,6 +38,9 @@ struct SettingsView: View {
     @AppStorage(AppPalette.storageKey) private var paletteRaw = AppPalette.amber.rawValue
 
     @State private var showsSignOutConfirmation = false
+    /// Spiegelt die gespeicherte Wahl – UserDefaults meldet sich nicht von
+    /// selbst bei SwiftUI.
+    @State private var penaltyStyle = PenaltyStyle.current
 
     var body: some View {
         ZStack {
@@ -47,6 +50,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     appearanceSection
                     soundSection
+                    penaltySection
                     drinkSection
                     developerSection
                     accountSection
@@ -204,24 +208,60 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Womit bezahlt wird
+
+    /// Steht UEBER den Trinkregeln, nicht darin.
+    ///
+    /// Wer nicht trinkt, soll es nicht unter "Trinkregeln" suchen muessen –
+    /// und die Wahl entscheidet, ob die Zeilen darunter ueberhaupt gelten.
+    private var penaltySection: some View {
+        section("STRAFEN") {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(PenaltyStyle.allCases) { stil in
+                    OptionRow(
+                        emoji: stil.emoji,
+                        title: stil.title,
+                        detail: stil.detail,
+                        isOn: stil == penaltyStyle,
+                        tint: BeerStatsColor.accentSecondary
+                    ) {
+                        penaltyStyle = stil
+                        PenaltyStyle.current = stil
+                    }
+                }
+
+                Text("Gilt für alles, was die App ansagt – jede Karte, jedes Feld, jede Runde. Wer nicht trinkt, spielt damit trotzdem mit.")
+                    .font(.scaled(10, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
     // MARK: - Trinkregeln
 
+    @ViewBuilder
     private var drinkSection: some View {
-        section("TRINKREGELN") {
-            DrinkIntensityPicker()
+        // Haerte und Shots formulieren Schluecke aus. Wird nicht getrunken,
+        // haben beide nichts zu sagen – und eine Einstellung, die nichts
+        // bewirkt, probiert man am Tisch trotzdem aus.
+        if penaltyStyle == .drinks {
+            section("TRINKREGELN") {
+                DrinkIntensityPicker()
 
-            toggleRow(
-                title: "Mit Shots",
-                detail: shotsEnabled
-                    ? "Karten dürfen Shots verlangen"
-                    : "Shots werden in Schlücke umgerechnet",
-                isOn: $shotsEnabled
-            )
+                toggleRow(
+                    title: "Mit Shots",
+                    detail: shotsEnabled
+                        ? "Karten dürfen Shots verlangen"
+                        : "Shots werden in Schlücke umgerechnet",
+                    isOn: $shotsEnabled
+                )
 
-            Text("Die Härte stellst du im Vorspann jedes Spiels ein – hier steht nur, womit ein Spiel anfängt, das du noch nie eingestellt hast. „Mit Shots“ gilt überall.")
-                .font(.scaled(10, weight: .medium, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                Text("Die Härte stellst du im Vorspann jedes Spiels ein – hier steht nur, womit ein Spiel anfängt, das du noch nie eingestellt hast. „Mit Shots“ gilt überall.")
+                    .font(.scaled(10, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
