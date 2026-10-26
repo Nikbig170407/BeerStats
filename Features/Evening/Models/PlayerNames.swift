@@ -138,10 +138,7 @@ extension EveningLog {
         else { return }
 
         let id = abend.participants[index].id
-        let (sips, shots) = amount.tally
-
-        if sips > 0 { addSips(sips, to: id) }
-        for _ in 0..<shots { addShot(to: id) }
+        book(amount, on: id)
     }
 
     /// Dieselbe Menge fuer mehrere Positionen auf einmal – etwa "alle ausser
@@ -168,9 +165,29 @@ extension EveningLog {
               abend.participants.contains(where: { $0.id == id })
         else { return }
 
+        book(amount, on: id)
+    }
+
+    /// Der eine Weg, auf dem eine Menge in die Bilanz kommt.
+    ///
+    /// Beide Aufrufstellen (ueber die Position und ueber die Profil-ID)
+    /// gehen hier durch, damit die Buchung in JEDEM Fall gemerkt wird –
+    /// sonst liesse sich die eine zuruecknehmen und die andere nicht, und
+    /// am Tisch merkt sich niemand, welches Spiel welchen Weg benutzt.
+    private static func book(_ amount: DrinkAmount, on participantId: String) {
         let (sips, shots) = amount.tally
 
-        if sips > 0 { addSips(sips, to: id) }
-        for _ in 0..<shots { addShot(to: id) }
+        if sips > 0 { addSips(sips, to: participantId) }
+        for _ in 0..<shots { addShot(to: participantId) }
+
+        remember(
+            EveningBooking(
+                participantId: participantId,
+                sips: sips,
+                shots: shots,
+                at: Date(),
+                source: nil
+            )
+        )
     }
 }

@@ -103,11 +103,31 @@ struct EveningEntry: Codable, Identifiable, Equatable {
     var trophyPoints: Int { winnerIds == nil ? 0 : (points ?? 0) }
 }
 
+/// Eine gebuchte Menge – gemerkt, damit sie zurueckgenommen werden kann.
+///
+/// Am Tisch vertippt man sich, und zwar auf zwei Arten: falsche Menge und
+/// falsche Person. Die Minus-Taste am Teilnehmer deckt nur die erste ab, und
+/// auch die nur schluckweise – drei Schluecke zurueckzunehmen hiess dreimal
+/// tippen, und eine Buchung auf den Falschen war gar nicht zu heilen.
+struct EveningBooking: Codable, Equatable {
+    let participantId: String
+    let sips: Int
+    let shots: Int
+    let at: Date
+    /// Woher sie kam, fuer die Zeile "Zuletzt: Ring of Fire".
+    var source: String?
+}
+
 struct Evening: Codable, Equatable {
     var startedAt: Date
     var endedAt: Date?
     var participants: [EveningParticipant]
     var entries: [EveningEntry]
+
+    /// Die zuletzt gebuchte Menge. Optional, damit Abende aus der Zeit
+    /// davor sich weiter lesen lassen – dieselbe Regel wie bei der
+    /// Sicherungsdatei.
+    var lastBooking: EveningBooking?
 
     var isRunning: Bool { endedAt == nil }
 
@@ -343,7 +363,34 @@ enum EveningLog {
     }
 
     static func record(partyGame: PartyGame) {
+        startIfNeeded()
         record(title: partyGame.title, emoji: partyGame.emoji, gameId: partyGame.rawValue)
+    }
+
+    /// Startet einen Abend, sobald das erste Spiel aufgemacht wird.
+    ///
+    /// Vorher musste man ihn suchen und antippen, bevor irgendetwas gezaehlt
+    /// wurde – und genau das vergisst am Tisch jeder. Wer um halb elf merkt,
+    /// dass die Bilanz leer ist, faengt nicht mehr an.
+    ///
+    /// Nur, wenn jemand am Tisch steht: Ein Abend ohne Teilnehmer kann
+    /// nichts buchen (`change` findet niemanden) und waere eine Liste
+    /// gespielter Spiele ohne Leute. Wer die Aufstellung nie angefasst hat,
+    /// spielt wie bisher weiter, nur ohne Bilanz.
+    static func startIfNeeded() {
+        guard current?.isRunning != true else { return }
+
+        let tisch = TableRoster.seats
+        guard !tisch.isEmpty else { return }
+
+        current = Evening(
+            startedAt: Date(),
+            endedAt: nil,
+            participants: tisch.map {
+                EveningParticipant(id: $0.id, name: $0.name, emoji: $0.emoji)
+            },
+            entries: []
+        )
     }
 
     /// Traegt den Sieger in den Eintrag nach, der beim Betreten entstanden
@@ -439,6 +486,33 @@ enum EveningLog {
                 teilnehmer.shots -= 1
             }
         }
+    }
+
+    /// Nimmt die zuletzt gebuchte Menge ganz zurueck – samt Person.
+    ///
+    /// Gibt `true` zurueck, wenn etwas passiert ist, damit die Ansicht
+    /// nicht so tut, als haette sie etwas getan.
+    @discardableResult
+    static func undoLastBooking() -> Bool {
+        guard var abend = current, abend.isRunning,
+              let buchung = abend.lastBooking,
+              let index = abend.participants.firstIndex(where: { $0.id == buchung.participantId })
+        else { return false }
+
+        // Nie unter null: Wer zwischendurch von Hand korrigiert hat, soll
+        // nicht ins Minus rutschen.
+        abend.participants[index].sips = max(0, abend.participants[index].sips - buchung.sips)
+        abend.participants[index].shots = max(0, abend.participants[index].shots - buchung.shots)
+        abend.lastBooking = nil
+        current = abend
+        return true
+    }
+
+    /// Haelt fest, was zuletzt gebucht wurde.
+    static func remember(_ booking: EveningBooking) {
+        guard var abend = current, abend.isRunning else { return }
+        abend.lastBooking = booking
+        current = abend
     }
 
     private static func change(_ participantId: String, _ body: (inout EveningParticipant) -> Void) {

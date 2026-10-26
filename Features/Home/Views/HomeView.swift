@@ -44,6 +44,11 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     header
                     eveningCard
+                    // Direkt unter dem Abend: Wer sich vertippt hat, geht
+                    // aus dem Spiel einmal zurueck und sieht es hier.
+                    LastBookingRow(evening: runningEvening) {
+                        runningEvening = EveningLog.current
+                    }
                     // Die Härte stand hier, über allen Partyspielen. Sie
                     // steht jetzt im Vorspann jedes Spiels, das Mengen
                     // ausspricht: Mäxchen wird anders getrunken als

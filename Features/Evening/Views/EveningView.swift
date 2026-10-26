@@ -201,6 +201,10 @@ struct EveningView: View {
                     .foregroundStyle(BeerStatsColor.textSecondary)
             }
 
+            // Ueber der Bilanz, nicht darunter: Wer hierherkommt, weil er
+            // sich vertippt hat, soll nicht erst an acht Namen vorbei.
+            LastBookingRow(evening: abend) { evening = EveningLog.current }
+
             VStack(alignment: .leading, spacing: 10) {
                 Text("TRINKBILANZ")
                     .font(.scaled(11, weight: .heavy, design: .rounded))
