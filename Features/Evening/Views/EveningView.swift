@@ -353,6 +353,17 @@ struct EveningView: View {
         if let durstig = abend.mostDrinks {
             rows.append(.init(label: "Durstigste Person", value: "\(durstig.emoji) \(durstig.name)"))
         }
+        // Was den Abend bestimmt hat. Die erzaehlendste Zeile des Plakats:
+        // "Vier Runden Ring of Fire" ist die Erinnerung, die Dauer nicht.
+        if let oft = abend.mostPlayed {
+            rows.append(.init(label: "Meistgespielt", value: "\(oft.emoji) \(oft.title) (\(oft.count)×)"))
+        }
+        // Eine Auszeichnung, nicht alle: Das Plakat soll ein Plakat
+        // bleiben und keine Liste. Die erste ist die seltenste, weil
+        // `forEvening` von selten nach haeufig baut.
+        if let besonderes = EveningAchievements.forEvening(abend).first {
+            rows.append(.init(label: besonderes.title, value: "\(besonderes.emoji) \(besonderes.detail)"))
+        }
 
         let datum = Date.FormatStyle.dateTime.day().month(.wide).year()
 

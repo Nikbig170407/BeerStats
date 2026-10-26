@@ -60,6 +60,27 @@ enum GameSound: String, CaseIterable {
         }
     }
 
+    /// Wie stark sich dieser Klang bei Wiederholung veraendert.
+    ///
+    /// Zehn Klaenge fuer eine ganze App heisst: Ein paar davon hoert man
+    /// hundertmal am Abend. Ein Becher-Treffer, der jedes Mal bis aufs
+    /// Sample identisch klingt, verraet nach zwanzig Wuerfen, dass es
+    /// derselbe Schnipsel ist – und ab da hoert man den Schnipsel statt des
+    /// Treffers. Am echten Tisch klingt kein Becher wie der vorige.
+    ///
+    /// Veraendert wird die Abspielrate, also Tempo UND Tonhoehe zugleich.
+    /// Bei kurzen, perkussiven Klaengen ist genau das richtig; bei einer
+    /// Melodie waere es ein Fehler.
+    ///
+    /// Die Signaturklaenge bleiben deshalb fest: Ein Sieg, der jedes Mal
+    /// anders klingt, klingt kaputt. Variiert wird nur, was oft kommt.
+    var pitchVariation: Float {
+        switch self {
+        case .cupHit, .tap, .cardFlip, .miss: return 0.06
+        case .airball, .bombe, .ballsBack, .onFire, .reRack, .victory: return 0
+        }
+    }
+
     /// Grundlautstärke. Der Airball ist ein Musikclip und deutlich lauter
     /// abgemischt als die kurzen Signale.
     var volume: Float {
@@ -98,6 +119,7 @@ enum SoundManager {
         pendingStops[sound] = nil
 
         player.volume = sound.volume
+        player.rate = rate(for: sound)
         player.currentTime = 0
         player.play()
 
@@ -127,6 +149,28 @@ enum SoundManager {
         }
     }
 
+    /// Wie oft dieser Klang schon lief – fuer die Variation.
+    private static var repetitions: [GameSound: Int] = [:]
+
+    /// Die Abspielrate dieses Durchlaufs.
+    ///
+    /// Gerechnet und nicht gewuerfelt: Zufall trifft irgendwann zweimal
+    /// hintereinander denselben Wert, und genau das hoert man – zwei
+    /// identische Treffer nacheinander fallen mehr auf als zwanzig
+    /// verschiedene. Die Stufen laufen deshalb reihum.
+    private static func rate(for sound: GameSound) -> Float {
+        let spanne = sound.pitchVariation
+        guard spanne > 0 else { return 1 }
+
+        let schritt = (repetitions[sound] ?? 0) % 5
+        repetitions[sound] = (repetitions[sound] ?? 0) + 1
+
+        // Fuenf Stufen um 1 herum: -2, -1, 0, +1, +2 mal ein Fuenftel der
+        // Spanne. Hoerbar, aber nicht als Tonart.
+        let versatz = Float(schritt - 2) * (spanne / 2)
+        return 1 + versatz
+    }
+
     private static func player(for sound: GameSound) -> AVAudioPlayer? {
         if let existing = players[sound] { return existing }
 
@@ -136,6 +180,8 @@ enum SoundManager {
             }
             do {
                 let player = try AVAudioPlayer(contentsOf: url)
+                // Ohne das ignoriert der Player jede Rate ausser 1.
+                player.enableRate = true
                 player.prepareToPlay()
                 players[sound] = player
                 return player

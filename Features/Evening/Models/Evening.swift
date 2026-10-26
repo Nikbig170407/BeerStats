@@ -156,6 +156,25 @@ struct Evening: Codable, Equatable {
         return counts
     }
 
+    /// Welches Spiel den Abend bestimmt hat.
+    ///
+    /// Auf dem Plakat die erzaehlendste Zeile: "Wir haben vier Runden Ring
+    /// of Fire gespielt" ist die Erinnerung, nicht die Dauer.
+    var mostPlayed: (title: String, emoji: String, count: Int)? {
+        var zaehler: [String: (emoji: String, count: Int)] = [:]
+        for eintrag in entries {
+            let bisher = zaehler[eintrag.title]
+            zaehler[eintrag.title] = (eintrag.emoji, (bisher?.count ?? 0) + 1)
+        }
+        // Mindestens zweimal: Bei lauter Einzelrunden gibt es kein Spiel,
+        // das den Abend bestimmt hat – dann steht die Zeile besser gar
+        // nicht da, als den Zufall zum Sieger zu erklaeren.
+        guard let bestes = zaehler.max(by: { $0.value.count < $1.value.count }),
+              bestes.value.count >= 2
+        else { return nil }
+        return (bestes.key, bestes.value.emoji, bestes.value.count)
+    }
+
     var mostWins: (name: String, count: Int)? {
         guard let best = winCounts.max(by: { $0.value < $1.value }) else { return nil }
         return (best.key, best.value)
