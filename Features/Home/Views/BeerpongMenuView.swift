@@ -19,6 +19,13 @@ struct BeerpongMenuView: View {
 
     let container: AppContainer
     @ObservedObject var viewModel: HomeViewModel
+    /// Die Konto-Kennung, ausgepackt.
+    ///
+    /// Sie steht auch im `viewModel`, dort aber optional: Seit es den
+    /// Gastmodus gibt, laeuft das Hauptmenue auch ohne Konto. Hierher
+    /// kommt man nur MIT, und dann soll nicht jede der acht Aufrufstellen
+    /// einzeln auspacken muessen (siehe `GuestMode`).
+    let ownerId: String
 
     /// Wohin es nach der Frage weitergeht.
     private enum Route: Hashable {
@@ -100,7 +107,7 @@ struct BeerpongMenuView: View {
             case .running:
                 if let resuming { liveGame(for: resuming) }
             case .newGame:
-                NewGameView(container: container, currentUserId: viewModel.currentUserId)
+                NewGameView(container: container, currentUserId: ownerId)
             case .quickStart:
                 if let quickStart {
                     LiveGameView(
@@ -112,7 +119,7 @@ struct BeerpongMenuView: View {
                         throwRepository: container.throwRepository,
                         gameRepository: container.gameRepository,
                         profileRepository: container.playerProfileRepository,
-                        ownerId: viewModel.currentUserId
+                        ownerId: ownerId
                     )
                 }
             case .none:
@@ -135,7 +142,7 @@ struct BeerpongMenuView: View {
 
     private var newGameLink: some View {
         NavigationLink {
-            NewGameView(container: container, currentUserId: viewModel.currentUserId)
+            NewGameView(container: container, currentUserId: ownerId)
         } label: {
             PrimaryButtonLabel(title: "Neues Spiel", systemImage: "plus")
         }
@@ -153,7 +160,7 @@ struct BeerpongMenuView: View {
             throwRepository: container.throwRepository,
             gameRepository: container.gameRepository,
             profileRepository: container.playerProfileRepository,
-            ownerId: viewModel.currentUserId
+            ownerId: ownerId
         )
     }
 
@@ -168,7 +175,7 @@ struct BeerpongMenuView: View {
                 .padding(.top, 4)
 
             NavigationLink {
-                ProfilesView(container: container, ownerId: viewModel.currentUserId)
+                ProfilesView(container: container, ownerId: ownerId)
             } label: {
                 destinationCard(
                     title: "Mitspieler & Statistiken",
@@ -197,7 +204,7 @@ struct BeerpongMenuView: View {
             NavigationLink {
                 GameHistoryView(
                     gameRepository: container.gameRepository,
-                    ownerId: viewModel.currentUserId
+                    ownerId: ownerId
                 )
             } label: {
                 destinationCard(
@@ -286,7 +293,7 @@ struct BeerpongMenuView: View {
                 type: lineup.type,
                 teams: teams,
                 format: format,
-                ownerId: viewModel.currentUserId
+                ownerId: ownerId
             )
             quickStart = (teams: teams, format: format, gameId: gameId)
             route = .quickStart
@@ -335,7 +342,7 @@ struct BeerpongMenuView: View {
                 .padding(.top, 4)
 
             NavigationLink {
-                DataExportView(container: container, ownerId: viewModel.currentUserId)
+                DataExportView(container: container, ownerId: ownerId)
             } label: {
                 destinationCard(
                     title: "Daten sichern",

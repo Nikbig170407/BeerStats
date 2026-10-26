@@ -284,7 +284,7 @@ struct HomeView: View {
             ],
             spacing: 14
         ) {
-            if viewModel.currentUserId != nil {
+            if let ownerId = viewModel.currentUserId {
                 menuTile(
                     emoji: "🍺",
                     title: "Beerpong",
@@ -296,7 +296,7 @@ struct HomeView: View {
                     preview: tablePlayers.map(\.emoji),
                     tint: BeerStatsColor.accent
                 ) {
-                    BeerpongMenuView(container: container, viewModel: viewModel)
+                    BeerpongMenuView(container: container, viewModel: viewModel, ownerId: ownerId)
                 }
             } else {
                 // Ohne Konto bleibt die Kachel stehen und sagt, was fehlt.
