@@ -258,6 +258,18 @@ den nachgespielten Wurf-Log alter Partien.
   dabei: Auf „was spielen wir jetzt" ist Trinkbingo keine Antwort.
 - **Nochmal dieselben**: die letzte Aufstellung als Zeile im Beerpong-Menü,
   gestartet mit den aktuellen Hausregeln.
+- **Ohne Konto spielbar.** Der Login stand vorher vor allem; jetzt gibt es
+  „Ohne Konto loslegen". Alle Partyspiele laufen sofort, nur Beerpong
+  braucht ein Konto.
+- **Strafen müssen kein Trinken sein** (`PenaltyStyle`): Sport, Kasse oder
+  Aufgaben statt Schlücke. Wer nicht trinkt, saß vorher daneben.
+- **Die App kommentiert** die Beerpong-Partie laut, wenn die Sprachansage
+  an ist (`LiveGameCommentator`).
+- **Tischmodus**: große Schrift und ein Bildschirm, der anbleibt, für das
+  Handy in der Tischmitte.
+- **Der Abend startet sich selbst**, sobald das erste Spiel aufgemacht
+  wird – und jede gebuchte Menge lässt sich ganz zurücknehmen, samt
+  Person.
 - **Vier Räder im Trink-Roulette** (25. Oktober): klassisch, zahm, hart –
   und ein **eigenes**, in das die Runde ihre Felder schreibt. Ein Rad mit
   acht festen Feldern ist beim zweiten Abend dasselbe Rad; ab dem dritten
@@ -686,6 +698,63 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Rad ist er Schlamperei. Das eigene Rad liegt in UserDefaults und ist erst
   **ab drei Feldern** spielbar: Mit zwei ist es eine Münze.
 
+- **Ohne Konto läuft KEIN Firestore-Listener** (`GuestMode`). Das ist nicht
+  nur sparsam: Ohne Anmeldung weist Firestore jeden Zugriff ab, und ein
+  Listener, der dauernd abgewiesen wird, kostet Strom und schreibt Fehler
+  ins Log. `HomeViewModel.currentUserId` ist deshalb optional und startet
+  bei `nil` gar nichts erst. Gast ist ein **eigener** Zustand neben
+  „abgemeldet": Abgemeldet heißt „will sich anmelden und ist noch nicht
+  fertig", Gast heißt „will gar kein Konto" – beides führt an verschiedene
+  Orte. Was ohne Konto fehlt, ist genau zweierlei: die Beerpong-Kachel
+  (sie bleibt stehen und erklärt, warum – sie wegzulassen hieße, dass
+  niemand sieht, dass die App Beerpong kann) und die Spieler-Zentrale (die
+  ist **weg** statt grau; ein Symbol, das nichts tut, probiert man am
+  Tisch dreimal).
+
+- **Eine Strafe ist nicht zwingend ein Schluck** (`PenaltyStyle`). Vier
+  Währungen: Trinken, Sport, Kasse, Aufgaben. Möglich war das als
+  Zwei-Zeilen-Eingriff nur, weil Mengen nirgends als Zahl im Text stehen,
+  sondern **alle** durch `DrinkAmount` laufen – es gibt genau eine Stelle,
+  an der eine Menge zu einem Satz wird. Die Umrechnung ist bewusst grob
+  (drei Stufen, deren Grenzen an **einer** Stelle stehen) und
+  deterministisch: Würfelte die Aufgabe, stünde auf der Karte etwas
+  anderes als in der Bilanz. Gebucht wird weiter in Schlücken und Shots –
+  das ist die Währung, in der gebucht wurde, und ein alter Abend wird
+  nicht nachträglich umgerechnet. Härte und Shot-Schalter verschwinden,
+  solange nicht getrunken wird: Beide formulieren Schlücke aus und hätten
+  nichts zu sagen.
+
+- **Der Kommentator ist eine reine Rechnung** (`LiveGameCommentator`),
+  genau wie der Narrator – Ereignis und laufende Nummer hinein, Satz
+  heraus; gesprochen wird er woanders. Drei Regeln entscheiden, ob man ihn
+  nach fünf Minuten abschaltet, und alle drei hängen an einem Test:
+  **Nicht jedes Ereignis spricht** (Treffer und Fehlwurf nur gelegentlich,
+  Verwaltung gar nicht, die großen Momente aber IMMER – hier hätte ein
+  „nur jedes dritte Mal" an der falschen Stelle den wichtigsten Satz
+  verschluckt), **mehrere Fassungen je Ereignis**, und die Fassung wird
+  **gerechnet statt gewürfelt**: Sonst klänge derselbe Zug beim
+  Nachspielen eines Logs anders als beim Spielen.
+
+- **Der Abend startet sich selbst, aber nur mit Leuten**
+  (`EveningLog.startIfNeeded`). Ein Abend ohne Teilnehmer kann nichts
+  buchen und wäre eine Liste gespielter Spiele ohne Leute. Ein laufender
+  Abend wird nie überschrieben, sonst wäre nach dem zweiten Spiel die
+  halbe Bilanz weg. **Jede Buchung wird gemerkt** (`Evening.lastBooking`)
+  und lässt sich ganz zurücknehmen – am Tisch vertippt man sich auf zwei
+  Arten, falsche Menge und falsche PERSON, und die Minus-Taste am
+  Teilnehmer heilt nur die erste. Gemerkt wird an **einer** Stelle: Beide
+  Wege in die Bilanz (über die Position und über die Profil-ID) gehen
+  durch dieselbe private Funktion, sonst ließe sich die eine zurücknehmen
+  und die andere nicht.
+
+- **Der Tischmodus gilt app-weit** (`TableMode`) und steht deshalb dort,
+  wo die App zusammengesetzt wird. Große Schrift nur als **Untergrenze**
+  (`.accessibility1...`): Eine feste Größe würde ausgerechnet denen die
+  Schrift verkleinern, die sie größer gestellt haben. Möglich ist er
+  überhaupt nur, weil die Textstile über `Font.scaled` laufen. Der
+  Bildschirm bleibt dabei an und wird beim Verlassen der App wieder
+  freigegeben.
+
 - **Partyspiele zahlen nicht auf die Beerpong-Statistiken ein.** Eine Runde
   Bombe hat keine Trefferquote. Wer dort eine Wertung will, braucht einen
   eigenen Zähler, nicht `UserStatistics`.
@@ -1049,6 +1118,30 @@ oben; was schief aussieht, unten.
   **„Bewegung reduzieren"** an durch Ring of Fire, Sieger-Screen und
   Roulette: Es muss still, aber nicht leer sein. Und der Blitz beim Riss
   muss bei **jedem** Riss kommen, nicht nur beim ersten.
+- **Ohne Konto (26. Oktober)**: Abmelden, dann „Ohne Konto loslegen" –
+  laufen alle Partyspiele, bleibt die Beerpong-Kachel stehen und erklärt
+  sich, ist das Personen-Symbol weg? Danach aus den Einstellungen heraus
+  anmelden: Abend, eigene Karten und Aufstellung müssen danach noch da
+  sein. **Offen und bewusst so**: Ohne Konto gibt es keine Profile, also
+  auch keine Aufstellung – und damit keinen Abend und keine Bilanz. Für
+  eine fremde Runde fehlen dafür lokale Mitspieler.
+- **Strafen ohne Trinken (26. Oktober)**: In den Einstellungen auf Sport
+  stellen und einmal quer durch – sagt wirklich **nichts** mehr „Schluck"
+  (Karten, Rad, Vorspänne, Bilanz, Abend-Plakat)? Fühlen sich die drei
+  Stufen richtig an, oder ist ein Shot zu billig weggekommen?
+- **Der Kommentator (26. Oktober)**: Sprachansage einschalten und eine
+  Partie spielen. Redet er zu viel oder zu wenig? Kommt er den
+  Einblendungen in die Quere? Und sagt er bei zwei Spielern „werfen" und
+  bei einem „wirft"?
+- **Tischmodus (26. Oktober)**: Einschalten und aus anderthalb Metern auf
+  den Tisch schauen. Ist es lesbar – und zerlegt die größere Schrift
+  irgendwo ein Layout? Bleibt der Bildschirm an, und geht er nach dem
+  Verlassen der App wieder normal aus?
+- **Abend von selbst und Zurücknehmen (26. Oktober)**: Aufstellung setzen,
+  irgendein Spiel aufmachen – läuft der Abend? Dann eine Strafe auf die
+  falsche Person buchen und im Hauptmenü „Zurücknehmen" – steht die
+  Bilanz danach wieder richtig?
+
 ### Ring of Fire sonst
 
 - **Der Ring selbst**: Liegen die Karten erkennbar geschuppt, und sieht man
