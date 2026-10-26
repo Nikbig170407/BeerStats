@@ -76,6 +76,10 @@ final class LiveGameViewModel: ObservableObject {
     private let naming: LiveGameNaming
     /// Was zu einem Ereignis gesagt und eingeblendet wird.
     private let narrator: LiveGameNarrator
+    /// Der laute Teil. Steht neben dem Narrator und nicht darin: Das
+    /// Protokoll liest man nach, der Kommentar hoert man einmal – und
+    /// deshalb spricht er auch nicht zu jedem Ereignis.
+    private let commentator: LiveGameCommentator
 
     /// Verhindert doppelte Auswertung: Das Spielende kann sowohl lokal als
     /// auch erneut durch den Log-Stream auftreten, gezählt werden darf es
@@ -127,6 +131,7 @@ final class LiveGameViewModel: ObservableObject {
         let naming = LiveGameNaming(teams: teams)
         self.naming = naming
         self.narrator = LiveGameNarrator(naming: naming)
+        self.commentator = LiveGameCommentator(naming: naming)
         self.dealer = ExtremeCardDealer(settings: extreme)
         self.state = GameEngine.makeInitialState(format: format, playersPerTeam: playersPerTeam)
 
@@ -588,6 +593,12 @@ final class LiveGameViewModel: ObservableObject {
             appendLog(narrator.logText(for: event))
             LiveGameFeedback.play(for: event)
             if let einblendung = narrator.highlight(for: event) { show(einblendung) }
+            // Die laufende Nummer waehlt die Fassung: Derselbe Satz beim
+            // dritten Mal ist schlimmer als keiner, und gewuerfelt klaenge
+            // derselbe Zug beim Nachspielen anders als beim Spielen.
+            if let satz = commentator.line(for: event, turn: state.sequenceNumber) {
+                SpeechAnnouncer.announce(satz)
+            }
             drawExtremeCardIfLoaded(for: event)
         }
         // Ist die Partie vorbei, hat der Sieger-Screen Vorrang. Eine noch
