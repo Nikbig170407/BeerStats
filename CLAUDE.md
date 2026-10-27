@@ -794,10 +794,14 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Lücke **null** ist. Die Regel feuerte also bauartbedingt, bevor es etwas
   zu sehen gab; nachgerechnet lag die Hälfte aller Risse unter einem
   Sechstel Kartenbreite. Jetzt muss eine **Viertelkarte** Luft sein
-  (`visibleGap`). Der Trugschluss dabei: Mehr Überlappung hilft nicht,
-  sie macht es schlimmer – je dichter die Karten liegen, desto feiner ist
-  der Spalt an der Schwelle. Deshalb ist `overlapFactor` mit gesunken.
-  Die drei Zahlen hängen voneinander ab und werden nur zusammen angefasst;
+  (`visibleGap`). Erst mit dieser Schwelle ist mehr Überlappung
+  unbedenklich: Ohne sie machte dichteres Legen den Spalt am Moment des
+  Risses nur feiner, mit ihr macht es den Riss nur **seltener**, nie
+  unsichtbarer. Darauf baut die Entscheidung des Nutzers vom 27. Oktober
+  („reißt ein bisschen schnell – Karten größer, mehr Überlappung“):
+  Überlappung und Streuung sind gestiegen, und der Ring darf 12 pt je
+  Seite näher an den Rand als der Rest des Screens. Die drei Zahlen
+  hängen voneinander ab und werden nur zusammen angefasst;
   `RingLayoutTests` hält die Folgen fest.
 
   **Und die Lücke wird GEZEICHNET** (`RingLayout.openings`, `gapMarker`) –
@@ -824,12 +828,12 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   `visibleGap` ist die Mindestbreite einer Lücke, die zählt. Ohne Streuung lägen alle Karten gleich dicht, und Ziehen wäre
   entweder nie oder immer gefährlich; mit Streuung gibt es dichte Stellen
   und dünne – und **man kann es sehen**. Die Größenordnung hält
-  `RingLayoutTests` fest: Auf frisch gelegtem Ring reißt jeder fünfte Zug,
-  die drei Shots sind nach rund zehn Zügen vergeben, und **jede Lücke, die
-  zählt, ist mindestens eine Viertelkarte breit**. Der letzte Punkt ist
-  der Wächter: Fällt er, ist die Regel wieder unsichtbar, egal wie richtig
-  sie rechnet. Wenn das am Tisch zu früh vorbei ist, gehört der Deckel an
-  die Kartenzahl gekoppelt.
+  `RingLayoutTests` fest: wie oft ein frisch gelegter Ring reißt, wie viele
+  Züge die drei Shots halten, und dass **jede Lücke, die zählt, mindestens
+  eine Viertelkarte breit ist**. Der letzte Punkt ist der Wächter: Fällt
+  er, ist die Regel wieder unsichtbar, egal wie richtig sie rechnet. Die
+  Karten werden mit der Überlappung größer und das Loch in der Mitte
+  kleiner – die Restzahl dort hat Vorrang vor noch größeren Karten.
 
   Vier Feinheiten, die beim Anfassen alle einen Shot wert sind:
   - Die Abstände werden auf genau **360 Grad normiert**, sonst klafft
@@ -1113,25 +1117,16 @@ oben; was schief aussieht, unten.
   standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.
 ### Was zuletzt gebaut wurde und nie lief
 
-- **Der Riss muss jetzt zu SEHEN sein** (26. Oktober, dritter Anlauf –
-  die beiden davor haben die Rechnung repariert, nicht das Bild). Der
-  entscheidende Punkt: Wenn der Shot kommt, muss an der Stelle eine
-  leuchtende Lücke stehen, und zwar mindestens eine Viertelkarte breit.
-  Gerechnet ist das abgedeckt; am Tisch zählt, ob man sie **ohne Suchen**
-  findet und ob sie da steht, wo man sie erwartet. Dazu: Bleibt die
-  Markierung liegen, wenn man vom Aktionsscreen zurückkommt, und ist sie
-  nach dem Neulegen weg? Steht auf einem vollen Ring **keine**? Und
-  reißt die Karte **neben** einer Lücke – während dieselbe Stelle nicht
-  zweimal zahlt?
-  Zwei Zahlen sind dabei neu gesetzt und nur gerechnet: Die Überlappung
-  ist von 2,4 auf 1,95 gesunken, der Ring liegt also **weniger dicht** als
-  vorher. Sieht er noch geschuppt aus oder schon wie ein Kranz mit Luft?
-  Und die Quote soll gleich geblieben sein (jeder fünfte Zug, drei Shots
-  nach rund zehn Zügen) – stimmt das am Tisch, oder soll der Deckel mit
-  der Kartenzahl wachsen (etwa einer je sieben Karten: 3 / 5 / 7)?
-  Außerdem weiter offen: Landet der Shot bei der Person, die gezogen hat
-  (nicht bei der nächsten), liegt der Ring nach dem „Verstanden" sichtbar
-  **neu**, und bleibt nach dem dritten Riss wirklich alles still?
+- **Der Ring reißt seltener, die Karten sind größer** (27. Oktober, auf
+  Wunsch – die sichtbare Lücke hat der Nutzer am Tisch bestätigt). Mehr
+  Überlappung, mehr Streuung, der Ring näher am Rand. Zu prüfen: Dauert es
+  spürbar länger, ohne dass die Regel in einer kurzen Runde verschwindet?
+  Sieht der Ring mit den größeren Karten noch geschuppt aus, ist die Zahl
+  in der Mitte bei **20 Karten** gut lesbar, und ragt nichts über den
+  Bildschirmrand? Weiter offen von vorher: Landet der Shot bei der Person,
+  die gezogen hat (nicht bei der nächsten), liegt der Ring nach dem
+  „Verstanden" sichtbar **neu**, und bleibt nach dem dritten Riss alles
+  still?
 - **Ring of Fire bucht mit (25. Oktober)**: Einen Abend starten, Ring of
   Fire spielen, bis ein Ass und eine Drei gezogen sind – stehen beide
   danach in der Trinkbilanz der richtigen Person? Und steht dort **nichts**

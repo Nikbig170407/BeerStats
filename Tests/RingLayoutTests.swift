@@ -311,17 +311,18 @@ final class RingLayoutTests: XCTestCase {
     // MARK: - Die Spannungskurve
 
     /// Die drei Konstanten entscheiden, wie oft es reisst, und sie haengen
-    /// voneinander ab: Mehr `visibleGap` macht es seltener, mehr `jitter`
-    /// oefter, und `overlapFactor` wirkt in beide Richtungen. Dieser Test
+    /// voneinander ab: Mehr `visibleGap` und mehr `overlapFactor` machen es
+    /// seltener, mehr `jitter` oefter. Dieser Test
     /// haelt die Groessenordnung fest, damit niemand eine davon unbemerkt
     /// so verstellt, dass jede zweite Karte einen Shot kostet – oder gar
     /// keine mehr.
     ///
-    /// Erste Zahl: Auf einem frisch gelegten Ring reisst jeder fuenfte Zug
-    /// (nachgerechnet rund 19 bis 20 %, je nach Kartenzahl). Die Grenzen
-    /// sind bewusst weit: Sie sollen ein Verstellen merken, nicht jede
-    /// Stelle hinter dem Komma.
-    func testEveryFifthDrawTearsAFreshRing() {
+    /// Erste Zahl: Auf einem frisch gelegten Ring reisst etwa jeder achte
+    /// Zug (nachgerechnet rund 12 %, bei 20, 32 und 52 Karten gleich).
+    /// Bis zum 27. Oktober war es jeder fuenfte – dem Nutzer riss das am
+    /// Tisch zu schnell. Die Grenzen sind bewusst weit: Sie sollen ein
+    /// Verstellen merken, nicht jede Stelle hinter dem Komma.
+    func testAboutEveryEighthDrawTearsAFreshRing() {
         var gerissen = 0
         let runden = 3000
 
@@ -332,18 +333,20 @@ final class RingLayoutTests: XCTestCase {
         }
 
         let anteil = Double(gerissen) / Double(runden)
-        XCTAssertGreaterThan(anteil, 0.15, "Es reisst praktisch nie – die Regel wäre unsichtbar")
-        XCTAssertLessThan(anteil, 0.29, "Es reisst zu oft – der erste Zug kostet fast immer")
+        XCTAssertGreaterThan(anteil, 0.08, "Es reisst praktisch nie – die Regel wäre unsichtbar")
+        XCTAssertLessThan(anteil, 0.17, "Es reisst wieder so schnell wie vor dem 27. Oktober")
     }
 
     /// Zweite Zahl: wie lange die drei Shots einer Runde halten. Gespielt
     /// wird wie in `RingOfFireView` – nach den ersten beiden Rissen wird
     /// neu gelegt, nach dem dritten ist die Regel durch.
     ///
-    /// Nachgerechnet kommt der dritte Riss nach rund zehn Zuegen. Das ist
-    /// die Zahl, an der das Spielgefuehl haengt: Deutlich weniger, und die
-    /// Regel ist vorbei, bevor jemand sie bemerkt hat.
-    func testTheThreeShotsLastAboutTenDraws() {
+    /// Nachgerechnet kommt der dritte Riss nach rund fuenfzehn Zuegen (bei
+    /// 52 Karten, mit 20 sind es etwa zwoelf). Das ist die Zahl, an der das
+    /// Spielgefuehl haengt: Deutlich weniger, und die Regel ist vorbei,
+    /// bevor jemand sie bemerkt hat – deutlich mehr, und sie kommt in einer
+    /// kurzen Runde kaum vor.
+    func testTheThreeShotsLastAboutFifteenDraws() {
         var summe = 0
         let runden = 300
 
@@ -373,8 +376,8 @@ final class RingLayoutTests: XCTestCase {
         }
 
         let zuege = Double(summe) / Double(runden)
-        XCTAssertGreaterThan(zuege, 6, "Die drei Shots sind weg, bevor es jemand merkt")
-        XCTAssertLessThan(zuege, 17, "Es reisst zu selten – die Regel kommt kaum vor")
+        XCTAssertGreaterThan(zuege, 10, "Die drei Shots sind wieder so schnell weg wie vor dem 27. Oktober")
+        XCTAssertLessThan(zuege, 22, "Es reisst zu selten – die Regel kommt kaum vor")
     }
 
     // MARK: - Der Stapel

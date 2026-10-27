@@ -24,25 +24,29 @@
 //  oder immer gefaehrlich. Mit Streuung gibt es dichte Stellen, an denen man
 //  gefahrlos zieht, und duenne, an denen es reisst – und man kann es sehen.
 //
-//  `visibleGap` ist die Mindestbreite einer Luecke, die zaehlt. Sie ist der
-//  Grund, warum die beiden anderen Zahlen am 26. Oktober gewandert sind:
-//  Ohne sie feuerte der Riss genau in dem Moment, in dem die Luecke NULL
-//  war – die Regel kostete einen Shot fuer etwas, das es noch nicht zu
-//  sehen gab. Mehr Ueberlappung half dagegen nicht, sie machte es
-//  schlimmer: Je dichter die Karten liegen, desto feiner ist die Luecke an
-//  der Schwelle. Deshalb liegt die Ueberlappung jetzt niedriger UND es
-//  muss eine Viertelkarte Luft sein.
+//  `visibleGap` ist die Mindestbreite einer Luecke, die zaehlt. Ohne sie
+//  feuerte der Riss genau in dem Moment, in dem die Luecke NULL war – die
+//  Regel kostete einen Shot fuer etwas, das es noch nicht zu sehen gab
+//  (26. Oktober). Seitdem ist sie der Waechter, und erst mit ihr ist mehr
+//  Ueberlappung unbedenklich: Wie dicht die Karten auch liegen, an der
+//  Schwelle klafft immer mindestens eine Viertelkarte.
 //
-//  Die Mischung ist durchgerechnet, nicht geraten (vierzigtausend
-//  simulierte Runden): Auf einem frisch gelegten Ring reisst etwa jeder
-//  FUENFTE Zug, und jede Luecke, die zaehlt, ist mindestens eine
-//  Viertelkarte breit – im Mittel eine halbe. Danach steigt die Quote,
-//  denn jede Luecke macht die naechste wahrscheinlicher.
+//  Die Werte sind eine Entscheidung des Nutzers vom 27. Oktober, nach dem
+//  Test am Tisch: "Reisst ein bisschen schnell – Karten groesser, mehr
+//  Ueberlappung, damit es laenger dauert." Mehr Ueberlappung allein haette
+//  den frischen Ring fast unzerreissbar gemacht (zwei Abstaende muessten
+//  zusammen ueber das Doppelte eines mittleren reichen). Deshalb stieg die
+//  Streuung mit: Es gibt jetzt mehr ganz dichte Stellen und einzelne
+//  duenne, und an denen reisst es – sichtbar.
+//
+//  Durchgerechnet, nicht geraten (zehntausende simulierte Runden): Auf
+//  einem frisch gelegten Ring reisst etwa jeder ACHTE Zug, die drei Shots
+//  halten rund fuenfzehn Zuege. Die genauen Grenzen haelt
+//  `RingLayoutTests` fest – dort und nicht hier stehen die Zahlen, an
+//  denen etwas haengt.
 //
 //  Bezahlt werden nur die ersten drei Risse (`RingOfFireView`), und nach
-//  den ersten beiden wird neu gelegt. Die drei Shots sind nach rund zehn
-//  Zuegen vergeben – bei zwanzig Karten also etwa zur Haelfte der Runde,
-//  bei zweiundfuenfzig nach einem Fuenftel.
+//  den ersten beiden wird neu gelegt.
 //
 
 import Foundation
@@ -60,8 +64,11 @@ struct RingLayout: Equatable {
     /// als das.
     let cardSpan: Double
 
-    static let overlapFactor = 1.95
-    static let jitter = 0.6
+    static let overlapFactor = 2.35
+
+    /// Unter 1 bleiben: Bei 1 koennte ein Abstand null werden, und zwei
+    /// Karten laegen deckungsgleich – im Bild fehlte dann eine.
+    static let jitter = 0.95
 
     /// Wie viel Luft zwischen zwei Nachbarinnen liegen muss, damit die
     /// Stelle als offen gilt – als Anteil einer Kartenbreite.

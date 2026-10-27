@@ -189,7 +189,12 @@ struct RingOfFireView: View {
 
             FillingScrollView {
                 VStack(spacing: 18) {
+                    // Der Ring darf naeher an den Rand als der Rest: Die
+                    // Karten werden mit ihm groesser (27. Oktober, "Karten
+                    // groesser"). Die negative Polsterung gibt ihm 24 pt
+                    // mehr Breite, ohne die Zeilen darunter zu verschieben.
                     ringOfCards
+                        .padding(.horizontal, -12)
                     tearStatus
                     emptyRingPanel
                     TurnRow(turn: turn, tint: BeerStatsColor.error)
