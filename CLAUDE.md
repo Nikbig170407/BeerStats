@@ -523,6 +523,23 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   selbst gebautes Rad sie bekommt), beim Zeitstrahl-Sieg und am Pokal des
   Abends.
 
+  **Der siebte Baustein ist gezeichnet: `EffectFlames`** (27. Oktober).
+  Der Nutzer wollte für den Riss „Flammen von der Seite, mächtig“ – und
+  aus 🔥-Teilchen wäre nur noch eine Szene geworden, die aussieht wie alle
+  anderen. Also eine Feuerwand aus gezeichneten Zungen in zwei Lagen, die
+  von beiden Rändern hereinschlägt und nach anderthalb Sekunden erlischt.
+  Zwei Regeln sind dort bewusst gebeugt, beide mit Grund im Kommentar:
+  Die Flammen liegen **über** allem (sonst verdeckt der Inhalt das Feuer),
+  aber nur an den Rändern; und sie laufen auf einer `TimelineView`, weil
+  Flackern keine Bewegung von A nach B ist – die Zeitleiste steht aber nur
+  in der Ansicht, solange es brennt. Gezeichnet wird in `FlameArt`, nicht
+  im generischen `EffectFlames` selbst: Generische Typen dürfen keine
+  statischen gespeicherten Werte haben, und `check.py` sieht das nicht.
+  **Gebrannt wird auf dem Aktionsscreen**, nicht auf dem Ring: Der schiebt
+  sich im Moment des Risses darüber – die alte Riss-Szene auf dem Ring
+  lief deshalb fast ungesehen darunter ab. Nach einem Riss entfällt dort
+  die Rang-Szene; zwei Szenen gleichzeitig sind keine.
+
 - **Kartengrößen rechnen, nicht tippen.** Bussfahrer zeigte seine Karten in
   festen 68 Punkten, egal wie breit das Gerät war. Jetzt teilen sie sich die
   verfügbare Breite (mit Deckel bei einem Viertel, sonst wird die Reihe
@@ -1153,10 +1170,18 @@ oben; was schief aussieht, unten.
   und sagt der Knopf „Anderes Rad" sauber zurück in die Auswahl? Dazu die
   Vorschau im Editor: Steht dort derselbe Satz, der nach der Drehung
   erscheint?
+- **Der Riss brennt** (27. Oktober, auf Wunsch): Statt Sprachansage und
+  💥 schlägt auf dem Aktionsscreen eine Feuerwand von beiden Seiten
+  herein. Wirkt es mächtig – und bleibt dabei „Ring gerissen“ in der Mitte
+  lesbar? Ruckelt es auf dem iPhone 13 (zwei Lagen Zungen plus Funken,
+  gezeichnet in jedem Bild)? Kommt das Feuer bei **jedem** Riss, ist die
+  Stimme wirklich still, und spürt man den harten Stoß vor dem Zittern?
+  Mit „Bewegung reduzieren“ muss es ein ruhiges Glühen an den Rändern
+  sein, nicht nichts.
 - **Die Szenen sind laut gestellt** (26. Oktober, auf Wunsch): Alle
-  Bausteine sind kräftiger, und vier Stellen haben zusätzliche Schichten –
-  der Riss (Funken und Einschlag dazu), der Sieger-Screen (Pokal schlägt
-  ein, Becher steigen), der Zeitstrahl-Sieg und der Knall in der Bombe.
+  Bausteine sind kräftiger, und drei Stellen haben zusätzliche Schichten –
+  der Sieger-Screen (Pokal schlägt ein, Becher steigen), der
+  Zeitstrahl-Sieg und der Knall in der Bombe.
   **Der wichtigste Punkt ist jetzt erst recht die Lesbarkeit**: Stört
   irgendwo eine Schicht den Text, besonders bei großer Schrift oder im
   Tischmodus? Wenn ja, sag welche Stelle – dann wird dort gedämpft, nicht

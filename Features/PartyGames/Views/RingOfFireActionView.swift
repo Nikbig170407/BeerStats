@@ -56,7 +56,12 @@ struct RingOfFireActionView: View {
             // Hinter allem und ueber dem Hintergrund: die Bewegung, die zu
             // dieser Karte gehoert. Sie liegt NICHT ueber der Karte – was
             // zu tun ist, darf nichts verdecken.
-            RingCardFlourish(rank: card.rank)
+            //
+            // Nach einem Riss nicht: Dann ist der Shot die Nachricht und das
+            // Feuer die Szene. Zwei Szenen gleichzeitig waeren keine.
+            if !tore {
+                RingCardFlourish(rank: card.rank)
+            }
 
             FillingScrollView {
                 VStack(spacing: 16) {
@@ -112,6 +117,15 @@ struct RingOfFireActionView: View {
                 .ignoresSafeArea()
             )
         }
+        // Der Riss brennt hier und nicht auf dem Ring: Dieser Screen schiebt
+        // sich im selben Moment ueber den Ring, also schaut man hierher.
+        // Ueber allem, auch ueber dem Knopf – aber nur an den Raendern und
+        // nur anderthalb Sekunden (`EffectFlames`).
+        .overlay {
+            if tore {
+                EffectFlames(trigger: tore, startsOnAppear: true)
+            }
+        }
         .onAppear {
             withAnimation(.spring(response: 0.42, dampingFraction: 0.68)) {
                 hasAppeared = true
@@ -126,7 +140,7 @@ struct RingOfFireActionView: View {
     /// entsprechenden Schluecke – dieselbe Regel wie ueberall.
     private var tornBanner: some View {
         VStack(spacing: 6) {
-            Text("💥").font(.system(size: 44))
+            Text("🔥").font(.system(size: 44))
 
             Text("Ring gerissen")
                 .font(.scaled(26, weight: .heavy, design: .rounded))

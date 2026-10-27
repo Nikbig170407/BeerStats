@@ -14,6 +14,7 @@ enum HapticManager {
 
     private static let lightGenerator = UIImpactFeedbackGenerator(style: .light)
     private static let mediumGenerator = UIImpactFeedbackGenerator(style: .medium)
+    private static let heavyGenerator = UIImpactFeedbackGenerator(style: .heavy)
     private static let notificationGenerator = UINotificationFeedbackGenerator()
 
     /// Für kleine, häufige Interaktionen: Button-Taps, Auswahl-Änderungen.
@@ -26,6 +27,13 @@ enum HapticManager {
     static func mediumImpact() {
         mediumGenerator.prepare()
         mediumGenerator.impactOccurred()
+    }
+
+    /// Für den lautesten Moment eines Spiels: der Riss in Ring of Fire.
+    /// Ein harter Stoß, den man in der Hand spürt, nicht nur ein Tippen.
+    static func heavyImpact() {
+        heavyGenerator.prepare()
+        heavyGenerator.impactOccurred()
     }
 
     /// Für positiven Abschluss: Spiel gewonnen.

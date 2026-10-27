@@ -315,29 +315,16 @@ struct RingOfFireView: View {
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
-            // Die Druckwelle geht von der Mitte aus und nicht von der
-            // Luecke: Gerissen ist der RING, nicht die Karte – und die
-            // Stelle zeigt ohnehin schon der Blitz dort.
-            .overlay {
-                if tornAt != nil {
-                    // Drei Schichten uebereinander, und das ist hier
-                    // richtig: Der Riss ist der lauteste Moment des Spiels
-                    // – er kostet einen Shot und hat die Regel im Namen.
-                    // Mit einer Druckwelle allein sah er aus wie jede
-                    // andere Rueckmeldung.
-                    EffectShockwave(tint: BeerStatsColor.warning, rings: 3, duration: 1.0)
-                    EffectParticles(
-                        symbol: "💥", count: 14, flight: .burst,
-                        tint: BeerStatsColor.warning, duration: 1.1,
-                        stagger: 0.04, sizeRange: 26...52, opacity: 0.95
-                    )
-                    EffectSlam(symbol: "💥", from: .top, tint: BeerStatsColor.error, size: 200, opacity: 0.32)
-                }
-            }
-            // Der Ruck beim Reissen. Kurz und klein – der Ring soll zucken,
+            // Hier lag bis zum 27. Oktober eine eigene Riss-Szene (Druckwelle
+            // und 💥). Sie lief unter dem Aktionsscreen ab, der sich im
+            // selben Moment darueberschiebt – zu sehen war davon fast
+            // nichts. Das Feuer brennt jetzt dort, wo man hinschaut
+            // (`RingOfFireActionView`); hier bleiben Ruck und Luecke.
+            //
+            // Der Ruck beim Reissen: kraeftig, aber der Ring soll zucken,
             // nicht wegfliegen.
-            .scaleEffect(tearPulse ? 1.04 : 1)
-            .rotationEffect(.degrees(tearPulse ? 1.5 : 0))
+            .scaleEffect(tearPulse ? 1.07 : 1)
+            .rotationEffect(.degrees(tearPulse ? 2.5 : 0))
         }
         // Nimmt sich die volle Breite und bleibt quadratisch: Der Ring ist
         // der Screen, nicht eine Zeile darin.
@@ -774,21 +761,29 @@ struct RingOfFireView: View {
     }
 
     /// Der Ring ist gerissen: Blitz, Ruck, Knall – und der Shot steht
-    /// danach auf dem Aktionsscreen.
+    /// danach auf dem Aktionsscreen, und dort schlagen die Flammen herein.
     ///
     /// Der Klang kommt hier und nicht in `apply`: Ein Riss schlaegt jeden
     /// Kartenklang, und zwei Toene gleichzeitig sind einer zu viel.
+    ///
+    /// Keine Sprachansage mehr (27. Oktober, auf Wunsch des Nutzers): Das
+    /// "Ring gerissen" in der Stimme nahm dem Moment die Wucht, statt sie zu
+    /// tragen. Gesagt wird es jetzt vom Bild.
     private func tear(at position: Int) {
         tearTask?.cancel()
         tornAt = position
 
-        HapticManager.error()
+        // Erst der harte Stoss, dann die Fehler-Rueckmeldung hinterher – zwei
+        // Schlaege, die man in der Hand unterscheidet
+        HapticManager.heavyImpact()
         SoundManager.play(.bombe)
-        SpeechAnnouncer.announce("Ring gerissen")
 
         tearTask = Task { @MainActor in
             withAnimation(.spring(response: 0.18, dampingFraction: 0.35)) { tearPulse = true }
-            try? await Task.sleep(nanoseconds: 220_000_000)
+            try? await Task.sleep(nanoseconds: 180_000_000)
+            guard !Task.isCancelled else { return }
+            HapticManager.error()
+            try? await Task.sleep(nanoseconds: 40_000_000)
             guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.34, dampingFraction: 0.6)) { tearPulse = false }
 
