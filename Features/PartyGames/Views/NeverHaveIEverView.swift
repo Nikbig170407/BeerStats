@@ -241,8 +241,16 @@ struct NeverHaveIEverView: View {
         let kopf = card.isPenalty ? "STRAFE" : (card.category?.title.uppercased() ?? "EIGENE KARTE")
 
         // Die Roehre fuellt den Platz (`maxHeight: .infinity` im Schild),
-        // statt ihn frei zu lassen – der Satz steht in ihrer Mitte.
-        return NeonCard(id: card.id.uuidString, header: kopf, text: card.text, isPenalty: card.isPenalty)
+        // statt ihn frei zu lassen – der Satz steht in ihrer Mitte. Farbe,
+        // Rahmen und Schrift folgen der Stelle im Stapel, damit keine zwei
+        // Karten hintereinander gleich leuchten.
+        return NeonCard(
+            id: card.id.uuidString,
+            header: kopf,
+            text: card.text,
+            isPenalty: card.isPenalty,
+            look: NeonSign.Look.forCard(at: index)
+        )
         // Der Kartenwechsel schiebt seitlich – so wirkt es wie ein Stapel
         // und nicht wie ein Text, der sich austauscht.
         .id(card.id)

@@ -736,6 +736,17 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   trägt. „Tabulos“ heißt deutlicher und persönlicher, nicht derber – und
   nie auf Kosten von jemandem, der nicht gefragt wurde.
 
+- **Jede Karte leuchtet anders, aber Rot gehört den Strafen**
+  (`NeonSign.Look`, 28. Oktober: „mehr Abwechslung, ändere zum Beispiel
+  die Farben der LEDs“). Farbe, Kopfzeilenfarbe, Rahmen (Röhre, Doppelröhre,
+  Pille, Lauflicht, Ecken) und Schrift wechseln von Karte zu Karte. Gerechnet
+  aus der **Stelle im Stapel**, nicht gewürfelt: Die Zyklen sind
+  teilerfremd lang, zwei Karten hintereinander leuchten nie gleich – auch
+  nicht mit einer Strafe dazwischen –, und ein Neuzeichnen ändert nichts.
+  Rot und alles nah an Rot fehlt in den Farben der Aussagen; eine Strafe
+  sieht immer gleich aus (`Look.penalty`), sonst liest jemand eine Frage als
+  Anweisung. `NeonSignTests` hält beides fest.
+
 - **Die Stapel sind getestet, nicht nur geschrieben** (`DeckContentTests`).
   Inhalt wächst oft und wird selten geprüft, und beim Nachlegen passieren
   immer dieselben zwei Dinge – beide fallen beim Spielen **nicht** auf:
@@ -1489,7 +1500,9 @@ oben; was schief aussieht, unten.
   wirklich anders an als die Stufen, und trägt jedes allein eine Runde?
   Fragen, die nicht passen, mit dem Daumen aussortieren und mir nennen.
   Dazu der Vorspann: Bleiben die zwei Gruppen mit großer Schrift
-  übersichtlich?
+  übersichtlich? Und die Schilder, die jetzt je Karte anders leuchten: zu
+  bunt oder genau richtig? Bleibt die kursive und die schmale Schrift aus
+  anderthalb Metern lesbar, und ruckelt das Lauflicht nicht?
 - **Zeitstrahl (22. Oktober)**: Das Wichtigste – stimmen die Jahreszahlen?
   Beim ersten Durchgang auf Lieder achten, bei denen die Runde widerspricht,
   und sie mir nennen. Dann: Reicht die Übergabe ans Handy, oder sieht der
