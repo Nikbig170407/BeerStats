@@ -23,9 +23,14 @@
 //  fest, dass kein Rang seine Bewegung mit einem anderen teilt
 //  (`RingSceneTests`). Ein Kommentar haette es nur behauptet.
 //
-//  Jungs und Maedels sind mit Absicht ein Spiegelpaar: Die beiden Karten
-//  gehoeren zusammen und sollen das aussehen – unterscheiden sollen sie
-//  sich trotzdem, deshalb Seite und Farbe.
+//  Jungs und Maedels waren bis zum 28. Oktober ein Spiegelpaar –
+//  dieselben Blaeschen, einmal links, einmal rechts. Gedacht als "die
+//  beiden gehoeren zusammen", war es das aehnlichste Paar im ganzen Spiel.
+//  Jetzt zucken bei den Jungs Blitze, bei den Maedels rieselt Glitzer.
+//
+//  Die Karte selbst hat seit demselben Tag ebenfalls einen eigenen Auftritt
+//  je Rang (`RingCardEntrance`) – Szene und Auftritt zusammen machen den
+//  Rang erkennbar, bevor jemand liest.
 //
 //  Deckkraft ist hier kein Detail, sondern die Bedingung: Die Szene liegt
 //  HINTER dem Text, und der muss lesbar bleiben. Was kraeftig sein darf,
@@ -38,9 +43,12 @@ import SwiftUI
 struct RingCardFlourish: View {
 
     let rank: Int
+    /// So lange wartet die Szene, bevor sie loslaeuft – der Kartenscreen
+    /// faehrt erst herein.
+    var delay: Double = 0
 
     var body: some View {
-        RingScene(rank: rank).canvas
+        EffectCanvas(draw: RingScene(rank: rank).drawing, delay: delay)
             // Die ganze Szene haengt an der Karte: Ein neuer Rang baut sie
             // neu auf, statt die alte Bewegung weiterlaufen zu lassen.
             // Steht HIER und nicht an der Aufrufstelle – die eine Stelle,
@@ -89,8 +97,8 @@ enum RingScene: CaseIterable {
         case .pointAt: return "Ein Pinselstrich schießt quer über den Screen und endet als Pfeil."
         case .drinkSelf: return "Bier steigt von unten, schwappt und trägt eine Schaumkrone."
         case .waterfall: return "Wellige Ströme fallen von oben und spritzen unten auf."
-        case .guys: return "Bläschen steigen schräg aus der linken unteren Ecke."
-        case .chicks: return "Bläschen steigen schräg aus der rechten unteren Ecke."
+        case .guys: return "Blitze zucken im Zickzack an den Seiten herab."
+        case .chicks: return "Glitzer rieselt von oben und funkelt auf."
         case .heaven: return "Lichtsäulen fallen von oben und wiegen sich langsam."
         case .mates: return "Zwei Lichter kreisen umeinander, durch ein Band verbunden."
         case .rhyme: return "Schallwellen laufen im Takt von unten herauf."
@@ -102,25 +110,26 @@ enum RingScene: CaseIterable {
         }
     }
 
-    /// Alle dreizehn sind derselbe Typ – eine Leinwand mit ihrer eigenen
-    /// Zeichnung. Die `AnyView` von frueher ist damit ueberfluessig: Sie war
-    /// noetig, weil dreizehn verschiedene Schichtungen dreizehn verschiedene
-    /// Typen ergaben, an denen der Compiler Minuten rechnete.
-    var canvas: EffectCanvas {
+    /// Die Zeichnung der Szene. Alle dreizehn haben dieselbe Form –
+    /// Leinwand, Groesse, Zeit –, und `EffectCanvas` zeigt sie. Die
+    /// `AnyView` von frueher ist damit ueberfluessig: Sie war noetig, weil
+    /// dreizehn verschiedene Schichtungen dreizehn verschiedene Typen
+    /// ergaben, an denen der Compiler Minuten rechnete.
+    var drawing: (inout GraphicsContext, CGSize, Double) -> Void {
         switch self {
-        case .pointAt: return EffectCanvas(draw: SceneArt.pointAt)
-        case .drinkSelf: return EffectCanvas(draw: SceneArt.drinkSelf)
-        case .waterfall: return EffectCanvas(draw: SceneArt.waterfall)
-        case .guys: return EffectCanvas { g, size, t in SceneArt.bubbles(&g, size, t, fromRight: false, color: SceneArt.blue) }
-        case .chicks: return EffectCanvas { g, size, t in SceneArt.bubbles(&g, size, t, fromRight: true, color: SceneArt.pink) }
-        case .heaven: return EffectCanvas(draw: SceneArt.heaven)
-        case .mates: return EffectCanvas(draw: SceneArt.drinkingMates)
-        case .rhyme: return EffectCanvas(draw: SceneArt.rhyme)
-        case .rule: return EffectCanvas(draw: SceneArt.rule)
-        case .thumbMaster: return EffectCanvas(draw: SceneArt.thumbMaster)
-        case .queen: return EffectCanvas(draw: SceneArt.queen)
-        case .category: return EffectCanvas(draw: SceneArt.category)
-        case .ace: return EffectCanvas(draw: SceneArt.ace)
+        case .pointAt: return SceneArt.pointAt
+        case .drinkSelf: return SceneArt.drinkSelf
+        case .waterfall: return SceneArt.waterfall
+        case .guys: return SceneArt.lightning
+        case .chicks: return SceneArt.glitter
+        case .heaven: return SceneArt.heaven
+        case .mates: return SceneArt.drinkingMates
+        case .rhyme: return SceneArt.rhyme
+        case .rule: return SceneArt.rule
+        case .thumbMaster: return SceneArt.thumbMaster
+        case .queen: return SceneArt.queen
+        case .category: return SceneArt.category
+        case .ace: return SceneArt.ace
         }
     }
 }

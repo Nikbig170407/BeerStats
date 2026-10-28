@@ -613,6 +613,34 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Eine Falle aus dem Bau ist geblieben: Generische Typen dürfen keine
   statischen gespeicherten Werte haben, und `check.py` sieht das nicht.
 
+  **Und die Karte selbst tritt je Rang anders auf** (`RingCardEntrance`,
+  Wunsch des Nutzers vom 28. Oktober: „noch mehr voneinander ab, sodass es
+  abwechslungsreicher ist“). Die Szenen waren schon verschieden, aber das
+  Größte auf dem Screen – die Karte – kam bei allen dreizehn Rängen gleich,
+  federnd aus 70 Prozent. Jetzt steckt die Zwei wie ein Pfeil, die Zehn
+  knallt auf wie ein Stempel, der König wirbelt wie eine Münze. Es gilt
+  dieselbe Satz-Regel (`RingCardEntrance.motion`, `RingCardEntranceTests`),
+  dazu drei Regeln, jede mit Test:
+  - **Reine Rechnung.** `pose(at:)` liefert für den Fortschritt eine Pose,
+    `RingCardEntering` zeigt sie nur an. Die Animation selbst ist linear –
+    eine Kurve darüber verböge die Rechnung.
+  - **Ende ohne Ruck, Anfang verborgen.** Jeder Auftritt endet genau auf
+    dem Platz und ist kurz davor schon fast dort. Am Anfang ist die Karte
+    unsichtbar oder weit draußen, denn währenddessen fährt der Screen herein.
+  - **Lesbar nach gut einer halben Sekunde.** Was danach kommt, ist
+    Nachschwingen. Wer sich überschlägt, zeigt zwischendurch die
+    **Rückseite** (`CardPose.showsBack`) – sonst stünde die Karte halb
+    spiegelverkehrt da. Beide Seiten liegen immer da, nur eine ist zu
+    sehen; ein `if` baute die Karte mitten in der Drehung neu.
+
+  **Szene, Auftritt und Rangklang warten, bis der Kartenscreen fast steht**
+  (`RingOfFireActionView.settle`). Er fährt als Vollbild von unten herein,
+  und was in dieser Bewegung beginnt, sieht niemand – ausgerechnet der
+  Anfang, an dem man den Rang erkennt. Der Text steht trotzdem sofort da.
+  `EffectCanvas` kann dafür seit diesem Tag später loslaufen (`delay`).
+  Am selben Tag sind Jungs und Mädels kein Spiegelpaar mehr: Blitze und
+  Glitzer statt derselben Bläschen von links und von rechts.
+
 - **Kartengrößen rechnen, nicht tippen.** Bussfahrer zeigte seine Karten in
   festen 68 Punkten, egal wie breit das Gerät war. Jetzt teilen sie sich die
   verfügbare Breite (mit Deckel bei einem Viertel, sonst wird die Reihe
@@ -1254,6 +1282,20 @@ oben; was schief aussieht, unten.
   Firestore-Cache ist nirgends im Code konfiguriert – auf iOS ist er
   standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.
 ### Was zuletzt gebaut wurde und nie lief
+
+- **Jede Karte kommt anders** (28. Oktober, auf Wunsch – die Auftritte
+  im Browser gezeichnet, auf dem Gerät nie gelaufen). Zu prüfen:
+  - **Erkennt man den Rang am Auftritt**, bevor man liest? Wenn zwei sich
+    ähneln oder einer albern wirkt – sag welche.
+  - **Wirkt die kurze Pause nach dem Hereinfahren wie Absicht** oder wie
+    ein Hänger? Der Screen kommt, dann erst die Karte und ihr Klang.
+  - **Beim Wasserfall**: Läuft die Karte sauber hinter der Welle ins Bild,
+    und hat sie danach ihren Schatten wie alle anderen?
+  - Ruckelt etwas auf dem iPhone 13, am ehesten beim König (Münze) und
+    beim Buben (Überschlag)? Zeigen beide zwischendurch die Rückseite?
+  - Mit „Bewegung reduzieren“ muss die Karte sofort stehen.
+  - Und die neuen Szenen hinter der 5 und der 6: Blitze an den Rändern,
+    Glitzer von oben – stört eines davon den Text?
 
 - **Der Riss als eigener Moment, seltener, mit Glutfaden** (28. Oktober,
   auf Wunsch – in der Vorschau „Riss im Ring“ abgestimmt, auf dem Gerät nie

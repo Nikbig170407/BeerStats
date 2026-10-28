@@ -47,6 +47,10 @@ struct EffectCanvas: View {
     /// wird die Zeitleiste abgebaut und das letzte Bild bleibt stehen. Ohne
     /// Angabe laeuft die Szene, solange sie im Bild ist.
     var lasts: Double?
+    /// So lange steht das erste Bild, bevor die Szene loslaeuft – fuer
+    /// Screens, die selbst erst hereinfahren. Ihr Anfang liefe sonst in
+    /// der Bewegung des ganzen Screens unter.
+    var delay: Double = 0
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var start = Date()
@@ -63,7 +67,7 @@ struct EffectCanvas: View {
                 // Screen des Zeitstrahl-Spiels und verdeckt den von SwiftUI.
                 SwiftUI.TimelineView(.animation) { timeline in
                     Canvas { context, size in
-                        draw(&context, size, timeline.date.timeIntervalSince(start))
+                        draw(&context, size, max(0, timeline.date.timeIntervalSince(start) - delay))
                     }
                 }
             }
@@ -74,7 +78,7 @@ struct EffectCanvas: View {
         // Bricht mit der Ansicht ab – nichts laeuft weiter, wenn sie weg ist
         .task {
             guard let lasts else { return }
-            try? await Task.sleep(nanoseconds: UInt64(lasts * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: UInt64((delay + lasts) * 1_000_000_000))
             guard !Task.isCancelled else { return }
             over = true
         }
@@ -93,8 +97,10 @@ enum SceneArt {
     static let beerDeep = Color(red: 0.78, green: 0.47, blue: 0.1)
     static let foam = Color(red: 1, green: 0.97, blue: 0.91)
     static let light = Color(red: 1, green: 0.96, blue: 0.84)
-    static let blue = Color(red: 0.29, green: 0.64, blue: 0.89)
+    static let bolt = Color(red: 0.47, green: 0.75, blue: 1)
+    static let boltCore = Color(red: 0.92, green: 0.96, blue: 1)
     static let pink = Color(red: 0.91, green: 0.36, blue: 0.6)
+    static let glitterCore = Color(red: 1, green: 0.94, blue: 0.97)
     static let violet = Color(red: 0.61, green: 0.48, blue: 1)
     static let ember = Color(red: 1, green: 0.59, blue: 0.16)
     static let emberCore = Color(red: 1, green: 0.86, blue: 0.55)
@@ -246,20 +252,88 @@ extension SceneArt {
              [(0, beer, 0.4 * da), (1, beerDeep, 0.45 * da)])
     }
 
-    /// 5 und 6 – Jungs und Maedels: Blaeschen steigen schraeg aus der unteren
-    /// Ecke. Bewusst ein Spiegelpaar – die beiden Karten gehoeren zusammen.
-    static func bubbles(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double, fromRight: Bool, color: Color) {
+    /// 5 – Jungs: Blitze zucken im Zickzack an den Seiten herab.
+    ///
+    /// Bis zum 28. Oktober waren Jungs und Maedels ein Spiegelpaar –
+    /// Blaeschen aus der linken und aus der rechten Ecke. Gemeint war "die
+    /// beiden gehoeren zusammen"; am Tisch hiess es "die sehen gleich aus".
+    /// Jetzt hat jede der beiden ihre eigene Bewegung.
+    ///
+    /// Die Blitze bleiben an den Raendern, weil in der Mitte der Text steht,
+    /// und sie flackern, ohne ganz auszugehen: ein Zucken, kein Blinken.
+    static func lightning(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
         let w = Double(size.width), h = Double(size.height)
-        for i in 0..<26 {
-            let z = fract(t * (0.18 + 0.14 * unit(i, 1)) + unit(i, 2)), r = 6 + 16 * unit(i, 3)
-            var x = w * (0.05 + 0.55 * z + 0.25 * unit(i, 4)) + 14 * sin(t * 2 + Double(i))
-            let y = h + 30 - (h + 60) * z
-            if fromRight { x = w - x }
-            let a = 0.55 * min(1, z * 6) * (1 - z * 0.6)
-            circle(&g, x, y, r, color, a * 0.25)
-            stroke(&g, arc(x, y, r, 0, 2 * .pi, 24), color, a, 2)
-            circle(&g, x - r * 0.35, y - r * 0.35, r * 0.22, foam, a * 0.8)
+        let takt = 1.4, leben = 0.36
+        for k in 0..<2 {
+            let lauf = (t + Double(k) * takt / 2) / takt
+            let zyklus = Int(lauf.rounded(.down)), z = fract(lauf) * takt
+            let n = zyklus * 2 + k, links = n % 2 == 0
+            let streifen: Double = links ? 0.05 : 0.77
+            let x0 = w * (streifen + 0.18 * unit(n, 1))
+            // Die Kante glueht nach, auch wenn der Blitz schon weg ist
+            glow(&g, x0, 0, 170, bolt, 0.28 * exp(-z * 3))
+            guard z <= leben else { continue }
+
+            // Alle 0,09 Sekunden ein neuer Weg – das ist das Zucken
+            let schlag = Int(z / 0.09)
+            let aus = clamp((z - leben * 0.55) / (leben * 0.45))
+            let flackern = 0.75 + 0.25 * sin(z * 90)
+            let hell = flackern * (1 - aus * aus * (3 - 2 * aus))
+            let laenge = h * (0.34 + 0.22 * unit(n, 2))
+            let zug: Double = links ? 3 : -3
+            var punkte: [Point] = [(x0, -10)]
+            var x = x0
+            for i in 1...9 {
+                x += noise(n * 31 + i + schlag * 7, 3) * 24 + zug
+                punkte.append((x, -10 + laenge * Double(i) / 9))
+            }
+            stroke(&g, punkte, bolt, 0.2 * hell, 18)
+            stroke(&g, punkte, bolt, 0.55 * hell, 6)
+            stroke(&g, punkte, boltCore, 0.95 * hell, 2.2)
+
+            // Ein Ast zweigt nach aussen ab
+            let ab = 3 + Int(unit(n, 4) * 4)
+            let seite: Double = links ? 1 : -1
+            var ast: [Point] = [punkte[ab]]
+            var ax = punkte[ab].x
+            for i in 1...3 {
+                ax += seite * (9 + 9 * unit(n + i + schlag, 5))
+                ast.append((ax, punkte[ab].y + laenge * 0.075 * Double(i)))
+            }
+            stroke(&g, ast, bolt, 0.4 * hell, 4)
+            stroke(&g, ast, boltCore, 0.8 * hell, 1.4)
         }
+    }
+
+    /// 6 – Maedels: Glitzer rieselt von oben und funkelt auf. In der Mitte
+    /// blasser, dort steht der Text.
+    static func glitter(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
+        let w = Double(size.width), h = Double(size.height)
+        for i in 0..<36 {
+            let di = Double(i)
+            let z = fract(t * (0.06 + 0.07 * unit(i, 1)) + unit(i, 2))
+            let x = w * unit(i, 3) + 16 * sin(t * (0.8 + unit(i, 4)) + di)
+            let y = -20 + (h + 40) * z
+            // Jedes Korn blitzt in seinem eigenen Takt kurz auf
+            let funkeln = pow(max(0, sin(t * (2.2 + 2 * unit(i, 5)) + di * 1.7)), 6)
+            let rand = min(1, abs(x / w - 0.5) * 2.6)
+            let hell = 0.4 + 0.6 * funkeln, aussen = 0.35 + 0.65 * rand
+            let a = hell * aussen * min(1, z * 8) * min(1, (1 - z) * 6)
+            let r = 4 + 3 * unit(i, 6) + 10 * funkeln
+            if funkeln > 0.2 { glow(&g, x, y, r * 3.2, pink, 0.45 * funkeln * a) }
+            sparkle(&g, x, y, r, t * 0.6 + di, pink, a)
+            circle(&g, x, y, 1.2 + funkeln * 1.8, glitterCore, a)
+        }
+    }
+
+    /// Ein Stern mit vier Zacken.
+    private static func sparkle(_ g: inout GraphicsContext, _ x: Double, _ y: Double, _ r: Double, _ turn: Double, _ color: Color, _ alpha: Double) {
+        let zacken: [Point] = (0..<8).map { k in
+            let winkel = turn + Double(k) * .pi / 4
+            let weite = k % 2 == 0 ? r : r * 0.28
+            return (x + cos(winkel) * weite, y + sin(winkel) * weite)
+        }
+        fill(&g, zacken, color, alpha)
     }
 
     /// 7 – Himmel: Lichtsaeulen fallen von oben und wiegen sich langsam.

@@ -24,6 +24,17 @@
 //  daran, bevor er sie liest; wer sie liest, soll dabei nicht gestoert
 //  werden.
 //
+//  Seit dem 28. Oktober hat auch die Karte selbst einen Auftritt je Rang
+//  (`RingCardEntrance`): Die Zwei schiesst wie ein Pfeil herein, die Zehn
+//  knallt auf wie ein Stempel, der Koenig wirbelt wie eine Muenze. Vorher
+//  kam sie jedes Mal gleich, federnd aus 70 Prozent Groesse – das Groesste
+//  auf dem Screen sah bei allen dreizehn Raengen gleich aus.
+//
+//  Szene, Auftritt und Rangklang beginnen erst, wenn der Screen fast steht
+//  (`settle`). Er faehrt als Vollbild von unten herein, und was in dieser
+//  Bewegung anfaengt, sieht niemand: ausgerechnet der Anfang, an dem man
+//  den Rang erkennt. Der Text steht dagegen sofort da.
+//
 
 import SwiftUI
 
@@ -42,7 +53,15 @@ struct RingOfFireActionView: View {
     var tornNote: String?
     let onDone: () -> Void
 
-    @State private var hasAppeared = false
+    /// Wie lange der Screen zum Hereinfahren braucht, bis er fast steht.
+    /// Erst dann beginnen Szene, Auftritt und Klang.
+    static let settle = 0.3
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Wie weit der Auftritt der Karte ist, von 0 bis 1.
+    @State private var entranceProgress = 0.0
+
+    private var entrance: RingCardEntrance { RingCardEntrance(rank: card.rank) }
 
     /// Rollen-Karten faerben rot, der Rest bernstein – dieselbe Zuordnung
     /// wie vorher im Panel.
@@ -61,7 +80,7 @@ struct RingOfFireActionView: View {
             // Auch nach einem Riss: Das Feuer hat seit dem 28. Oktober seinen
             // eigenen Moment auf dem Ring, bevor dieser Screen kommt. Hier
             // ist danach wieder die Karte dran.
-            RingCardFlourish(rank: card.rank)
+            RingCardFlourish(rank: card.rank, delay: Self.settle)
 
             FillingScrollView {
                 VStack(spacing: 16) {
@@ -69,10 +88,16 @@ struct RingOfFireActionView: View {
                         tornBanner
                     }
 
-                    PlayingCardView(card: card, width: 150)
-                        .shadow(color: tint.opacity(0.4), radius: 24)
-                        .scaleEffect(hasAppeared ? 1 : 0.7)
-                        .padding(.top, 12)
+                    // Mit "Bewegung reduzieren" steht die Karte sofort
+                    // auf ihrem Platz – ein stilles Bild, nicht keins
+                    RingCardEntering(
+                        card: card,
+                        entrance: entrance,
+                        width: 150,
+                        progress: reduceMotion ? 1 : entranceProgress
+                    )
+                    .shadow(color: tint.opacity(0.4), radius: 24)
+                    .padding(.top, 12)
 
                     Text(rule.nickname)
                         .font(.scaled(11, weight: .heavy, design: .rounded))
@@ -118,12 +143,20 @@ struct RingOfFireActionView: View {
             )
         }
         .onAppear {
-            // Jeder Rang klingt anders – man hoert, welche Karte kam, bevor
-            // man sie liest
-            SoundManager.play(.ringRank(card.rank))
-            withAnimation(.spring(response: 0.42, dampingFraction: 0.68)) {
-                hasAppeared = true
+            guard !reduceMotion else { return }
+            // Linear: Wie schnell die Karte wann ist, rechnet der Auftritt
+            // selbst – eine zweite Kurve darueber verbiege seine Rechnung
+            withAnimation(.linear(duration: entrance.duration).delay(Self.settle)) {
+                entranceProgress = 1
             }
+        }
+        // Jeder Rang klingt anders – man hoert, welche Karte kam, bevor man
+        // sie liest. Mit dem Auftritt, nicht mit dem Hereinfahren; und
+        // bricht ab, wenn der Screen vorher wieder zu ist.
+        .task {
+            try? await Task.sleep(nanoseconds: UInt64(Self.settle * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            SoundManager.play(.ringRank(card.rank))
         }
     }
 
