@@ -1071,6 +1071,15 @@ Regel gilt für Abschnitt 9.
     viel übersprungen wurde**. Eine Sicherung, die halb durchläuft und
     „fertig" meldet, ist schlimmer als eine, die scheitert.
 
+15. **Ein eigener Typ kann einen SwiftUI-Typ verdecken.** Der Screen des
+    Zeitstrahl-Spiels heißt `TimelineView` – genau wie SwiftUIs Zeitleiste.
+    `TimelineView(.animation)` rief deshalb den Spiel-Screen auf, und der
+    Lauf brach mit „argument passed to call that takes no arguments“ ab
+    (27. Oktober, beim Bau von `EffectFlames`). Gemeint ist dann
+    `SwiftUI.TimelineView`, voll ausgeschrieben. `check.py` meldet so einen
+    Aufruf seitdem selbst – der Name allein ist kein Fehler, aber ein
+    Aufruf mit Punkt-Argument (`(.animation)`) meint fast immer SwiftUI.
+
 ---
 
 ## 8. Arbeitsweise
