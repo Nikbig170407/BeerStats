@@ -313,6 +313,42 @@ enum PartyGame: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Die Welt des Spiels: Grund, Flaeche, Kante, Schrift (`GameWorld`).
+    ///
+    /// Ein vollstaendiges `switch` ohne `default` – ein neues Spiel
+    /// uebersetzt nicht, bevor es eine eigene Welt hat. Und keine zwei
+    /// Spiele teilen sich eine (`GameWorldTests`): Genau das hat sie vorher
+    /// alle gleich aussehen lassen.
+    var world: GameWorld {
+        switch self {
+        case .ringOfFire: return .campfire
+        case .horseRace: return .racetrack
+        case .busRide: return .nightBus
+        case .truthOrDare: return .twoPiles
+        case .neverHaveIEver: return .neonSign
+        case .timeline: return .recordShelf
+        case .schocken: return .regularsTable
+        case .maexchen: return .underTheCup
+        case .twoTruths: return .lieDetector
+        case .spy: return .secretFile
+        case .headsUp: return .foreheadCard
+        case .countTo21: return .boardGame
+        case .estimation: return .quizShow
+        case .categories: return .hourglass
+        case .mostLikely: return .showOfHands
+        case .knowYourPeople: return .trumpCards
+        case .charades: return .silentFilm
+        case .spectrum: return .wavelength
+        case .bombPass: return .bunker
+        case .reactionDuel: return .highNoon
+        case .drinkRoulette: return .casino
+        case .herd: return .pasture
+        case .forbiddenWords: return .gafferTape
+        case .drinkBingo: return .bingoHall
+        case .eveningRule: return .decree
+        }
+    }
+
     // MARK: - Wie lange und mit wie vielen
 
     /// Wie lange eine Runde dauert.
@@ -547,6 +583,11 @@ enum PartyGame: String, CaseIterable, Identifiable {
 
         return AnyView(
             ziel
+                // Die Welt gilt fuer alles, was zum Spiel gehoert – auch fuer
+                // den Vorspann davor. Ueber die Umgebung, damit die geteilten
+                // Bausteine sie lesen koennen, ohne dass ein Spiel sie
+                // durchreichen muss.
+                .environment(\.gameWorld, world)
                 .onAppear { DrinkIntensity.activate(for: self) }
                 // Zurueck zur Vorgabe. Ohne das liefe Beerpong Extreme nach
                 // einer harten Runde Schocken auch hart.

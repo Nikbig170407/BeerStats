@@ -34,4 +34,18 @@ extension Font {
         let grown = UIFontMetrics.default.scaledValue(for: size)
         return .system(size: min(grown, size * maximumScale), weight: weight, design: design)
     }
+
+    /// Dasselbe mit einer Breite der Systemschrift – schmal, gestaucht oder
+    /// breit. Die Spielwelten unterscheiden sich auch darin, und es bleibt
+    /// eine Systemschrift: keine Schriftdatei, keine Lizenzfrage, und die
+    /// Systemgroesse gilt weiter.
+    static func scaled(
+        _ size: CGFloat,
+        weight: Font.Weight = .regular,
+        design: Font.Design = .rounded,
+        width: Font.Width,
+        maximumScale: CGFloat = 1.5
+    ) -> Font {
+        scaled(size, weight: weight, design: design, maximumScale: maximumScale).width(width)
+    }
 }

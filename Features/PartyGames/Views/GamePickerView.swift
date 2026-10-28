@@ -79,6 +79,8 @@ struct GamePickerView: View {
         }
         .navigationTitle("Was spielen wir?")
         .navigationBarTitleDisplayMode(.inline)
+        // Kein Spiel, aber ein eigener Ort: die Abfahrtstafel
+        .environment(\.gameWorld, .departureBoard)
         .onAppear(perform: adoptTableCount)
         .onDisappear { rollTask?.cancel() }
     }

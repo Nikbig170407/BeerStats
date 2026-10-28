@@ -59,6 +59,19 @@ IOS17_ONLY = [
     "PhaseAnimator",
     "MeshGradient",
     "onChange(of:initial:",
+    # Genau nach diesen greift man beim Gestalten – und sie sind alle neuer
+    # als das Deployment-Target (Spielwelten, 28. Oktober).
+    "KeyframeAnimator",
+    ".keyframeAnimator",
+    ".phaseAnimator",
+    ".visualEffect",
+    ".scrollTransition",
+    ".sensoryFeedback",
+    ".colorEffect",
+    ".layerEffect",
+    ".distortionEffect",
+    "numericText(value:",
+    "TextRenderer",
 ]
 
 

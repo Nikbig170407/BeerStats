@@ -57,6 +57,9 @@ struct TournamentView: View {
                 .padding(22)
             }
         }
+        // Kein Spiel, aber ein eigener Ort: das Stadion. Die Spiele darin
+        // bringen ihre eigene Welt mit (`PartyGame.destination`).
+        .environment(\.gameWorld, .stadium)
         .navigationTitle("Turnier")
         .navigationBarTitleDisplayMode(.inline)
     }

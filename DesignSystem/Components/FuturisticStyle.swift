@@ -29,7 +29,37 @@ struct NeonEdge: ViewModifier {
     /// die ganze App sofort umspringt, ohne dass eine Ansicht davon weiss.
     @AppStorage(AppAppearance.neonEdgesKey) private var neonOn = true
 
+    /// In einem Spiel zeichnet dessen Welt die Kante – ein Pergament hat
+    /// keine Neonkante, ein Filzbrett einen Holzrand.
+    @Environment(\.gameWorld) private var world
+
+    @ViewBuilder
     func body(content: Content) -> some View {
+        if let world {
+            worldEdge(content, world)
+        } else {
+            neonLook(content)
+        }
+    }
+
+    private func worldEdge(_ content: Content, _ world: GameWorld) -> some View {
+        let look = world.look, radius = world.corner(cornerRadius), farbe = world.edgeColor(for: color)
+        let staerke = 0.35 + 0.65 * min(1, intensity)
+        return content
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(farbe.opacity(staerke), lineWidth: look.edgeWidth)
+            )
+            .overlay(
+                // Der Zwischentitel im Stummfilm hat einen zweiten, feinen Rahmen
+                RoundedRectangle(cornerRadius: max(0, radius - 2), style: .continuous)
+                    .strokeBorder(farbe.opacity(world == .silentFilm ? 0.55 * staerke : 0), lineWidth: 1)
+                    .padding(world == .silentFilm ? 6 : 0)
+            )
+            .shadow(color: farbe.opacity(look.edgeGlows && neonOn ? 0.4 * min(1, intensity) : 0), radius: 14)
+    }
+
+    private func neonLook(_ content: Content) -> some View {
         content
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -77,7 +107,22 @@ struct GlassPanel: ViewModifier {
 
     var cornerRadius: CGFloat = 18
 
+    /// In einem Spiel die Flaeche seiner Welt: Filz, Holz, Akte, Beton.
+    @Environment(\.gameWorld) private var world
+
+    @ViewBuilder
     func body(content: Content) -> some View {
+        if let world {
+            content.background(
+                RoundedRectangle(cornerRadius: world.corner(cornerRadius), style: .continuous)
+                    .fill(LinearGradient(colors: [world.look.surfaceTop, world.look.surfaceBottom], startPoint: .top, endPoint: .bottom))
+            )
+        } else {
+            glass(content)
+        }
+    }
+
+    private func glass(_ content: Content) -> some View {
         content.background(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(
@@ -128,6 +173,12 @@ struct AmbientBackdrop: View {
         BackdropStyle(rawValue: styleRaw) ?? .bubbles
     }
 
+    /// In einem Spiel liegt hier der Grund seiner Welt statt der Blasen –
+    /// Holz, Rasen, Beton. Die Einstellung gilt weiter: Schlicht zeigt nur
+    /// die Grundfarbe, und bewegt wird nur bei "Blasen".
+    @Environment(\.gameWorld) private var world
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     /// Lage und Größe relativ zur Fläche, damit es auf jedem Gerät gleich
     /// aussieht. Bewusst unregelmäßig – gleichmäßig verteilt wäre wieder ein
     /// Raster, nur mit runden Ecken.
@@ -150,6 +201,15 @@ struct AmbientBackdrop: View {
     ]
 
     var body: some View {
+        if let world {
+            WorldGround(world: world, plain: style == .plain, moves: world.look.groundMoves && style == .bubbles && !reduceMotion)
+                .equatable()
+        } else {
+            bubbleBackdrop
+        }
+    }
+
+    private var bubbleBackdrop: some View {
         ZStack {
             BeerStatsColor.backgroundPrimary
 

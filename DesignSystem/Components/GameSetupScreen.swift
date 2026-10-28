@@ -30,6 +30,8 @@ struct GameSetupScreen<Content: View>: View {
     let onStart: () -> Void
     @ViewBuilder let content: () -> Content
 
+    @Environment(\.gameWorld) private var world
+
     var body: some View {
         ZStack {
             AmbientBackdrop(glow: tint)
@@ -72,8 +74,9 @@ struct GameSetupScreen<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(emoji).font(.system(size: 46))
 
+            // In der Schrift seiner Welt: Das Spiel faengt schon hier an
             Text(title)
-                .font(BeerStatsFont.title)
+                .font(world == nil ? BeerStatsFont.title : Font.world(world, 26))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text(subtitle)

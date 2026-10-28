@@ -29,6 +29,8 @@ struct HandoffPanel<Secret: View>: View {
     private let onContinue: () -> Void
     private let secret: Secret
 
+    @Environment(\.gameWorld) private var world
+
     init(
         player: Int,
         isRevealed: Bool,
@@ -50,7 +52,7 @@ struct HandoffPanel<Secret: View>: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Spieler \(player + 1)")
-                .font(BeerStatsFont.title)
+                .font(world == nil ? BeerStatsFont.title : Font.world(world, 24))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             if isRevealed {

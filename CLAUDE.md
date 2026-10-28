@@ -475,6 +475,50 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Ausfüllen in der Breite. `verticalScrollOnly()` steckt im Baustein; an
   den umgestellten Aufrufstellen ist es deshalb weg.
 
+- **Jedes Spiel hat seine eigene Welt** (`DesignSystem/Worlds/`).
+  Entscheidung des Nutzers vom 28. Oktober: „Im Moment sieht jedes Spiel
+  sehr ähnlich aus.“ Bis dahin lag unter jedem Spiel derselbe Blasengrund,
+  der Inhalt auf derselben Glasfläche mit Neonkante, in derselben runden
+  Schrift – nur die Lichtfarbe wechselte, und davon gab es fünf für
+  fünfundzwanzig Spiele. Das Vorbild sind die Party Packs von Jackbox:
+  jedes Spiel in eigenem Stil, geteilt wird nur der Rahmen.
+  - **Gerüst und Welt sind getrennt.** Gleich bleiben Navigation, Knöpfe,
+    Vorspann, Weitergeben, Anleitung, Härte, Abend und Bilanz – im
+    Verhalten. Jede Welt (`GameWorld`) bringt Grund, Fläche, Kante und
+    Schrift mit. **Die geteilten Bausteine lesen die Welt selbst**
+    (`\.gameWorld` in der Umgebung): `AmbientBackdrop` zeichnet ihren
+    Grund, `glassPanel` ihre Fläche, `neonEdge` ihre Kante,
+    `GameSetupScreen` und `HandoffPanel` ihre Schrift. Kein Spiel muss
+    dafür etwas tun, und keines kann es vergessen. In Menüs ist keine Welt
+    gesetzt – dort bleibt alles, wie es war.
+  - **Die Welt steht im Katalog** (`PartyGame.world`, vollständiges
+    `switch`), gesetzt in `PartyGame.destination` – auch für den Vorspann.
+    Auslosen und Turnier sind kein Spiel, haben aber einen eigenen Ort
+    (Abfahrtstafel, Stadion).
+  - **Satz-Regel, eine Ebene höher**: Jede Welt lässt sich in einem Satz
+    sagen, ohne Emoji, kein Satz kommt doppelt vor, und keine zwei Spiele
+    teilen sich eine Welt (`GameWorldTests`).
+  - **Dunkler Grund, dunkle Flächen.** Schrift und Deckkräfte sind auf
+    Dunkel gerechnet. Hell dürfen nur Gegenstände sein (Spielkarte, Akte,
+    Bingoblatt) – mit eigener, fester Tinte.
+  - **Grün und Rot behalten ihre Bedeutung.** Eine Kante in Erfolgs- oder
+    Fehlerfarbe bleibt so; jede andere Farbe war nur die Farbe des Spiels
+    und weicht der Welt (`GameWorld.edgeColor`).
+  - **Die Einstellungen gelten weiter.** Das Farbschema rahmt die App
+    (Knöpfe, Navigation, Menüs); in der Welt haben Dinge ihre eigene Farbe,
+    wie Bier. „Hintergrund“ heißt in einer Welt, wie viel los ist:
+    Schlicht ist die Grundfarbe, Ruhig die Textur, Blasen dazu die leise
+    Bewegung der Welt. Neonkanten gelten für den Rahmen.
+  - **Text steht nach spätestens einer halben Sekunde.** Rückmeldung des
+    Nutzers zur Vorschau: Manche Schriften brauchten zu lange, um
+    dazustehen. Bewegung darf drumherum weiterlaufen, aber niemand wartet
+    aufs Lesen.
+  - **Nur Systemschriften**, über `Font.scaled(…, width:)` auch schmal oder
+    breit – keine Schriftdatei, keine Lizenzfrage, die Systemgröße gilt.
+  - **Texturen werden einmal gezeichnet** (`WorldGround` ist
+    gleichsetzbar, ein Tastendruck rechnet den Grund nicht neu), leise
+    Bewegung höchstens mit 30 Bildern je Sekunde.
+
 - **Jede Szene hat ihre eigene Bewegung**
   (`DesignSystem/Components/DrawnScenes.swift`). Entscheidung des Nutzers
   vom 27. Oktober, nach dem Test am Tisch: „Die sehen alle gleich aus, nur
@@ -1194,6 +1238,14 @@ oben; was schief aussieht, unten.
   Stimme wirklich still, und spürt man den harten Stoß vor dem Zittern?
   Mit „Bewegung reduzieren“ muss es ein ruhiges Glühen an den Rändern
   sein, nicht nichts.
+- **Jedes Spiel hat seine eigene Welt** (28. Oktober, auf Wunsch): Grund,
+  Fläche, Kante und Schrift kommen aus der Welt, die Spiele selbst sind
+  dafür nicht angefasst. Zu prüfen: Erkennt man jedes Spiel ohne seinen
+  Titel? Bleibt aller Text lesbar, auch mit großer Schrift und im
+  Tischmodus? Ruckelt etwas auf dem iPhone 13 (Glut, Lampe und Filmkorn
+  bewegen sich)? Mit „Hintergrund: Schlicht“ muss jede Welt fast
+  einfarbig sein, mit „Bewegung reduzieren“ still. Und die Menüs müssen
+  genau aussehen wie vorher.
 - **Jede Szene bewegt sich anders** (27. Oktober, auf Wunsch): Alle Szenen
   sind neu gezeichnet – dreizehn hinter den Ring-Karten, dazu Feuerwerk im
   Sieger-Screen, Rauch und Splitter in der Bombe, die Schallplatte beim
