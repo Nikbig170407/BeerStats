@@ -139,6 +139,9 @@ struct EffectFlash<Trigger: Equatable>: View {
 
     let trigger: Trigger
     var tint: Color = BeerStatsColor.warning
+    /// Wie hell der Blitz aufleuchtet. Kraeftig, wenn er ein Ereignis
+    /// meldet; blasser, wenn er nur einen Schnitt markiert.
+    var peak: Double = 0.8
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown: Trigger?
@@ -147,7 +150,7 @@ struct EffectFlash<Trigger: Equatable>: View {
     var body: some View {
         Rectangle()
             .fill(tint)
-            .opacity(bright ? 0.8 : 0)
+            .opacity(bright ? peak : 0)
             .ignoresSafeArea()
             .accessibilityHidden(true)
             .allowsHitTesting(false)
@@ -155,7 +158,12 @@ struct EffectFlash<Trigger: Equatable>: View {
                 guard !reduceMotion, neu != shown else { return }
                 shown = neu
                 bright = true
-                withAnimation(.easeOut(duration: 0.65)) { bright = false }
+                // Erst den hellen Zustand zeigen, dann ausblenden – im selben
+                // Durchlauf gesetzt, saehe SwiftUI nur den Endwert, und der
+                // Blitz kaeme nie an.
+                DispatchQueue.main.async {
+                    withAnimation(.easeOut(duration: 0.65)) { bright = false }
+                }
             }
     }
 }

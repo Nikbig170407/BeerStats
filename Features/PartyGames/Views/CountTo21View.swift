@@ -28,7 +28,7 @@ struct CountTo21View: View {
     private let mistakePenalty = DrinkAmount.sips(2)
     private let finishPenalty = DrinkAmount.sips(3)
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 4)
+    @Environment(\.gameWorld) private var world
 
     var body: some View {
         ZStack {
@@ -37,7 +37,7 @@ struct CountTo21View: View {
             FillingScrollView {
                 VStack(spacing: 18) {
                     header
-                    numberGrid
+                    board
                     penaltyButtons
                     if !rules.isEmpty { ruleList }
                 }
@@ -66,7 +66,7 @@ struct CountTo21View: View {
     private var header: some View {
         VStack(spacing: 6) {
             Text("Reihum von 1 bis 21 zählen")
-                .font(BeerStatsFont.headline)
+                .font(Font.world(world, 20, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
             Text("Wer 21 sagt, trinkt und ersetzt eine Zahl durch eine eigene Regel. Dann von vorne.")
                 .font(BeerStatsFont.caption)
@@ -78,17 +78,25 @@ struct CountTo21View: View {
         .glassPanel(cornerRadius: 18)
     }
 
-    // MARK: - Zahlen
+    // MARK: - Das Brett
 
-    private var numberGrid: some View {
-        LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(1...21, id: \.self) { number in
-                numberTile(number)
+    /// Die Zahlen als Felder auf einem gewundenen Weg, die Regeln als
+    /// Aufkleber darauf. Jedes Feld laesst sich antippen, wie vorher jede
+    /// Kachel.
+    private var board: some View {
+        GeometryReader { geometry in
+            ZStack {
+                BoardTrail()
+                ForEach(1...21, id: \.self) { number in
+                    field(number)
+                        .position(BoardGame.center(number, width: geometry.size.width))
+                }
             }
         }
+        .frame(height: BoardGame.height)
     }
 
-    private func numberTile(_ number: Int) -> some View {
+    private func field(_ number: Int) -> some View {
         let rule = rules[number]
         let isFinal = number == 21
 
@@ -97,37 +105,39 @@ struct CountTo21View: View {
             editingNumber = number
             HapticManager.lightImpact()
         } label: {
-            VStack(spacing: 2) {
+            ZStack {
+                Circle()
+                    .fill(isFinal ? BoardGame.gold : BoardGame.field)
+                    .frame(width: isFinal ? 64 : 50, height: isFinal ? 64 : 50)
+                    .shadow(color: .black.opacity(0.35), radius: 3, y: 2)
+                    .overlay(alignment: .top) {
+                        if isFinal {
+                            BoardCrown()
+                                .fill(BoardGame.gold)
+                                .frame(width: 38, height: 22)
+                                .offset(y: -18)
+                        }
+                    }
+
                 Text("\(number)")
-                    .font(.scaled(20, weight: .heavy, design: .rounded))
-                    .foregroundStyle(tileColor(hasRule: rule != nil, isFinal: isFinal))
+                    .font(.scaled(isFinal ? 28 : 21, weight: .heavy, design: .rounded, maximumScale: 1.3))
+                    .foregroundStyle(BoardGame.ink)
+                    .monospacedDigit()
+
                 if let rule {
-                    Text(rule)
-                        .font(.scaled(9, weight: .semibold, design: .rounded))
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
-                        .minimumScaleFactor(0.7)
+                    BoardSticker(
+                        text: rule,
+                        color: BoardGame.stickerColor(for: number),
+                        angle: SceneArt.noise(number, 3) * 11
+                    )
+                    .offset(x: 8, y: 20)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 58)
-            .padding(.horizontal, 4)
-            .glassPanel(cornerRadius: 12)
-            .neonEdge(
-                tileColor(hasRule: rule != nil, isFinal: isFinal),
-                cornerRadius: 12,
-                intensity: rule != nil ? 0.7 : (isFinal ? 0.5 : 0.12)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .frame(width: 70, height: 70)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PressableButtonStyle())
-    }
-
-    private func tileColor(hasRule: Bool, isFinal: Bool) -> Color {
-        if hasRule { return BeerStatsColor.accent }
-        if isFinal { return BeerStatsColor.error }
-        return BeerStatsColor.textSecondary
+        .accessibilityLabel(rule.map { "\(number): \($0)" } ?? "\(number)")
     }
 
     // MARK: - Strafen
@@ -177,16 +187,18 @@ struct CountTo21View: View {
     private var ruleList: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("AKTIVE REGELN")
-                .font(.scaled(11, weight: .heavy, design: .rounded))
+                .font(Font.world(world, 13, weight: .heavy))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
             ForEach(rules.keys.sorted(), id: \.self) { number in
                 HStack(alignment: .top, spacing: 10) {
+                    // Dieselbe Farbe wie der Aufkleber auf dem Brett
                     Text("\(number)")
-                        .font(.scaled(16, weight: .heavy, design: .rounded))
-                        .foregroundStyle(BeerStatsColor.accent)
-                        .frame(minWidth: 26, alignment: .leading)
+                        .font(.scaled(15, weight: .heavy, design: .rounded))
+                        .foregroundStyle(BoardGame.ink)
+                        .frame(minWidth: 30, minHeight: 24)
+                        .background(BoardGame.stickerColor(for: number), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                     Text(rules[number] ?? "")
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.textPrimary)

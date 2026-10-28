@@ -28,6 +28,8 @@ struct EstimationView: View {
     private let loserAmount = DrinkAmount.sips(3)
     private let winnerAmount = DrinkAmount.sips(3)
 
+    @Environment(\.gameWorld) private var world
+
     var body: some View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.success)
@@ -60,22 +62,26 @@ struct EstimationView: View {
     private func questionCard(_ question: EstimationQuestion) -> some View {
         VStack(spacing: 16) {
             Spacer(minLength: 0)
-            Text("🤔").font(.system(size: 34))
 
             Text(question.text)
-                .font(.scaled(24, weight: .bold, design: .rounded))
+                .font(Font.world(world, 23, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
             if isRevealed {
-                Divider().background(BeerStatsColor.textSecondary.opacity(0.3))
+                Text("AUFLÖSUNG")
+                    .font(Font.world(world, 13, weight: .bold))
+                    .kerning(3)
+                    .foregroundStyle(QuizShow.bulb)
 
-                Text(question.answerText)
-                    .font(.scaled(40, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BeerStatsColor.success)
-                    .minimumScaleFactor(0.5)
-                    .lineLimit(1)
+                // Die Loesung rollt auf Walzen ein, die Einheit steht darunter
+                DigitReels(text: question.numberText, size: question.numberText.count > 4 ? 36 : 44)
+                if !question.unit.isEmpty {
+                    Text(question.unit)
+                        .font(Font.world(world, 20, weight: .bold))
+                        .foregroundStyle(BeerStatsColor.textPrimary)
+                }
 
                 Text("Wer am weitesten daneben liegt, trinkt \(loserAmount.text).")
                     .font(BeerStatsFont.caption)
@@ -100,9 +106,10 @@ struct EstimationView: View {
         // Screens leer. Die Spacer INNEN halten den Text in der Mitte der
         // Karte.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(26)
+        .padding(30)
         .glassPanel(cornerRadius: 24)
-        .neonEdge(BeerStatsColor.success, cornerRadius: 24, intensity: isRevealed ? 0.9 : 0.5)
+        // Die Lauflichter der Quizshow um die Frage
+        .overlay { MarqueeLights().padding(4) }
         .animation(AppAnimation.standard, value: isRevealed)
         .id(question.id)
         .transition(.asymmetric(
@@ -122,9 +129,8 @@ struct EstimationView: View {
 
     private var finishedView: some View {
         VStack(spacing: 18) {
-            Text("🏁").font(.system(size: 60))
             Text("Alle Fragen durch")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 28, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
             Spacer(minLength: 0)
             PrimaryButton(title: "Neu mischen", systemImage: "shuffle") { restart() }

@@ -32,6 +32,19 @@ struct TwoTruthsView: View {
     private let groupPenalty = DrinkAmount.sips(3)
     private let wrongPenalty = DrinkAmount.sips(2)
 
+    @Environment(\.gameWorld) private var world
+
+    /// Wie stark die Nadel ausschlaegt: nervoes, solange erzaehlt wird –
+    /// heftig, wenn alle die Luege gefunden haben, still, wenn sie durchkam.
+    private var needle: Double {
+        switch outcome {
+        case nil: return 0.35
+        case .everyone?: return 1
+        case .mixed?: return 0.55
+        case .nobody?: return 0.05
+        }
+    }
+
     var body: some View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.accent)
@@ -40,6 +53,7 @@ struct TwoTruthsView: View {
                 VStack(spacing: 18) {
                     TurnRow(turn: turn)
                     themeCard
+                    Polygraph(level: needle)
                     if let outcome {
                         resultCard(outcome)
                         PrimaryButton(title: "Nächster ist dran", systemImage: "arrow.right") { nextPerson() }
@@ -55,23 +69,17 @@ struct TwoTruthsView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    /// Das Thema als Beweisstueck mit laufender Nummer.
     private var themeCard: some View {
-        VStack(spacing: 10) {
-            Text("🎭").font(.system(size: 34))
-            Text("THEMA")
-                .font(.scaled(11, weight: .heavy, design: .rounded))
-                .kerning(2.4)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+        EvidenceTag(number: turn + 1) {
+            Text("BEWEISSTÜCK · THEMA")
+                .font(Font.world(world, 12, weight: .bold))
+                .kerning(2)
+                .opacity(0.6)
             Text(theme)
-                .font(.scaled(28, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .multilineTextAlignment(.center)
+                .font(Font.world(world, 24, weight: .heavy))
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity)
-        .padding(24)
-        .glassPanel(cornerRadius: 22)
-        .neonEdge(BeerStatsColor.accent, cornerRadius: 22, intensity: 0.7)
         .id(theme)
         .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -117,7 +125,7 @@ struct TwoTruthsView: View {
         } label: {
             VStack(spacing: 3) {
                 Text(title)
-                    .font(BeerStatsFont.headline)
+                    .font(Font.world(world, 16, weight: .bold))
                     .foregroundStyle(BeerStatsColor.textPrimary)
                 Text(detail)
                     .font(BeerStatsFont.caption)
@@ -135,9 +143,12 @@ struct TwoTruthsView: View {
 
     private func resultCard(_ value: Outcome) -> some View {
         VStack(spacing: 8) {
-            Text(emoji(for: value)).font(.system(size: 48))
+            Text(verdict(for: value))
+                .font(Font.world(world, 22, weight: .heavy))
+                .kerning(3)
+                .foregroundStyle(BeerStatsColor.textPrimary)
             Text(text(for: value))
-                .font(.scaled(22, weight: .bold, design: .rounded))
+                .font(Font.world(world, 20, weight: .bold))
                 .foregroundStyle(BeerStatsColor.error)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -148,11 +159,12 @@ struct TwoTruthsView: View {
         .neonEdge(BeerStatsColor.error, cornerRadius: 20, intensity: 0.7)
     }
 
-    private func emoji(for value: Outcome) -> String {
+    /// Was der Detektor festhaelt – die Zeile auf dem Messprotokoll.
+    private func verdict(for value: Outcome) -> String {
         switch value {
-        case .everyone: return "🙈"
-        case .nobody: return "😎"
-        case .mixed: return "🤷"
+        case .everyone: return "ENTLARVT"
+        case .nobody: return "UNERKANNT"
+        case .mixed: return "TEILS ERKANNT"
         }
     }
 

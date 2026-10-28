@@ -22,13 +22,17 @@ struct EstimationQuestion: Identifiable, Equatable {
     let answer: Double
     let unit: String
 
-    /// Antwort ohne unnoetige Nachkommastelle: 206 statt 206,0.
-    var answerText: String {
+    /// Die Zahl ohne unnoetige Nachkommastelle: 206 statt 206,0.
+    var numberText: String {
         let rounded = answer.rounded()
-        let number = abs(answer - rounded) < 0.05
+        return abs(answer - rounded) < 0.05
             ? String(Int(rounded))
             : String(format: "%.1f", answer).replacingOccurrences(of: ".", with: ",")
-        return unit.isEmpty ? number : "\(number) \(unit)"
+    }
+
+    /// Zahl mit Einheit, so wie sie am Tisch vorgelesen wird.
+    var answerText: String {
+        unit.isEmpty ? numberText : "\(numberText) \(unit)"
     }
 }
 

@@ -35,6 +35,10 @@ struct MaexchenView: View {
     @State private var claim: Int?
     @State private var claimant = 0
     @State private var myRoll = MaexchenRoll.random()
+    /// Zaehlt die Wuerfe – jeder neue laesst den Becher neu aufknallen.
+    @State private var rolls = 0
+
+    @Environment(\.gameWorld) private var world
 
     private let normalPenalty = DrinkAmount.sips(3)
     private let miaPenalty = DrinkAmount.sips(6)
@@ -64,10 +68,8 @@ struct MaexchenView: View {
 
     private var setupView: some View {
         VStack(spacing: 18) {
-            Text("🎲").font(.system(size: 56))
-
             Text("Wie viele spielen mit?")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 28, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Verdeckt würfeln, ansagen – wahr oder gelogen. Der Nächste glaubt dir oder deckt auf.")
@@ -88,7 +90,7 @@ struct MaexchenView: View {
     private func handoffView(_ player: Int) -> some View {
         VStack(spacing: 18) {
             Text("\(PlayerNames.name(for: player))")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 28, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             if let claim {
@@ -97,8 +99,8 @@ struct MaexchenView: View {
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.textSecondary)
                     Text(MaexchenRanking.label(claim))
-                        .font(.scaled(40, weight: .heavy, design: .rounded))
-                        .foregroundStyle(BeerStatsColor.accentSecondary)
+                        .font(Font.world(world, 46, weight: .heavy))
+                        .foregroundStyle(UnderTheCup.stitch)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(24)
@@ -106,7 +108,7 @@ struct MaexchenView: View {
                 .neonEdge(BeerStatsColor.accentSecondary, cornerRadius: 22, intensity: 0.7)
 
                 Text("Glaubst du das?")
-                    .font(BeerStatsFont.headline)
+                    .font(Font.world(world, 20, weight: .bold))
                     .foregroundStyle(BeerStatsColor.textPrimary)
 
                 if MaexchenRanking.values(above: claim).isEmpty {
@@ -152,15 +154,16 @@ struct MaexchenView: View {
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
-            VStack(spacing: 10) {
-                Text(myRoll.diceSymbols)
-                    .font(.system(size: 72))
+            // Der Becher knallt auf und wird angehoben – darunter der Wurf
+            VStack(spacing: 6) {
+                CupReveal(high: myRoll.high, low: myRoll.low, rollID: rolls)
                 Text(MaexchenRanking.label(myRoll.value))
-                    .font(.scaled(32, weight: .heavy, design: .rounded))
+                    .font(Font.world(world, 36, weight: .heavy))
                     .foregroundStyle(myRoll.isMia ? BeerStatsColor.error : BeerStatsColor.success)
             }
             .frame(maxWidth: .infinity)
-            .padding(26)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
             .glassPanel(cornerRadius: 22)
             .neonEdge(myRoll.isMia ? BeerStatsColor.error : BeerStatsColor.success, cornerRadius: 22, intensity: 0.8)
 
@@ -181,7 +184,7 @@ struct MaexchenView: View {
     private func claimingView(_ player: Int) -> some View {
         VStack(spacing: 14) {
             Text("Was sagst du an?")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 26, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Es muss höher sein als \(claim.map { MaexchenRanking.label($0) } ?? "nichts"). Ob es stimmt, ist deine Sache.")
@@ -197,7 +200,7 @@ struct MaexchenView: View {
                 } label: {
                     HStack {
                         Text(MaexchenRanking.label(value))
-                            .font(BeerStatsFont.headline)
+                            .font(Font.world(world, 19, weight: .bold))
                             .foregroundStyle(BeerStatsColor.textPrimary)
                         Spacer()
                         if value == myRoll.value {
@@ -229,22 +232,23 @@ struct MaexchenView: View {
         let amount = wasMia && !liar ? miaPenalty : normalPenalty
 
         return VStack(spacing: 16) {
-            Text(liar ? "🤥" : "😬").font(.system(size: 56))
-
             VStack(spacing: 6) {
                 Text("\(PlayerNames.name(for: claimant)) sagte")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                 Text(claim.map { MaexchenRanking.label($0) } ?? "–")
-                    .font(BeerStatsFont.headline)
-                    .foregroundStyle(BeerStatsColor.accentSecondary)
+                    .font(Font.world(world, 26, weight: .heavy))
+                    .foregroundStyle(UnderTheCup.stitch)
 
-                Text("gewürfelt war")
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-                    .padding(.top, 6)
-                Text(lastRoll.map { "\($0.diceSymbols)  \(MaexchenRanking.label($0.value))" } ?? "–")
-                    .font(.scaled(26, weight: .heavy, design: .rounded))
+                // Aufdecken heisst: Becher hoch
+                if let lastRoll {
+                    CupReveal(high: lastRoll.high, low: lastRoll.low, rollID: rolls, height: 200)
+                }
+                Text(lastRoll.map { "gewürfelt: \(MaexchenRanking.label($0.value))" } ?? "–")
+                    .font(Font.world(world, 26, weight: .heavy))
+                    .foregroundStyle(liar ? BeerStatsColor.error : BeerStatsColor.success)
+                Text(liar ? "Gelogen." : "Stimmt.")
+                    .font(Font.world(world, 18, weight: .bold))
                     .foregroundStyle(liar ? BeerStatsColor.error : BeerStatsColor.success)
             }
             .frame(maxWidth: .infinity)
@@ -252,7 +256,7 @@ struct MaexchenView: View {
             .glassPanel(cornerRadius: 22)
 
             Text("\(PlayerNames.name(for: loser)) trinkt \(amount.text)")
-                .font(.scaled(22, weight: .bold, design: .rounded))
+                .font(Font.world(world, 22, weight: .bold))
                 .foregroundStyle(BeerStatsColor.error)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
@@ -289,6 +293,7 @@ struct MaexchenView: View {
 
     private func roll(_ player: Int) {
         myRoll = MaexchenRoll.random()
+        rolls += 1
         withAnimation(AppAnimation.standard) { phase = .rolled(player: player) }
         HapticManager.mediumImpact()
         SoundManager.play(.cupHit)
@@ -319,6 +324,8 @@ struct MaexchenView: View {
         let loser = liar ? claimant : doubter
         let wasMia = lastRoll?.isMia == true
         EveningLog.record(wasMia && !liar ? miaPenalty : normalPenalty, forPlayer: loser)
+        // Der Becher wird beim Aufdecken noch einmal gehoben
+        rolls += 1
 
         withAnimation(AppAnimation.standard) { phase = .revealed(doubter: doubter, liar: liar) }
         HapticManager.error()

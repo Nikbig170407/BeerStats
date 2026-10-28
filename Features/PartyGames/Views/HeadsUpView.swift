@@ -30,6 +30,12 @@ struct HeadsUpView: View {
     @State private var hits = 0
     @State private var misses = 0
     @State private var tickTask: Task<Void, Never>?
+    /// Wie die letzte Karte ausging – daran haengt, wohin sie fliegt.
+    @State private var lastHit = true
+    /// Zaehlt die Karten der Runde; jede ist eine eigene Ansicht.
+    @State private var cards = 0
+
+    @Environment(\.gameWorld) private var world
 
     private var current: String? { deck.indices.contains(index) ? deck[index] : nil }
 
@@ -55,10 +61,8 @@ struct HeadsUpView: View {
 
     private var setupView: some View {
         VStack(spacing: 16) {
-            Text("🙈").font(.system(size: 54))
-
-            Text("Handy an die Stirn")
-                .font(BeerStatsFont.title)
+            Text("HANDY AN DIE STIRN")
+                .font(Font.world(world, 34, weight: .black))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Die Runde beschreibt, du rätst. Ein Nachbar tippt: links daneben, rechts getroffen.")
@@ -94,25 +98,37 @@ struct HeadsUpView: View {
 
     // MARK: - Runde
 
+    /// Die Karte fuellt den Screen: Sie wird aus zwei Metern gelesen, von
+    /// der Runde, nicht vom Ratenden. Die Zeit laeuft als Band um den Rand –
+    /// das Band gehoert zur Runde, nicht zur Karte, und bleibt deshalb
+    /// stehen, waehrend die Karten durchfliegen.
     private var playingView: some View {
         VStack(spacing: 0) {
-            Text(String(format: "%.0f", remaining))
-                .font(.scaled(30, weight: .heavy, design: .rounded))
-                .foregroundStyle(remaining <= 10 ? BeerStatsColor.error : BeerStatsColor.textSecondary)
-                .monospacedDigit()
-                .padding(.top, 8)
-
-            Spacer(minLength: 0)
-
-            Text(current ?? "")
-                .font(.scaled(44, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.4)
-                .lineLimit(3)
-                .padding(.horizontal, 20)
-
-            Spacer(minLength: 0)
+            ZStack {
+                if let current {
+                    ForeheadCardFace(category: category.title, term: current)
+                        .padding(10)
+                        .id(cards)
+                        // Getroffen faellt die Karte nach unten, weiter fliegt
+                        // sie nach oben; die naechste kommt von der anderen Seite
+                        .transition(.asymmetric(
+                            insertion: .move(edge: lastHit ? .top : .bottom),
+                            removal: .move(edge: lastHit ? .bottom : .top)
+                        ))
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay { TimeBand(share: remaining / Self.roundSeconds).padding(10) }
+            .overlay(alignment: .bottom) {
+                Text(String(format: "%.0f", remaining))
+                    .font(Font.world(world, 20, weight: .heavy))
+                    .foregroundStyle(remaining <= 10 ? BeerStatsColor.error : Color.white.opacity(0.7))
+                    .monospacedDigit()
+                    .padding(.bottom, 24)
+            }
+            .clipped()
+            .padding(.horizontal, 6)
+            .padding(.top, 4)
 
             HStack(spacing: 0) {
                 TapZone(title: "Daneben", tint: BeerStatsColor.error) { advance(hit: false) }
@@ -120,16 +136,21 @@ struct HeadsUpView: View {
             }
             .frame(height: TapZone.height)
         }
+        .overlay {
+            EffectFlash(trigger: cards, tint: lastHit ? BeerStatsColor.success : ForeheadCard.pass, peak: 0.4)
+        }
     }
 
     // MARK: - Ergebnis
 
     private var finishedView: some View {
         VStack(spacing: 16) {
-            Text("⏱️").font(.system(size: 54))
+            Text("ZEIT UM")
+                .font(Font.world(world, 44, weight: .black))
+                .foregroundStyle(ForeheadCard.band)
 
             Text("\(hits) getroffen, \(misses) daneben")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 26, weight: .bold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
 
@@ -202,13 +223,22 @@ struct HeadsUpView: View {
             SoundManager.play(.miss)
         }
 
-        // Ist der Stapel durch, wird neu gemischt statt abgebrochen: Bei 35
-        // Begriffen und 60 Sekunden passiert das nur den ganz Schnellen, und
-        // die sollen nicht dafuer bestraft werden.
-        index += 1
-        if index >= deck.count {
-            deck = HeadsUpDeck.shuffled(category)
-            index = 0
+        // Erst die Richtung festhalten, dann die Karte wechseln: Die alte
+        // Karte fliegt mit dem Uebergang davon, den sie zuletzt hatte – im
+        // selben Durchlauf floege sie noch in die Richtung der vorigen.
+        lastHit = hit
+        DispatchQueue.main.async {
+            withAnimation(.easeIn(duration: 0.28)) {
+                cards += 1
+                // Ist der Stapel durch, wird neu gemischt statt abgebrochen:
+                // Bei 35 Begriffen und 60 Sekunden passiert das nur den ganz
+                // Schnellen, und die sollen nicht dafuer bestraft werden.
+                index += 1
+                if index >= deck.count {
+                    deck = HeadsUpDeck.shuffled(category)
+                    index = 0
+                }
+            }
         }
     }
 
