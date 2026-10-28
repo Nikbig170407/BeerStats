@@ -26,6 +26,8 @@ import SwiftUI
 struct DrinkBingoView: View {
 
     private static let size = 4
+    private static let tileHeight: CGFloat = 78
+    private static let gap: CGFloat = 6
 
     @State private var fields: [String] = BingoDeck.draw()
     @State private var marked: Set<Int> = []
@@ -37,10 +39,6 @@ struct DrinkBingoView: View {
     private let spotPenalty = DrinkAmount.sips(1)
     private let bingoReward = DrinkAmount.sips(5)
 
-    private let columns = Array(
-        repeating: GridItem(.flexible(), spacing: 6),
-        count: DrinkBingoView.size
-    )
 
     var body: some View {
         ZStack {
@@ -88,12 +86,35 @@ struct DrinkBingoView: View {
 
     // MARK: - Blatt
 
+    /// Das Blatt als Papier: Jeder Tipp drueckt einen Stempelklecks aufs
+    /// Feld, eine volle Reihe bekommt einen Filzstiftstrich. Die Kleckse
+    /// bleiben – man sieht dem Blatt den Abend an.
     private var board: some View {
-        LazyVGrid(columns: columns, spacing: 6) {
-            ForEach(fields.indices, id: \.self) { index in
-                tile(index)
+        VStack(spacing: 0) {
+            HStack(spacing: 16) {
+                ForEach(Array("BINGO"), id: \.self) { buchstabe in
+                    Text(String(buchstabe))
+                        .font(.scaled(34, weight: .black, design: .rounded, maximumScale: 1.2))
+                        .foregroundStyle(BingoHall.red)
+                }
             }
+            .padding(.vertical, 8)
+            .accessibilityHidden(true)
+
+            VStack(spacing: Self.gap) {
+                ForEach(0..<Self.size, id: \.self) { reihe in
+                    HStack(spacing: Self.gap) {
+                        ForEach(0..<Self.size, id: \.self) { spalte in
+                            tile(reihe * Self.size + spalte)
+                        }
+                    }
+                }
+            }
+            .overlay { strikes }
         }
+        .padding(10)
+        .background(BingoHall.paper, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .shadow(color: .black.opacity(0.5), radius: 16, y: 8)
     }
 
     private func tile(_ index: Int) -> some View {
@@ -103,28 +124,74 @@ struct DrinkBingoView: View {
             toggle(index)
         } label: {
             Text(fields[index])
-                .font(.scaled(10, weight: .semibold, design: .rounded))
-                .foregroundStyle(isMarked ? BeerStatsColor.textOnAccent : BeerStatsColor.textPrimary)
+                .font(.scaled(10, weight: .bold, design: .rounded))
+                .foregroundStyle(BingoHall.ink)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.6)
                 .lineLimit(4)
                 .padding(5)
                 .frame(maxWidth: .infinity)
-                .frame(height: 78)
-                .background(
-                    isMarked ? BeerStatsColor.success : BeerStatsColor.surfaceElevated.opacity(0.7),
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-                )
+                .frame(height: Self.tileHeight)
+                .background {
+                    if isMarked { BingoDaub(seed: index) }
+                }
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(
-                            isMarked ? BeerStatsColor.success : BeerStatsColor.textSecondary.opacity(0.25),
-                            lineWidth: 1
-                        )
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .strokeBorder(BingoHall.ink.opacity(0.2), lineWidth: 1)
                 )
-                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .contentShape(Rectangle())
         }
         .buttonStyle(PressableButtonStyle())
+        .accessibilityValue(isMarked ? "angekreuzt" : "")
+    }
+
+    /// Je voller Reihe ein Filzstiftstrich quer hindurch.
+    private var strikes: some View {
+        GeometryReader { geometry in
+            ForEach(fullLines, id: \.self) { linie in
+                let enden = endpoints(of: linie, in: geometry.size)
+                MarkerStrike(from: enden.0, to: enden.1)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    /// Die vollen Reihen: erst die Zeilen, dann die Spalten, dann die
+    /// beiden Diagonalen – jede mit ihrer festen Nummer.
+    private var fullLines: [Int] {
+        let n = Self.size
+        var linien: [Int] = []
+        for reihe in 0..<n where (0..<n).allSatisfy({ marked.contains(reihe * n + $0) }) {
+            linien.append(reihe)
+        }
+        for spalte in 0..<n where (0..<n).allSatisfy({ marked.contains($0 * n + spalte) }) {
+            linien.append(n + spalte)
+        }
+        if (0..<n).allSatisfy({ marked.contains($0 * n + $0) }) { linien.append(2 * n) }
+        if (0..<n).allSatisfy({ marked.contains($0 * n + (n - 1 - $0)) }) { linien.append(2 * n + 1) }
+        return linien
+    }
+
+    private func endpoints(of linie: Int, in size: CGSize) -> (CGPoint, CGPoint) {
+        let n = Self.size
+        let breite = (size.width - Self.gap * CGFloat(n - 1)) / CGFloat(n)
+        let hoehe = Self.tileHeight
+
+        func mitte(_ reihe: Int, _ spalte: Int) -> CGPoint {
+            CGPoint(x: CGFloat(spalte) * (breite + Self.gap) + breite / 2,
+                    y: CGFloat(reihe) * (hoehe + Self.gap) + hoehe / 2)
+        }
+
+        if linie < n {
+            let y = mitte(linie, 0).y
+            return (CGPoint(x: 8, y: y), CGPoint(x: size.width - 8, y: y))
+        }
+        if linie < 2 * n {
+            let x = mitte(0, linie - n).x
+            return (CGPoint(x: x, y: 8), CGPoint(x: x, y: size.height - 8))
+        }
+        if linie == 2 * n { return (mitte(0, 0), mitte(n - 1, n - 1)) }
+        return (mitte(0, n - 1), mitte(n - 1, 0))
     }
 
     // MARK: - Fuß
@@ -148,12 +215,8 @@ struct DrinkBingoView: View {
     private var bingoOverlay: some View {
         ZStack {
             BeerStatsColor.backgroundPrimary.opacity(0.93)
-            VStack(spacing: 14) {
-                Text("🎉").font(.system(size: 84))
-                Text("BINGO")
-                    .font(.scaled(42, weight: .heavy, design: .rounded))
-                    .kerning(5)
-                    .foregroundStyle(BeerStatsColor.success)
+            VStack(spacing: 18) {
+                BingoBadge()
                 Text("Verteile \(bingoReward.text)")
                     .font(BeerStatsFont.headline)
                     .foregroundStyle(BeerStatsColor.textPrimary)
@@ -185,20 +248,10 @@ struct DrinkBingoView: View {
         completedLines = lines
     }
 
+    /// Dieselbe Rechnung wie die Striche auf dem Blatt – eine Quelle fuer
+    /// beides, sonst stuende ein Strich da, ohne dass Bingo gemeldet wird.
     private func countLines() -> Int {
-        let n = Self.size
-        var lines = 0
-
-        for row in 0..<n {
-            if (0..<n).allSatisfy({ marked.contains(row * n + $0) }) { lines += 1 }
-        }
-        for column in 0..<n {
-            if (0..<n).allSatisfy({ marked.contains($0 * n + column) }) { lines += 1 }
-        }
-        if (0..<n).allSatisfy({ marked.contains($0 * n + $0) }) { lines += 1 }
-        if (0..<n).allSatisfy({ marked.contains($0 * n + (n - 1 - $0)) }) { lines += 1 }
-
-        return lines
+        fullLines.count
     }
 
     private func startBingo() {

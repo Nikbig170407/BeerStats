@@ -33,6 +33,8 @@ struct ForbiddenWordsView: View {
 
     private let penalty = DrinkAmount.sips(3)
 
+    @Environment(\.gameWorld) private var world
+
     var body: some View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.warning)
@@ -57,10 +59,8 @@ struct ForbiddenWordsView: View {
 
     private var setupView: some View {
         VStack(spacing: 18) {
-            Text("🤐").font(.system(size: 56))
-
             Text("Wie viele spielen mit?")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 30, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Jeder zieht ein Wort, das er ab jetzt nicht mehr sagen darf. Läuft neben allen anderen Spielen weiter.")
@@ -89,24 +89,23 @@ struct ForbiddenWordsView: View {
             },
             onContinue: { nextPlayer(after: index) }
         ) {
-            Text("🤐").font(.system(size: 48))
-
-            Text("Dein verbotenes Wort")
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            // Die Tinte stellt die Karteikarte – deshalb keine eigene Farbe
+            Text("DEIN VERBOTENES WORT")
+                .font(Font.world(world, 13, weight: .bold))
+                .kerning(2)
+                .opacity(0.6)
 
             // Der Bereich hat bis zu zwoelf Woerter, und manche sind lang –
             // lieber kleiner setzen als umbrechen.
-            Text(words.indices.contains(index) ? words[index] : "–")
-                .font(.scaled(40, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.warning)
-                .minimumScaleFactor(0.5)
+            Text(words.indices.contains(index) ? words[index].uppercased() : "–")
+                .font(Font.world(world, 64, weight: .black))
+                .minimumScaleFactor(0.4)
                 .lineLimit(1)
 
-            Text("Merk es dir. Niemand sonst darf es sehen.")
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
-                .multilineTextAlignment(.center)
+            Text("bis zum Ende des Abends. Merk es dir – niemand sonst darf es sehen.")
+                .font(Font.world(world, 15, weight: .semibold))
+                .opacity(0.6)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -114,10 +113,8 @@ struct ForbiddenWordsView: View {
 
     private var runningView: some View {
         VStack(spacing: 18) {
-            Text("🤐").font(.system(size: 56))
-
             Text("\(playerCount) Wörter im Umlauf")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 30, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             VStack(alignment: .leading, spacing: 12) {
@@ -164,10 +161,8 @@ struct ForbiddenWordsView: View {
 
     private var revealedView: some View {
         VStack(spacing: 16) {
-            Text("🔓").font(.system(size: 52))
-
             Text("Das waren die Wörter")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 30, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             VStack(spacing: 8) {
@@ -177,8 +172,8 @@ struct ForbiddenWordsView: View {
                             .font(BeerStatsFont.caption)
                             .foregroundStyle(BeerStatsColor.textSecondary)
                         Spacer()
-                        Text(word)
-                            .font(BeerStatsFont.headline)
+                        Text(word.uppercased())
+                            .font(Font.world(world, 20, weight: .black))
                             .foregroundStyle(BeerStatsColor.warning)
                     }
                     .padding(.horizontal, 16)

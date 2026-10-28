@@ -77,11 +77,15 @@ struct HandoffPanel<Secret: View>: View {
     }
 
     /// Der Ablauf ist ueberall derselbe, die Karte kleidet sich nach der
-    /// Welt: Beim Spion ist sie eine Akte, deren Deckel aufklappt.
+    /// Welt: Beim Spion ist sie eine Akte, deren Deckel aufklappt, bei den
+    /// verbotenen Woertern eine Karteikarte, deren Band abgezogen wird.
     @ViewBuilder
     private var card: some View {
         if world == .secretFile {
             Dossier(player: player, isOpen: isRevealed, alarm: tint == BeerStatsColor.error, secret: secret)
+        } else if world == .gafferTape {
+            // Bei den verbotenen Woertern eine Karteikarte unter Gewebeband
+            TapedCard(isOpen: isRevealed, secret: secret)
         } else if isRevealed {
             VStack(spacing: 12) { secret }
                 .frame(maxWidth: .infinity)

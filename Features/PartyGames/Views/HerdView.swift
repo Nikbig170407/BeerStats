@@ -45,6 +45,8 @@ struct HerdView: View {
     private let penalty = DrinkAmount.sips(2)
     private let cowPenalty = DrinkAmount.shot
 
+    @Environment(\.gameWorld) private var world
+
     var body: some View {
         Group {
             switch phase {
@@ -97,14 +99,12 @@ struct HerdView: View {
 
     private var askingView: some View {
         screen {
-            Text("🐄").font(.system(size: 44))
-
             Text("Runde \(round)")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
             Text(question)
-                .font(.scaled(30, weight: .heavy, design: .rounded))
+                .font(Font.world(world, 32, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -114,6 +114,10 @@ struct HerdView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+
+            // Die Herde rueckt zusammen – ein Schaf je Mitspieler
+            HerdField(count: playerCount, alone: [], cows: [])
+                .id(round)
         } buttons: {
             PrimaryButton(title: "Gesagt – wer stand allein?", systemImage: "arrow.right") {
                 selected = []
@@ -130,7 +134,7 @@ struct HerdView: View {
     private var pickingView: some View {
         screen {
             Text("Wer war allein?")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 28, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Antippen, wer eine Antwort hatte, die sonst niemand hatte. Waren alle einer Meinung, tippt niemanden an.")
@@ -187,11 +191,19 @@ struct HerdView: View {
 
     private func resultView(alone: [Int], cow: [Int]) -> some View {
         screen {
-            Text(alone.isEmpty ? "🤝" : "🍺").font(.system(size: 54))
+            // Wer allein stand, trottet an den Rand; wer zweimal allein
+            // stand, ist jetzt eine Kuh mit Glocke
+            HerdField(
+                count: playerCount,
+                alone: Set(alone),
+                cows: Set(cow),
+                names: Dictionary(uniqueKeysWithValues: alone.map { ($0, PlayerNames.plainName(for: $0)) })
+            )
+            .id("ergebnis-\(round)")
 
             if alone.isEmpty {
                 Text("Alle einer Meinung")
-                    .font(BeerStatsFont.title)
+                    .font(Font.world(world, 28, weight: .heavy))
                     .foregroundStyle(BeerStatsColor.success)
                     .multilineTextAlignment(.center)
 
@@ -201,7 +213,7 @@ struct HerdView: View {
                     .multilineTextAlignment(.center)
             } else {
                 Text(namesText(alone))
-                    .font(BeerStatsFont.title)
+                    .font(Font.world(world, 28, weight: .heavy))
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)

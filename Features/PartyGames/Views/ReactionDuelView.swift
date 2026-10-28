@@ -32,6 +32,10 @@ struct ReactionDuelView: View {
     @State private var goDate: Date?
     @State private var reactionMillis: Int?
     @State private var scores = [0, 0]
+    /// Zaehlt die Signale – jedes kommt mit einem weissen Blitz.
+    @State private var signals = 0
+
+    @Environment(\.gameWorld) private var world
 
     /// Was Verlieren kostet – und was der Frueh-Tipp zusaetzlich kostet.
     ///
@@ -49,6 +53,7 @@ struct ReactionDuelView: View {
                     .rotationEffect(.degrees(180))
                 half(playerIndex: 1, height: geometry.size.height / 2)
             }
+            .overlay { EffectFlash(trigger: signals, tint: .white, peak: 0.85) }
         }
         .ignoresSafeArea(edges: .bottom)
         .navigationTitle("Reaktionsduell")
@@ -64,8 +69,9 @@ struct ReactionDuelView: View {
 
             VStack(spacing: 10) {
                 Text(headline(for: playerIndex))
-                    .font(.scaled(30, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BeerStatsColor.textPrimary)
+                    .font(Font.world(world, 40, weight: .heavy))
+                    .foregroundStyle(HighNoon.sand)
+                    .shadow(color: .black.opacity(0.7), radius: 6)
                     .multilineTextAlignment(.center)
 
                 Text(subline(for: playerIndex))
@@ -87,19 +93,40 @@ struct ReactionDuelView: View {
         .onTapGesture { handleTap(by: playerIndex) }
     }
 
+    /// Jede Haelfte ist eine Wueste in der Daemmerung. Was sie bedeutet,
+    /// liegt als Licht darueber: Rot heisst warten, Gruen heisst jetzt –
+    /// diese Bedeutung bleibt in jeder Welt.
     private func background(for playerIndex: Int) -> some View {
         let color: Color
+        let staerke: Double
         switch phase {
         case .idle:
-            color = playerIndex == 0 ? BeerStatsColor.accent : BeerStatsColor.accentSecondary
+            color = .clear
+            staerke = 0
         case .waiting:
             color = BeerStatsColor.error
+            staerke = 0.3
         case .go:
             color = BeerStatsColor.success
+            staerke = 0.6
         case .done(let winner, _):
             color = winner == playerIndex ? BeerStatsColor.success : BeerStatsColor.error
+            staerke = 0.4
         }
-        return color.opacity(0.85).animation(AppAnimation.tap, value: phase)
+
+        // Wer zu frueh gezogen hat, behaelt das Loch bis zur naechsten Runde
+        let getroffen: Bool
+        if case .done(let winner, let tooEarly) = phase {
+            getroffen = tooEarly && winner != playerIndex
+        } else {
+            getroffen = false
+        }
+
+        return ZStack {
+            DesertHalf(breathing: phase == .waiting, bulletHole: getroffen)
+            color.opacity(staerke)
+        }
+        .animation(AppAnimation.tap, value: phase)
     }
 
     private func headline(for playerIndex: Int) -> String {
@@ -170,6 +197,7 @@ struct ReactionDuelView: View {
             guard !Task.isCancelled else { return }
 
             goDate = Date()
+            signals += 1
             withAnimation(AppAnimation.tap) { phase = .go }
             HapticManager.success()
             SoundManager.play(.ballsBack)

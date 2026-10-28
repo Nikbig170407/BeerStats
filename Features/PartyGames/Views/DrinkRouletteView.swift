@@ -40,6 +40,8 @@ struct DrinkRouletteView: View {
     @State private var isSpinning = false
     @State private var spinTask: Task<Void, Never>?
 
+    @Environment(\.gameWorld) private var world
+
     private static let spinDuration: Double = 3.0
     private static let fullTurns: Double = 4
 
@@ -194,9 +196,13 @@ struct DrinkRouletteView: View {
 
     private var wheelView: some View {
         GeometryReader { geometry in
-            let size = min(geometry.size.width, geometry.size.height)
+            // Platz fuer den Kranz lassen, sonst ragt er ueber den Rahmen
+            let size = min(geometry.size.width, geometry.size.height) - 30
 
             ZStack {
+                // Der Kranz aus Holz und Gold; seine Lichter drehen sich mit
+                CasinoRim(size: size, rotation: rotation)
+
                 ZStack {
                     ForEach(Array(wedges.enumerated()), id: \.element.id) { index, wedge in
                         let farbe = color(at: index, of: wedges.count)
@@ -221,16 +227,20 @@ struct DrinkRouletteView: View {
                 .frame(width: size, height: size)
                 .rotationEffect(.degrees(rotation))
 
+                // Die Nabe: Gold auf Holz
                 Circle()
-                    .fill(BeerStatsColor.backgroundPrimary)
+                    .fill(CasinoArt.wood)
                     .frame(width: size * 0.22, height: size * 0.22)
                     .overlay(
-                        Circle().strokeBorder(BeerStatsColor.accent.opacity(0.6), lineWidth: 2)
+                        Circle()
+                            .fill(RadialGradient(colors: [Color.white.opacity(0.5), CasinoArt.gold],
+                                                 center: .topLeading, startRadius: 2, endRadius: size * 0.1))
+                            .padding(size * 0.025)
                     )
 
                 // Zeiger oben, fest stehend.
                 Triangle()
-                    .fill(BeerStatsColor.textPrimary)
+                    .fill(CasinoArt.gold)
                     .frame(width: size * 0.08, height: size * 0.07)
                     .offset(y: -size * 0.5)
                     .shadow(color: .black.opacity(0.6), radius: 4)
@@ -244,7 +254,7 @@ struct DrinkRouletteView: View {
     private var resultPanel: some View {
         if let result, !isSpinning {
             Text(result.resolved)
-                .font(.scaled(24, weight: .bold, design: .rounded))
+                .font(Font.world(world, 24, weight: .bold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

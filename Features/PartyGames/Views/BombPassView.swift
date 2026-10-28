@@ -17,6 +17,7 @@ import SwiftUI
 struct BombPassView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.gameWorld) private var world
 
     @State private var phase: Phase = .idle
     @State private var length: Length = .medium
@@ -83,8 +84,8 @@ struct BombPassView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Text(headline)
-                .font(BeerStatsFont.title)
-                .foregroundStyle(BeerStatsColor.textPrimary)
+                .font(Font.world(world, 44, weight: .black))
+                .foregroundStyle(phase == .exploded ? BunkerArt.flame : BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
 
             Text(subline)
@@ -97,8 +98,8 @@ struct BombPassView: View {
 
     private var headline: String {
         switch phase {
-        case .idle: return "Wer bleibt drauf sitzen?"
-        case .running: return "Weitergeben!"
+        case .idle: return "WER BLEIBT DRAUF SITZEN?"
+        case .running: return "WEITERGEBEN!"
         case .exploded: return "BOOM"
         }
     }
@@ -116,27 +117,15 @@ struct BombPassView: View {
 
     // MARK: - Bombe
 
+    /// Eine gezeichnete Bombe statt 💣: Gezuendet spruehen Funken aus der
+    /// Schnur, und sie ruckt in Stoessen. Die Schnur wird nie kuerzer – die
+    /// Restzeit bleibt unsichtbar. Im Takt des Tickens zuckt sie zusaetzlich.
     private var bomb: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: phase == .exploded
-                            ? [BeerStatsColor.warning, BeerStatsColor.accentSecondary.opacity(0.2)]
-                            : [BeerStatsColor.accentSecondary.opacity(0.35), .clear],
-                        center: .center,
-                        startRadius: 10,
-                        endRadius: 150
-                    )
-                )
-                .frame(width: 260, height: 260)
-
-            Text(phase == .exploded ? "💥" : "💣")
-                .font(.system(size: 116))
-                .scaleEffect(pulse ? 1.12 : 1)
-                .rotationEffect(.degrees(pulse ? 3 : -3))
-        }
-        .frame(height: 260)
+        DrawnBomb(lit: phase == .running)
+            .frame(width: 280, height: 260)
+            .scaleEffect(pulse ? 1.06 : 1)
+            .opacity(phase == .exploded ? 0 : 1)
+            .frame(height: 260)
         // Der Knall, aber erst wenn es knallt. Vorher soll nichts
         // ablenken – die Spannung kommt daraus, dass man die Restzeit
         // NICHT sieht.

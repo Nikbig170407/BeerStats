@@ -36,6 +36,8 @@ struct EveningRuleView: View {
 
     private let penalty = DrinkAmount.sips(2)
 
+    @Environment(\.gameWorld) private var world
+
     private var current: String? { rules.first }
     private var older: [String] { Array(rules.dropFirst()) }
 
@@ -112,43 +114,41 @@ struct EveningRuleView: View {
         }
     }
 
-    /// Die zuletzt gezogene Regel, so gross wie der Platz es zulaesst.
+    /// Die zuletzt gezogene Regel als Erlass: Das Pergament entrollt sich,
+    /// dann wird es versiegelt. Jede neue Regel ist ein neues Pergament
+    /// (`id`), deshalb entrollt jede sich neu.
     private var currentCard: some View {
-        VStack(spacing: 14) {
-            Spacer(minLength: 0)
+        Parchment {
+            Text("ERLASS")
+                .font(Font.world(world, 16, weight: .bold))
+                .kerning(5)
+                .foregroundStyle(Decree.red)
 
-            Text("📜").font(.system(size: 42))
-
-            Text("JETZT GILT")
-                .font(.scaled(11, weight: .heavy, design: .rounded))
-                .kerning(2)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+            Text("Ab sofort gilt für alle:")
+                .font(Font.world(world, 15, weight: .regular).italic())
+                .foregroundStyle(Decree.inkSoft)
 
             Text(current ?? "–")
-                .font(.scaled(27, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .multilineTextAlignment(.center)
+                .font(Font.world(world, 26, weight: .semibold))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 6)
+
+            Text("Wer sie bricht, trinkt \(penalty.text).")
+                .font(Font.world(world, 15, weight: .regular).italic())
+                .foregroundStyle(Decree.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Wer sie bricht, trinkt \(penalty.text)")
-                .font(BeerStatsFont.headline)
-                .foregroundStyle(BeerStatsColor.accentSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
+            WaxSeal()
+                .padding(.top, 4)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(22)
-        .glassPanel(cornerRadius: 24)
-        .neonEdge(BeerStatsColor.accentSecondary, cornerRadius: 24, intensity: 0.7)
+        .id(current)
     }
 
     private var olderSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("AUCH NOCH IN KRAFT")
-                    .font(.scaled(11, weight: .heavy, design: .rounded))
+                    .font(Font.world(world, 13, weight: .bold))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -171,11 +171,17 @@ struct EveningRuleView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Aeltere Regeln als schmale Pergamentstreifen mit kleinem Siegel.
     private func olderRow(_ rule: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
+            Circle()
+                .fill(Decree.seal)
+                .frame(width: 14, height: 14)
+                .accessibilityHidden(true)
+
             Text(rule)
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textPrimary)
+                .font(Font.world(world, 15, weight: .regular).italic())
+                .foregroundStyle(Decree.ink)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -186,7 +192,7 @@ struct EveningRuleView: View {
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 18))
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .foregroundStyle(Decree.inkSoft.opacity(0.7))
                     // Nr. 4 und Nr. 12 der Lessons Learned: Ein Symbol von
                     // achtzehn Punkten ist keine Trefferflaeche.
                     .frame(width: 44, height: 44)
@@ -197,7 +203,10 @@ struct EveningRuleView: View {
         }
         .padding(.leading, 14)
         .padding(.vertical, 2)
-        .glassPanel(cornerRadius: 14)
+        .background(
+            LinearGradient(colors: [Decree.rollerLight, Decree.parchment], startPoint: .top, endPoint: .bottom),
+            in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+        )
     }
 
     // MARK: - Ablauf
