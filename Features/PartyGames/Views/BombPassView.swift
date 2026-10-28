@@ -115,19 +115,17 @@ struct BombPassView: View {
 
     private var bomb: some View {
         ZStack {
-            // Der Knall: Druckwelle und Funken, aber erst wenn es knallt.
-            // Vorher soll nichts ablenken – die Spannung kommt daraus,
-            // dass man die Restzeit NICHT sieht.
+            // Der Knall, aber erst wenn es knallt. Vorher soll nichts
+            // ablenken – die Spannung kommt daraus, dass man die Restzeit
+            // NICHT sieht.
+            //
+            // Blitz, Rauch, Splitter, Funken – einmal, dann steht die
+            // Leinwand still (`lasts`). Groesser als der Rahmen der Bombe,
+            // damit die Splitter ueber den Screen fliegen; die Knoepfe
+            // darunter liegen trotzdem obenauf.
             if phase == .exploded {
-                EffectShockwave(tint: BeerStatsColor.warning, rings: 3, duration: 1.1)
-                EffectParticles(
-                    symbol: "💥", count: 16, flight: .burst,
-                    tint: BeerStatsColor.warning, duration: 1.3,
-                    stagger: 0.05, sizeRange: 26...52, opacity: 0.95
-                )
-                // Ein Knall darf knallen: Der Einschlag kommt NACH der
-                // Welle ins Bild und gibt ihr etwas, von dem sie ausgeht.
-                EffectSlam(symbol: "💣", from: .bottom, tint: BeerStatsColor.error, size: 210, opacity: 0.34)
+                EffectCanvas(draw: SceneArt.explosion, lasts: 2.6)
+                    .frame(width: 700, height: 700)
             }
 
             Circle()

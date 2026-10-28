@@ -10,28 +10,27 @@
 //  gehoert, sagt es schon vorher – und sie sagt es ueber den Tisch hinweg,
 //  wo niemand mitliest.
 //
-//  Hier stand bis zum 25. Oktober EINE Bewegung mit dreizehn Einstellungen:
-//  Zeichen, Anzahl, Richtung. Das war als Sparmassnahme richtig gedacht und
-//  als Ergebnis falsch – dreizehn Mal dieselbe Flugbahn sieht dreizehn Mal
-//  gleich aus, egal wie verschieden die Emoji sind. Am Tisch unterscheidet
-//  man sie dann nicht, und damit ist der ganze Sinn weg.
+//  Zweimal ist das schon gescheitert, beide Male an derselben Stelle: Bis
+//  zum 25. Oktober war es EINE Flugbahn mit dreizehn Emoji, danach dreizehn
+//  Schichtungen aus denselben vier Bausteinen – wieder mit dreizehn Emoji.
+//  Der Nutzer am 27. Oktober: "Die sehen alle gleich aus, nur mit anderen
+//  Emojis." Ein anderes Zeichen auf derselben Bahn ist keine andere Szene.
 //
-//  Jetzt ist jeder Rang eine SZENE aus mehreren Schichten (`VisualEffects`):
-//  ein Einschlag, der eine Druckwelle wirft, dahinter drehende Strahlen und
-//  steigende Funken. Der gute Teil des alten Ansatzes bleibt – eine Szene
-//  ist eine Kombination von Bausteinen und kein neuer Entwurf, eine
-//  vierzehnte Karte braucht also weiter nur ein paar Zeilen.
+//  Seitdem hat jeder Rang eine eigene, gezeichnete BEWEGUNG
+//  (`DrawnScenes.swift`). Die Pruefung ist ein Satz je Rang, der ohne Emoji
+//  auskommt – und kein Satz darf zweimal vorkommen. Die Saetze stehen in
+//  `RingScene.motion` und nicht in diesem Kommentar: Dort haelt ein Test
+//  fest, dass kein Rang seine Bewegung mit einem anderen teilt
+//  (`RingSceneTests`). Ein Kommentar haette es nur behauptet.
 //
-//  Die Richtung ist dabei nicht Geschmack: Was auf dich zukommt, faellt
-//  (Dame, Drei); was von dir ausgeht, steigt (Daumen, Regel); was alle
-//  gleichzeitig trifft, platzt auseinander (Kategorie); was bleibt, kreist
-//  (Trink-Duo, Reim). Wer die Karte kennt, erkennt sie an der Bewegung,
-//  bevor er den Titel liest.
+//  Jungs und Maedels sind mit Absicht ein Spiegelpaar: Die beiden Karten
+//  gehoeren zusammen und sollen das aussehen – unterscheiden sollen sie
+//  sich trotzdem, deshalb Seite und Farbe.
 //
 //  Deckkraft ist hier kein Detail, sondern die Bedingung: Die Szene liegt
-//  HINTER dem Text, und der muss lesbar bleiben. Strahlen laufen deshalb um
-//  0,2, Einschlaege um 0,3 – was man sucht, findet man, was man liest,
-//  stoert es nicht.
+//  HINTER dem Text, und der muss lesbar bleiben. Was kraeftig sein darf,
+//  liegt am Rand oder unten (Bier, Glut, Rand im Herzschlag); was durch die
+//  Mitte geht, bleibt blass (Lichtsaeulen, Scheinwerfer).
 //
 
 import SwiftUI
@@ -41,7 +40,7 @@ struct RingCardFlourish: View {
     let rank: Int
 
     var body: some View {
-        scene(for: rank)
+        RingScene(rank: rank).canvas
             // Die ganze Szene haengt an der Karte: Ein neuer Rang baut sie
             // neu auf, statt die alte Bewegung weiterlaufen zu lassen.
             // Steht HIER und nicht an der Aufrufstelle – die eine Stelle,
@@ -51,194 +50,77 @@ struct RingCardFlourish: View {
             .accessibilityHidden(true)
             .allowsHitTesting(false)
     }
+}
 
-    // MARK: - Die dreizehn Szenen
+/// Die dreizehn Bewegungen von Ring of Fire, je Rang eine.
+///
+/// Eine Aufzaehlung und nicht eine Funktion, die gleich die Leinwand
+/// liefert: Nur so laesst sich pruefen, dass zwei Raenge nie dieselbe Szene
+/// bekommen – genau der Fehler, den der Nutzer zweimal gesehen hat.
+enum RingScene: CaseIterable {
 
-    /// Bewusst `AnyView` und kein `@ViewBuilder` – dieselbe Entscheidung wie
-    /// bei `PartyGame.destination`. Dreizehn Faelle mit je mehreren Schichten
-    /// bauen als `@ViewBuilder` einen Typ aus verschachtelten
-    /// Entweder-Oder-Huellen, den der Compiler erst in Minuten prueft – und
-    /// manchmal gar nicht. Die Kosten einer `AnyView` sind hier
-    /// bedeutungslos: Es haengt genau eine davon im Baum, und sie wechselt
-    /// nur, wenn eine neue Karte gezogen wird.
-    private func scene(for rank: Int) -> AnyView {
+    case pointAt, drinkSelf, waterfall, guys, chicks, heaven
+    case mates, rhyme, rule, thumbMaster, queen, category, ace
+
+    /// 2 bis 13 wie auf der Karte; alles andere ist das Ass (14).
+    init(rank: Int) {
         switch rank {
+        case 2: self = .pointAt
+        case 3: self = .drinkSelf
+        case 4: self = .waterfall
+        case 5: self = .guys
+        case 6: self = .chicks
+        case 7: self = .heaven
+        case 8: self = .mates
+        case 9: self = .rhyme
+        case 10: self = .rule
+        case 11: self = .thumbMaster
+        case 12: self = .queen
+        case 13: self = .category
+        default: self = .ace
+        }
+    }
 
-        case 2:
-            // Zeigt auf jemanden. Der Finger kommt von der Seite herein und
-            // bleibt, dahinter ziehen weitere quer durch.
-            return AnyView(ZStack {
-                EffectParticles(
-                    symbol: "👉", count: 6, flight: .sweep,
-                    tint: BeerStatsColor.accent, duration: 1.9, opacity: 0.55
-                )
-                EffectSlam(symbol: "👉", from: .leading, tint: BeerStatsColor.accent, size: 160, opacity: 0.28)
-            })
+    /// Die Bewegung in einem Satz – ohne Emoji, und keiner kommt zweimal
+    /// vor. Faellt einem fuer eine neue Szene kein eigener Satz ein, ist es
+    /// keine neue Szene.
+    var motion: String {
+        switch self {
+        case .pointAt: return "Ein Pinselstrich schießt quer über den Screen und endet als Pfeil."
+        case .drinkSelf: return "Bier steigt von unten, schwappt und trägt eine Schaumkrone."
+        case .waterfall: return "Wellige Ströme fallen von oben und spritzen unten auf."
+        case .guys: return "Bläschen steigen schräg aus der linken unteren Ecke."
+        case .chicks: return "Bläschen steigen schräg aus der rechten unteren Ecke."
+        case .heaven: return "Lichtsäulen fallen von oben und wiegen sich langsam."
+        case .mates: return "Zwei Lichter kreisen umeinander, durch ein Band verbunden."
+        case .rhyme: return "Schallwellen laufen im Takt von unten herauf."
+        case .rule: return "Ein Stempel knallt auf und hinterlässt seinen Abdruck."
+        case .thumbMaster: return "Der Bildschirmrand leuchtet im Herzschlag."
+        case .queen: return "Zwei Scheinwerfer schwenken herein und treffen sich auf der Karte."
+        case .category: return "Kärtchen fliegen aus der Mitte nach allen Seiten und drehen sich."
+        case .ace: return "Glut steigt auf wie aus einem Lagerfeuer."
+        }
+    }
 
-        case 3:
-            // Kommt auf DICH herunter: Einschlag von oben, Druckwelle, und
-            // es regnet weiter nach.
-            return AnyView(ZStack {
-                EffectShockwave(tint: BeerStatsColor.error, rings: 2, duration: 1.5, delay: 0.25)
-                EffectParticles(
-                    symbol: "⬇️", count: 7, flight: .fall,
-                    tint: BeerStatsColor.error, duration: 1.7, opacity: 0.5
-                )
-                EffectSlam(symbol: "🍺", from: .top, tint: BeerStatsColor.error, size: 150, opacity: 0.3)
-            })
-
-        case 4:
-            // Der Wasserfall. Zwei Tropfenschichten in verschiedenem Tempo –
-            // eine allein sieht aus wie Regen, zwei wie Stroemung.
-            return AnyView(ZStack {
-                EffectParticles(
-                    symbol: "💧", count: 12, flight: .fall,
-                    tint: BeerStatsColor.accentSecondary, duration: 1.4,
-                    stagger: 0.08, sizeRange: 18...34, opacity: 0.6
-                )
-                EffectParticles(
-                    symbol: "💧", count: 8, flight: .fall,
-                    tint: BeerStatsColor.accent, duration: 2.3,
-                    stagger: 0.14, sizeRange: 30...52, opacity: 0.35, seed: 31
-                )
-                EffectParticles(
-                    symbol: "🫧", count: 6, flight: .rise,
-                    tint: BeerStatsColor.accentSecondary, duration: 2.6,
-                    sizeRange: 16...28, opacity: 0.4, seed: 57
-                )
-            })
-
-        case 5:
-            // Die Jungs: Arme gehen hoch, der Bizeps schlaegt von unten
-            // herein.
-            return AnyView(ZStack {
-                EffectRays(tint: BeerStatsColor.accentSecondary, spokes: 10, opacity: 0.16)
-                EffectParticles(
-                    symbol: "🙋‍♂️", count: 7, flight: .rise,
-                    tint: BeerStatsColor.accentSecondary, duration: 2.0, opacity: 0.55
-                )
-                EffectSlam(symbol: "💪", from: .bottom, tint: BeerStatsColor.accentSecondary, size: 150, opacity: 0.28)
-            })
-
-        case 6:
-            // Die Maedels: gleiche Bauart, andere Farbe und anderes Zeichen.
-            // Die beiden Karten gehoeren zusammen und sollen das aussehen.
-            return AnyView(ZStack {
-                EffectRays(tint: BeerStatsColor.error, spokes: 10, opacity: 0.16)
-                EffectParticles(
-                    symbol: "🙋‍♀️", count: 7, flight: .rise,
-                    tint: BeerStatsColor.error, duration: 2.0, opacity: 0.55
-                )
-                EffectSlam(symbol: "💃", from: .bottom, tint: BeerStatsColor.error, size: 150, opacity: 0.28)
-            })
-
-        case 7:
-            // Alle Haende sofort hoch. Schnell und viele – hier zaehlt
-            // Hektik, nicht Pracht.
-            return AnyView(ZStack {
-                EffectParticles(
-                    symbol: "☝️", count: 14, flight: .rise,
-                    tint: BeerStatsColor.warning, duration: 1.1,
-                    stagger: 0.06, sizeRange: 22...40, opacity: 0.6
-                )
-                EffectShockwave(tint: BeerStatsColor.warning, rings: 3, duration: 1.2)
-            })
-
-        case 8:
-            // Das Trink-Duo: Zwei Glaeser kreisen umeinander, der
-            // Handschlag steht in der Mitte.
-            return AnyView(ZStack {
-                EffectParticles(
-                    symbol: "🍻", count: 8, flight: .orbit,
-                    tint: BeerStatsColor.success, duration: 3.2, stagger: 0.2, opacity: 0.45
-                )
-                EffectShockwave(tint: BeerStatsColor.success, rings: 2, duration: 2.0, lineWidth: 2, delay: 0.3)
-                EffectSlam(symbol: "🤝", from: .bottom, tint: BeerStatsColor.success, size: 150, opacity: 0.3)
-            })
-
-        case 9:
-            // Reimen: Noten kreisen, das Mikrofon kommt von unten.
-            return AnyView(ZStack {
-                EffectRays(tint: BeerStatsColor.accentSecondary, spokes: 8, duration: 20, opacity: 0.13)
-                EffectParticles(
-                    symbol: "🎵", count: 9, flight: .orbit,
-                    tint: BeerStatsColor.accentSecondary, duration: 3.6, stagger: 0.22, opacity: 0.5
-                )
-                EffectSlam(symbol: "🎤", from: .bottom, tint: BeerStatsColor.accentSecondary, size: 140, opacity: 0.28)
-            })
-
-        case 10:
-            // Die Regel: Das Siegel klatscht aufs Papier – deshalb der
-            // Einschlag zuerst und die Druckwelle mit Verzoegerung danach.
-            return AnyView(ZStack {
-                EffectParticles(
-                    symbol: "📜", count: 6, flight: .rise,
-                    tint: BeerStatsColor.warning, duration: 2.6, opacity: 0.4
-                )
-                EffectShockwave(tint: BeerStatsColor.warning, rings: 2, duration: 1.4, lineWidth: 4, delay: 0.28)
-                EffectSlam(symbol: "🖋️", from: .trailing, tint: BeerStatsColor.warning, size: 150, opacity: 0.3)
-            })
-
-        case 11:
-            // Der Daumenmeister: Ein grosser Daumen schlaegt von unten ein,
-            // der ganze Tisch zieht nach.
-            return AnyView(ZStack {
-                EffectShockwave(tint: BeerStatsColor.success, rings: 3, duration: 1.5, delay: 0.3)
-                EffectParticles(
-                    symbol: "👍", count: 9, flight: .rise,
-                    tint: BeerStatsColor.success, duration: 1.8, stagger: 0.12, opacity: 0.5
-                )
-                EffectSlam(symbol: "👍", from: .bottom, tint: BeerStatsColor.success, size: 190, opacity: 0.32)
-            })
-
-        case 12:
-            // Die Dame ist die praechtigste Karte: Strahlen, Kronenregen,
-            // Funken, Druckwelle – und die Krone setzt sich oben auf.
-            return AnyView(ZStack {
-                EffectRays(tint: BeerStatsColor.warning, spokes: 14, duration: 12, opacity: 0.22)
-                EffectParticles(
-                    symbol: "👑", count: 8, flight: .fall,
-                    tint: BeerStatsColor.warning, duration: 2.2, opacity: 0.5
-                )
-                EffectParticles(
-                    symbol: "✨", count: 10, flight: .burst,
-                    tint: BeerStatsColor.warning, duration: 1.8,
-                    stagger: 0.1, sizeRange: 14...26, opacity: 0.55, seed: 41
-                )
-                EffectShockwave(tint: BeerStatsColor.warning, rings: 2, duration: 1.6, lineWidth: 2, delay: 0.3)
-                EffectSlam(symbol: "👑", from: .top, tint: BeerStatsColor.warning, size: 170, opacity: 0.3)
-            })
-
-        case 13:
-            // Die Kategorie: Begriffe platzen nach allen Seiten – das Spiel
-            // geht reihum und nicht auf eine Person.
-            return AnyView(ZStack {
-                EffectRays(tint: BeerStatsColor.accent, spokes: 12, duration: 16, opacity: 0.15)
-                EffectParticles(
-                    symbol: "📚", count: 10, flight: .burst,
-                    tint: BeerStatsColor.accent, duration: 2.0, stagger: 0.12, opacity: 0.5
-                )
-                EffectSlam(symbol: "👑", from: .top, tint: BeerStatsColor.accent, size: 160, opacity: 0.26)
-            })
-
-        default:
-            // Das Ass ist der einzige Shot im Blatt. Es brennt: Strahlen,
-            // zwei Funkenschichten, Druckwelle, Glas.
-            return AnyView(ZStack {
-                EffectRays(tint: BeerStatsColor.error, spokes: 16, duration: 9, opacity: 0.24)
-                EffectParticles(
-                    symbol: "🔥", count: 11, flight: .rise,
-                    tint: BeerStatsColor.error, duration: 1.6,
-                    stagger: 0.1, sizeRange: 26...48, opacity: 0.6
-                )
-                EffectParticles(
-                    symbol: "✨", count: 9, flight: .rise,
-                    tint: BeerStatsColor.warning, duration: 2.4,
-                    stagger: 0.16, sizeRange: 12...22, opacity: 0.5, seed: 67
-                )
-                EffectShockwave(tint: BeerStatsColor.error, rings: 3, duration: 1.3)
-                EffectSlam(symbol: "🥃", from: .bottom, tint: BeerStatsColor.error, size: 160, opacity: 0.32)
-            })
+    /// Alle dreizehn sind derselbe Typ – eine Leinwand mit ihrer eigenen
+    /// Zeichnung. Die `AnyView` von frueher ist damit ueberfluessig: Sie war
+    /// noetig, weil dreizehn verschiedene Schichtungen dreizehn verschiedene
+    /// Typen ergaben, an denen der Compiler Minuten rechnete.
+    var canvas: EffectCanvas {
+        switch self {
+        case .pointAt: return EffectCanvas(draw: SceneArt.pointAt)
+        case .drinkSelf: return EffectCanvas(draw: SceneArt.drinkSelf)
+        case .waterfall: return EffectCanvas(draw: SceneArt.waterfall)
+        case .guys: return EffectCanvas { g, size, t in SceneArt.bubbles(&g, size, t, fromRight: false, color: SceneArt.blue) }
+        case .chicks: return EffectCanvas { g, size, t in SceneArt.bubbles(&g, size, t, fromRight: true, color: SceneArt.pink) }
+        case .heaven: return EffectCanvas(draw: SceneArt.heaven)
+        case .mates: return EffectCanvas(draw: SceneArt.drinkingMates)
+        case .rhyme: return EffectCanvas(draw: SceneArt.rhyme)
+        case .rule: return EffectCanvas(draw: SceneArt.rule)
+        case .thumbMaster: return EffectCanvas(draw: SceneArt.thumbMaster)
+        case .queen: return EffectCanvas(draw: SceneArt.queen)
+        case .category: return EffectCanvas(draw: SceneArt.category)
+        case .ace: return EffectCanvas(draw: SceneArt.ace)
         }
     }
 }

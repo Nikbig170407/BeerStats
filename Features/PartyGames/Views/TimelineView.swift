@@ -314,17 +314,12 @@ struct TimelineView: View {
             // lesen koennen.
             Text("🏆")
                 .font(.system(size: 62))
+                // Eine Schallplatte dreht sich dahinter – das Spiel ist
+                // Musik, und der Sieg soll nach diesem Spiel aussehen und
+                // nicht nach jedem anderen.
                 .background(
-                    ZStack {
-                        EffectRays(tint: BeerStatsColor.warning, spokes: 12, duration: 9, opacity: 0.38)
-                        EffectShockwave(tint: BeerStatsColor.warning, rings: 2, duration: 1.8, lineWidth: 4)
-                        EffectParticles(
-                            symbol: "✨", count: 9, flight: .orbit,
-                            tint: BeerStatsColor.warning, duration: 3.2,
-                            stagger: 0.22, sizeRange: 18...32, opacity: 0.85
-                        )
-                    }
-                    .frame(width: 260, height: 260)
+                    EffectCanvas(draw: SceneArt.record)
+                        .frame(width: 260, height: 260)
                 )
 
             Text("\(PlayerNames.name(for: player)) gewinnt")

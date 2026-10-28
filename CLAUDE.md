@@ -475,70 +475,77 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Ausfüllen in der Breite. `verticalScrollOnly()` steckt im Baustein; an
   den umgestellten Aufrufstellen ist es deshalb weg.
 
-- **Bewegung kommt aus Bausteinen, nicht aus einer Animation mit
-  Einstellungen** (`DesignSystem/Components/VisualEffects.swift`,
-  25. Oktober). Hier stand eine einzige Bewegung mit dreizehn
-  Einstellungen – Zeichen, Anzahl, Richtung – und das war als Sparmaßnahme
-  richtig gedacht und als Ergebnis falsch: Dreizehn Mal dieselbe Flugbahn
-  sieht dreizehn Mal gleich aus, egal wie verschieden die Emoji sind. Am
-  Tisch unterscheidet man sie dann nicht, und damit ist der Sinn weg.
-  Jetzt gibt es sechs Bausteine (`EffectParticles`, `EffectShockwave`,
-  `EffectRays`, `EffectSlam`, `EffectConfetti`, `EffectFlash`), und eine
-  Szene ist eine **Schichtung** daraus. Der gute Teil des alten Ansatzes
-  bleibt: eine neue Szene ist eine Kombination und kein neuer Entwurf.
-  Vier Regeln, jede mit Grund:
+- **Jede Szene hat ihre eigene Bewegung**
+  (`DesignSystem/Components/DrawnScenes.swift`). Entscheidung des Nutzers
+  vom 27. Oktober, nach dem Test am Tisch: „Die sehen alle gleich aus, nur
+  mit anderen Emojis.“ Zweimal ist es an derselben Stelle gescheitert –
+  erst eine Flugbahn mit dreizehn Emoji, dann Schichtungen aus denselben
+  vier Bausteinen, wieder mit dreizehn Emoji. Ein anderes Zeichen auf
+  derselben Bahn ist keine andere Szene.
+  Deshalb gilt die **Satz-Regel**: Jede Szene lässt sich in einem Satz
+  beschreiben, **ohne ein Emoji zu nennen**, und kein Satz kommt zweimal
+  vor. Für die Ränge von Ring of Fire stehen die Sätze im Code
+  (`RingScene.motion`), und `RingSceneTests` hält fest, dass kein Rang seine
+  Bewegung mit einem anderen teilt. Fällt einem für eine neue Szene kein
+  eigener Satz ein, ist es keine neue Szene.
+
+  Eine Szene ist eine Zeichenfunktion in `SceneArt`, gezeigt von
+  `EffectCanvas` (Leinwand plus Zeitleiste) – alle sind derselbe Typ, ein
+  `AnyView` braucht es dafür nicht mehr. Teilchen, Druckwelle, Strahlen und
+  Einschlag sind **entfernt** und nicht bloß unbenutzt: Ein Baustein, der
+  nur Gleichheit erzeugen kann, wird beim nächsten Mal wieder genommen,
+  weil er bequem daliegt. In `VisualEffects.swift` geblieben sind
+  `EffectConfetti`, `EffectFlash` und `EffectFlames`. Szenen stehen hinter
+  jeder Ring-Karte, im Sieger-Screen (Feuerwerk und Konfetti, nur bei einem
+  Sieger, nie beim Unentschieden), in der Bombe (Rauch und Splitter, einmal),
+  beim Zeitstrahl-Sieg (eine Schallplatte) und am Pokal des Abends (ein
+  Goldglanz, leise – er steht in einer **Liste**, und eine Liste, in der an
+  mehreren Stellen etwas fliegt, liest sich nicht mehr).
+
+  **Dieselbe Kostenart sieht überall gleich aus.** Ein Shot glüht wie das
+  Ass, Schlücke steigen als Bier wie bei der Drei, wer nichts trinkt, atmet
+  in Grün auf. Im Trink-Roulette hängt die Szene deshalb an der
+  **Kostenart** und nicht am Text – so bekommt auch ein selbst gebautes Rad
+  sie. Diese Sprache lernt man einmal, nicht je Spiel; das ist die eine
+  Stelle, an der zwei Momente bewusst gleich aussehen.
+
+  Die Regeln, jede mit Grund:
   - **Zierde, kein Inhalt.** Alles liegt hinter dem Text, nimmt keine
     Tipps an und ist für VoiceOver unsichtbar. **Wie laut, hat der Nutzer
-    entschieden** (26. Oktober, zweimal verlangt): Die Vorgaben standen
-    auf „stört nicht" – Strahlen um 0,2, Einschläge um 0,3 – und waren auf
-    einem Handy in der Tischmitte aus anderthalb Metern praktisch
-    unsichtbar. Jetzt stehen sie auf „fällt auf" (Strahlen um 0,34,
-    Einschläge um 0,42). Die Grenze ist weiter hinten, aber dieselbe: Der
-    **Text muss lesbar bleiben**. Wer eine Schicht hochdreht, bis er
-    leidet, hat eine zu viel.
-  - **Prächtig wird es durch Schichtung, nicht durch Lautstärke.** Eine
-    Stelle mit einer Schicht wird durch stärkere Bausteine nur lauter.
-    Jede Lage muss sich ANDERS bewegen; die Reihenfolge ist nicht
-    beliebig (Strahlen am tiefsten, dann Einschlag, Teilchen, Konfetti).
-    Vier Schichten sind das Maximum. Der Pokal im Abend-Rückblick bleibt
-    bewusst bei einer: Er steht in einer **Liste**, und eine Liste, in der
-    an mehreren Stellen etwas fliegt, liest sich nicht mehr.
-  - **Gerechneter Zufall** (`EffectNoise`). Mit `Double.random` springen
-    die Teilchen bei jedem Neuzeichnen woandershin – und SwiftUI zeichnet
-    öfter neu, als man denkt.
-  - **Ein Zustand, der in `onAppear` umkippt**, und die Bewegung in den
-    Modifiern. Kein Timer und keine Task-Schleife: Beides läuft weiter,
-    wenn der Screen schon weg ist.
+    entschieden** (26. Oktober, zweimal verlangt): „fällt auf“ statt
+    „stört nicht“ – das Leise war auf einem Handy in der Tischmitte aus
+    anderthalb Metern unsichtbar. Die Grenze ist weiter hinten, aber
+    dieselbe: Der **Text muss lesbar bleiben**. Kräftig darf sein, was am
+    Rand oder unten liegt; was durch die Mitte geht, bleibt blass.
+  - **Gerechneter Zufall** (`EffectNoise`). Mit `Double.random` springt
+    alles bei jedem Neuzeichnen woandershin – und gezeichnet wird jedes
+    Bild neu.
+  - **Nichts läuft weiter, wenn der Screen weg ist.** Szenen zeichnen auf
+    einer Zeitleiste, die mit der Ansicht verschwindet; was einmalig ist
+    (die Explosion), hält danach an (`lasts`). Konfetti und Blitz tragen
+    ihre Bewegung in den Modifiern. Kein Timer, keine Task-Schleife.
+  - **Bewegung reduzieren** zeigt ein stilles Bild aus der Szene
+    (`stillAt`) – nicht nichts, sonst fehlt die Farbe, die zum Moment
+    gehört.
   - **`EffectFlash` hängt an einem WERT von draußen**, nicht an
     `onAppear` – ein Blitz gehört zu einem Ereignis. Und er merkt sich den
     Wert statt ein Ja/Nein, sonst blitzt er genau einmal pro Screen
     (Lessons Learned Nr. 11).
-  `RingCardFlourish` liefert `AnyView` je Rang und kein `@ViewBuilder`:
-  Dreizehn Fälle mit je mehreren Schichten bauen sonst einen Typ aus
-  verschachtelten Entweder-Oder-Hüllen, den der Compiler erst in Minuten
-  prüft – dieselbe Entscheidung wie bei `PartyGame.destination`. Szenen
-  gibt es inzwischen auch im Sieger-Screen (Konfetti nur bei einem Sieger,
-  nie beim Unentschieden), beim Riss in Ring of Fire, in der Bombe, im
-  Trink-Roulette (die Szene hängt an der **Kostenart**, damit auch ein
-  selbst gebautes Rad sie bekommt), beim Zeitstrahl-Sieg und am Pokal des
-  Abends.
 
-  **Der siebte Baustein ist gezeichnet: `EffectFlames`** (27. Oktober).
-  Der Nutzer wollte für den Riss „Flammen von der Seite, mächtig“ – und
-  aus 🔥-Teilchen wäre nur noch eine Szene geworden, die aussieht wie alle
-  anderen. Also eine Feuerwand aus gezeichneten Zungen in zwei Lagen, die
-  von beiden Rändern hereinschlägt und nach anderthalb Sekunden erlischt.
-  Zwei Regeln sind dort bewusst gebeugt, beide mit Grund im Kommentar:
-  Die Flammen liegen **über** allem (sonst verdeckt der Inhalt das Feuer),
-  aber nur an den Rändern; und sie laufen auf einer `TimelineView`, weil
-  Flackern keine Bewegung von A nach B ist – die Zeitleiste steht aber nur
-  in der Ansicht, solange es brennt. Gezeichnet wird in `FlameArt`, nicht
-  im generischen `EffectFlames` selbst: Generische Typen dürfen keine
-  statischen gespeicherten Werte haben, und `check.py` sieht das nicht.
-  **Gebrannt wird auf dem Aktionsscreen**, nicht auf dem Ring: Der schiebt
-  sich im Moment des Risses darüber – die alte Riss-Szene auf dem Ring
-  lief deshalb fast ungesehen darunter ab. Nach einem Riss entfällt dort
-  die Rang-Szene; zwei Szenen gleichzeitig sind keine.
+  **Die Flammen beim Riss** (`EffectFlames`, 27. Oktober). Der Nutzer
+  wollte „Flammen von der Seite, mächtig“ – aus 🔥-Teilchen wäre nur noch
+  eine Szene geworden, die aussieht wie alle anderen. Also eine Feuerwand
+  aus gezeichneten Zungen in zwei Lagen, die von beiden Rändern
+  hereinschlägt und nach anderthalb Sekunden erlischt. Eine Regel ist dort
+  bewusst gebeugt, mit Grund im Kommentar: Die Flammen liegen **über**
+  allem (sonst verdeckt der Inhalt das Feuer), aber nur an den Rändern.
+  Gezeichnet wird in `FlameArt`, nicht im generischen `EffectFlames`
+  selbst: Generische Typen dürfen keine statischen gespeicherten Werte
+  haben, und `check.py` sieht das nicht. **Gebrannt wird auf dem
+  Aktionsscreen**, nicht auf dem Ring: Der schiebt sich im Moment des
+  Risses darüber – die alte Riss-Szene auf dem Ring lief deshalb fast
+  ungesehen darunter ab. Nach einem Riss entfällt dort die Rang-Szene;
+  zwei Szenen gleichzeitig sind keine.
 
 - **Kartengrößen rechnen, nicht tippen.** Bussfahrer zeigte seine Karten in
   festen 68 Punkten, egal wie breit das Gerät war. Jetzt teilen sie sich die
@@ -1187,18 +1194,24 @@ oben; was schief aussieht, unten.
   Stimme wirklich still, und spürt man den harten Stoß vor dem Zittern?
   Mit „Bewegung reduzieren“ muss es ein ruhiges Glühen an den Rändern
   sein, nicht nichts.
-- **Die Szenen sind laut gestellt** (26. Oktober, auf Wunsch): Alle
-  Bausteine sind kräftiger, und drei Stellen haben zusätzliche Schichten –
-  der Sieger-Screen (Pokal schlägt ein, Becher steigen), der
-  Zeitstrahl-Sieg und der Knall in der Bombe.
-  **Der wichtigste Punkt ist jetzt erst recht die Lesbarkeit**: Stört
-  irgendwo eine Schicht den Text, besonders bei großer Schrift oder im
-  Tischmodus? Wenn ja, sag welche Stelle – dann wird dort gedämpft, nicht
-  überall. Dazu die Bilder pro Sekunde: Der Sieger-Screen hat jetzt vier
-  Schichten, die Dame und das Ass auch. Ruckelt es? Und einmal mit
-  **„Bewegung reduzieren"** an durch Ring of Fire, Sieger-Screen und
-  Roulette: Es muss still, aber nicht leer sein. Der Blitz beim Riss muss
-  bei **jedem** Riss kommen, nicht nur beim ersten.
+- **Jede Szene bewegt sich anders** (27. Oktober, auf Wunsch): Alle Szenen
+  sind neu gezeichnet – dreizehn hinter den Ring-Karten, dazu Feuerwerk im
+  Sieger-Screen, Rauch und Splitter in der Bombe, die Schallplatte beim
+  Zeitstrahl-Sieg, der Goldglanz am Pokal des Abends und die drei
+  Kostenarten im Trink-Roulette. Abgestimmt wurde im Browser, auf einem
+  Gerät lief nichts davon. Zu prüfen, in dieser Reihenfolge:
+  - **Unterscheidet man sie?** Einmal durch Ring of Fire, bis jeder Rang
+    dran war: Erkennt man die Karte an der Bewegung, bevor man den Text
+    liest? Wenn sich zwei ähneln – sag welche.
+  - **Bleibt der Text lesbar**, auch mit großer Schrift und im Tischmodus?
+    Am ehesten im Weg sind die Szenen, die durch die Mitte gehen:
+    Wasserfall, Himmel, Dame und Kategorie. Stört eine, wird dort
+    gedämpft, nicht überall.
+  - **Ruckelt es auf dem iPhone 13?** Jedes Bild wird neu gezeichnet; am
+    meisten zu tun haben das Feuerwerk und die Glut beim Ass.
+  - **Mit „Bewegung reduzieren“** muss jede Szene ein stilles Bild zeigen –
+    nicht nichts. Der Blitz beim Riss muss bei **jedem** Riss kommen,
+    nicht nur beim ersten.
 - **Ohne Konto (26. Oktober)**: Abmelden, dann „Ohne Konto loslegen" –
   laufen alle Partyspiele, bleibt die Beerpong-Kachel stehen und erklärt
   sich, ist das Personen-Symbol weg? Danach aus den Einstellungen heraus

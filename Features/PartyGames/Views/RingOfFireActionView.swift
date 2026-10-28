@@ -18,10 +18,11 @@
 //  der Anlass.
 //
 //  Hinter der Karte laeuft seit dem 24. Oktober eine Bewegung, die zum Rang
-//  gehoert (`RingCardFlourish`) – Kronen regnen bei der Dame, Daumen
-//  steigen beim Buben. Sie liegt bewusst HINTER dem Text: Wer quer ueber
-//  den Tisch schaut, erkennt die Karte daran, bevor er sie liest; wer sie
-//  liest, soll dabei nicht gestoert werden.
+//  gehoert (`RingCardFlourish`) – bei der Dame schwenken Scheinwerfer
+//  herein, beim Buben leuchtet der Rand im Herzschlag. Sie liegt bewusst
+//  HINTER dem Text: Wer quer ueber den Tisch schaut, erkennt die Karte
+//  daran, bevor er sie liest; wer sie liest, soll dabei nicht gestoert
+//  werden.
 //
 
 import SwiftUI

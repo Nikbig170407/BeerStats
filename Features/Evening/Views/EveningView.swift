@@ -466,8 +466,11 @@ struct EveningView: View {
                 // Nur beim Pokal und nur hier: Der Rueckblick ist eine
                 // Liste, und eine Liste, in der an mehreren Stellen etwas
                 // fliegt, liest sich nicht mehr.
+                // Ein Goldglanz statt Konfetti: Konfetti ist der Sieger-
+                // Screen von Beerpong, und der Pokal des Abends ist etwas
+                // anderes.
                 .background(
-                    EffectConfetti(count: 14, duration: 3.4)
+                    EffectCanvas(draw: SceneArt.shine)
                         .frame(height: 140)
                 )
             } else if let sieger = abend.mostWins {

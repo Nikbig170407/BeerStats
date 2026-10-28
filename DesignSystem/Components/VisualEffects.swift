@@ -2,51 +2,48 @@
 //  VisualEffects.swift
 //  BeerStats
 //
-//  Die Bausteine fuer Bewegung: Teilchen, Druckwellen, Strahlen, Einschlag,
-//  Konfetti, Blitz – und seit dem 27. Oktober Flammen, der erste
-//  gezeichnete Baustein (`EffectFlames`, siehe dort).
+//  Was von den Bausteinen fuer Bewegung geblieben ist: gerechneter Zufall,
+//  Konfetti, Blitz und Flammen. Die Szenen selbst stehen seit dem
+//  27. Oktober in `DrawnScenes.swift`.
 //
-//  Bis zum 25. Oktober gab es im Projekt genau EINE Animation
-//  (`RingCardFlourish`) – eine Bewegung mit dreizehn Einstellungen. Das war
-//  als Sparmassnahme richtig gedacht und als Ergebnis falsch: Dreizehn Mal
-//  dieselbe Flugbahn mit anderem Emoji sieht dreizehn Mal gleich aus, egal
-//  wie verschieden die Emoji sind. Praechtig wird es nicht durch mehr
-//  Zeichen, sondern durch SCHICHTEN – ein Einschlag, der eine Druckwelle
-//  wirft, waehrend dahinter Strahlen drehen und Funken steigen.
+//  Hier lagen vorher sechs Bausteine – Teilchen, Druckwelle, Strahlen,
+//  Einschlag, Konfetti, Blitz –, und eine Szene war eine Schichtung daraus.
+//  Das war die Antwort auf die EINE Animation davor und hat ihr Problem nur
+//  verschoben: Wird jede Szene aus denselben vier Bausteinen gestapelt,
+//  bewegt sich jede gleich, und was sich unterscheidet, ist das Emoji. Der
+//  Nutzer am Tisch: "Die sehen alle gleich aus, nur mit anderen Emojis."
 //
-//  Deshalb hier nicht dreizehn Animationen, sondern sechs Bausteine, die
-//  sich stapeln lassen. Eine neue Szene ist eine Kombination und kein neuer
-//  Entwurf – das war der richtige Teil am alten Ansatz und bleibt.
+//  Teilchen, Druckwelle, Strahlen und Einschlag sind deshalb ENTFERNT und
+//  nicht bloss unbenutzt. Ein Baustein, der nur Gleichheit erzeugen kann,
+//  wird beim naechsten Mal wieder genommen, weil er so bequem daliegt.
+//  Geblieben ist, was eine eigene Bewegung hat: Konfetti faellt, der Blitz
+//  haengt an einem Ereignis, die Flammen schlagen von den Raendern herein.
 //
-//  Vier Regeln gelten fuer alle Bausteine, und jede hat einen Grund:
+//  Vier Regeln gelten fuer diese Bausteine und fuer die Szenen in
+//  `DrawnScenes.swift`, und jede hat einen Grund:
 //
 //  1. **Zierde, kein Inhalt.** Alles liegt HINTER dem Text, nimmt keine
 //     Tipps an (`allowsHitTesting(false)`) und ist fuer VoiceOver
-//     unsichtbar. Was zu tun ist, steht geschrieben da.
-//  2. **Gerechneter Zufall, nicht gewuerfelter.** `scatter` ist eine
-//     Funktion des Index. Mit `Double.random` springen die Teilchen bei
-//     jedem Neuzeichnen an eine andere Stelle – und SwiftUI zeichnet
-//     oefter neu, als man denkt.
-//  3. **Ein Zustand, der in `onAppear` umkippt.** Die Bewegung steckt in
-//     den Modifiern, nicht im `body`. Kein Timer, keine Task-Schleife:
-//     Beides laeuft weiter, wenn der Screen schon weg ist.
+//     unsichtbar. Was zu tun ist, steht geschrieben da. (Die Flammen sind
+//     die eine begruendete Ausnahme, siehe dort.)
+//  2. **Gerechneter Zufall, nicht gewuerfelter.** `EffectNoise` ist eine
+//     Funktion des Index. Mit `Double.random` springt alles bei jedem
+//     Neuzeichnen an eine andere Stelle – und SwiftUI zeichnet oefter neu,
+//     als man denkt.
+//  3. **Nichts laeuft weiter, wenn der Screen weg ist.** Konfetti und Blitz
+//     tragen ihre Bewegung in den Modifiern, ausgeloest von einem Zustand,
+//     der einmal umkippt. Flammen und Szenen zeichnen auf einer Zeitleiste,
+//     die mit der Ansicht verschwindet. Kein Timer, keine Task-Schleife.
 //  4. **Bewegung reduzieren wird beachtet.** Wer die Systemeinstellung an
-//     hat, bekommt das Bild ohne Flug – nicht nichts, sonst fehlt die
-//     Farbe, die zur Szene gehoert.
+//     hat, bekommt ein stilles Bild – nicht nichts, sonst fehlt die Farbe,
+//     die zum Moment gehoert.
 //
-//  **Zur Lautstaerke** (26. Oktober, auf Wunsch des Nutzers): Die
-//  Vorgabewerte hier waren auf "stoert nicht" eingestellt – Strahlen um
-//  0,2, Einschlaege um 0,3, acht Teilchen. Am Tisch, auf einem Handy in
-//  der Mitte und aus anderthalb Metern, war davon fast nichts zu sehen.
-//  Jetzt liegen sie auf "faellt auf": Strahlen um 0,34, Einschlaege um
-//  0,42, zwoelf Teilchen, und die Druckwelle hat einen Schein.
-//
-//  Die Grenze bleibt dieselbe, nur weiter hinten: **Der Text muss lesbar
-//  bleiben.** Deshalb liegt weiter alles HINTER dem Text, und die
-//  Reihenfolge der Schichten ist nicht beliebig – Strahlen am tiefsten,
-//  dann Einschlag, dann Teilchen, dann Konfetti. Wer eine Schicht
-//  hochdreht, bis der Text leidet, hat eine zu viel: Praechtig wird es
-//  durch VERSCHIEDENE Bewegungen, nicht durch mehr vom Gleichen.
+//  **Zur Lautstaerke** (26. Oktober, auf Wunsch des Nutzers): Am Tisch
+//  liegt das Handy in der Mitte und wird aus anderthalb Metern angeschaut.
+//  Was dort "nicht stoert", sieht niemand. Deshalb "faellt auf" – mit
+//  derselben Grenze wie vorher, nur weiter hinten: **Der Text muss lesbar
+//  bleiben.** Kraeftig darf sein, was am Rand oder unten liegt; was durch
+//  die Mitte geht, bleibt blass.
 //
 
 import SwiftUI
@@ -67,296 +64,6 @@ enum EffectNoise {
     /// Dasselbe, aber zwischen 0 und 1.
     static func unit(_ index: Int, seed: Int = 0) -> CGFloat {
         (scatter(index, seed: seed) + 1) / 2
-    }
-}
-
-// MARK: - Teilchen
-
-/// Wie ein Teilchen fliegt.
-enum EffectFlight {
-    /// Steigt auf – was von dir ausgeht.
-    case rise
-    /// Faellt herab – was auf dich zukommt.
-    case fall
-    /// Platzt aus der Mitte – was alle gleichzeitig trifft.
-    case burst
-    /// Zieht quer – was auf jemanden zeigt.
-    case sweep
-    /// Kreist um die Mitte – was bleibt und wirkt.
-    case orbit
-}
-
-/// Fliegende Zeichen. Der Grundbaustein jeder Szene.
-struct EffectParticles: View {
-
-    let symbol: String
-    var count: Int = 12
-    var flight: EffectFlight = .rise
-    var tint: Color = BeerStatsColor.accent
-    /// Wie lange ein Zeichen unterwegs ist.
-    var duration: Double = 2.2
-    /// Abstand zwischen zwei Zeichen.
-    var stagger: Double = 0.14
-    var sizeRange: ClosedRange<CGFloat> = 30...56
-    var opacity: Double = 0.92
-    /// Seed trennt zwei Teilchenfelder in derselben Szene. Ohne ihn liegen
-    /// Funken und Rauch genau uebereinander.
-    var seed: Int = 0
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var running = false
-
-    /// Mehr als das bringt kein Bild, kostet aber Bilder pro Sekunde.
-    private static let maximum = 28
-
-    private var anzahl: Int { min(max(count, 1), Self.maximum) }
-
-    var body: some View {
-        GeometryReader { geometry in
-            let breite = geometry.size.width
-            let hoehe = geometry.size.height
-
-            ZStack {
-                ForEach(0..<anzahl, id: \.self) { index in
-                    Text(symbol)
-                        .font(.system(size: size(index)))
-                        .foregroundStyle(tint)
-                        .rotationEffect(.degrees(drehung(index)))
-                        .opacity(reduceMotion ? opacity * 0.5 : (running ? 0 : opacity))
-                        .offset(
-                            x: offsetX(index, width: breite),
-                            y: offsetY(index, height: hoehe)
-                        )
-                        .scaleEffect(skalierung(index))
-                        .animation(
-                            reduceMotion
-                                ? nil
-                                : .easeOut(duration: duration)
-                                    .repeatForever(autoreverses: false)
-                                    .delay(Double(index) * stagger),
-                            value: running
-                        )
-                }
-            }
-            .frame(width: breite, height: hoehe)
-        }
-        .accessibilityHidden(true)
-        .allowsHitTesting(false)
-        .onAppear { running = true }
-    }
-
-    // MARK: Flugbahn
-
-    private func offsetX(_ index: Int, width: CGFloat) -> CGFloat {
-        let start = EffectNoise.scatter(index, seed: seed) * width * 0.42
-
-        switch flight {
-        case .rise, .fall:
-            // Leicht ausfaechern, damit nicht alles auf einer Linie liegt.
-            return start + (running ? EffectNoise.scatter(index, seed: seed + 7) * width * 0.14 : 0)
-        case .burst:
-            return running ? richtung(index).dx * width * 0.56 : 0
-        case .sweep:
-            return running ? width * 0.5 : -width * 0.5
-        case .orbit:
-            // Der Kreis entsteht aus zwei Phasen: Start und Ziel liegen auf
-            // demselben Ring, nur um ein Stueck versetzt.
-            return running ? richtung(index + 2).dx * width * 0.34 : richtung(index).dx * width * 0.34
-        }
-    }
-
-    private func offsetY(_ index: Int, height: CGFloat) -> CGFloat {
-        switch flight {
-        case .rise:
-            return running ? -height * 0.62 : height * 0.62
-        case .fall:
-            return running ? height * 0.62 : -height * 0.62
-        case .burst:
-            return running ? richtung(index).dy * height * 0.56 : 0
-        case .sweep:
-            return EffectNoise.scatter(index, seed: seed + 3) * height * 0.34
-        case .orbit:
-            return running ? richtung(index + 2).dy * height * 0.34 : richtung(index).dy * height * 0.34
-        }
-    }
-
-    /// Gleichmaessig im Kreis verteilt – nach allen Seiten statt nach
-    /// Zufall.
-    private func richtung(_ index: Int) -> (dx: CGFloat, dy: CGFloat) {
-        let winkel = Double(index) / Double(anzahl) * 2 * .pi
-        return (CGFloat(cos(winkel)), CGFloat(sin(winkel)))
-    }
-
-    private func size(_ index: Int) -> CGFloat {
-        let spanne = sizeRange.upperBound - sizeRange.lowerBound
-        return sizeRange.lowerBound + EffectNoise.unit(index, seed: seed + 11) * spanne
-    }
-
-    private func drehung(_ index: Int) -> Double {
-        switch flight {
-        case .sweep, .orbit: return 0
-        default: return Double(EffectNoise.scatter(index, seed: seed + 23)) * 40
-        }
-    }
-
-    private func skalierung(_ index: Int) -> CGFloat {
-        guard !reduceMotion else { return 1 }
-        switch flight {
-        case .burst: return running ? 2.0 : 0.4
-        case .orbit: return running ? 1.1 : 0.9
-        default: return running ? 1.15 : 0.8
-        }
-    }
-}
-
-// MARK: - Druckwelle
-
-/// Ringe, die aus der Mitte nach aussen laufen. Der Baustein, der einem
-/// Einschlag Gewicht gibt.
-struct EffectShockwave: View {
-
-    var tint: Color = BeerStatsColor.warning
-    var rings: Int = 3
-    var duration: Double = 1.6
-    var lineWidth: CGFloat = 5
-    /// Wartet, bevor der erste Ring laeuft – fuer den Einschlag, der ihn
-    /// ausloest.
-    var delay: Double = 0
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var running = false
-
-    var body: some View {
-        GeometryReader { geometry in
-            let seite = max(geometry.size.width, geometry.size.height)
-
-            ZStack {
-                ForEach(0..<max(rings, 1), id: \.self) { index in
-                    Circle()
-                        .strokeBorder(tint, lineWidth: lineWidth)
-                        // Der Schein hinter dem Ring. Ein nackter Strich
-                        // wird beim Groesserwerden optisch duenner; der
-                        // weiche Rand haelt die Welle sichtbar, bis sie
-                        // aus dem Bild laeuft.
-                        .background(
-                            Circle()
-                                .strokeBorder(tint, lineWidth: lineWidth * 2.4)
-                                .blur(radius: lineWidth * 2)
-                                .opacity(0.8)
-                        )
-                        .frame(width: seite * 0.3, height: seite * 0.3)
-                        .scaleEffect(running ? 3.2 : 0.18)
-                        .opacity(running ? 0 : 1)
-                        .animation(
-                            reduceMotion
-                                ? nil
-                                : .easeOut(duration: duration)
-                                    .repeatForever(autoreverses: false)
-                                    .delay(delay + Double(index) * duration / Double(max(rings, 1))),
-                            value: running
-                        )
-                }
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
-        }
-        .accessibilityHidden(true)
-        .allowsHitTesting(false)
-        .onAppear { running = true }
-    }
-}
-
-// MARK: - Strahlen
-
-/// Langsam drehende Lichtstrahlen. Liegt am tiefsten in der Szene und macht
-/// den Hintergrund lebendig, ohne vom Text abzulenken.
-struct EffectRays: View {
-
-    var tint: Color = BeerStatsColor.warning
-    var spokes: Int = 12
-    var duration: Double = 10
-    var opacity: Double = 0.34
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var running = false
-
-    var body: some View {
-        GeometryReader { geometry in
-            let seite = max(geometry.size.width, geometry.size.height) * 1.6
-
-            ZStack {
-                ForEach(0..<max(spokes, 1), id: \.self) { index in
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [tint.opacity(0.9), tint.opacity(0)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: seite * 0.062, height: seite / 2)
-                        .offset(y: -seite / 4)
-                        .rotationEffect(.degrees(Double(index) / Double(max(spokes, 1)) * 360))
-                }
-            }
-            .frame(width: seite, height: seite)
-            .rotationEffect(.degrees(running ? 360 : 0))
-            .animation(
-                reduceMotion ? nil : .linear(duration: duration).repeatForever(autoreverses: false),
-                value: running
-            )
-            .opacity(opacity)
-            .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
-        }
-        .accessibilityHidden(true)
-        .allowsHitTesting(false)
-        .onAppear { running = true }
-    }
-}
-
-// MARK: - Einschlag
-
-/// Ein grosses Zeichen, das von einer Seite hereinschlaegt und nachfedert.
-///
-/// Schlaegt EINMAL ein und bleibt dann stehen – eine Dauerschleife waere
-/// nach dem dritten Mal nur noch Zappeln. Was weiterlaufen soll, legt man
-/// als Teilchenfeld dahinter.
-struct EffectSlam: View {
-
-    let symbol: String
-    var from: Edge = .top
-    var tint: Color = BeerStatsColor.warning
-    var size: CGFloat = 190
-    var opacity: Double = 0.42
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var landed = false
-
-    var body: some View {
-        Text(symbol)
-            .font(.system(size: size))
-            .foregroundStyle(tint)
-            .opacity(landed || reduceMotion ? opacity : 0)
-            .scaleEffect(landed || reduceMotion ? 1 : 2.6)
-            .offset(
-                x: landed || reduceMotion ? 0 : start.x,
-                y: landed || reduceMotion ? 0 : start.y
-            )
-            .rotationEffect(.degrees(landed || reduceMotion ? 0 : -26))
-            // Wenig Daempfung: Das Zeichen schiesst ueber und federt zurueck.
-            // Genau das macht aus einem Einblenden einen Einschlag.
-            .animation(reduceMotion ? nil : .spring(response: 0.52, dampingFraction: 0.36), value: landed)
-            .accessibilityHidden(true)
-            .allowsHitTesting(false)
-            .onAppear { landed = true }
-    }
-
-    private var start: CGPoint {
-        switch from {
-        case .top: return CGPoint(x: 0, y: -420)
-        case .bottom: return CGPoint(x: 0, y: 420)
-        case .leading: return CGPoint(x: -420, y: 0)
-        case .trailing: return CGPoint(x: 420, y: 0)
-        }
     }
 }
 
@@ -460,15 +167,13 @@ struct EffectFlash<Trigger: Equatable>: View {
 ///
 /// Gebaut fuer den Riss in Ring of Fire (27. Oktober, auf Wunsch des
 /// Nutzers: "Flammen von der Seite, maechtig – und keine Stimme mehr").
-/// Der erste Baustein, der nicht aus Zeichen besteht, sondern GEZEICHNET
-/// wird: Ein Feuer aus 🔥 waere nur eine weitere Szene, die aussieht wie
-/// alle anderen mit anderem Emoji.
+/// Gezeichnet und nicht aus Zeichen: Ein Feuer aus 🔥 waere nur eine
+/// weitere Szene, die aussieht wie alle anderen mit anderem Emoji.
 ///
-/// Auch der einzige mit Zeitleiste – Flammen flackern, und Flackern ist
-/// keine Bewegung von A nach B, die ein Modifier tragen koennte. Regel 3
-/// gilt trotzdem im Sinn: Die `TimelineView` steht nur in der Ansicht,
-/// solange es brennt; das Ende setzt eine `.task`, die mit der Ansicht
-/// abgebrochen wird. Nichts laeuft weiter, wenn der Screen weg ist.
+/// Flammen flackern, und Flackern ist keine Bewegung von A nach B, die ein
+/// Modifier tragen koennte – deshalb eine Zeitleiste. Sie steht nur in der
+/// Ansicht, solange es brennt; das Ende setzt eine `.task`, die mit der
+/// Ansicht abgebrochen wird (Regel 3).
 ///
 /// Die Ausnahme von Regel 1: Die Flammen liegen UEBER allem, sonst
 /// verdeckt der Inhalt das Feuer. Dafuer nur an den Raendern (`reach`) und

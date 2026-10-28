@@ -164,37 +164,19 @@ struct DrinkRouletteView: View {
     /// Die Szene haengt an der KOSTENART und nicht am Text: Ein eigenes
     /// Feld hat keinen Katalogeintrag, aber immer eine Menge – damit
     /// bekommt auch ein selbst gebautes Rad die passende Bewegung.
+    ///
+    /// Und dieselbe Kostenart sieht in der ganzen App gleich aus: Ein Shot
+    /// glueht wie das Ass in Ring of Fire, Schluecke steigen als Bier wie
+    /// bei "Ich", wer nichts trinkt, atmet auf. So lernt man die Sprache
+    /// einmal und nicht je Spiel.
     private func resultScene(for wedge: RouletteWedge) -> AnyView {
         switch wedge.cost {
         case .nothing:
-            return AnyView(ZStack {
-                EffectParticles(
-                    symbol: "✨", count: 12, flight: .rise,
-                    tint: BeerStatsColor.success, duration: 2.2,
-                    stagger: 0.1, sizeRange: 14...28, opacity: 0.5
-                )
-            }.id(wedge.id))
-
+            return AnyView(EffectCanvas(draw: SceneArt.relief).id(wedge.id))
         case .shot:
-            return AnyView(ZStack {
-                EffectRays(tint: BeerStatsColor.error, spokes: 14, duration: 10, opacity: 0.2)
-                EffectParticles(
-                    symbol: "🔥", count: 10, flight: .rise,
-                    tint: BeerStatsColor.error, duration: 1.6,
-                    stagger: 0.1, sizeRange: 24...44, opacity: 0.55
-                )
-                EffectShockwave(tint: BeerStatsColor.error, rings: 2, duration: 1.3)
-            }.id(wedge.id))
-
+            return AnyView(EffectCanvas(draw: SceneArt.ace).id(wedge.id))
         default:
-            return AnyView(ZStack {
-                EffectShockwave(tint: BeerStatsColor.warning, rings: 2, duration: 1.5, lineWidth: 2)
-                EffectParticles(
-                    symbol: "🍺", count: 7, flight: .orbit,
-                    tint: BeerStatsColor.warning, duration: 3.0,
-                    stagger: 0.18, sizeRange: 20...34, opacity: 0.4
-                )
-            }.id(wedge.id))
+            return AnyView(EffectCanvas(draw: SceneArt.drinkSelf).id(wedge.id))
         }
     }
 

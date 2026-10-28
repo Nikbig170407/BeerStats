@@ -643,18 +643,13 @@ struct LiveGameView: View {
                 BeerStatsColor.backgroundPrimary.opacity(0.97)
 
                 if winner != nil {
-                    // Vier Schichten – das Maximum, und der Sieg ist die
-                    // Stelle, an der es sich lohnt. Die Strahlen liegen
-                    // am tiefsten, der Pokal schlaegt ein, Konfetti
-                    // faellt, Becher steigen: Jede Schicht bewegt sich
-                    // anders, sonst waere es nur mehr vom Gleichen.
-                    EffectRays(tint: BeerStatsColor.accent, spokes: 14, duration: 11, opacity: 0.26)
-                    EffectSlam(symbol: "🏆", from: .top, tint: BeerStatsColor.warning, size: 230, opacity: 0.3)
-                    EffectParticles(
-                        symbol: "🍺", count: 10, flight: .rise,
-                        tint: BeerStatsColor.accent, duration: 3.0,
-                        stagger: 0.3, sizeRange: 26...46, opacity: 0.8, seed: 3
-                    )
+                    // Feuerwerk und Konfetti: zwei Schichten, die sich von
+                    // Grund auf verschieden bewegen – Raketen steigen und
+                    // platzen, Papier faellt. Bis zum 27. Oktober lagen hier
+                    // Strahlen, ein einschlagender Pokal und steigende
+                    // Becher: dasselbe Rezept wie an jeder anderen Stelle,
+                    // nur mit anderem Emoji (`DrawnScenes.swift`).
+                    EffectCanvas(draw: SceneArt.fireworks)
                     EffectConfetti()
                 }
             }
