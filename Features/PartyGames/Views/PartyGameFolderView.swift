@@ -111,6 +111,10 @@ struct PartyGameCard: View {
     /// Die Anleitung – auf Anforderung, nicht im Weg.
     @State private var showsRules = false
 
+    /// Dieselbe Einstellung wie fuer den Grund im Spiel: Bei "Schlicht"
+    /// traegt der Deckel nur die Grundfarbe seiner Welt.
+    @AppStorage(AppAppearance.backdropKey) private var backdropRaw = BackdropStyle.bubbles.rawValue
+
     /// Das Emoji-Feld waechst mit der Kachel.
     ///
     /// Sonst saesse in einer hohen Kachel ein kleines Symbol und daneben
@@ -194,7 +198,7 @@ struct PartyGameCard: View {
     /// Welt, still – eine Liste, in der ueberall etwas laeuft, liest sich
     /// nicht. Unten dunkler, damit die Schrift steht.
     private var lid: some View {
-        WorldGround(world: game.world, plain: false, moves: false, fillsScreen: false)
+        WorldGround(world: game.world, plain: backdropRaw == BackdropStyle.plain.rawValue, moves: false, fillsScreen: false)
             .equatable()
             .overlay(
                 LinearGradient(colors: [Color.black.opacity(0.25), Color.black.opacity(0.7)],

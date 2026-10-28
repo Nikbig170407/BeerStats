@@ -495,7 +495,7 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     **stillen Deckel** (`WorldGround(…, moves: false, fillsScreen: false)`)
     und den Titel in ihrer Schrift. Man soll das Spiel erkennen, bevor man
     es aufmacht – still, weil eine Liste, in der überall etwas läuft, sich
-    nicht mehr liest.
+    nicht mehr liest. „Schlicht“ gilt auch für den Deckel.
   - **Die Welt steht im Katalog** (`PartyGame.world`, vollständiges
     `switch`), gesetzt in `PartyGame.destination` – auch für den Vorspann.
     Auslosen und Turnier sind kein Spiel, haben aber einen eigenen Ort
