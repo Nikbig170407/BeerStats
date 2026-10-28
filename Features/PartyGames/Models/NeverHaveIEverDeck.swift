@@ -15,31 +15,82 @@
 //  100 Karten, an zufaelliger Stelle. Ein fester Abstand waere nach zwei
 //  Strafen durchschaut, ein eigener Block wuerde den Rhythmus zerlegen.
 //
+//  Seit dem 28. Oktober gibt es Kategorien in zwei Richtungen. Der Nutzer:
+//  "wir brauchen mehr Kategorien. Noch härter und auch noch welche, die in
+//  andere Richtungen gehen." Die Haerte geht jetzt eine Stufe weiter
+//  (Tabulos), und daneben stehen Themen, die nicht haerter sind, sondern
+//  anders – peinlich, Party, verboten, Tiefgang, Abenteuer. Gemischt wird
+//  alles, was gewaehlt ist; die Gruppen sind nur fuer den Vorspann da.
+//  Die Themen stehen in `NeverHaveIEverThemes.swift`.
+//
 
 import Foundation
 
-/// Stufe einer Frage. Strafen tauchen hier bewusst nicht auf – sie sind
-/// keine Frage und werden nicht gewaehlt, sondern eingestreut.
-enum NeverHaveIEverLevel: String, CaseIterable, Identifiable, Codable {
+/// Kategorie einer Frage: eine Haertestufe oder ein Thema. Strafen tauchen
+/// hier bewusst nicht auf – sie sind keine Frage und werden nicht gewaehlt,
+/// sondern eingestreut.
+enum NeverHaveIEverCategory: String, CaseIterable, Identifiable, Codable {
+    // Wie hart
     case kids
     case spicy
     case extreme
+    case taboo
+    // Worum es geht
+    case awkward
+    case party
+    case forbidden
+    case deep
+    case adventure
+
+    /// Die beiden Richtungen, in die eine Kategorie gehen kann.
+    enum Direction: CaseIterable {
+        /// Von harmlos bis tabulos – jede Stufe haerter als die davor.
+        case intensity
+        /// Nicht haerter, sondern anders.
+        case theme
+
+        var title: String {
+            switch self {
+            case .intensity: return "Wie hart?"
+            case .theme: return "Worum geht's?"
+            }
+        }
+    }
 
     var id: String { rawValue }
+
+    var direction: Direction {
+        switch self {
+        case .kids, .spicy, .extreme, .taboo: return .intensity
+        case .awkward, .party, .forbidden, .deep, .adventure: return .theme
+        }
+    }
 
     var title: String {
         switch self {
         case .kids: return "Kinder"
         case .spicy: return "Spicy"
         case .extreme: return "Extrem"
+        case .taboo: return "Tabulos"
+        case .awkward: return "Peinlich"
+        case .party: return "Party"
+        case .forbidden: return "Verboten"
+        case .deep: return "Tiefgang"
+        case .adventure: return "Abenteuer"
         }
     }
 
     var subtitle: String {
         switch self {
         case .kids: return "Jugendfrei, geht mit jedem"
-        case .spicy: return "Fuer spaeter am Abend"
+        case .spicy: return "Für später am Abend"
         case .extreme: return "Nur mit Leuten, die sich gut kennen"
+        case .taboo: return "Noch härter – nur, wenn wirklich alle wollen"
+        case .awkward: return "Momente, über die man heute lacht"
+        case .party: return "Was nachts um drei passiert"
+        case .forbidden: return "Kleine und größere Regelbrüche"
+        case .deep: return "Ehrlich statt anzüglich – über Gefühle"
+        case .adventure: return "Reisen, Mutproben, draußen"
         }
     }
 
@@ -48,6 +99,12 @@ enum NeverHaveIEverLevel: String, CaseIterable, Identifiable, Codable {
         case .kids: return "🧒"
         case .spicy: return "🔥"
         case .extreme: return "😈"
+        case .taboo: return "🔞"
+        case .awkward: return "😳"
+        case .party: return "🍾"
+        case .forbidden: return "🚨"
+        case .deep: return "💭"
+        case .adventure: return "🧭"
         }
     }
 }
@@ -55,13 +112,13 @@ enum NeverHaveIEverLevel: String, CaseIterable, Identifiable, Codable {
 struct NeverHaveIEverCard: Identifiable, Equatable {
 
     enum Kind: Equatable {
-        case statement(NeverHaveIEverLevel)
+        case statement(NeverHaveIEverCategory)
         case penalty
         /// Selbst eingetippt. Bewusst ein eigener Fall statt einer erfundenen
-        /// Stufe: `level` bleibt damit `nil`, und die Ansicht zeigt ohnehin
-        /// schon "🍻" ohne Beschriftung, wenn keine Stufe da ist. Eine
-        /// zugewiesene Stufe wuerde dagegen behaupten, die Karte sei zahm
-        /// oder extrem – eine Einordnung, die niemand getroffen hat.
+        /// Kategorie: `category` bleibt damit `nil`, und die Ansicht zeigt
+        /// dann "Eigene Karte". Eine zugewiesene Kategorie wuerde dagegen
+        /// behaupten, die Karte sei zahm oder extrem – eine Einordnung, die
+        /// niemand getroffen hat.
         case custom
     }
 
@@ -74,8 +131,8 @@ struct NeverHaveIEverCard: Identifiable, Equatable {
         return false
     }
 
-    var level: NeverHaveIEverLevel? {
-        if case .statement(let level) = kind { return level }
+    var category: NeverHaveIEverCategory? {
+        if case .statement(let category) = kind { return category }
         return nil
     }
 }
@@ -85,19 +142,22 @@ enum NeverHaveIEverDeck {
     /// Anteil der Strafen am fertigen Stapel: rund 20 von 100 Karten.
     private static let penaltyShare = 0.2
 
-    static let statements: [NeverHaveIEverCard] = kids + spicy + extreme
+    static let statements: [NeverHaveIEverCard] = Array([
+        kids, spicy, extreme, taboo,
+        awkward, party, forbidden, deep, adventure
+    ].joined())
 
-    /// Baut den Stapel fuer eine Runde: Fragen der gewaehlten Stufen,
+    /// Baut den Stapel fuer eine Runde: Fragen der gewaehlten Kategorien,
     /// gemischt, mit eingestreuten Strafen.
     static func shuffled(
-        levels: Set<NeverHaveIEverLevel>,
+        categories: Set<NeverHaveIEverCategory>,
         includePenalties: Bool
     ) -> [NeverHaveIEverCard] {
 
         // Eigene Karten kommen ohne Stufe dazu und gelten deshalb in jeder
         // Auswahl. Wer sie eintippt, hat sich fuer seine Runde schon
-        // entschieden - eine Einordnung in Kinder, Spicy oder Extrem waere
-        // eine Frage, die niemand beantworten will.
+        // entschieden - eine Einordnung in eine der Kategorien waere eine
+        // Frage, die niemand beantworten will.
         let eigene = CustomCards.cards(for: .neverHaveIEver)
             .map { NeverHaveIEverCard(text: $0, kind: .custom) }
 
@@ -109,7 +169,7 @@ enum NeverHaveIEverDeck {
         let versteckt = HiddenCards.keys(for: .neverHaveIEver)
 
         let questions = (statements
-            .filter { card in card.level.map { levels.contains($0) } ?? false } + eigene)
+            .filter { card in card.category.map { categories.contains($0) } ?? false } + eigene)
             .filter { !versteckt.contains($0.text) }
             .shuffled()
 
@@ -160,8 +220,8 @@ enum NeverHaveIEverDeck {
         return chosen
     }
 
-    static func questionCount(for level: NeverHaveIEverLevel) -> Int {
-        statements.filter { $0.level == level }.count
+    static func questionCount(for category: NeverHaveIEverCategory) -> Int {
+        statements.filter { $0.category == category }.count
     }
 
     // MARK: - Kinder
@@ -403,6 +463,64 @@ enum NeverHaveIEverDeck {
         "Ich hab noch nie eine Nacht verbracht, an die ich mich gar nicht erinnere",
         "Ich hab noch nie etwas in diesem Spiel falsch beantwortet, um nicht trinken zu müssen"
     ].map { NeverHaveIEverCard(text: $0, kind: .statement(.extreme)) }
+
+    // MARK: - Tabulos
+
+    /// Eine Stufe ueber Extrem, auf Wunsch vom 28. Oktober: "Noch härter."
+    /// Haerter heisst hier deutlicher und persoenlicher, nicht derber –
+    /// und nie auf Kosten von jemandem, der nicht gefragt wurde.
+    private static let taboo: [NeverHaveIEverCard] = [
+        "Ich war noch nie in einem Swingerclub",
+        "Ich hab noch nie ein Sexvideo von mir gedreht",
+        "Ich war noch nie bei einer Orgie dabei",
+        "Ich hab noch nie Fesselspiele ausprobiert",
+        "Ich hab noch nie ein Rollenspiel im Bett gespielt",
+        "Ich hatte noch nie Sex am Arbeitsplatz",
+        "Ich hatte noch nie etwas mit meinem Chef",
+        "Ich hatte noch nie Sex in einer Umkleidekabine",
+        "Ich hatte noch nie Sex in einem Zelt auf einem Festival",
+        "Ich hatte noch nie Sex am Strand",
+        "Ich hatte noch nie Sex in einem Flugzeug",
+        "Ich bin noch nie von meinen Eltern beim Sex erwischt worden",
+        "Ich hab noch nie jemanden beim Sex erwischt",
+        "Ich hab noch nie Telefonsex gehabt",
+        "Ich hab mich noch nie nur für Sex verabredet",
+        "Ich hab noch nie für Sex bezahlt",
+        "Ich hab noch nie Geld für Nacktbilder bekommen",
+        "Ich hab noch nie für Erotikinhalte im Internet bezahlt",
+        "Ich hab noch nie während des Sex telefoniert",
+        "Ich hatte noch nie Sex, während im Fernsehen Fußball lief",
+        "Ich hab noch nie eine Pille danach gebraucht",
+        "Ich hatte noch nie eine Geschlechtskrankheit",
+        "Ich hab noch nie jemanden aus dieser Runde nackt gesehen",
+        "Ich hab noch nie von jemandem aus dieser Runde geträumt, und zwar nicht jugendfrei",
+        "Ich hab noch nie beim Sex an jemanden aus dieser Runde gedacht",
+        "Ich hab noch nie den Partner eines Freundes geküsst",
+        "Ich hab noch nie jemanden betrogen und es bis heute nicht gestanden",
+        "Ich hab noch nie Schluss gemacht, weil der Sex schlecht war",
+        "Ich hab noch nie jemanden nur wegen seines Körpers gedatet",
+        "Ich hab noch nie in einer offenen Beziehung gelebt",
+        "Ich hatte noch nie zwei Beziehungen gleichzeitig",
+        "Ich hatte noch nie etwas mit dem Bruder oder der Schwester eines Ex",
+        "Ich hab noch nie Pornos auf einem fremden Gerät geschaut",
+        "Ich war noch nie in einem Stripclub",
+        "Ich hab noch nie für jemanden gestrippt",
+        "Ich hab noch nie einen Lapdance bekommen",
+        "Ich hatte noch nie Sex, bei dem etwas kaputtgegangen ist",
+        "Ich hab mich noch nie beim Sex verletzt",
+        "Ich war noch nie an einem FKK-Strand",
+        "Ich hab noch nie nackt die Tür aufgemacht",
+        "Ich hab noch nie einem Freund den Partner ausgespannt",
+        "Ich hab noch nie eine Beziehung mit einer Lüge angefangen",
+        "Ich hab noch nie ein Sexspielzeug mit auf Reisen genommen",
+        "Ich hab noch nie mitten in der Nacht jemandem geschrieben, nur um Sex zu bekommen",
+        "Ich hatte noch nie Sex mit jemandem, den ich auf einer Hochzeit kennengelernt hab",
+        "Ich musste noch nie in fremder Unterwäsche nach Hause gehen",
+        "Ich hab noch nie mit jemandem geschlafen, um es einem anderen heimzuzahlen",
+        "Ich hab noch nie einem Fremden Nacktbilder geschickt",
+        "Ich hab noch nie in einer Nacht mit mehr als zwei Leuten rumgemacht",
+        "Ich hatte noch nie Sex, der so laut war, dass sich jemand beschwert hat"
+    ].map { NeverHaveIEverCard(text: $0, kind: .statement(.taboo)) }
 
     // MARK: - Strafen
 

@@ -18,7 +18,7 @@ import SwiftUI
 
 struct NeverHaveIEverView: View {
 
-    @State private var levels: Set<NeverHaveIEverLevel> = [.kids, .spicy]
+    @State private var categories: Set<NeverHaveIEverCategory> = [.kids, .spicy]
     @State private var includePenalties = true
     @State private var deck: [NeverHaveIEverCard] = []
     @State private var index = 0
@@ -100,9 +100,8 @@ struct NeverHaveIEverView: View {
 
     // MARK: - Vorbereitung
 
-    /// Scrollbar, seit die Haerte mit dazu gehoert: Drei Stufen, die
-    /// Strafen-Zeile und die Haerte sind mehr, als auf ein kleines Geraet
-    /// mit grosser Schrift passt.
+    /// Scrollbar, seit die Haerte mit dazu gehoert – und erst recht, seit
+    /// es Kategorien in zwei Gruppen gibt.
     private var setup: some View {
         FillingScrollView {
             setupContent
@@ -120,38 +119,52 @@ struct NeverHaveIEverView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
 
-            VStack(spacing: 10) {
-                ForEach(NeverHaveIEverLevel.allCases) { level in
-                    levelToggle(level)
+            // Zwei Gruppen: wie hart, und worum es geht. Gemischt wird alles,
+            // was angehakt ist – die Gruppen sagen nur, dass ein Thema keine
+            // Stufe ist. "Peinlich" ist nicht zahmer als "Extrem", sondern
+            // etwas anderes.
+            ForEach(NeverHaveIEverCategory.Direction.allCases, id: \.self) { richtung in
+                VStack(spacing: 10) {
+                    Text(richtung.title)
+                        .font(BeerStatsFont.statLabel)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityAddTraits(.isHeader)
+
+                    ForEach(NeverHaveIEverCategory.allCases.filter { $0.direction == richtung }) { kategorie in
+                        categoryToggle(kategorie)
+                    }
                 }
-                penaltyToggle
             }
+
+            penaltyToggle
 
             DrinkIntensityPicker(game: .neverHaveIEver)
 
             Spacer(minLength: 0)
 
             PrimaryButton(title: "Los geht's", systemImage: "play.fill") { start() }
-                .opacity(levels.isEmpty ? 0.4 : 1)
-                .disabled(levels.isEmpty)
+                .opacity(categories.isEmpty ? 0.4 : 1)
+                .disabled(categories.isEmpty)
         }
     }
 
-    private func levelToggle(_ level: NeverHaveIEverLevel) -> some View {
-        let isOn = levels.contains(level)
+    private func categoryToggle(_ category: NeverHaveIEverCategory) -> some View {
+        let isOn = categories.contains(category)
 
         return optionRow(
-            emoji: level.emoji,
-            title: level.title,
-            subtitle: "\(NeverHaveIEverDeck.questionCount(for: level)) Fragen · \(level.subtitle)",
+            emoji: category.emoji,
+            title: category.title,
+            subtitle: "\(NeverHaveIEverDeck.questionCount(for: category)) Fragen · \(category.subtitle)",
             isOn: isOn,
             tint: BeerStatsColor.success
         ) {
-            // Mindestens eine Stufe muss bleiben, sonst waere der Stapel leer.
-            if isOn, levels.count > 1 {
-                levels.remove(level)
+            // Mindestens eine Kategorie muss bleiben, sonst waere der Stapel
+            // leer – egal aus welcher Gruppe.
+            if isOn, categories.count > 1 {
+                categories.remove(category)
             } else if !isOn {
-                levels.insert(level)
+                categories.insert(category)
             }
             HapticManager.lightImpact()
         }
@@ -224,8 +237,8 @@ struct NeverHaveIEverView: View {
     private func cardView(_ card: NeverHaveIEverCard) -> some View {
         // Kein fester Vorspann: Der ganze Satz steht auf der Karte, weil
         // "Ich bin noch nie" und "Ich hatte noch nie" sonst nicht gehen.
-        // Oben leuchtet deshalb nur die Stufe – oder die Strafe.
-        let kopf = card.isPenalty ? "STRAFE" : (card.level?.title.uppercased() ?? "EIGENE KARTE")
+        // Oben leuchtet deshalb nur die Kategorie – oder die Strafe.
+        let kopf = card.isPenalty ? "STRAFE" : (card.category?.title.uppercased() ?? "EIGENE KARTE")
 
         // Die Roehre fuellt den Platz (`maxHeight: .infinity` im Schild),
         // statt ihn frei zu lassen – der Satz steht in ihrer Mitte.
@@ -315,7 +328,7 @@ struct NeverHaveIEverView: View {
     }
 
     private func start() {
-        deck = NeverHaveIEverDeck.shuffled(levels: levels, includePenalties: includePenalties)
+        deck = NeverHaveIEverDeck.shuffled(categories: categories, includePenalties: includePenalties)
         index = 0
         hasStarted = true
         HapticManager.success()

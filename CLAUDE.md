@@ -293,6 +293,11 @@ den nachgespielten Wurf-Log alter Partien.
   Der Daumen nach unten steht in jedem Schritt da, nicht erst nach dem
   Aufdecken: Ein Knopf, den man erst nach drei Sekunden Countdown sieht,
   ist für den Nutzer keiner.
+- **Ich hab noch nie in zwei Richtungen** (28. Oktober, auf Wunsch: „mehr
+  Kategorien, noch härter, und welche, die in andere Richtungen gehen“):
+  Die Härte reicht von Kinder bis **Tabulos**, daneben stehen Themen –
+  Peinlich, Party, Verboten, Tiefgang, Abenteuer. Gemischt wird alles, was
+  angehakt ist.
 - **Nicht gespeicherte Würfe lassen sich nachreichen** – siehe unten.
 - **Die Partyspiele sagen Namen statt Nummern**, sobald jemand am Tisch
   steht – auch ohne laufenden Abend (`PlayerNames`, Reihenfolge unten).
@@ -719,6 +724,17 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
 - **Kartenspiele tragen den ganzen Satz auf der Karte**, nicht nur den
   Nachsatz. Ein fester Vorspann („Ich hab noch nie …") kann grammatisch
   nicht aufgehen: Es gibt „Ich bin noch nie …" und „Ich hatte noch nie …".
+
+- **Ein Thema ist keine Stufe** (`NeverHaveIEverCategory.direction`). Bei
+  „Ich hab noch nie“ gab es nur eine Achse, und wer einen Abend lang
+  spielte, landete zwangsläufig bei Sex. Seit dem 28. Oktober gibt es zwei
+  Richtungen: wie hart (Kinder bis Tabulos) und worum es geht (Peinlich,
+  Party …). Der Vorspann zeigt sie als zwei Gruppen, gemischt wird aber
+  alles, was angehakt ist – „Peinlich“ ist nicht zahmer als „Extrem“,
+  sondern etwas anderes. Eine neue Kategorie ist ein neuer Fall samt
+  Richtung und Liste, und ein Test verlangt, dass sie allein eine Runde
+  trägt. „Tabulos“ heißt deutlicher und persönlicher, nicht derber – und
+  nie auf Kosten von jemandem, der nicht gefragt wurde.
 
 - **Die Stapel sind getestet, nicht nur geschrieben** (`DeckContentTests`).
   Inhalt wächst oft und wird selten geprüft, und beim Nachlegen passieren
@@ -1468,6 +1484,12 @@ oben; was schief aussieht, unten.
   nur zwei oder drei Fragen übrig bleiben. Und: Landet die Strafe beim
   Richtigen, wenn ein Abend läuft?
 ### Partyspiele: Inhalt, Mengen, Gefühl
+- **Ich hab noch nie mit neuen Kategorien (28. Oktober)**: Ist „Tabulos“
+  hart genug – oder schon zu viel für eure Runde? Fühlen sich die Themen
+  wirklich anders an als die Stufen, und trägt jedes allein eine Runde?
+  Fragen, die nicht passen, mit dem Daumen aussortieren und mir nennen.
+  Dazu der Vorspann: Bleiben die zwei Gruppen mit großer Schrift
+  übersichtlich?
 - **Zeitstrahl (22. Oktober)**: Das Wichtigste – stimmen die Jahreszahlen?
   Beim ersten Durchgang auf Lieder achten, bei denen die Runde widerspricht,
   und sie mir nennen. Dann: Reicht die Übergabe ans Handy, oder sieht der

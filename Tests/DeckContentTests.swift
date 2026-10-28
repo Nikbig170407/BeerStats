@@ -86,7 +86,7 @@ final class DeckContentTests: XCTestCase {
         pruefe("Der Spion", SpyDeck.all, mindestens: 110)
         pruefe("Kategorien", CategoryDeck.all, mindestens: 85)
         pruefe("Schätzmeister", EstimationDeck.all.map(\.text), mindestens: 75)
-        pruefe("Ich hab noch nie", NeverHaveIEverDeck.statements.map(\.text), mindestens: 210)
+        pruefe("Ich hab noch nie", NeverHaveIEverDeck.statements.map(\.text), mindestens: 480)
 
         pruefe("Regel des Abends", EveningRuleDeck.all, mindestens: 38)
 
@@ -117,6 +117,33 @@ final class DeckContentTests: XCTestCase {
                 karte.text.contains(" noch nie") || karte.text.contains(" nie "),
                 "Sagt nicht, dass es nie passiert ist: \(karte.text)"
             )
+        }
+    }
+
+    /// Jede Kategorie traegt eine Runde fuer sich: Wer nur „Abenteuer“
+    /// ankreuzt, soll nicht nach zwanzig Karten durch sein. Und eine
+    /// Kategorie ohne Fragen waere ein Haken, der nichts tut.
+    func testEveryNeverHaveIEverCategoryCarriesARoundOfItsOwn() {
+        for kategorie in NeverHaveIEverCategory.allCases {
+            XCTAssertGreaterThanOrEqual(
+                NeverHaveIEverDeck.questionCount(for: kategorie), 40,
+                "\(kategorie.title) ist zu dünn für eine eigene Runde"
+            )
+        }
+    }
+
+    /// Titel, Zeichen und Untertitel unterscheiden die Kategorien im
+    /// Vorspann – zwei gleiche wären zwei Haken, zwischen denen niemand
+    /// wählen kann. Und beide Richtungen müssen vorkommen, sonst ist eine
+    /// der Überschriften leer.
+    func testNeverHaveIEverCategoriesCanBeToldApart() {
+        let alle = NeverHaveIEverCategory.allCases
+
+        XCTAssertEqual(Set(alle.map(\.title)).count, alle.count)
+        XCTAssertEqual(Set(alle.map(\.emoji)).count, alle.count)
+        XCTAssertEqual(Set(alle.map(\.subtitle)).count, alle.count)
+        for richtung in NeverHaveIEverCategory.Direction.allCases {
+            XCTAssertGreaterThanOrEqual(alle.filter { $0.direction == richtung }.count, 2, "\(richtung.title)")
         }
     }
 

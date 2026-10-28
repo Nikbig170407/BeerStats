@@ -92,11 +92,11 @@ final class HiddenCardsTests: XCTestCase {
     // MARK: - Ich hab noch nie
 
     func testAHiddenStatementStaysAway() {
-        let alleStufen = Set(NeverHaveIEverLevel.allCases)
+        let alleKategorien = Set(NeverHaveIEverCategory.allCases)
         let weg = NeverHaveIEverDeck.statements[0].text
         HiddenCards.hide(weg, in: .neverHaveIEver)
 
-        let stapel = NeverHaveIEverDeck.shuffled(levels: alleStufen, includePenalties: false)
+        let stapel = NeverHaveIEverDeck.shuffled(categories: alleKategorien, includePenalties: false)
         XCTAssertFalse(stapel.contains { $0.text == weg })
         XCTAssertFalse(stapel.isEmpty)
     }
