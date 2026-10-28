@@ -63,7 +63,10 @@ struct BombPassView: View {
             AmbientBackdrop(glow: BeerStatsColor.accentSecondary)
 
             VStack(spacing: 24) {
+                // Ueber dem Knall: Er ragt weit ueber die Bombe hinaus, und
+                // wer trinkt, steht HIER – das darf nichts verdecken.
                 header
+                    .zIndex(1)
                 bomb
                 Spacer(minLength: 0)
                 controls
@@ -115,19 +118,6 @@ struct BombPassView: View {
 
     private var bomb: some View {
         ZStack {
-            // Der Knall, aber erst wenn es knallt. Vorher soll nichts
-            // ablenken – die Spannung kommt daraus, dass man die Restzeit
-            // NICHT sieht.
-            //
-            // Blitz, Rauch, Splitter, Funken – einmal, dann steht die
-            // Leinwand still (`lasts`). Groesser als der Rahmen der Bombe,
-            // damit die Splitter ueber den Screen fliegen; die Knoepfe
-            // darunter liegen trotzdem obenauf.
-            if phase == .exploded {
-                EffectCanvas(draw: SceneArt.explosion, lasts: 2.6)
-                    .frame(width: 700, height: 700)
-            }
-
             Circle()
                 .fill(
                     RadialGradient(
@@ -147,6 +137,22 @@ struct BombPassView: View {
                 .rotationEffect(.degrees(pulse ? 3 : -3))
         }
         .frame(height: 260)
+        // Der Knall, aber erst wenn es knallt. Vorher soll nichts
+        // ablenken – die Spannung kommt daraus, dass man die Restzeit
+        // NICHT sieht.
+        //
+        // Blitz, Rauch, Splitter, Funken – einmal, dann steht die Leinwand
+        // still (`lasts`). Weit groesser als die Bombe, damit die Splitter
+        // ueber den Screen fliegen – und deshalb als HINTERGRUND: Im Stapel
+        // haette die feste Groesse den ganzen Screen mit aufgeblaeht, als
+        // Hintergrund zaehlt sie fuers Layout nicht. Hoch statt breit, weil
+        // die Splitter fallen und neben dem Screen niemand hinschaut.
+        .background {
+            if phase == .exploded {
+                EffectCanvas(draw: SceneArt.explosion, lasts: 2.6)
+                    .frame(width: 440, height: 1200)
+            }
+        }
         .animation(.easeInOut(duration: 0.18), value: pulse)
         .animation(AppAnimation.standard, value: phase)
     }

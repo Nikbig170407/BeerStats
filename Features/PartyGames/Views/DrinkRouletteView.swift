@@ -131,8 +131,9 @@ struct DrinkRouletteView: View {
             AmbientBackdrop(glow: BeerStatsColor.error)
 
             // Was das Feld bedeutet, sagt auch die Szene dahinter: Beim
-            // Shot brennt es, beim Freilos glitzert es. Erst NACH der
-            // Drehung – waehrend sie laeuft, soll man aufs Rad schauen.
+            // Shot steigt Glut, beim Freilos atmet es in Gruen auf. Erst
+            // NACH der Drehung – waehrend sie laeuft, soll man aufs Rad
+            // schauen.
             if let result, !isSpinning {
                 resultScene(for: result)
             }
