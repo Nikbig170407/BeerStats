@@ -300,7 +300,7 @@ den nachgespielten Wurf-Log alter Partien.
 - Live-Tracking mit vollständigem Regelwerk, Undo, Re-Rack, Abbruch
 - Statistiken auf Profile, umschaltbar zwischen Gesamt und letztem Monat
 - Rangliste, Direktvergleich, Spielverlauf, Becher-Heatmap, MVP der Partie
-- Sounds (selbst synthetisiert), Sprachansage, App-Icon
+- Sounds (Mixkit, Ring of Fire selbst gerechnet), Sprachansage, App-Icon
 - Entwicklereinstellungen, passwortgeschützt (im Quelltext steht nur der
   SHA-256; das Passwort selbst kennt der Nutzer)
 - **Datensicherung**: „Daten sichern" im Beerpong-Menü schreibt Profile,
@@ -971,6 +971,19 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     kommt beim Druck sofort ein Klang, und die schnelle Phase tickt auf
     jedem vierten Schritt – auf jedem wäre es bei 12 Millisekunden ein
     Rauschen.
+  - **Jeder Rang klingt anders, und die Klänge sind gerechnet**
+    (`scripts/make_ring_sounds.py`, Entscheidung des Nutzers vom
+    28. Oktober). Vorher teilten sich neun Ränge den leisen Kartenklang,
+    der Rest lieh sich Beerpong. Das Skript erzeugt Ratsche, Halt, Ziehen,
+    dreizehn Ränge, Riss, „hält knapp“, Mischen und „Regel durch“ aus
+    Schwingungen und Rauschen, nur mit der Standardbibliothek. Drei
+    Regeln: Neue Klänge kommen **ins Skript**, nie als Datei aus dem Netz
+    (das Repo ist öffentlich, ein gerechneter Klang hat keine Lizenz).
+    Die WAV-Dateien werden **nie von Hand** geändert, der nächste Lauf
+    überschreibt sie. Und die Satz-Regel gilt auch hier: Jeder Klang hat
+    seinen Satz im Skript, und es bricht ab, wenn zwei sich einen teilen.
+    Der Rangklang kommt mit der Karte auf den Kartenscreen, nicht beim
+    Ziehen – er gehört zu dem Moment, in dem man sie sieht.
 
 - **Die Härte gehört zum Spiel, nicht zum Gerät.** Sie stand bis Oktober
   2026 einmal über den Partyspielen und galt für alle. Am Tisch ist sie
@@ -1347,6 +1360,12 @@ oben; was schief aussieht, unten.
   Bilanz danach wieder richtig?
 
 ### Ring of Fire sonst
+
+- **Die neuen Klänge (28. Oktober)**: Unterscheidet man die Ränge am Ton,
+  bevor man die Karte liest? Nervt die Ratsche beim Losen nach zehn
+  Zügen? Sind Riss und Ass laut genug gegen Musik, und ist nichts so laut,
+  dass es erschreckt? Gerechnet und im Spektrum geprüft, gehört hat sie
+  vor dem Einbau nur der Nutzer in der Vorschau.
 
 - **Der Ring selbst**: Liegen die Karten erkennbar geschuppt, und sieht man
   die dünnen Stellen? Bei **zwanzig** Karten wird der Kranz dicht und das

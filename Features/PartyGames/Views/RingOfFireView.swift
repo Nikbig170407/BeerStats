@@ -722,6 +722,7 @@ struct RingOfFireView: View {
             && layout.tearsRing(at: position, present: ring.map { $0 != nil })
 
         withAnimation(AppAnimation.standard) { ring[position] = nil }
+        SoundManager.play(.ringDraw)
 
         current = card
         currentTore = reisst
@@ -747,7 +748,7 @@ struct RingOfFireView: View {
         // Die Rolle bekommt der, der die Karte gezogen hat.
         let halter = holderName(forTurn: zieher)
         turn += 1
-        apply(regel, rank: card.rank, holder: halter)
+        apply(regel, holder: halter)
 
         if reisst {
             tear(at: position)
@@ -776,7 +777,7 @@ struct RingOfFireView: View {
         // Erst der harte Stoss, dann die Fehler-Rueckmeldung hinterher – zwei
         // Schlaege, die man in der Hand unterscheidet
         HapticManager.heavyImpact()
-        SoundManager.play(.bombe)
+        SoundManager.play(.ringTear)
 
         tearTask = Task { @MainActor in
             withAnimation(.spring(response: 0.18, dampingFraction: 0.35)) { tearPulse = true }
@@ -818,35 +819,30 @@ struct RingOfFireView: View {
         tearPulse = false
 
         HapticManager.mediumImpact()
-        SoundManager.play(.reRack)
+        SoundManager.play(.ringShuffle)
     }
 
-    private func apply(_ rule: RingOfFireRule, rank: Int, holder: String?) {
+    private func apply(_ rule: RingOfFireRule, holder: String?) {
         HapticManager.mediumImpact()
 
+        // Der Klang des Rangs kommt nicht hier, sondern mit der Karte auf
+        // dem Kartenscreen (`RingOfFireActionView`): Er gehoert zu dem
+        // Moment, in dem man sie sieht.
         switch rule.role {
         case .thumbMaster:
             roleHolders.append(RingRoleHolder(role: .thumbMaster, name: holder))
-            SoundManager.play(.onFire)
         case .questionQueen:
             roleHolders.append(RingRoleHolder(role: .questionQueen, name: holder))
-            SoundManager.play(.onFire)
         case .drinkingMate:
             roleHolders.append(RingRoleHolder(role: .drinkingMate, name: holder))
-            SoundManager.play(.ballsBack)
         case .houseRule:
-            SoundManager.play(.reRack)
             // Nicht sofort: Erst liest man die Karte zu Ende, dann tippt
             // man. Ausgeloest wird die Frage beim Schliessen des
             // Aktionsscreens.
             ruleAuthor = holder
             needsRulePrompt = true
         case .none:
-            // Das Ass ist der einzige Rang mit einem Shot – dafür der harte
-            // Ton, alles andere bleibt der leise Kartenklang. Am Rang und
-            // nicht am Emoji festgemacht, damit eine Umbenennung den Klang
-            // nicht stillschweigend mitnimmt.
-            SoundManager.play(rank == 14 ? .bombe : .cardFlip)
+            break
         }
     }
 
@@ -870,7 +866,7 @@ struct RingOfFireView: View {
         clearRoles()
         hasStarted = true
         HapticManager.success()
-        SoundManager.play(.reRack)
+        SoundManager.play(.ringShuffle)
     }
 
     private func restart() {
@@ -896,7 +892,7 @@ struct RingOfFireView: View {
         // Sofort beim Druck, nicht erst beim ersten Tick: Der Knopf muss
         // antworten, bevor das Licht ueberhaupt losgelaufen ist.
         HapticManager.mediumImpact()
-        SoundManager.play(.cardFlip)
+        SoundManager.play(.ringTick)
         drawTask?.cancel()
         drawTask = Task { @MainActor in
             await runSpotlight(to: ziel, over: liegende)
@@ -943,18 +939,21 @@ struct RingOfFireView: View {
                 // Rauschen, auf keinem war das Rad die erste Sekunde lang
                 // STUMM: Man druckt, es dreht sich, und man hoert nichts.
                 // Genau das ist am 25. Oktober am Tisch aufgefallen.
-                if schritt % 4 == 0 { SoundManager.play(.tap) }
+                if schritt % 4 == 0 { SoundManager.play(.ringTick) }
             } else {
                 dauer = 0.05 + 0.25 * (Double(14 - restlich) / 14)
                 HapticManager.lightImpact()
                 // Das Ticken des Auslaufens, jetzt auf jedem Schritt: Hier
                 // sind die Abstaende lang genug, dass man einzelne Schlaege
                 // hoert statt eines Rauschens.
-                SoundManager.play(.tap)
+                SoundManager.play(.ringTick)
             }
 
             try? await Task.sleep(nanoseconds: UInt64(dauer * 1_000_000_000))
         }
+        // Das Licht steht: ein satter Schlag statt eines weiteren Ticks
+        guard !Task.isCancelled else { return }
+        SoundManager.play(.ringStop)
     }
 
     private func clearRoles() {

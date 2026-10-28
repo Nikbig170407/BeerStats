@@ -9,6 +9,12 @@
 //  Namensnennung nötig); der Airball ist ein eigener Ausschnitt, die Bombe
 //  ist weiterhin selbst erzeugt, weil dort nichts Passendes zu finden war.
 //
+//  Ring of Fire hat seit dem 28. Oktober eigene Klänge, und die sind
+//  gerechnet: `scripts/make_ring_sounds.py` erzeugt sie aus Schwingungen und
+//  Rauschen. Neue Klänge kommen dorthin und nicht als Datei aus dem Netz –
+//  das Repository ist öffentlich, und ein gerechneter Klang hat keine
+//  Lizenz, die man im Blick behalten müsste.
+//
 //  Zum Austauschen reicht die Datei: Der Name entspricht dem Fall im Enum,
 //  gesucht wird in der Reihenfolge wav, mp3, m4a, caf. Eine alte .wav neben
 //  einer neuen .mp3 gewinnt also – die muss weg.
@@ -39,6 +45,21 @@ enum GameSound: String, CaseIterable {
     /// Becher, weil sie sich `cupHit` geliehen haben.
     case cardFlip
 
+    // Ring of Fire. Vorher teilten sich dort neun von dreizehn Rängen den
+    // leisen Kartenklang, und die übrigen liehen sich Beerpong-Klänge – am
+    // Tisch hörte man nicht, welche Karte kam. Jetzt klingt jeder Rang
+    // anders, dazu Ziehen, Riss und Neulegen.
+    case ringTick, ringStop, ringDraw
+    case ringRank2, ringRank3, ringRank4, ringRank5, ringRank6, ringRank7, ringRank8
+    case ringRank9, ringRank10, ringRank11, ringRank12, ringRank13, ringRank14
+    case ringTear, ringHolds, ringShuffle, ringOut
+
+    /// Der Klang eines Rangs in Ring of Fire. Alles außerhalb von 2 bis 13
+    /// ist das Ass – dieselbe Zuordnung wie bei den Regeln.
+    static func ringRank(_ rank: Int) -> GameSound {
+        GameSound(rawValue: "ringRank\(rank)") ?? .ringRank14
+    }
+
     /// Unterstützte Endungen, in dieser Reihenfolge gesucht.
     static let supportedExtensions = ["wav", "mp3", "m4a", "caf"]
 
@@ -57,6 +78,11 @@ enum GameSound: String, CaseIterable {
         case .airball: return 3.0
         case .victory: return 5.0
         case .cupHit, .bombe, .reRack, .tap: return nil
+        // Gerechnet und schon so kurz, wie sie sein sollen
+        case .ringTick, .ringStop, .ringDraw, .ringRank2, .ringRank3, .ringRank4, .ringRank5,
+             .ringRank6, .ringRank7, .ringRank8, .ringRank9, .ringRank10, .ringRank11,
+             .ringRank12, .ringRank13, .ringRank14, .ringTear, .ringHolds, .ringShuffle, .ringOut:
+            return nil
         }
     }
 
@@ -77,7 +103,14 @@ enum GameSound: String, CaseIterable {
     var pitchVariation: Float {
         switch self {
         case .cupHit, .tap, .cardFlip, .miss: return 0.06
+        // Die Ratsche hoert man zwanzigmal je Zug – genau das, was variieren soll
+        case .ringTick: return 0.06
         case .airball, .bombe, .ballsBack, .onFire, .reRack, .victory: return 0
+        // Die Raenge sind Signaturklaenge: Jede Karte soll klingen wie sie selbst
+        case .ringStop, .ringDraw, .ringRank2, .ringRank3, .ringRank4, .ringRank5,
+             .ringRank6, .ringRank7, .ringRank8, .ringRank9, .ringRank10, .ringRank11,
+             .ringRank12, .ringRank13, .ringRank14, .ringTear, .ringHolds, .ringShuffle, .ringOut:
+            return 0
         }
     }
 

@@ -128,6 +128,9 @@ struct RingOfFireActionView: View {
             }
         }
         .onAppear {
+            // Jeder Rang klingt anders – man hoert, welche Karte kam, bevor
+            // man sie liest
+            SoundManager.play(.ringRank(card.rank))
             withAnimation(.spring(response: 0.42, dampingFraction: 0.68)) {
                 hasAppeared = true
             }
