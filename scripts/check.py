@@ -17,6 +17,11 @@ Fehler, die in diesem Projekt tatsaechlich vorgekommen sind:
   3. APIs, die es erst ab iOS 17 gibt - das Deployment-Target ist 16.
   4. Swift-Dateien, die in keinem Quellordner aus project.yml liegen und
      deshalb stillschweigend gar nicht uebersetzt werden.
+  5. Ein eigener Typ, der einen SwiftUI-Typ verdeckt, und ein Aufruf, der
+     trotzdem SwiftUI meint. `TimelineView` ist hier der Screen des
+     Zeitstrahl-Spiels - `TimelineView(.animation)` ruft also den Screen auf,
+     und der Lauf scheitert mit "argument passed to call that takes no
+     arguments" (Lessons Learned Nr. 15).
 
 Rueckgabewert 1, wenn etwas gefunden wurde - damit es sich in eine
 Befehlskette haengen laesst.
@@ -55,6 +60,18 @@ IOS17_ONLY = [
     "MeshGradient",
     "onChange(of:initial:",
 ]
+
+
+# SwiftUI-Typen, die ein eigener Typ leicht verdecken kann. Gemeldet wird
+# nicht die Verdeckung selbst (die ist gewollt, siehe TimelineView), sondern
+# ein Aufruf mit einem Argument, das mit einem Punkt beginnt - so sieht ein
+# SwiftUI-Aufruf aus (`TimelineView(.animation)`), ein eigener Screen nicht.
+SWIFTUI_TYPEN = {
+    "TimelineView", "Canvas", "Label", "Text", "Image", "Button", "Group",
+    "Section", "Color", "Font", "Gradient", "Path", "Circle", "Capsule",
+    "Toggle", "Picker", "Slider", "Link", "Menu", "Form", "List", "Grid",
+    "Table", "Spacer", "Divider", "Animation", "ScrollView", "TabView",
+}
 
 
 def swift_files():
@@ -139,11 +156,13 @@ def strip_code(text):
 
 def main():
     funde = []
+    dateien = []
 
     for path in swift_files():
         rel = path.relative_to(ROOT)
         text = path.read_text(encoding="utf-8")
         code, offene = strip_code(text)
+        dateien.append((rel, code))
 
         for zeile in offene:
             funde.append(f"{rel}:{zeile}  Zeichenkette wird nicht geschlossen")
@@ -158,6 +177,21 @@ def main():
             for treffer in re.finditer(re.escape(symbol), code):
                 zeile = code[:treffer.start()].count("\n") + 1
                 funde.append(f"{rel}:{zeile}  {symbol} gibt es erst ab iOS 17")
+
+    # Eigene Typen, die einen SwiftUI-Namen tragen, und Aufrufe, die trotzdem
+    # SwiftUI meinen. Voll ausgeschrieben (`SwiftUI.TimelineView`) ist es gut.
+    eigene = set()
+    for _, code in dateien:
+        eigene.update(re.findall(r"\b(?:struct|class|enum|actor|typealias|protocol)\s+([A-Z]\w*)", code))
+    for name in sorted(eigene & SWIFTUI_TYPEN):
+        muster = re.compile(r"(?<![\w.])" + name + r"\s*\(\s*\.")
+        for rel, code in dateien:
+            for treffer in muster.finditer(code):
+                zeile = code[:treffer.start()].count("\n") + 1
+                funde.append(
+                    f"{rel}:{zeile}  {name}(.…) meint vermutlich SwiftUI.{name} - "
+                    f"ein eigener Typ im Projekt verdeckt den Namen"
+                )
 
     # Dateien, die in keinem Quellordner liegen, werden nie uebersetzt - der
     # Build bleibt gruen und die Aenderung wirkt trotzdem nicht.

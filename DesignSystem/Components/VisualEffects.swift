@@ -496,7 +496,9 @@ struct EffectFlames<Trigger: Equatable>: View {
             if reduceMotion {
                 calmGlow
             } else if let start {
-                TimelineView(.animation) { timeline in
+                // Voll ausgeschrieben: `TimelineView` allein ist im Projekt der
+                // Screen des Zeitstrahl-Spiels und verdeckt den von SwiftUI.
+                SwiftUI.TimelineView(.animation) { timeline in
                     Canvas { context, size in
                         FlameArt.draw(in: &context, size: size, reach: reach, duration: duration,
                                       t: timeline.date.timeIntervalSince(start))
