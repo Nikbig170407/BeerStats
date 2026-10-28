@@ -560,7 +560,7 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Einschlag sind **entfernt** und nicht bloß unbenutzt: Ein Baustein, der
   nur Gleichheit erzeugen kann, wird beim nächsten Mal wieder genommen,
   weil er bequem daliegt. In `VisualEffects.swift` geblieben sind
-  `EffectConfetti`, `EffectFlash` und `EffectFlames`. Szenen stehen hinter
+  `EffectConfetti` und `EffectFlash`. Szenen stehen hinter
   jeder Ring-Karte, im Sieger-Screen (Feuerwerk und Konfetti, nur bei einem
   Sieger, nie beim Unentschieden), in der Bombe (Rauch und Splitter, einmal),
   beim Zeitstrahl-Sieg (eine Schallplatte) und am Pokal des Abends (ein
@@ -597,20 +597,21 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     Wert statt ein Ja/Nein, sonst blitzt er genau einmal pro Screen
     (Lessons Learned Nr. 11).
 
-  **Die Flammen beim Riss** (`EffectFlames`, 27. Oktober). Der Nutzer
-  wollte „Flammen von der Seite, mächtig“ – aus 🔥-Teilchen wäre nur noch
-  eine Szene geworden, die aussieht wie alle anderen. Also eine Feuerwand
-  aus gezeichneten Zungen in zwei Lagen, die von beiden Rändern
-  hereinschlägt und nach anderthalb Sekunden erlischt. Eine Regel ist dort
-  bewusst gebeugt, mit Grund im Kommentar: Die Flammen liegen **über**
-  allem (sonst verdeckt der Inhalt das Feuer), aber nur an den Rändern.
-  Gezeichnet wird in `FlameArt`, nicht im generischen `EffectFlames`
-  selbst: Generische Typen dürfen keine statischen gespeicherten Werte
-  haben, und `check.py` sieht das nicht. **Gebrannt wird auf dem
-  Aktionsscreen**, nicht auf dem Ring: Der schiebt sich im Moment des
-  Risses darüber – die alte Riss-Szene auf dem Ring lief deshalb fast
-  ungesehen darunter ab. Nach einem Riss entfällt dort die Rang-Szene;
-  zwei Szenen gleichzeitig sind keine.
+  **Der Riss hat seinen eigenen Moment** (`RingEmbers.swift`, Wunsch des
+  Nutzers vom 28. Oktober: „erst eine einzelne Animation, die klar macht,
+  dass der Kreis gerissen ist – man soll nachvollziehen können, wo“).
+  Vorher schob sich der Kartenscreen sofort über den Ring, und eine
+  Feuerwand schlug an seinem Rand herein – mächtig, aber die Stelle sah
+  niemand. Jetzt gehören dem Ring 1,6 Sekunden: Der Glutfaden reißt an der
+  Lücke, eine Stichflamme schlägt heraus, die Nachbarkarten zucken weg,
+  alles wird dunkel bis auf die Stelle, und „RISS“ steht über der Lücke.
+  Erst danach kommt die Karte. Der Moment liegt über dem **ganzen** Screen,
+  nicht nur über dem Ring; der Ring meldet seine Lage als Anker nach oben
+  (`RingTearSpotKey`), weil er in einem ScrollView liegt und seine Punkte
+  sonst niemand kennt. Die Feuerwand (`EffectFlames`) ist entfernt, nicht
+  nur unbenutzt, und die Rang-Szene läuft auch nach einem Riss wieder.
+  Eine Falle aus dem Bau ist geblieben: Generische Typen dürfen keine
+  statischen gespeicherten Werte haben, und `check.py` sieht das nicht.
 
 - **Kartengrößen rechnen, nicht tippen.** Bussfahrer zeigte seine Karten in
   festen 68 Punkten, egal wie breit das Gerät war. Jetzt teilen sie sich die
@@ -882,27 +883,31 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   berühren sich nicht mehr" – und das ist genau der Moment, in dem die
   Lücke **null** ist. Die Regel feuerte also bauartbedingt, bevor es etwas
   zu sehen gab; nachgerechnet lag die Hälfte aller Risse unter einem
-  Sechstel Kartenbreite. Jetzt muss eine **Viertelkarte** Luft sein
-  (`visibleGap`). Erst mit dieser Schwelle ist mehr Überlappung
-  unbedenklich: Ohne sie machte dichteres Legen den Spalt am Moment des
-  Risses nur feiner, mit ihr macht es den Riss nur **seltener**, nie
-  unsichtbarer. Darauf baut die Entscheidung des Nutzers vom 27. Oktober
-  („reißt ein bisschen schnell – Karten größer, mehr Überlappung“):
-  Überlappung und Streuung sind gestiegen, und der Ring darf 12 pt je
-  Seite näher an den Rand als der Rest des Screens. Die drei Zahlen
-  hängen voneinander ab und werden nur zusammen angefasst;
-  `RingLayoutTests` hält die Folgen fest.
+  Sechstel Kartenbreite. Seitdem gibt es eine Mindestbreite (`visibleGap`).
+  Erst mit ihr ist mehr Überlappung unbedenklich: Ohne sie machte
+  dichteres Legen den Spalt am Moment des Risses nur feiner, mit ihr macht
+  es den Riss nur **seltener**, nie unsichtbarer. Darauf bauen zwei
+  Entscheidungen des Nutzers: am 27. Oktober („reißt ein bisschen schnell
+  – Karten größer, mehr Überlappung“) Überlappung und Streuung hoch, der
+  Ring 12 pt je Seite näher an den Rand; am 28. Oktober („reißt fast immer
+  innerhalb von 1–3 Karten“) die Schwelle von einer Viertel- auf eine
+  **halbe Karte**. Die drei Zahlen hängen voneinander ab und werden nur
+  zusammen angefasst; `RingLayoutTests` hält die Folgen fest.
 
-  **Und die Lücke wird GEZEICHNET** (`RingLayout.openings`, `gapMarker`) –
-  aus derselben Sehnenrechnung wie die Kartenbreite. Eine Markierung, die
-  anders gerechnet wird, zeigt eine andere Lücke als die, für die jemand
-  getrunken hat. Gezeichnet wird **jede** offene Stelle und nicht nur die
-  letzte: Eine Lücke bleibt liegen, und wer vom Aktionsscreen zurückkommt,
-  soll sehen, wie der Ring steht. Das ist der Gegenpol zum unsichtbaren
-  Kartenplatz weiter unten – unsichtbar ist der Platz der **gezogenen
-  Karte**, sichtbar die **Lücke zwischen den Nachbarn**. Das eine macht
-  jeden Zug gleich aussehen, das andere ist die Stelle, um die es in der
-  Regel geht.
+  **Und die Lücke wird GEZEICHNET – als Glutfaden** (`RingLayout.links`,
+  `RingEmbers`). Unter den Karten liegt ein glühender Faden. Wo sie sich
+  überlappen, ist er verdeckt; in einer Lücke sieht man ihn. Unter der
+  Schwelle hält er, wird aber dünner und unruhiger, je weiter die Lücke
+  ist; an der Schwelle reißt er. Nötig ist das seit der halben Karte:
+  Darunter entstehen Lücken, die nicht zählen, und ohne Faden sähe der
+  Tisch dort ein Loch ohne Shot. Der Faden rechnet **nicht selbst**,
+  sondern mit denselben Zahlen wie die Regel, und ob er reißt, entscheidet
+  derselbe Vergleich (`Link.isOpen`, nicht über die geteilte Spannung –
+  die rundet an der Schwelle anders). Ein Test hält fest, dass er genau
+  dort reißt, wo `openings` eine offene Stelle meldet. Das ist der
+  Gegenpol zum unsichtbaren Kartenplatz weiter unten – unsichtbar ist der
+  Platz der **gezogenen Karte**, sichtbar die **Verbindung zwischen den
+  Nachbarn**. Nach dem dritten Riss ist die Glut aus: Asche statt Faden.
 
   **Drei Risse kostet eine Runde, dann ist die Regel durch.** Nach den
   ersten beiden wird eingesammelt und neu gelegt (`relayout()`); danach
@@ -917,10 +922,12 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   `visibleGap` ist die Mindestbreite einer Lücke, die zählt. Ohne Streuung lägen alle Karten gleich dicht, und Ziehen wäre
   entweder nie oder immer gefährlich; mit Streuung gibt es dichte Stellen
   und dünne – und **man kann es sehen**. Die Größenordnung hält
-  `RingLayoutTests` fest: wie oft ein frisch gelegter Ring reißt, wie viele
+  `RingLayoutTests` fest: wie oft es schon in den ersten drei Zügen reißt
+  (die Zahl, an der die Entscheidung vom 28. Oktober hängt), wie viele
   Züge die drei Shots halten, und dass **jede Lücke, die zählt, mindestens
-  eine Viertelkarte breit ist**. Der letzte Punkt ist der Wächter: Fällt
-  er, ist die Regel wieder unsichtbar, egal wie richtig sie rechnet. Die
+  so breit ist, wie die Schwelle verlangt**. Der letzte Punkt ist der
+  Wächter: Fällt er, ist die Regel wieder unsichtbar, egal wie richtig sie
+  rechnet. Die
   Karten werden mit der Überlappung größer und das Loch in der Mitte
   kleiner – die Restzahl dort hat Vorrang vor noch größeren Karten.
 
@@ -1248,16 +1255,23 @@ oben; was schief aussieht, unten.
   standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.
 ### Was zuletzt gebaut wurde und nie lief
 
-- **Der Ring reißt seltener, die Karten sind größer** (27. Oktober, auf
-  Wunsch – die sichtbare Lücke hat der Nutzer am Tisch bestätigt). Mehr
-  Überlappung, mehr Streuung, der Ring näher am Rand. Zu prüfen: Dauert es
-  spürbar länger, ohne dass die Regel in einer kurzen Runde verschwindet?
-  Sieht der Ring mit den größeren Karten noch geschuppt aus, ist die Zahl
-  in der Mitte bei **20 Karten** gut lesbar, und ragt nichts über den
-  Bildschirmrand? Weiter offen von vorher: Landet der Shot bei der Person,
-  die gezogen hat (nicht bei der nächsten), liegt der Ring nach dem
-  „Verstanden" sichtbar **neu**, und bleibt nach dem dritten Riss alles
-  still?
+- **Der Riss als eigener Moment, seltener, mit Glutfaden** (28. Oktober,
+  auf Wunsch – in der Vorschau „Riss im Ring“ abgestimmt, auf dem Gerät nie
+  gelaufen). Zu prüfen:
+  - **Sieht man, wo es gerissen ist?** Der Faden reißt, die Flamme
+    schlägt aus der Lücke, „RISS“ steht darüber – und erst nach gut
+    anderthalb Sekunden kommt die Karte. Zu lang, zu kurz?
+  - **Reißt es jetzt selten genug?** Gerechnet: bei 20 Karten in etwa
+    jeder zehnten Runde schon in den ersten drei Zügen statt in vier von
+    zehn. Kommt die Regel in einer kurzen Runde trotzdem noch vor?
+  - **Versteht man den Faden?** Eine kleine Lücke, über der der Faden
+    glüht, darf nicht wie ein Riss aussehen – und ein dünner, flackernder
+    Faden soll nach „gleich reißt es“ aussehen.
+  - Ruckelt der Moment auf dem iPhone 13? Mit „Bewegung reduzieren“ muss
+    ein stilles Bild mit Markierung dastehen, nicht nichts.
+  - Weiter offen von vorher: Landet der Shot bei der Person, die gezogen
+    hat, liegt der Ring nach dem „Verstanden" sichtbar **neu**, und ist
+    nach dem dritten Riss die Glut aus?
 - **Ring of Fire bucht mit (25. Oktober)**: Einen Abend starten, Ring of
   Fire spielen, bis ein Ass und eine Drei gezogen sind – stehen beide
   danach in der Trinkbilanz der richtigen Person? Und steht dort **nichts**
@@ -1284,14 +1298,6 @@ oben; was schief aussieht, unten.
   und sagt der Knopf „Anderes Rad" sauber zurück in die Auswahl? Dazu die
   Vorschau im Editor: Steht dort derselbe Satz, der nach der Drehung
   erscheint?
-- **Der Riss brennt** (27. Oktober, auf Wunsch): Statt Sprachansage und
-  💥 schlägt auf dem Aktionsscreen eine Feuerwand von beiden Seiten
-  herein. Wirkt es mächtig – und bleibt dabei „Ring gerissen“ in der Mitte
-  lesbar? Ruckelt es auf dem iPhone 13 (zwei Lagen Zungen plus Funken,
-  gezeichnet in jedem Bild)? Kommt das Feuer bei **jedem** Riss, ist die
-  Stimme wirklich still, und spürt man den harten Stoß vor dem Zittern?
-  Mit „Bewegung reduzieren“ muss es ein ruhiges Glühen an den Rändern
-  sein, nicht nichts.
 - **Jedes Spiel hat seine eigene Welt** (28. Oktober, auf Wunsch): Grund,
   Fläche, Kante und Schrift kommen aus der Welt, und jedes Spiel hat
   seine eigenen Dinge bekommen – Akte, Würfelbecher, Leuchtreklame,
@@ -1333,8 +1339,7 @@ oben; was schief aussieht, unten.
   - **Ruckelt es auf dem iPhone 13?** Jedes Bild wird neu gezeichnet; am
     meisten zu tun haben das Feuerwerk und die Glut beim Ass.
   - **Mit „Bewegung reduzieren“** muss jede Szene ein stilles Bild zeigen –
-    nicht nichts. Der Blitz beim Riss muss bei **jedem** Riss kommen,
-    nicht nur beim ersten.
+    nicht nichts.
 - **Ohne Konto (26. Oktober)**: Abmelden, dann „Ohne Konto loslegen" –
   laufen alle Partyspiele, bleibt die Beerpong-Kachel stehen und erklärt
   sich, ist das Personen-Symbol weg? Danach aus den Einstellungen heraus

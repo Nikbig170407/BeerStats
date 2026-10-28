@@ -16,9 +16,14 @@
 //  Geschmack da: Vorher reichte "beruehren sich nicht mehr", und damit
 //  feuerte die Regel bei einer Luecke von genau null. Der Shot kam, der
 //  Ring sah aus wie vorher, und am Tisch war das nicht von Willkuer zu
-//  unterscheiden. Jetzt muss eine Viertelkarte Luft sein, und die Luecke
-//  wird GEZEICHNET – aus denselben Zahlen, mit denen gerechnet wird
-//  (`gapMarker`).
+//  unterscheiden. Seit dem 28. Oktober muss eine halbe Karte Luft sein,
+//  und was darunter liegt, haelt sichtbar ein Glutfaden zusammen
+//  (`RingEmbers`) – aus denselben Zahlen, mit denen gerechnet wird.
+//
+//  Reisst er, gehoert der Moment erst dem Ring: Der Faden reisst an der
+//  Stelle, eine Stichflamme schlaegt heraus, und "RISS" steht ueber der
+//  Luecke. Erst danach kommt die Karte. Vorher schob sie sich sofort
+//  darueber, und wo es gerissen war, sah niemand.
 //
 //  Vorher lagen die Karten in gleichen Abstaenden mit Luft dazwischen, und
 //  die Regel gab es gar nicht – es war ein Stapel, den jemand im Kreis
@@ -32,10 +37,10 @@
 //
 //  Drei Risse kostet eine Runde, dann ist die Regel durch (24. Oktober).
 //  Nach jedem der ersten beiden wird eingesammelt und neu gelegt – wie am
-//  Tisch. Das muss begrenzt sein: Solange der Ring ganz daliegt, reisst
-//  jeder fuenfte Zug, und ein Spiel, das dreissig Shots verteilt, spielt
+//  Tisch. Das muss begrenzt sein: Jede Luecke macht die naechste
+//  wahrscheinlicher, und ein Spiel, das dreissig Shots verteilt, spielt
 //  niemand zu Ende. Nach dem dritten bleibt der Ring liegen, wie er liegt,
-//  und die Luecken sind nur noch Spielstand.
+//  die Glut ist aus, und die Luecken sind nur noch Spielstand.
 //
 //  Vier Raenge wirken weiter, nachdem die Karte gezogen wurde. Sie landen in
 //  der Merkliste unter dem Ring, weil sie sonst mit der naechsten Karte aus
@@ -59,21 +64,26 @@ struct RingOfFireView: View {
     @State private var layout = RingLayout.random(count: PlayingCardDeck.fullSize)
     @State private var current: PlayingCard?
 
-    /// Die Stelle, an der der Ring gerade gerissen ist – fuer das
-    /// Aufblitzen im Ring. Verblasst von selbst.
-    @State private var tornAt: Int?
+    /// Der Riss, der gerade seinen Moment hat – vom Reissen, bis der
+    /// Aktionsscreen wieder zu ist.
+    @State private var tearMoment: RingTearMoment?
     /// Hat der ZULETZT gezogene Zug gerissen? Steht getrennt, weil der
-    /// Aktionsscreen laenger offen ist als das Aufblitzen dauert.
+    /// Aktionsscreen laenger offen ist als der Moment dauert.
     @State private var currentTore = false
-    @State private var tearPulse = false
+    /// Die beiden Nachbarinnen zucken beim Riss weg – von 1 federnd auf 0.
+    @State private var tearJolt = 0.0
     @State private var tearTask: Task<Void, Never>?
+    /// Eine Stelle, die gerade knapp gehalten hat: Dort leuchtet der Faden
+    /// kurz auf.
+    @State private var held: RingHeld?
+    @State private var heldTask: Task<Void, Never>?
 
     /// Wie oft der Ring in dieser Runde schon gerissen ist.
     ///
     /// Drei Shots hat eine Runde – danach ist die Regel durch. Ohne diese
     /// Grenze waere der Riss eine Steuer, die den ganzen Abend mitlaeuft:
-    /// Am Anfang reisst jeder fuenfte Zug, und wer das dreissigmal zahlt,
-    /// spielt nicht mehr mit.
+    /// Jede Luecke macht die naechste wahrscheinlicher, und wer das
+    /// dreissigmal zahlt, spielt nicht mehr mit.
     @State private var tears = 0
     /// Steht das Neulegen noch aus? Es passiert erst, wenn der
     /// Aktionsscreen zu ist – sonst waere der Ring schon anders, waehrend
@@ -134,6 +144,7 @@ struct RingOfFireView: View {
         .onDisappear {
             drawTask?.cancel()
             tearTask?.cancel()
+            heldTask?.cancel()
         }
         .sheet(isPresented: $isAskingForRule) {
             rulePrompt
@@ -171,7 +182,7 @@ struct RingOfFireView: View {
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("Die Karten liegen geschuppt im Kreis, jede ein Stück unter der nächsten. Klafft nach deinem Zug zwischen den Nachbarn eine Lücke, ist der Ring gerissen: Das kostet dich \(DrinkAmount.shot.text), und der Ring wird neu gelegt. Die Lücke leuchtet auf – du siehst also, wofür du trinkst. Für dieselbe Lücke zahlt niemand zweimal, aber die Karte NEBEN einer Lücke reißt umso leichter. Drei Risse hat die Runde; danach sind Lücken egal.")
+                Text("Die Karten liegen geschuppt im Kreis, jede ein Stück unter der nächsten. Darunter glüht ein Faden: Kleine Lücken hält er, und je weiter sie werden, desto dünner glüht er. Reißt er nach deinem Zug, ist der Ring gerissen. Das kostet dich \(DrinkAmount.shot.text), und der Ring wird neu gelegt. Für dieselbe Lücke zahlt niemand zweimal, aber die Karte NEBEN einer Lücke reißt umso leichter. Drei Risse hat die Runde; danach ist die Glut aus.")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -204,11 +215,18 @@ struct RingOfFireView: View {
                 .padding(20)
             }
         }
-        // Der Blitz liegt UEBER allem und haengt am Zaehler, nicht an einem
-        // Ja/Nein: Ein `Bool` blitzte genau einmal pro Screen (Lessons
-        // Learned Nr. 11). Er nimmt keine Tipps an, liegt also auch nicht
-        // auf dem Knopf.
-        .overlay(EffectFlash(trigger: tears, tint: BeerStatsColor.warning))
+        // Der Riss-Moment liegt ueber dem ganzen Screen: Er dunkelt alles
+        // ab bis auf die Stelle, und dort brennt es. Der Ring meldet von
+        // innen, wo er liegt. Ein Blitz ueber den ganzen Schirm kommt nicht
+        // mehr – er nahm der Stelle die Aufmerksamkeit, die sie haben soll.
+        .overlayPreferenceValue(RingTearSpotKey.self) { spot in
+            Group {
+                if let spot {
+                    RingTearOverlay(spot: spot)
+                        .id(spot.moment.id)
+                }
+            }
+        }
         // Vollbild statt Blatt: In dem Moment zaehlt nur, was auf der Karte
         // steht. Der Ring darunter wuerde nur ablenken.
         .fullScreenCover(isPresented: $showsAction) {
@@ -227,6 +245,11 @@ struct RingOfFireView: View {
         // Karte haette man gelesen, bevor man die Karte gelesen hat.
         .onChange(of: showsAction) { istOffen in
             guard !istOffen else { return }
+
+            // Der Moment ist vorbei, sobald die Karte gelesen ist
+            tearMoment = nil
+            // Der dritte Riss: Die Glut geht aus, und das hoert man
+            if currentTore, ruleIsSpent { SoundManager.play(.ringOut) }
 
             // Erst neu legen, dann die Hausregel fragen: Das Textfeld legt
             // sich ueber den Ring, und man soll vorher gesehen haben, dass
@@ -279,52 +302,42 @@ struct RingOfFireView: View {
                     }
                 }
 
+                // Der Glutfaden liegt UNTER den Karten: Wo sie sich
+                // ueberlappen, verdecken sie ihn, in einer Luecke sieht man
+                // ihn – gehalten oder gerissen.
+                RingEmbers(
+                    links: layout.links(present: ring.map { $0 != nil }),
+                    radius: radius,
+                    isSpent: ruleIsSpent,
+                    tearing: tearMoment?.link,
+                    held: held
+                )
+
                 ForEach(ring.indices, id: \.self) { position in
                     ringCard(
                         width: cardWidth,
                         height: cardHeight,
                         isLit: spotlight == position,
-                        isEmpty: ring[position] == nil,
-                        isTorn: tornAt == position
+                        isEmpty: ring[position] == nil
                     )
                         // Erst nach aussen schieben, dann um die Mitte
                         // drehen: `offset` verschiebt nur die Darstellung,
                         // nicht den Rahmen – der Drehpunkt bleibt also die
                         // Mitte des Rings.
                         .offset(y: -radius)
-                        .rotationEffect(.degrees(angle(for: position)))
+                        .rotationEffect(.degrees(angle(for: position) + jolt(for: position)))
                         // Muss sein, seit die Karten sich ueberlappen: Der
-                        // Lichtpunkt und der Riss liegen sonst unter der
-                        // naechsten Karte, weil ein ZStack in
-                        // Reihenfolge zeichnet – und genau die beiden sind
-                        // das, was man sehen soll.
-                        .zIndex(spotlight == position || tornAt == position ? 1 : 0)
-                }
-
-                // Die offenen Stellen. Sie liegen ueber den Karten, damit
-                // eine Nachbarkante den Schein nicht verdeckt – und sie
-                // kommen aus demselben Layout, mit dem gerechnet wird.
-                ForEach(layout.openings(present: ring.map { $0 != nil }), id: \.from) { opening in
-                    gapMarker(
-                        width: chord(degrees: opening.width, radius: radius),
-                        height: cardHeight
-                    )
-                        .offset(y: -radius)
-                        .rotationEffect(.degrees(opening.centerAngle))
-                        .zIndex(2)
+                        // Lichtpunkt laege sonst unter der naechsten Karte,
+                        // weil ein ZStack in Reihenfolge zeichnet.
+                        .zIndex(spotlight == position ? 1 : 0)
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
-            // Hier lag bis zum 27. Oktober eine eigene Riss-Szene (Druckwelle
-            // und 💥). Sie lief unter dem Aktionsscreen ab, der sich im
-            // selben Moment darueberschiebt – zu sehen war davon fast
-            // nichts. Das Feuer brennt jetzt dort, wo man hinschaut
-            // (`RingOfFireActionView`); hier bleiben Ruck und Luecke.
-            //
-            // Der Ruck beim Reissen: kraeftig, aber der Ring soll zucken,
-            // nicht wegfliegen.
-            .scaleEffect(tearPulse ? 1.07 : 1)
-            .rotationEffect(.degrees(tearPulse ? 2.5 : 0))
+            // Der Riss meldet sich nach oben: Sein Moment liegt ueber dem
+            // ganzen Screen und muss wissen, wo der Ring steht.
+            .anchorPreference(key: RingTearSpotKey.self, value: .bounds) { rahmen in
+                tearMoment.map { RingTearSpot(ring: rahmen, radius: radius, cardHeight: cardHeight, moment: $0) }
+            }
         }
         // Nimmt sich die volle Breite und bleibt quadratisch: Der Ring ist
         // der Screen, nicht eine Zeile darin.
@@ -397,61 +410,13 @@ struct RingOfFireView: View {
         return "Die \(raenge.count) höchsten Ränge – ab \(name) aufwärts, von jedem alle vier Karten. Die kleinen Karten sagen nur Mengen an; was den Tisch beschäftigt, steht oben."
     }
 
-    /// Die Markierung einer offenen Stelle – das, was am 26. Oktober
-    /// gefehlt hat.
-    ///
-    /// Der Riss war vorher eine Rechnung ohne Bild: Der freie Platz der
-    /// gezogenen Karte ist bewusst unsichtbar (sonst sieht jeder Zug gleich
-    /// aus), die LUECKE zwischen den Nachbarinnen war es aber auch – und
-    /// damit gab es nichts, worauf man am Tisch zeigen konnte. Der Shot kam
-    /// aus dem Nichts.
-    ///
-    /// Gezeichnet wird deshalb genau die Strecke, mit der die Regel
-    /// rechnet: Was hier leuchtet, ist die Luecke, die den Shot gekostet
-    /// hat. Sie bleibt liegen, bis neu gelegt wird – nach dem
-    /// Aktionsscreen soll man die Stelle wiederfinden, ohne zu suchen.
-    private func gapMarker(width: CGFloat, height: CGFloat) -> some View {
-        ZStack {
-            // Der Schein. Breiter als die Luecke selbst, sonst ist eine
-            // schmale kaum zu sehen.
-            Capsule()
-                .fill(BeerStatsColor.warning)
-                .frame(width: max(width, 6), height: height * 0.92)
-                .blur(radius: max(width, 10) * 0.9)
-                .opacity(0.75)
-
-            // Der Spalt: heller Kern, nach aussen auslaufend. Kein Rahmen –
-            // eine Luecke hat keine Kante, sie ist das Fehlen einer.
-            Capsule()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            BeerStatsColor.warning.opacity(0.35),
-                            BeerStatsColor.warning,
-                            BeerStatsColor.warning.opacity(0.35)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: max(width * 0.5, 3), height: height * 0.86)
-        }
-        .frame(width: max(width, 6), height: height)
-        // Zierde-Regeln wie bei den Effekten: nimmt keine Tipps an und
-        // steht VoiceOver nicht im Weg. Was offen ist, sagt die Zeile unter
-        // dem Ring.
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-
-    /// Die Sehne zu einem Winkel – so wird aus einer Luecke in Grad eine
-    /// Breite in Punkten.
-    ///
-    /// Dieselbe Rechnung wie bei der Kartenbreite, und das ist Pflicht:
-    /// Wuerde die Markierung anders gerechnet, zeigte das Bild eine andere
-    /// Luecke als die, fuer die jemand getrunken hat.
-    private func chord(degrees: Double, radius: CGFloat) -> CGFloat {
-        2 * radius * CGFloat(sin(max(degrees, 0) / 2 * .pi / 180))
+    /// Wie weit eine Nachbarin beim Riss wegzuckt, in Grad – die linke
+    /// gegen, die rechte mit dem Uhrzeigersinn.
+    private func jolt(for position: Int) -> Double {
+        guard let link = tearMoment?.link else { return 0 }
+        if position == link.from { return -4 * tearJolt }
+        if position == link.to { return 4 * tearJolt }
+        return 0
     }
 
     /// Kommt aus dem Layout, nicht aus der Position: Die Karten liegen
@@ -474,21 +439,19 @@ struct RingOfFireView: View {
     /// gleich aus – mal kommt eine Strafe, mal nicht, und am Tisch wirkt
     /// das wie Willkuer. Wie viel noch liegt, steht ohnehin in der Mitte.
     ///
-    /// Gezeigt wird stattdessen die LUECKE selbst (`gapMarker`) – das ist
-    /// die Stelle, um die es in der Regel geht.
+    /// Gezeigt wird stattdessen die LUECKE selbst, ueber den Glutfaden
+    /// darunter – das ist die Stelle, um die es in der Regel geht.
     ///
     /// `isLit` ist der Lichtpunkt, der beim Ziehen herumwandert. Die Karten
     /// sind nicht antippbar: Gezogen wird ausgelost.
     ///
-    /// `isTorn` ist die Stelle, an der der Ring gerade gerissen ist. Sie
-    /// leuchtet kurz auf – die Luecke selbst bleibt danach als normale
-    /// Luecke stehen, denn gerissen wird sie nur einmal.
+    /// Gerissen wird nicht an der Karte, sondern zwischen den Nachbarinnen –
+    /// das zeigt der Glutfaden und der Moment darueber (`RingEmbers`).
     private func ringCard(
         width: CGFloat,
         height: CGFloat,
         isLit: Bool,
-        isEmpty: Bool,
-        isTorn: Bool
+        isEmpty: Bool
     ) -> some View {
         RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
             .fill(
@@ -517,27 +480,12 @@ struct RingOfFireView: View {
                         lineWidth: isLit ? 1.8 : 1.1
                     )
             )
-            .overlay(
-                // Der Riss: ein kurzer heller Blitz genau dort, wo die Karte
-                // lag. Die Luecke selbst ist unsichtbar – der Blitz ist
-                // das Einzige, was die Stelle zeigt, und man soll sie
-                // finden, ohne zu suchen.
-                RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
-                    .fill(BeerStatsColor.warning)
-                    .blur(radius: width * 0.3)
-                    .opacity(isTorn ? 0.9 : 0)
-            )
-            .shadow(
-                color: isTorn
-                    ? BeerStatsColor.warning.opacity(0.95)
-                    : BeerStatsColor.error.opacity(isLit ? 0.9 : 0),
-                radius: isTorn ? 18 : 10
-            )
+            .shadow(color: BeerStatsColor.error.opacity(isLit ? 0.9 : 0), radius: 10)
             .frame(width: width, height: height)
             .scaleEffect(isLit ? 1.45 : 1)
-            // Der leere Platz ist unsichtbar – ausser im Moment des Risses,
-            // damit man die Stelle findet, an der es gerade gekracht hat.
-            .opacity(isEmpty && !isTorn ? 0 : 1)
+            // Der leere Platz ist unsichtbar: Mit einem Platzhalter saehe
+            // jeder Zug gleich aus.
+            .opacity(isEmpty ? 0 : 1)
     }
 
     // MARK: - Ring durch
@@ -750,50 +698,79 @@ struct RingOfFireView: View {
         turn += 1
         apply(regel, holder: halter)
 
-        if reisst {
-            tear(at: position)
-        } else if remaining == 0 {
+        // Die Verbindung, die ueber der gezogenen Karte entstanden ist – sie
+        // reisst oder haelt
+        let ueber = layout.link(over: position, present: ring.map { $0 != nil })
+
+        if reisst, let riss = ueber {
+            beginTear(riss)
+            return
+        }
+
+        if !ruleIsSpent, let ueber, ueber.isVisible {
+            // Knapp gehalten: Die Luecke ist da, aber der Faden traegt sie
+            hold(ueber)
+        }
+        if remaining == 0 {
             // Die letzte Karte ohne Riss: Der Ring ist heil durchgespielt,
             // und das ist am Tisch eine Meldung wert.
             SoundManager.play(.victory)
         }
 
+        isDrawing = false
         showsAction = true
     }
 
-    /// Der Ring ist gerissen: Blitz, Ruck, Knall – und der Shot steht
-    /// danach auf dem Aktionsscreen, und dort schlagen die Flammen herein.
+    /// Der Ring ist gerissen, und der Moment gehoert erst ihm: Der Faden
+    /// reisst an der Stelle, eine Stichflamme schlaegt heraus, der Rest wird
+    /// dunkel, "RISS" steht ueber der Luecke (`RingTearOverlay`). Erst
+    /// danach kommt die Karte mit dem Shot.
     ///
-    /// Der Klang kommt hier und nicht in `apply`: Ein Riss schlaegt jeden
-    /// Kartenklang, und zwei Toene gleichzeitig sind einer zu viel.
+    /// Vorher kam der Aktionsscreen sofort, und die Flammen schlugen an
+    /// seinem Rand herein. Wo es gerissen war, sah niemand – genau das hat
+    /// der Nutzer am 28. Oktober gewollt: nachvollziehen koennen, wo.
     ///
-    /// Keine Sprachansage mehr (27. Oktober, auf Wunsch des Nutzers): Das
-    /// "Ring gerissen" in der Stimme nahm dem Moment die Wucht, statt sie zu
-    /// tragen. Gesagt wird es jetzt vom Bild.
-    private func tear(at position: Int) {
+    /// Keine Sprachansage (27. Oktober, auf Wunsch des Nutzers): Das "Ring
+    /// gerissen" in der Stimme nahm dem Moment die Wucht, statt sie zu
+    /// tragen. Gesagt wird es vom Bild.
+    private func beginTear(_ link: RingLayout.Link) {
         tearTask?.cancel()
-        tornAt = position
+        tearMoment = RingTearMoment(link: link)
 
         // Erst der harte Stoss, dann die Fehler-Rueckmeldung hinterher – zwei
         // Schlaege, die man in der Hand unterscheidet
         HapticManager.heavyImpact()
         SoundManager.play(.ringTear)
 
+        // Die Nachbarinnen zucken weg und federn zurueck. Erst setzen, dann
+        // im naechsten Durchgang animieren – im selben gesetzt, saehe
+        // SwiftUI nur den Endwert (Lessons Learned Nr. 17).
+        tearJolt = 1
+        DispatchQueue.main.async {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.3)) { tearJolt = 0 }
+        }
+
         tearTask = Task { @MainActor in
-            withAnimation(.spring(response: 0.18, dampingFraction: 0.35)) { tearPulse = true }
             try? await Task.sleep(nanoseconds: 180_000_000)
             guard !Task.isCancelled else { return }
             HapticManager.error()
-            try? await Task.sleep(nanoseconds: 40_000_000)
+            try? await Task.sleep(nanoseconds: UInt64((RingTearArt.duration - 0.18) * 1_000_000_000))
             guard !Task.isCancelled else { return }
-            withAnimation(.spring(response: 0.34, dampingFraction: 0.6)) { tearPulse = false }
+            isDrawing = false
+            showsAction = true
+        }
+    }
 
-            // Der Blitz bleibt laenger als der Ruck: Er muss den
-            // Aktionsscreen ueberleben, damit man die Stelle beim
-            // Zurueckkommen noch findet.
-            try? await Task.sleep(nanoseconds: 2_400_000_000)
+    /// Eine Luecke, die der Faden noch traegt: Er leuchtet dort kurz auf,
+    /// und die Glut knistert – ein Durchatmen am Tisch.
+    private func hold(_ link: RingLayout.Link) {
+        heldTask?.cancel()
+        held = RingHeld(from: link.from, to: link.to, since: Date())
+        SoundManager.play(.ringHolds)
+        heldTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             guard !Task.isCancelled else { return }
-            withAnimation(AppAnimation.standard) { tornAt = nil }
+            held = nil
         }
     }
 
@@ -815,8 +792,8 @@ struct RingOfFireView: View {
             layout = RingLayout.random(count: ring.count)
         }
         spotlight = nil
-        tornAt = nil
-        tearPulse = false
+        tearMoment = nil
+        held = nil
 
         HapticManager.mediumImpact()
         SoundManager.play(.ringShuffle)
@@ -860,8 +837,8 @@ struct RingOfFireView: View {
         needsRelayout = false
         turn = 0
         spotlight = nil
-        tornAt = nil
-        tearPulse = false
+        tearMoment = nil
+        held = nil
         isDrawing = false
         clearRoles()
         hasStarted = true
@@ -872,10 +849,11 @@ struct RingOfFireView: View {
     private func restart() {
         drawTask?.cancel()
         tearTask?.cancel()
+        heldTask?.cancel()
         isDrawing = false
         spotlight = nil
-        tornAt = nil
-        tearPulse = false
+        tearMoment = nil
+        held = nil
         needsRelayout = false
         hasStarted = false
     }
@@ -898,7 +876,8 @@ struct RingOfFireView: View {
             await runSpotlight(to: ziel, over: liegende)
             guard !Task.isCancelled else { return }
             spotlight = nil
-            isDrawing = false
+            // `isDrawing` nimmt erst `draw(at:)` zurueck: Reisst der Ring,
+            // laeuft noch sein Moment, und so lange darf niemand ziehen.
             draw(at: ziel)
         }
     }

@@ -58,11 +58,10 @@ struct RingOfFireActionView: View {
             // dieser Karte gehoert. Sie liegt NICHT ueber der Karte – was
             // zu tun ist, darf nichts verdecken.
             //
-            // Nach einem Riss nicht: Dann ist der Shot die Nachricht und das
-            // Feuer die Szene. Zwei Szenen gleichzeitig waeren keine.
-            if !tore {
-                RingCardFlourish(rank: card.rank)
-            }
+            // Auch nach einem Riss: Das Feuer hat seit dem 28. Oktober seinen
+            // eigenen Moment auf dem Ring, bevor dieser Screen kommt. Hier
+            // ist danach wieder die Karte dran.
+            RingCardFlourish(rank: card.rank)
 
             FillingScrollView {
                 VStack(spacing: 16) {
@@ -117,15 +116,6 @@ struct RingOfFireActionView: View {
                 )
                 .ignoresSafeArea()
             )
-        }
-        // Der Riss brennt hier und nicht auf dem Ring: Dieser Screen schiebt
-        // sich im selben Moment ueber den Ring, also schaut man hierher.
-        // Ueber allem, auch ueber dem Knopf – aber nur an den Raendern und
-        // nur anderthalb Sekunden (`EffectFlames`).
-        .overlay {
-            if tore {
-                EffectFlames(trigger: tore, startsOnAppear: true)
-            }
         }
         .onAppear {
             // Jeder Rang klingt anders – man hoert, welche Karte kam, bevor

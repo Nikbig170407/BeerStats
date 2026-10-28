@@ -29,7 +29,7 @@
 //  Regel kostete einen Shot fuer etwas, das es noch nicht zu sehen gab
 //  (26. Oktober). Seitdem ist sie der Waechter, und erst mit ihr ist mehr
 //  Ueberlappung unbedenklich: Wie dicht die Karten auch liegen, an der
-//  Schwelle klafft immer mindestens eine Viertelkarte.
+//  Schwelle klafft immer mindestens so viel, wie sie verlangt.
 //
 //  Die Werte sind eine Entscheidung des Nutzers vom 27. Oktober, nach dem
 //  Test am Tisch: "Reisst ein bisschen schnell – Karten groesser, mehr
@@ -39,11 +39,16 @@
 //  Streuung mit: Es gibt jetzt mehr ganz dichte Stellen und einzelne
 //  duenne, und an denen reisst es – sichtbar.
 //
-//  Durchgerechnet, nicht geraten (zehntausende simulierte Runden): Auf
-//  einem frisch gelegten Ring reisst etwa jeder ACHTE Zug, die drei Shots
-//  halten rund fuenfzehn Zuege. Die genauen Grenzen haelt
-//  `RingLayoutTests` fest – dort und nicht hier stehen die Zahlen, an
-//  denen etwas haengt.
+//  Und am 28. Oktober noch einmal: "Reisst fast immer innerhalb von 1–3
+//  Karten." Nachgerechnet stimmte das – bei 20 Karten riss es in vier von
+//  zehn Runden schon in den ersten drei Zuegen. Seitdem zaehlt erst eine
+//  HALBE Karte Luecke. Was darunter liegt, ueberbrueckt sichtbar der
+//  Glutfaden (`links`), damit man eine Luecke nicht fuer einen Riss haelt,
+//  der keiner ist.
+//
+//  Durchgerechnet, nicht geraten (zehntausende simulierte Runden). Die
+//  Grenzen haelt `RingLayoutTests` fest – dort und nicht hier stehen die
+//  Zahlen, an denen etwas haengt.
 //
 //  Bezahlt werden nur die ersten drei Risse (`RingOfFireView`), und nach
 //  den ersten beiden wird neu gelegt.
@@ -77,13 +82,14 @@ struct RingLayout: Equatable {
     /// gerissen, sobald sich die Nachbarinnen nicht mehr beruehren – also
     /// bei einer Luecke von GENAU NULL. Die Schwelle war damit
     /// bauartbedingt unsichtbar: Der Shot kam in dem Moment, in dem es
-    /// noch nichts zu sehen gab, und die Luecke wuchs erst mit den
-    /// naechsten Zuegen. Am Tisch hiess das: Es kostet, und niemand
-    /// erkennt, warum.
+    /// noch nichts zu sehen gab. Am Tisch hiess das: Es kostet, und
+    /// niemand erkennt, warum.
     ///
-    /// Jetzt zahlt nur, was man sieht – ein Viertel Karte ist der
-    /// Unterschied zwischen "liegt knapp an" und "da ist ein Loch".
-    static let visibleGap = 0.25
+    /// Erst eine Viertelkarte, seit dem 28. Oktober eine halbe: Bei einer
+    /// Viertelkarte riss es dem Nutzer zu schnell. Mit der hoeheren
+    /// Schwelle entstehen Luecken, die noch NICHT zaehlen – die zeigt der
+    /// Glutfaden als gehalten, sonst saehe der Tisch ein Loch ohne Shot.
+    static let visibleGap = 0.55
 
     // MARK: - Auslegen
 
@@ -223,6 +229,80 @@ struct RingLayout: Equatable {
     /// Klafft zwischen diesen beiden Karten eine sichtbare Luecke?
     func isOpen(from: Int, to: Int) -> Bool {
         freeSpan(from: from, to: to) >= openingThreshold
+    }
+
+    // MARK: - Der Glutfaden
+
+    /// Die Verbindung zwischen zwei liegenden Nachbarinnen, so wie der
+    /// Glutfaden unter den Karten sie zeigt.
+    ///
+    /// Der Faden ist die sichtbare Seite der Schwelle: Eine Luecke unter
+    /// einer halben Karte zaehlt nicht, und ohne Faden saehe man dort ein
+    /// Loch, fuer das niemand zahlt. Mit Faden sieht man, dass es haelt –
+    /// und wie knapp. Deshalb rechnet er mit denselben Zahlen wie die
+    /// Regel und nicht mit eigenen; ein Test haelt fest, dass er genau dort
+    /// reisst, wo `openings` eine offene Stelle meldet.
+    struct Link: Equatable {
+
+        /// Die liegende Karte vor der Verbindung.
+        let from: Int
+
+        /// Die liegende Karte dahinter.
+        let to: Int
+
+        /// Kante der Karte `from`, in Grad.
+        let start: Double
+
+        /// Die freie Strecke bis zur Kante der Karte `to`, in Grad – negativ,
+        /// wenn sich die beiden ueberlappen.
+        let free: Double
+
+        /// Ab dieser freien Strecke ist die Stelle offen, in Grad.
+        let threshold: Double
+
+        /// Kante der Karte `to`, in Grad.
+        var end: Double { start + free }
+
+        /// Die freie Strecke im Verhaeltnis zur Schwelle: unter 0 ueberlappen
+        /// sich die Karten, zwischen 0 und 1 haelt der Faden, ab 1 ist die
+        /// Stelle offen.
+        var tension: Double { free / threshold }
+
+        /// Sieht man zwischen den beiden Karten ueberhaupt etwas?
+        var isVisible: Bool { free > 0 }
+
+        /// Ist der Faden hier gerissen? Derselbe Vergleich wie in `isOpen`
+        /// des Rings und nicht ueber `tension` – eine geteilte Zahl kann an
+        /// der Schwelle anders runden als die Regel.
+        var isOpen: Bool { free >= threshold }
+    }
+
+    /// Alle Verbindungen zwischen liegenden Nachbarinnen, in Laufrichtung.
+    func links(present: [Bool]) -> [Link] {
+        guard present.count == angles.count else { return [] }
+        let liegende = present.indices.filter { present[$0] }
+        // Wie bei `openings`: Mit zwei Karten gibt es keinen Ring.
+        guard liegende.count >= 3, openingThreshold > 0 else { return [] }
+
+        return liegende.indices.map { stelle in
+            let von = liegende[stelle]
+            let nach = liegende[(stelle + 1) % liegende.count]
+            let frei = freeSpan(from: von, to: nach)
+            let start = angles[von] + cardSpan / 2
+            return Link(from: von, to: nach, start: start, free: frei, threshold: openingThreshold)
+        }
+    }
+
+    /// Die Verbindung, die ueber eine gezogene Karte hinweg entstanden ist –
+    /// zwischen ihren beiden naechsten noch liegenden Nachbarinnen.
+    func link(over position: Int, present: [Bool]) -> Link? {
+        let anzahl = angles.count
+        return links(present: present).first { link in
+            // Liegt `position` in Laufrichtung zwischen den beiden?
+            let bisPosition = ((position - link.from) % anzahl + anzahl) % anzahl
+            let bisZiel = ((link.to - link.from) % anzahl + anzahl) % anzahl
+            return bisPosition > 0 && bisPosition < bisZiel
+        }
     }
 
     // MARK: - Rechnerei
