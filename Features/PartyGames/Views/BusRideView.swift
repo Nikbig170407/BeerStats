@@ -37,15 +37,19 @@ struct BusRideView: View {
     }
 
     private struct Question {
-        let title: String
+        /// Zwei Zeilen fuer die Fahrtziel-Anzeige – hoechstens vierzehn
+        /// Zeichen je Zeile, mehr passt nicht auf die Tafel.
+        let board: (top: String, bottom: String)
+        /// Der Name der Haltestelle.
+        let stop: String
         let options: [String]
     }
 
     private static let questions: [Question] = [
-        Question(title: "Rot oder Schwarz?", options: ["Rot", "Schwarz"]),
-        Question(title: "Höher oder tiefer?", options: ["Höher", "Tiefer"]),
-        Question(title: "Innerhalb oder außerhalb?", options: ["Innerhalb", "Außerhalb"]),
-        Question(title: "Welche Farbe?", options: ["Herz", "Karo", "Pik", "Kreuz"])
+        Question(board: ("ROT ODER", "SCHWARZ?"), stop: "Farbe", options: ["Rot", "Schwarz"]),
+        Question(board: ("HÖHER ODER", "TIEFER?"), stop: "Höher", options: ["Höher", "Tiefer"]),
+        Question(board: ("INNERHALB", "ODER AUSSEN?"), stop: "Innen", options: ["Innerhalb", "Außerhalb"]),
+        Question(board: ("WELCHE", "FARBE?"), stop: "Symbol", options: ["Herz", "Karo", "Pik", "Kreuz"])
     ]
 
     /// Wie viele Karten die Busfahrt lang ist.
@@ -81,6 +85,20 @@ struct BusRideView: View {
     /// zeichnet.
     private var round: Int { min(drawn.count, Self.questions.count - 1) }
 
+    @Environment(\.gameWorld) private var world
+
+    /// Wo der Bus steht: an der Frage, die gerade dran ist – auf der
+    /// Busfahrt an der Karte, die als Naechstes kommt.
+    private var busPosition: Double {
+        isRiding
+            ? Double(min(ridePosition, Self.rideLength - 1))
+            : Double(round)
+    }
+
+    private var stops: [String] {
+        isRiding ? (1...Self.rideLength).map { "\($0)" } : Self.questions.map(\.stop)
+    }
+
     private var isRiding: Bool {
         switch phase {
         case .rideReady, .riding, .busted, .escaped: return true
@@ -103,6 +121,7 @@ struct BusRideView: View {
                         TurnRow(turn: turn, tint: BeerStatsColor.accentSecondary)
                     }
                     cardRow(in: geometry.size.width)
+                    BusStops(labels: stops, reached: isRiding ? ridePosition : drawn.count, position: busPosition)
                     statusPanel
                     controls
                 }
@@ -136,6 +155,7 @@ struct BusRideView: View {
         return HStack(spacing: abstand) {
             ForEach(Array(0..<anzahl), id: \.self) { slot in
                 PlayingCardView(card: card(at: slot), width: breite)
+                    .modifier(FlipOnReveal(value: card(at: slot)))
                     .opacity(dimmed(slot) ? 0.35 : 1)
             }
         }
@@ -169,91 +189,66 @@ struct BusRideView: View {
         switch phase {
         case .asking:
             panel(tint: BeerStatsColor.accentSecondary, intensity: 0.5) {
-                Text("FRAGE \(round + 1) VON 4")
-                    .font(Font.scaled(12, weight: .heavy, design: .rounded))
-                    .kerning(2.4)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-
-                Text(Self.questions[round].title)
-                    .font(.scaled(30, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BeerStatsColor.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                DestinationBoard(top: Self.questions[round].board.top, bottom: Self.questions[round].board.bottom)
 
                 Text("Falsch kostet \(DrinkAmount.sips(round + 1).text)")
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.accentSecondary)
+                    .font(Font.world(world, 15, weight: .semibold))
+                    .foregroundStyle(NightBus.amber)
             }
 
         case .wrong(let sips):
             resultPanel(
-                emoji: "🍺",
-                title: "DANEBEN",
+                board: ("DANEBEN", "VON VORN"),
                 message: "Trink \(DrinkAmount.sips(sips).text) und fang von vorne an.",
                 tint: BeerStatsColor.error
             )
 
         case .survived:
             resultPanel(
-                emoji: "🎉",
-                title: "DURCHGEKOMMEN",
+                board: ("DURCH!", "DU BIST RAUS"),
                 message: "Alle vier richtig – du bist raus. Das Handy geht weiter.",
                 tint: BeerStatsColor.success
             )
 
         case .rideReady:
             resultPanel(
-                emoji: "🚌",
-                title: "DIE BUSFAHRT",
+                board: ("DIE BUSFAHRT", "\(Self.rideLength) KARTEN"),
                 message: "Wer am meisten daneben lag, fährt Bus. \(Self.rideLength) Karten aufdecken – jede Bildkarte schickt dich zurück an den Anfang. Je weiter du kommst, desto teurer.",
                 tint: BeerStatsColor.warning
             )
 
         case .riding:
             panel(tint: BeerStatsColor.warning, intensity: 0.6) {
-                Text("KARTE \(ridePosition + 1) VON \(Self.rideLength)")
-                    .font(Font.scaled(12, weight: .heavy, design: .rounded))
-                    .kerning(2.4)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+                DestinationBoard(top: "HALT \(ridePosition + 1) VON \(Self.rideLength)", bottom: "BILD: ZURÜCK")
 
-                Text("Zahl ist gut, Bild ist schlecht.")
-                    .font(.scaled(26, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BeerStatsColor.textPrimary)
+                Text("Zahl ist gut, Bild ist schlecht. Ein Bild kostet jetzt \(DrinkAmount.sips(ridePosition + 1).text).")
+                    .font(Font.world(world, 15, weight: .semibold))
+                    .foregroundStyle(NightBus.amber)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-
-                Text("Ein Bild kostet jetzt \(DrinkAmount.sips(ridePosition + 1).text)")
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.warning)
             }
 
         case .busted(let sips):
             resultPanel(
-                emoji: "🛑",
-                title: "ZURÜCK AN DEN ANFANG",
+                board: ("ZURÜCK AN", "DEN ANFANG"),
                 message: "Bild gezogen. Trink \(DrinkAmount.sips(sips).text) – und nochmal von Karte eins.",
                 tint: BeerStatsColor.error
             )
 
         case .escaped:
             resultPanel(
-                emoji: "🏁",
-                title: "AUSGESTIEGEN",
+                board: ("AUSGESTIEGEN", "ENDSTATION"),
                 message: "Alle \(Self.rideLength) Karten ohne Bild. Du bist raus – verteile \(DrinkAmount.sips(3).text).",
                 tint: BeerStatsColor.success
             )
         }
     }
 
-    private func resultPanel(emoji: String, title: String, message: String, tint: Color) -> some View {
+    /// Ergebnis auf der Fahrtziel-Anzeige, die Erklaerung darunter. Ob es
+    /// gut oder schlecht ausging, sagt die Kante: Gruen und Rot bleiben.
+    private func resultPanel(board: (top: String, bottom: String), message: String, tint: Color) -> some View {
         panel(tint: tint, intensity: 0.8) {
-            Text(emoji).font(.system(size: 52))
-            Text(title)
-                .font(.scaled(26, weight: .heavy, design: .rounded))
-                .kerning(2)
-                .foregroundStyle(tint)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            DestinationBoard(top: board.top, bottom: board.bottom)
             Text(message)
                 .font(BeerStatsFont.body)
                 .foregroundStyle(BeerStatsColor.textPrimary)
@@ -350,18 +345,12 @@ struct BusRideView: View {
             answer(index)
         } label: {
             Text(title)
-                .font(BeerStatsFont.headline)
+                .font(Font.world(world, 18, weight: .bold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
-                .background(
-                    BeerStatsColor.surfaceElevated,
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(BeerStatsColor.accentSecondary.opacity(0.45), lineWidth: 1)
-                )
+                .glassPanel(cornerRadius: 16)
+                .neonEdge(BeerStatsColor.warning, cornerRadius: 16, intensity: 0.45)
                 .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(PressableButtonStyle())

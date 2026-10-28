@@ -61,4 +61,27 @@ final class GameWorldTests: XCTestCase {
             XCTAssertEqual(welt.edgeColor(for: BeerStatsColor.warning), welt.look.edge, "\(welt)")
         }
     }
+
+    // MARK: - Zeitstrahl: Farbe heisst Jahrzehnt
+
+    /// Jedes Jahrzehnt im Stapel hat seine eigene Farbe. Zwei gleiche, und
+    /// die Reihe im Regal sagte nicht mehr, was sie sagen soll.
+    func testEveryDecadeInTheSongDeckHasItsOwnColor() {
+        let jahrzehnte = Set(SongDeck.shuffled().map { $0.year / 10 * 10 }).sorted()
+        XCTAssertGreaterThan(jahrzehnte.count, 1)
+
+        for (i, a) in jahrzehnte.enumerated() {
+            for b in jahrzehnte.dropFirst(i + 1) {
+                XCTAssertNotEqual(RecordShelf.color(forYear: a), RecordShelf.color(forYear: b), "\(a) und \(b)")
+            }
+        }
+    }
+
+    /// Solange geraten wird, ist die Huelle schwarz – und schwarz darf kein
+    /// Jahrzehnt sein, sonst verriete die neutrale Huelle doch etwas.
+    func testTheBlankSleeveGivesNoDecadeAway() {
+        for jahr in SongDeck.shuffled().map(\.year) {
+            XCTAssertNotEqual(RecordShelf.color(forYear: jahr), RecordShelf.blankSleeve, "\(jahr)")
+        }
+    }
 }

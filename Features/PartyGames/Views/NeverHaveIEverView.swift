@@ -30,6 +30,8 @@ struct NeverHaveIEverView: View {
     /// Wie oft weitergegeben wurde. Wer das ist, rechnet `TurnRow`.
     @State private var turn = 0
 
+    @Environment(\.gameWorld) private var world
+
     private var currentCard: NeverHaveIEverCard? {
         deck.indices.contains(index) ? deck[index] : nil
     }
@@ -79,17 +81,14 @@ struct NeverHaveIEverView: View {
                 endRadius: 280
             )
 
-            VStack(spacing: 16) {
-                Text("🥃")
-                    .font(.system(size: 96))
+            VStack(spacing: 22) {
+                WarningTriangle(tube: NeonSign.red)
+                    .frame(width: 120, height: 104)
                     .scaleEffect(flashPulse ? 1 : 0.4)
                     .rotationEffect(.degrees(flashPulse ? 0 : -25))
 
-                Text("STRAFE")
-                    .font(.scaled(40, weight: .heavy, design: .rounded))
+                NeonText(text: "STRAFE", tube: NeonSign.red, font: Font.world(world, 40, weight: .heavy))
                     .kerning(5)
-                    .foregroundStyle(BeerStatsColor.accentSecondary)
-                    .shadow(color: BeerStatsColor.accentSecondary.opacity(0.6), radius: 14)
                     .opacity(flashPulse ? 1 : 0)
             }
         }
@@ -112,8 +111,9 @@ struct NeverHaveIEverView: View {
 
     private var setupContent: some View {
         VStack(spacing: 18) {
-            Text("🍻")
-                .font(.system(size: 56))
+            NeonText(text: "ICH HAB NOCH NIE", tube: NeonSign.cyan, font: Font.world(world, 24, weight: .semibold))
+                .kerning(3)
+                .padding(.vertical, 8)
 
             Text("Reihum vorlesen. Wer es schon gemacht hat, trinkt.")
                 .font(BeerStatsFont.body)
@@ -222,40 +222,14 @@ struct NeverHaveIEverView: View {
     }
 
     private func cardView(_ card: NeverHaveIEverCard) -> some View {
-        let isPenalty = card.isPenalty
-        let tint = isPenalty ? BeerStatsColor.accentSecondary : BeerStatsColor.success
+        // Kein fester Vorspann: Der ganze Satz steht auf der Karte, weil
+        // "Ich bin noch nie" und "Ich hatte noch nie" sonst nicht gehen.
+        // Oben leuchtet deshalb nur die Stufe – oder die Strafe.
+        let kopf = card.isPenalty ? "STRAFE" : (card.level?.title.uppercased() ?? "EIGENE KARTE")
 
-        return VStack(spacing: 16) {
-            Spacer(minLength: 0)
-
-            Text(isPenalty ? "🥃" : (card.level?.emoji ?? "🍻"))
-                .font(.system(size: 34))
-
-            // Kein fester Vorspann mehr: Der ganze Satz steht auf der Karte,
-            // weil "Ich bin noch nie" und "Ich hatte noch nie" sonst nicht
-            // gehen. Hier steht deshalb nur noch die Stufe.
-            Text(isPenalty ? "STRAFE" : (card.level?.title.uppercased() ?? ""))
-                .font(Font.scaled(12, weight: .heavy, design: .rounded))
-                .kerning(2.4)
-                .foregroundStyle(isPenalty ? tint : BeerStatsColor.textSecondary)
-
-            Text(card.text)
-                .font(.scaled(isPenalty ? 30 : 24, weight: .bold, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
-        }
-        // Fuellt den Platz, statt ihn frei zu lassen: Hier stand ein
-        // `Spacer` zwischen Karte und Knoepfen, und die Karte blieb so klein
-        // wie ihr Text – auf einem grossen Geraet lag die Haelfte des
-        // Screens leer. Die Spacer INNEN halten den Text in der Mitte der
-        // Karte.
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(28)
-        .glassPanel(cornerRadius: 24)
-        .neonEdge(tint, cornerRadius: 24, intensity: isPenalty ? 0.9 : 0.6)
+        // Die Roehre fuellt den Platz (`maxHeight: .infinity` im Schild),
+        // statt ihn frei zu lassen – der Satz steht in ihrer Mitte.
+        return NeonCard(id: card.id.uuidString, header: kopf, text: card.text, isPenalty: card.isPenalty)
         // Der Kartenwechsel schiebt seitlich – so wirkt es wie ein Stapel
         // und nicht wie ein Text, der sich austauscht.
         .id(card.id)
@@ -326,10 +300,8 @@ struct NeverHaveIEverView: View {
 
     private var finishedView: some View {
         VStack(spacing: 18) {
-            Text("🏁").font(.system(size: 60))
-            Text("Stapel durch")
-                .font(BeerStatsFont.title)
-                .foregroundStyle(BeerStatsColor.textPrimary)
+            NeonText(text: "STAPEL DURCH", tube: NeonSign.pink, font: Font.world(world, 30, weight: .bold))
+                .kerning(2)
             Text("\(deck.count) Karten gespielt. Neu mischen für die nächste Runde.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)

@@ -44,6 +44,8 @@ struct TimelineView: View {
 
     private let penalty = DrinkAmount.sips(2)
 
+    @Environment(\.gameWorld) private var world
+
     /// Wer das Lied abspielt: der Nachbar des Ratenden.
     private var dj: Int { playerCount > 1 ? (guesser + 1) % playerCount : 0 }
 
@@ -136,10 +138,8 @@ struct TimelineView: View {
 
     private var handoffView: some View {
         panel {
-            Text("📱").font(.system(size: 54))
-
             Text("\(PlayerNames.name(for: dj)) nimmt das Handy")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 24, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -180,24 +180,18 @@ struct TimelineView: View {
         }
     }
 
+    /// Das Lied in seiner Huelle – schwarz, solange geraten wird. Die
+    /// Farbe einer Huelle verraet das Jahrzehnt, und das darf hier noch
+    /// niemand sehen.
     private var songPanel: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Text("SPIEL DAS AN")
-                .font(.scaled(11, weight: .heavy, design: .rounded))
+                .font(Font.world(world, 12, weight: .heavy))
                 .kerning(1.8)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
-            Text(current?.title ?? "–")
-                .font(.scaled(24, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(current?.artist ?? "")
-                .font(BeerStatsFont.headline)
-                .foregroundStyle(BeerStatsColor.accentSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            RecordSleeve(title: current?.title ?? "–", artist: current?.artist ?? "", year: nil)
+                .frame(width: 230, height: 230)
 
             Text("Jahr nicht verraten – es steht hier ohnehin noch nicht.")
                 .font(BeerStatsFont.caption)
@@ -205,9 +199,6 @@ struct TimelineView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(18)
-        .glassPanel(cornerRadius: 20)
-        .neonEdge(BeerStatsColor.accentSecondary, cornerRadius: 20, intensity: 0.6)
     }
 
     /// Die Reihe des Ratenden: Karten und dazwischen die Luecken.
@@ -244,12 +235,10 @@ struct TimelineView: View {
         .buttonStyle(PressableButtonStyle())
     }
 
+    /// Ein Lied im Regal: der Ruecken in der Farbe seines Jahrzehnts.
     private func cardRow(_ card: SongCard) -> some View {
         HStack(spacing: 12) {
-            Text(String(card.year))
-                .font(.scaled(17, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .monospacedDigit()
+            RecordSpine(year: card.year)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(card.title)
@@ -274,22 +263,17 @@ struct TimelineView: View {
 
     private func resultView(correct: Bool) -> some View {
         panel {
-            Text(correct ? "✅" : "❌").font(.system(size: 54))
+            // Jetzt darf die Huelle ihre Farbe zeigen: Die Platte rutscht
+            // heraus, das Jahr steht auf dem Etikett
+            if let current {
+                RecordReveal(title: current.title, artist: current.artist, year: current.year)
+                    .frame(height: 190)
 
-            Text(String(current?.year ?? 0))
-                .font(.scaled(48, weight: .heavy, design: .rounded))
-                .foregroundStyle(correct ? BeerStatsColor.success : BeerStatsColor.error)
-                .monospacedDigit()
-
-            Text(current?.title ?? "")
-                .font(BeerStatsFont.title)
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(current?.artist ?? "")
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+                Text(String(current.year))
+                    .font(Font.world(world, 48, weight: .heavy))
+                    .foregroundStyle(RecordShelf.color(forYear: current.year))
+                    .monospacedDigit()
+            }
 
             Text(correct
                  ? "Sitzt. Die Karte bleibt bei \(PlayerNames.name(for: guesser))."
@@ -323,7 +307,7 @@ struct TimelineView: View {
                 )
 
             Text("\(PlayerNames.name(for: player)) gewinnt")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 24, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

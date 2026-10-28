@@ -45,6 +45,12 @@ struct HorseRaceView: View {
     /// Wer heute am Tisch steht. Leer ist gueltig – dann laeuft das Rennen
     /// wie frueher, nur ohne Namen.
     @Environment(\.tablePlayers) private var tablePlayers
+    @Environment(\.gameWorld) private var world
+
+    private var isFinished: Bool {
+        if case .finished = phase { return true }
+        return false
+    }
 
     /// Wer auf welche Bahn gesetzt hat: Profil-ID → Index der Farbe.
     ///
@@ -82,7 +88,7 @@ struct HorseRaceView: View {
     private var sideTrack: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("SEITENSTRECKE")
-                .font(.scaled(10, weight: .heavy, design: .rounded))
+                .font(Font.world(world, 12, weight: .heavy))
                 .kerning(1.6)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -98,25 +104,14 @@ struct HorseRaceView: View {
         let isOpen = index < revealedSides
         let card = side.indices.contains(index) ? side[index] : nil
 
+        // Echte Karten neben der Bahn, verdeckt, bis alle Pferde vorbei
+        // sind – dann dreht sich die Karte um.
         return VStack(spacing: 3) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(isOpen ? Color(white: 0.94) : BeerStatsColor.surfaceElevated)
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .strokeBorder(
-                        isOpen ? Color.black.opacity(0.2) : BeerStatsColor.success.opacity(0.5),
-                        lineWidth: 1
-                    )
-                if isOpen, let card {
-                    Text(card.suit.symbol)
-                        .font(.system(size: 17))
-                        .foregroundStyle(card.suit.isRed ? Color(red: 0.79, green: 0.16, blue: 0.14) : .black)
-                }
-            }
-            .frame(height: 40)
+            PlayingCardView(card: isOpen ? card : nil, width: 44)
+                .modifier(FlipOnReveal(value: isOpen ? card : nil))
 
             Text("\(index + 1)")
-                .font(.scaled(9, weight: .bold, design: .rounded))
+                .font(Font.world(world, 11, weight: .bold))
                 .foregroundStyle(BeerStatsColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
@@ -125,13 +120,15 @@ struct HorseRaceView: View {
     // MARK: - Bahn
 
     private var track: some View {
-        VStack(spacing: 7) {
+        VStack(spacing: 6) {
             ForEach(suits.indices, id: \.self) { index in
                 lane(index)
             }
         }
         .padding(12)
         .glassPanel(cornerRadius: 18)
+        // Im Ziel: Blitz, Schwarzweiss, Stillstand
+        .modifier(PhotoFinish(isFinished: isFinished))
     }
 
     private func lane(_ index: Int) -> some View {
@@ -139,34 +136,22 @@ struct HorseRaceView: View {
         let isWinner: Bool
         if case .finished(let w) = phase { isWinner = w == index } else { isWinner = false }
 
-        return HStack(spacing: 3) {
+        return HStack(spacing: 6) {
             Text(suit.symbol)
                 .font(.system(size: 19))
                 .foregroundStyle(suit.isRed ? BeerStatsColor.error : BeerStatsColor.textPrimary)
-                .frame(width: 24)
+                .frame(width: 22)
 
-            ForEach(0...Self.finishLine, id: \.self) { field in
-                ZStack {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(field == Self.finishLine
-                              ? BeerStatsColor.success.opacity(0.25)
-                              : BeerStatsColor.surfaceElevated.opacity(0.55))
-                    if positions[index] == field {
-                        Text("🐎")
-                            .font(.system(size: 15))
-                    }
-                }
-                .frame(height: 26)
-                .frame(maxWidth: .infinity)
-            }
+            RaceLane(suit: suit, position: positions[index], finish: Self.finishLine)
+                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
         }
-        .padding(.vertical, 3)
-        .padding(.horizontal, 5)
+        .padding(3)
+        // Hell statt gruen: Das Zielfoto ist schwarzweiss, und der Sieger
+        // soll darauf trotzdem herausstechen
         .background(
-            isWinner ? BeerStatsColor.success.opacity(0.16) : Color.clear,
-            in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+            isWinner ? Color.white.opacity(0.22) : Color.clear,
+            in: RoundedRectangle(cornerRadius: 8, style: .continuous)
         )
-        .animation(AppAnimation.standard, value: positions[index])
     }
 
     // MARK: - Einsaetze
@@ -202,7 +187,7 @@ struct HorseRaceView: View {
         if phase == .betting, !tablePlayers.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Text("WER SETZT AUF WAS")
-                    .font(.scaled(11, weight: .heavy, design: .rounded))
+                    .font(Font.world(world, 13, weight: .heavy))
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
@@ -309,9 +294,9 @@ struct HorseRaceView: View {
         switch phase {
         case .betting:
             VStack(spacing: 8) {
-                Text("🐎").font(.system(size: 40))
-                Text("Setzt eure Pferde")
-                    .font(BeerStatsFont.title)
+                Text("SETZT EURE PFERDE")
+                    .font(Font.world(world, 28, weight: .heavy))
+                    .kerning(1.5)
                     .foregroundStyle(BeerStatsColor.textPrimary)
                 Text(tablePlayers.isEmpty
                      ? "Jeder sagt laut, auf welche Farbe er setzt. Wer auf den Sieger tippt, verteilt \(winnerReward.text) – alle anderen trinken \(loserPenalty.text)."
@@ -332,7 +317,7 @@ struct HorseRaceView: View {
                         PlayingCardView(card: lastCard, width: 54)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("\(lastCard.suit.name) rückt vor")
-                                .font(BeerStatsFont.headline)
+                                .font(Font.world(world, 20, weight: .bold))
                                 .foregroundStyle(BeerStatsColor.textPrimary)
                             Text("\(deck.count) Karten im Stapel")
                                 .font(BeerStatsFont.caption)
@@ -366,9 +351,9 @@ struct HorseRaceView: View {
 
         case .finished(let winner):
             VStack(spacing: 10) {
-                Text("🏁").font(.system(size: 44))
-                Text("\(suits[winner].name) gewinnt")
-                    .font(BeerStatsFont.title)
+                Text("\(suits[winner].name.uppercased()) GEWINNT")
+                    .font(Font.world(world, 30, weight: .heavy))
+                    .kerning(1.5)
                     .foregroundStyle(BeerStatsColor.success)
                 Text(names(on: winner).map { "\($0) \(verb("verteilt", "verteilen", on: winner)) \(winnerReward.text)." }
                      ?? "Wer auf \(suits[winner].name) gesetzt hat, verteilt \(winnerReward.text).")

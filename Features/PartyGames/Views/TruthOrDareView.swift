@@ -22,6 +22,8 @@ struct TruthOrDareView: View {
     /// Wie oft weitergegeben wurde. Wer das ist, rechnet `TurnRow`.
     @State private var turn = 0
 
+    @Environment(\.gameWorld) private var world
+
     private var tint: Color {
         current?.kind == .dare ? BeerStatsColor.accentSecondary : BeerStatsColor.accent
     }
@@ -59,12 +61,10 @@ struct TruthOrDareView: View {
 
     private var chooser: some View {
         VStack(spacing: 18) {
-            Text("🎭").font(.system(size: 56))
-
             TurnRow(turn: turn)
 
             Text(PlayerNames.knowsNames ? "Wahrheit oder Pflicht?" : "Wer dran ist, wählt.")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 26, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
 
@@ -75,70 +75,54 @@ struct TruthOrDareView: View {
 
             Spacer(minLength: 0)
 
-            chooserButton(.truth, tint: BeerStatsColor.accent, remaining: truths.count)
-            chooserButton(.dare, tint: BeerStatsColor.accentSecondary, remaining: dares.count)
+            // Die Stapel liegen, wo ihre Haelfte des Tisches ist: die
+            // Wahrheit oben links, die Pflicht unten rechts
+            pile(.truth, remaining: truths.count)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            pile(.dare, remaining: dares.count)
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
-    private func chooserButton(_ kind: TruthOrDareKind, tint: Color, remaining: Int) -> some View {
+    private func pile(_ kind: TruthOrDareKind, remaining: Int) -> some View {
         Button {
             draw(kind)
         } label: {
-            HStack(spacing: 16) {
-                Text(kind.emoji).font(.system(size: 34))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(kind.title)
-                        .font(BeerStatsFont.title)
-                        .foregroundStyle(BeerStatsColor.textPrimary)
-                    Text("\(remaining) übrig")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                }
-                Spacer()
-            }
-            .padding(20)
-            .frame(maxWidth: .infinity)
-            .glassPanel(cornerRadius: 20)
-            .neonEdge(tint, cornerRadius: 20, intensity: 0.6)
-            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            CardPile(kind: kind, remaining: remaining)
+                .frame(width: 220)
+                .contentShape(Rectangle())
         }
         .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel("\(kind.title) ziehen, \(remaining) übrig")
     }
 
     // MARK: - Karte
 
+    /// Die gezogene Karte. Sie fuellt den Platz (`maxHeight: .infinity` in
+    /// `TruthOrDareFace`), statt ihn frei zu lassen – und wer verweigert,
+    /// zerreisst sie.
     private func cardView(_ card: TruthOrDareCard) -> some View {
-        VStack(spacing: 16) {
-            Spacer(minLength: 0)
-
-            Text(card.kind.emoji).font(.system(size: 36))
-
-            Text(card.kind.title.uppercased())
-                .font(Font.scaled(13, weight: .heavy, design: .rounded))
-                .kerning(2.8)
-                .foregroundStyle(tint)
-
-            Text(card.text)
-                .font(.scaled(25, weight: .bold, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
+        Group {
+            if isRefusing {
+                TornApart { face(card) }
+            } else {
+                face(card)
+            }
         }
-        // Fuellt den Platz, statt ihn frei zu lassen: Hier stand ein
-        // `Spacer` zwischen Karte und Knoepfen, und die Karte blieb so klein
-        // wie ihr Text. Die Spacer INNEN halten den Text in der Mitte.
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(28)
-        .glassPanel(cornerRadius: 24)
-        .neonEdge(tint, cornerRadius: 24, intensity: 0.7)
         .id(card.id)
         .transition(.asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
+            insertion: .drawn(from: card.kind),
             removal: .move(edge: .leading).combined(with: .opacity)
         ))
         .animation(AppAnimation.standard, value: card.id)
+    }
+
+    private func face(_ card: TruthOrDareCard) -> some View {
+        TruthOrDareFace(
+            kind: card.kind,
+            text: card.text,
+            price: "Verweigern kostet \(TruthOrDareDeck.refusal.text)"
+        )
     }
 
     private var resolveControls: some View {
@@ -172,23 +156,23 @@ struct TruthOrDareView: View {
 
     // MARK: - Verweigert
 
+    /// Nur abgedunkelt, nicht zugedeckt: Dahinter faellt die zerrissene
+    /// Karte auseinander, und das soll man sehen.
     private var refusalOverlay: some View {
         ZStack {
-            BeerStatsColor.backgroundPrimary.opacity(0.93)
+            Color.black.opacity(0.35)
             RadialGradient(
-                colors: [BeerStatsColor.error.opacity(0.4), .clear],
+                colors: [BeerStatsColor.error.opacity(0.35), .clear],
                 center: .center,
                 startRadius: 20,
                 endRadius: 280
             )
-            VStack(spacing: 14) {
-                Text("🍺").font(.system(size: 90))
-                Text(TruthOrDareDeck.refusal.text.uppercased())
-                    .font(.scaled(34, weight: .heavy, design: .rounded))
-                    .kerning(2)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(BeerStatsColor.error)
-            }
+            Text(TruthOrDareDeck.refusal.text.uppercased())
+                .font(.scaled(44, weight: .black, design: .default, width: .compressed))
+                .kerning(2)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(BeerStatsColor.error)
+                .shadow(color: .black.opacity(0.7), radius: 10)
         }
         .ignoresSafeArea()
         .contentShape(Rectangle())
