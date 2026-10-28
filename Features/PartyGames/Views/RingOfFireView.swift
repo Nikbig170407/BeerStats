@@ -101,6 +101,9 @@ struct RingOfFireView: View {
 
     /// Die Karte, auf der das Licht gerade steht, waehrend gezogen wird.
     @State private var spotlight: Int?
+    /// Die Raenge der letzten Zuege, juengster zuletzt – damit derselbe
+    /// Rang nicht gleich wiederkommt (`RingDraw`).
+    @State private var recentRanks: [Int] = []
     @State private var isDrawing = false
     @State private var drawTask: Task<Void, Never>?
 
@@ -672,6 +675,9 @@ struct RingOfFireView: View {
         withAnimation(AppAnimation.standard) { ring[position] = nil }
         SoundManager.play(.ringDraw)
 
+        // Mehr als die gedaempften Raenge braucht die Auslosung nicht
+        recentRanks = Array((recentRanks + [card.rank]).suffix(RingDraw.recentDamping.count))
+
         current = card
         currentTore = reisst
 
@@ -835,6 +841,7 @@ struct RingOfFireView: View {
         currentTore = false
         tears = 0
         needsRelayout = false
+        recentRanks = []
         turn = 0
         spotlight = nil
         tearMoment = nil
@@ -859,12 +866,13 @@ struct RingOfFireView: View {
     }
 
     /// Lost eine der noch liegenden Karten aus und laesst das Licht dorthin
-    /// laufen.
+    /// laufen. Gelost wird vorher und nicht ganz gleich verteilt: Der Rang
+    /// von eben kommt nicht gleich wieder (`RingDraw`).
     private func drawRandom() {
         guard !isDrawing else { return }
 
         let liegende = ring.indices.filter { ring[$0] != nil }
-        guard let ziel = liegende.randomElement() else { return }
+        guard let ziel = RingDraw.pick(ring: ring, recentRanks: recentRanks) else { return }
 
         isDrawing = true
         // Sofort beim Druck, nicht erst beim ersten Tick: Der Knopf muss

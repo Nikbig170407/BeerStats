@@ -1039,6 +1039,15 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     die Hälfte fest, gibt es **keine halbe Zeile**, sondern wieder die
     Zahl – „Lena, Spieler 2" liest sich wie eine Auskunft und ist eine
     halbe.
+  - **Derselbe Rang kommt nicht gleich wieder** (`RingDraw`, Wunsch des
+    Nutzers vom 28. Oktober). Mit vier Karten je Rang kam er bei reinem
+    Zufall im Schnitt dreimal je Runde direkt hintereinander, egal wie
+    groß der Ring. Jetzt ist der Rang von eben ausgeschlossen, solange etwas
+    anderes liegt, die beiden davor sind gedämpft, und Ränge mit mehr
+    offenen Karten kommen eher dran – sonst sammelten sich die
+    Wiederholungen am Ende. Gelost wird **vorher**, das Licht läuft nur hin
+    und hält dort, wo die Karte herkommt. `RingDrawTests` rechnet ganze
+    Runden mit festem Startwert durch.
   - **Das Rad tickt von der ersten Sekunde.** Die Auslosung tickte nur im
     Auslaufen; man drückte, es drehte sich, und man hörte nichts. Jetzt
     kommt beim Druck sofort ein Klang, und die schnelle Phase tickt auf
