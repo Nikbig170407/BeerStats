@@ -490,7 +490,12 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     Grund, `glassPanel` ihre Fläche, `neonEdge` ihre Kante,
     `GameSetupScreen` und `HandoffPanel` ihre Schrift. Kein Spiel muss
     dafür etwas tun, und keines kann es vergessen. In Menüs ist keine Welt
-    gesetzt – dort bleibt alles, wie es war.
+    gesetzt – sie bleiben im Rahmen der App. Einzige Ausnahme sind die
+    Spielkacheln in den Ordnern: Sie tragen den Grund ihrer Welt als
+    **stillen Deckel** (`WorldGround(…, moves: false, fillsScreen: false)`)
+    und den Titel in ihrer Schrift. Man soll das Spiel erkennen, bevor man
+    es aufmacht – still, weil eine Liste, in der überall etwas läuft, sich
+    nicht mehr liest.
   - **Die Welt steht im Katalog** (`PartyGame.world`, vollständiges
     `switch`), gesetzt in `PartyGame.destination` – auch für den Vorspann.
     Auslosen und Turnier sind kein Spiel, haben aber einen eigenen Ort
@@ -518,6 +523,19 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   - **Texturen werden einmal gezeichnet** (`WorldGround` ist
     gleichsetzbar, ein Tastendruck rechnet den Grund nicht neu), leise
     Bewegung höchstens mit 30 Bildern je Sekunde.
+  - **Die Dinge einer Welt liegen neben ihrem Grund**, eine Datei je Welt
+    in `DesignSystem/Worlds/` (`SecretFile`, `NightBus`, `Casino` …). Die
+    Spiele benutzen sie und zeichnen nicht selbst. Geteilte Bausteine
+    ziehen sich in einer Welt selbst um: `HandoffPanel` ist beim Spion eine
+    Akte (`Dossier`) und bei Verbotene Wörter ein abgeklebter Zettel
+    (`TapedCard`). Das Verhalten bleibt an einer Stelle, nur das Kleid
+    wechselt.
+  - **Verdeckt heißt: nicht gebaut.** Was eine Karte noch verbirgt – die
+    Rolle beim Spion, das Wort unter dem Klebeband –, entsteht erst, wenn
+    es aufgedeckt ist. Bloß überdeckt, liest VoiceOver es trotzdem vor.
+  - **Die Satz-Regel der Szenen gilt auch für Beerpong**: Umstellen,
+    Redemption und Trickshot haben je eine eigene Bewegung statt eines
+    gemeinsamen einfliegenden Symbols (`HighlightOverlayView`).
 
 - **Jede Szene hat ihre eigene Bewegung**
   (`DesignSystem/Components/DrawnScenes.swift`). Entscheidung des Nutzers
@@ -1140,6 +1158,17 @@ Regel gilt für Abschnitt 9.
     Spielwelten). Eine Schleife mit benannten Punkten (`let oben: Point =
     (x, 0)`) hat das Problem nicht. `check.py` meldet das Muster seitdem.
 
+17. **Setzen und im selben Durchgang zurück animieren sieht niemand.**
+    `EffectFlash` schaltete auf hell und blendete in derselben Funktion
+    wieder aus. SwiftUI zeichnet aber erst nach dem ganzen Durchgang und
+    sieht dann nur den Endwert – dunkel nach dunkel, also nichts. Der Blitz
+    kam damit nie an. Aufgefallen ist das beim Lesen (28. Oktober), nicht
+    am Tisch: Ein Blitz, der fehlt, fehlt niemandem. Die Lösung ist, den
+    Ausgangswert zu setzen und die Animation erst im nächsten Durchgang zu
+    starten (`DispatchQueue.main.async { withAnimation { … } }`). Das
+    braucht jeder Baustein, der etwas aufblitzen, anschlagen oder
+    zurückfedern lässt; in den Spielwelten steht es an mehreren Stellen.
+
 ---
 
 ## 8. Arbeitsweise
@@ -1248,13 +1277,28 @@ oben; was schief aussieht, unten.
   Mit „Bewegung reduzieren“ muss es ein ruhiges Glühen an den Rändern
   sein, nicht nichts.
 - **Jedes Spiel hat seine eigene Welt** (28. Oktober, auf Wunsch): Grund,
-  Fläche, Kante und Schrift kommen aus der Welt, die Spiele selbst sind
-  dafür nicht angefasst. Zu prüfen: Erkennt man jedes Spiel ohne seinen
-  Titel? Bleibt aller Text lesbar, auch mit großer Schrift und im
-  Tischmodus? Ruckelt etwas auf dem iPhone 13 (Glut, Lampe und Filmkorn
-  bewegen sich)? Mit „Hintergrund: Schlicht“ muss jede Welt fast
-  einfarbig sein, mit „Bewegung reduzieren“ still. Und die Menüs müssen
-  genau aussehen wie vorher.
+  Fläche, Kante und Schrift kommen aus der Welt, und jedes Spiel hat
+  seine eigenen Dinge bekommen – Akte, Würfelbecher, Leuchtreklame,
+  Zielanzeige, Pergament und so weiter. Abgestimmt wurde die Vorschau im
+  Browser; auf einem Gerät lief nichts davon. Zu prüfen, in dieser
+  Reihenfolge:
+  - **Steht der Text nach einer halben Sekunde?** Das war die Rückmeldung
+    zur Vorschau (Spion, Bussfahrer). Wo etwas noch länger braucht – sag
+    wo.
+  - **Erkennt man jedes Spiel ohne seinen Titel?** Auch an der Kachel im
+    Ordner, die jetzt den Grund ihrer Welt als Deckel trägt.
+  - **Bleibt aller Text lesbar**, mit großer Schrift und im Tischmodus?
+    Am ehesten eng: die Abfahrtstafel beim Würfel, die Stirnkarte bei
+    „Wer bin ich?" und die Anzeigetafel im Turnier.
+  - **Ruckelt etwas auf dem iPhone 13?** Am meisten zu tun haben die
+    Leuchtreklame bei „Ich hab noch nie", das Casino-Rad, die Herde, die
+    Fallblätter und die Gründe mit Bewegung (Glut, Lampe, Filmkorn).
+  - **Geht alles, was sich anders bedient?** Die Akte beim Spion und das
+    Klebeband bei Verbotene Wörter statt der alten Karte, die Kleckse und
+    Striche im Trinkbingo, die Karte, die bei „Wer bin ich?" wegfliegt.
+  - Mit „Hintergrund: Schlicht“ muss jede Welt fast einfarbig sein, mit
+    „Bewegung reduzieren“ still – und trotzdem vollständig: Jede Karte
+    muss aufgedeckt dastehen, kein Text darf fehlen.
 - **Jede Szene bewegt sich anders** (27. Oktober, auf Wunsch): Alle Szenen
   sind neu gezeichnet – dreizehn hinter den Ring-Karten, dazu Feuerwerk im
   Sieger-Screen, Rauch und Splitter in der Bombe, die Schallplatte beim
@@ -1312,6 +1356,11 @@ oben; was schief aussieht, unten.
   durch Ring of Fire, Bussfahrer und Pferderennen schauen, ob alle vier
   Farben jetzt normal aussehen.
 ### Beerpong
+- **Drei neue Einblendungen** (28. Oktober): Beim Umstellen gleiten
+  Becher in die neue Formation, bei der Redemption steht ein umgekippter
+  Becher wieder auf, beim Trickshot zieht ein Ball eine Schleife in den
+  Becher. Unterscheidet man sie im Vorbeisehen, und sind sie vorbei, bevor
+  weitergetippt wird?
 - **Hausregeln**: Eine Partie mit abgeschalteter Redemption zu Ende spielen –
   der letzte Becher muss direkt in den Sieger-Screen führen, ohne Nachwurf.
   Das Regelwerk selbst deckt `HouseRulesTests` ab, den Weg dorthin nicht:
@@ -1368,11 +1417,15 @@ oben; was schief aussieht, unten.
   es sich nach Können anfühlt? Die Trefferzone ist 15 Prozent breit, der
   straffreie Ring 36 – beides gerechnet, nicht erprobt. Zu schmal heißt
   Lotterie, zu breit heißt, jeder Hinweis gewinnt. Und: Lässt sich der
-  Regler am Tisch gemeinsam bedienen, oder reißt ihn einer an sich?
+  Zeiger am Tisch gemeinsam bedienen, oder reißt ihn einer an sich? Seit
+  dem 28. Oktober zieht man ihn direkt auf der Scheibe statt an einem
+  Regler darunter.
 - **„Was spielen wir?" (18. Oktober)**: Lost der Würfel etwas aus, das am
   Tisch gerade wirklich passt – oder landet dreimal hintereinander dasselbe
-  Spiel? Die halbe Sekunde Blättern ist geschätzt, nicht gemessen: zu kurz,
-  um zu zeigen, dass gelost wird, oder zu lang zum Warten? Und stimmen die
+  Spiel? Gelost wird auf einer Abfahrtstafel: Eine halbe Sekunde klappern
+  die Fallblätter, dann steht der Titel nach knapp einer weiteren. Beides
+  geschätzt, nicht gemessen – zu kurz, um zu zeigen, dass gelost wird,
+  oder zu lang zum Warten? Und stimmen die
   Dauer-Angaben („2 Minuten", „10 Minuten") ungefähr mit dem überein, was
   eine Runde tatsächlich braucht? Sie stehen jetzt auch auf jeder
   Spielkachel im Ordner.

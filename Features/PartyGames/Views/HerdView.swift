@@ -197,7 +197,8 @@ struct HerdView: View {
                 count: playerCount,
                 alone: Set(alone),
                 cows: Set(cow),
-                names: Dictionary(uniqueKeysWithValues: alone.map { ($0, PlayerNames.plainName(for: $0)) })
+                names: Dictionary(uniqueKeysWithValues: alone.map { ($0, PlayerNames.plainName(for: $0)) }),
+                startsGathered: true
             )
             .id("ergebnis-\(round)")
 

@@ -97,10 +97,10 @@ struct HighlightOverlayView: View {
         case .ballsBack:    BallsBackArt(isAnimating: isAnimating, reduceMotion: reduceMotion)
         case .bombe:        BombArt(isAnimating: isAnimating, reduceMotion: reduceMotion)
         case .onFire:       FlameArt(isAnimating: isAnimating, reduceMotion: reduceMotion)
-        case .reRack:       SpinArt(symbol: "arrow.triangle.2.circlepath", isAnimating: isAnimating, reduceMotion: reduceMotion)
-        case .redemption:   SpinArt(symbol: "flame.circle", isAnimating: isAnimating, reduceMotion: reduceMotion)
+        case .reRack:       ReRackArt(reduceMotion: reduceMotion)
+        case .redemption:   RedemptionArt(reduceMotion: reduceMotion)
         case .bounce:       BounceArt(reduceMotion: reduceMotion)
-        case .trickshot:    SpinArt(symbol: "tornado", isAnimating: isAnimating, reduceMotion: reduceMotion)
+        case .trickshot:    TrickshotArt(reduceMotion: reduceMotion)
         case .neutral:      EmptyView()
         }
     }
@@ -336,28 +336,125 @@ private struct FlameArt: View {
     }
 }
 
-// MARK: - Umstellen und Redemption: einfliegendes Symbol
+// MARK: - Umstellen, Redemption, Trickshot: je eine eigene Bewegung
+//
+// Bis zum 28. Oktober teilten sich diese drei dasselbe einfliegende Symbol,
+// nur das Zeichen wechselte – ein anderes Zeichen auf derselben Bahn ist
+// keine andere Szene (Satz-Regel). Jetzt:
+// - Umstellen: Becher gleiten von oben gesehen in die neue Formation.
+// - Redemption: Ein umgekippter Becher richtet sich wieder auf.
+// - Trickshot: Ein Ball zieht eine Schleife und faellt in den Becher.
 
-private struct SpinArt: View {
-    let symbol: String
-    let isAnimating: Bool
-    let reduceMotion: Bool
-
-    @State private var angle: Double = -170
-    @State private var scale: CGFloat = 0.4
+/// Ein Becher von oben: roter Rand, weisse Kante, dunkles Inneres.
+private struct CupTop: View {
+    var size: CGFloat = 28
 
     var body: some View {
-        Image(systemName: symbol)
-            .font(.system(size: 52, weight: .semibold))
-            .foregroundStyle(BeerStatsColor.accent)
-            .rotationEffect(.degrees(angle))
-            .scaleEffect(scale)
-            .onAppear {
-                guard !reduceMotion else { angle = 0; scale = 1; return }
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
-                    angle = 0
-                    scale = 1
-                }
+        ZStack {
+            Circle().fill(BeerStatsColor.cupBase)
+            Circle().strokeBorder(Color.white.opacity(0.65), lineWidth: 2).padding(size * 0.09)
+            Circle().fill(BeerStatsColor.cupShadow).padding(size * 0.2)
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+/// Umstellen: sechs Becher im Dreieck gleiten nacheinander in eine Raute.
+private struct ReRackArt: View {
+    let reduceMotion: Bool
+
+    @State private var moved = false
+
+    /// Plaetze in Becherbreiten, vorher und nachher.
+    private static let from: [(Double, Double)] = [(0, 0), (-1, 1), (1, 1), (-2, 2), (0, 2), (2, 2)]
+    private static let to: [(Double, Double)] = [(0, 0), (-1, 1), (1, 1), (0, 2), (-1, 3), (1, 3)]
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<6, id: \.self) { i in
+                let platz = moved ? Self.to[i] : Self.from[i]
+                CupTop()
+                    .offset(x: platz.0 * 17, y: platz.1 * 22 - 33)
+                    .animation(
+                        reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.7).delay(0.15 + Double(i) * 0.06),
+                        value: moved
+                    )
             }
+        }
+        .frame(width: 120, height: 96)
+        .onAppear { moved = true }
+    }
+}
+
+/// Redemption: Der Becher liegt auf der Seite und steht wieder auf, dann
+/// steigen ein paar Blaeschen.
+private struct RedemptionArt: View {
+    let reduceMotion: Bool
+
+    @State private var upright = false
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            CupShape()
+                .fill(LinearGradient(colors: [BeerStatsColor.cupHighlight, BeerStatsColor.cupBase, BeerStatsColor.cupShadow],
+                                     startPoint: .leading, endPoint: .trailing))
+                .frame(width: 52, height: 66)
+                .rotationEffect(.degrees(upright || reduceMotion ? 0 : -90), anchor: .bottom)
+                .animation(reduceMotion ? nil : .spring(response: 0.55, dampingFraction: 0.5).delay(0.15), value: upright)
+
+            if upright, !reduceMotion {
+                EffectCanvas(draw: { context, size, t in
+                    let w = Double(size.width), h = Double(size.height)
+                    for i in 0..<6 {
+                        let z = SceneArt.fract(max(0, t - 0.6) * 0.8 + Double(i) / 6)
+                        let x = w / 2 + SceneArt.noise(i, 3) * 14
+                        let y = h - 70 - z * 40
+                        SceneArt.circle(&context, x, y, 2.5, BeerStatsColor.accent, t > 0.6 ? 0.7 * (1 - z) : 0)
+                    }
+                })
+                .frame(width: 120, height: 96)
+            }
+        }
+        .frame(width: 120, height: 96)
+        .onAppear { upright = true }
+    }
+}
+
+/// Trickshot: Der Ball zieht eine Schleife und faellt in den Becher.
+private struct TrickshotArt: View {
+    let reduceMotion: Bool
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            CupTop(size: 36)
+                .padding(.trailing, 4)
+            EffectCanvas(draw: Self.flight, stillAt: 1.1, lasts: 1.2)
+        }
+        .frame(width: 180, height: 96)
+    }
+
+    /// Die Bahn: ein Bogen von links nach rechts, in der Mitte eine Schleife.
+    private static func position(_ s: Double, _ w: Double, _ h: Double) -> SceneArt.Point {
+        let x = 12 + (w - 34) * s
+        let y = h - 22 - sin(s * .pi) * h * 0.55
+        let schleife = s > 0.3 && s < 0.6 ? sin((s - 0.3) / 0.3 * .pi) : 0
+        let dx = sin(schleife * .pi * 2) * 22 * schleife
+        let dy = (1 - cos(schleife * .pi * 2)) * 24 * schleife
+        return (x + dx, y - dy)
+    }
+
+    private static func flight(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
+        let w = Double(size.width), h = Double(size.height)
+        let p = SceneArt.clamp(t / 1.1)
+        for k in 0..<14 {
+            let s = p - Double(k) * 0.02
+            guard s > 0 else { continue }
+            let punkt = position(s, w, h)
+            SceneArt.circle(&g, punkt.x, punkt.y, 5 - Double(k) * 0.3, BeerStatsColor.textPrimary, 0.45 * (1 - Double(k) / 14))
+        }
+        if p < 1 {
+            let ball = position(p, w, h)
+            SceneArt.circle(&g, ball.x, ball.y, 7, .white, 1)
+        }
     }
 }

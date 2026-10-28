@@ -140,8 +140,10 @@ struct PartyGameCard: View {
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
+                    // Der Titel in der Schrift seiner Welt – man erkennt
+                    // das Spiel am Deckel, bevor man den Titel liest
                     Text(game.title)
-                        .font(BeerStatsFont.headline)
+                        .font(Font.world(game.world, 17, weight: .bold))
                         .foregroundStyle(BeerStatsColor.textPrimary)
                     Text(game.subtitle)
                         .font(BeerStatsFont.caption)
@@ -179,14 +181,39 @@ struct PartyGameCard: View {
             }
             .padding(16)
             .frame(minHeight: height ?? 0)
-            .glassPanel()
-            .neonEdge(game.tint, intensity: 0.4)
+            .background { lid }
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(PressableButtonStyle())
         .sheet(isPresented: $showsRules) {
             PartyGameRulesView(game: game)
         }
+    }
+
+    /// Die Kachel als Schachteldeckel: darauf ein Standbild vom Grund der
+    /// Welt, still – eine Liste, in der ueberall etwas laeuft, liest sich
+    /// nicht. Unten dunkler, damit die Schrift steht.
+    private var lid: some View {
+        WorldGround(world: game.world, plain: false, moves: false, fillsScreen: false)
+            .equatable()
+            .overlay(
+                LinearGradient(colors: [Color.black.opacity(0.25), Color.black.opacity(0.7)],
+                               startPoint: .top, endPoint: .bottom)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.14), lineWidth: 1)
+            )
+            // Die Kante des Deckels
+            .overlay(alignment: .top) {
+                Capsule()
+                    .fill(Color.white.opacity(0.3))
+                    .frame(height: 1.5)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 2)
+            }
+            .shadow(color: .black.opacity(0.5), radius: 10, y: 5)
     }
 }
 

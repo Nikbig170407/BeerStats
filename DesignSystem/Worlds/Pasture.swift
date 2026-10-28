@@ -32,6 +32,10 @@ struct HerdField: View {
     let cows: Set<Int>
     /// Namen der Allein-Stehenden, unter ihnen geschrieben.
     var names: [Int: String] = [:]
+    /// Im Ergebnis steht die Herde schon beisammen – sie stand es bei der
+    /// Frage. Noch einmal zusammenzuruecken hiesse fast eine Sekunde warten,
+    /// bevor die Namen unter den Schafen stehen.
+    var startsGathered = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var gathered = false
@@ -39,14 +43,18 @@ struct HerdField: View {
 
     var body: some View {
         Flock(count: count, alone: alone, cows: cows, names: names,
-              gather: gathered || reduceMotion ? 1 : 0,
+              gather: gathered || startsGathered || reduceMotion ? 1 : 0,
               split: split || reduceMotion ? 1 : 0)
             .frame(height: 170)
             .onAppear {
                 guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 0.9)) { gathered = true }
+                if !startsGathered {
+                    withAnimation(.easeInOut(duration: 0.9)) { gathered = true }
+                }
                 if !alone.isEmpty {
-                    withAnimation(.easeInOut(duration: 1).delay(0.9)) { split = true }
+                    // Die Namen erscheinen, wenn die Schafe am Rand stehen –
+                    // im Ergebnis nach gut einer halben Sekunde
+                    withAnimation(.easeInOut(duration: 0.6).delay(startsGathered ? 0.05 : 0.9)) { split = true }
                 }
             }
             .accessibilityHidden(true)

@@ -41,6 +41,10 @@ struct TournamentView: View {
 
     private let roundOptions = [3, 5, 7]
 
+    /// Die Schrift des Stadions. Direkt aus der Welt und nicht aus der
+    /// Umgebung: Die Welt setzt diese Ansicht selbst, fuer ihre Kinder.
+    private let stadion = GameWorld.stadium
+
     var body: some View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.warning)
@@ -68,10 +72,9 @@ struct TournamentView: View {
 
     private var setupView: some View {
         VStack(spacing: 18) {
-            Text("🏆").font(.system(size: 56))
-
-            Text("Turnier")
-                .font(BeerStatsFont.title)
+            Text("TURNIER")
+                .font(stadion.font(44, weight: .heavy))
+                .kerning(3)
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Die App lost Spiele aus. Wer eine Runde verliert, trinkt – und je später die Runde, desto teurer.")
@@ -132,18 +135,16 @@ struct TournamentView: View {
         let game = games[index]
 
         return VStack(spacing: 18) {
-            standings
+            scoreboard(round: index)
+
+            PenaltyStairs(rounds: games.count, current: index)
+                .id(index)
 
             VStack(spacing: 12) {
-                Text("RUNDE \(index + 1) VON \(games.count)")
-                    .font(.scaled(11, weight: .heavy, design: .rounded))
-                    .kerning(2)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-
                 Text(game.emoji).font(.system(size: 52))
 
                 Text(game.title)
-                    .font(BeerStatsFont.title)
+                    .font(stadion.font(28, weight: .heavy))
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .multilineTextAlignment(.center)
 
@@ -189,10 +190,8 @@ struct TournamentView: View {
 
     private func scoringView(_ index: Int) -> some View {
         VStack(spacing: 16) {
-            Text("😬").font(.system(size: 48))
-
             Text("Wer hat \(games[index].title) verloren?")
-                .font(BeerStatsFont.title)
+                .font(stadion.font(26, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -248,13 +247,15 @@ struct TournamentView: View {
         let losers = strikes.indices.filter { strikes[$0] == worst && worst > 0 }
 
         return VStack(spacing: 18) {
-            Text("🏆").font(.system(size: 56))
-
-            Text("Turnier vorbei")
-                .font(BeerStatsFont.title)
+            Text("ENDSTAND")
+                .font(stadion.font(40, weight: .heavy))
+                .kerning(3)
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             standings
+                .padding(12)
+                .background(StadiumArt.board, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(StadiumArt.rim, lineWidth: 3))
 
             if losers.isEmpty {
                 Text("Keine Striche verteilt – ihr seid euch alle einig gewesen.")
@@ -285,27 +286,46 @@ struct TournamentView: View {
         }
     }
 
+    /// Die Anzeigetafel: Runde von Runden gross, darunter die Striche je
+    /// Person – in Sieben-Segment-Ziffern wie im Stadion.
+    private func scoreboard(round index: Int) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
+                Text("RUNDE")
+                    .font(stadion.font(15, weight: .heavy))
+                    .kerning(3)
+                    .foregroundStyle(Color.white.opacity(0.8))
+                Spacer(minLength: 0)
+                SevenSegmentNumber(value: index + 1, height: 54)
+                Text("/")
+                    .font(stadion.font(36, weight: .light))
+                    .foregroundStyle(StadiumArt.red.opacity(0.6))
+                SevenSegmentNumber(value: games.count, height: 54)
+            }
+            standings
+        }
+        .padding(16)
+        .background(StadiumArt.board, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(StadiumArt.rim, lineWidth: 3))
+    }
+
     private var standings: some View {
         VStack(spacing: 6) {
             ForEach(0..<playerCount, id: \.self) { player in
+                let striche = strikes.indices.contains(player) ? strikes[player] : 0
                 HStack {
-                    Text("\(PlayerNames.name(for: player))")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
+                    Text(PlayerNames.plainName(for: player).uppercased())
+                        .font(stadion.font(16, weight: .heavy))
+                        .kerning(1)
+                        .foregroundStyle(Color.white.opacity(0.85))
+                        .lineLimit(1)
                     Spacer()
-                    Text(strikes.indices.contains(player) && strikes[player] > 0
-                         ? String(repeating: "×", count: strikes[player])
-                         : "–")
-                        .font(BeerStatsFont.headline)
-                        .foregroundStyle(
-                            strikes.indices.contains(player) && strikes[player] > 0
-                                ? BeerStatsColor.error
-                                : BeerStatsColor.textSecondary
-                        )
+                    SevenSegmentNumber(value: striche, color: striche > 0 ? StadiumArt.amber : StadiumArt.idle, height: 26)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .glassPanel(cornerRadius: 12)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(PlayerNames.plainName(for: player)): \(striche) verloren")
             }
         }
     }

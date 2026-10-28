@@ -30,6 +30,9 @@ struct WorldGround: View, Equatable {
     let world: GameWorld
     let plain: Bool
     let moves: Bool
+    /// Als Grund eines Screens reicht er unter die Raender; als Deckel einer
+    /// Kachel bleibt er in ihr.
+    var fillsScreen = true
 
     var body: some View {
         Group {
@@ -47,7 +50,7 @@ struct WorldGround: View, Equatable {
                 }
             }
         }
-        .ignoresSafeArea()
+        .ignoresSafeArea(edges: fillsScreen ? .all : [])
         .accessibilityHidden(true)
         .allowsHitTesting(false)
     }

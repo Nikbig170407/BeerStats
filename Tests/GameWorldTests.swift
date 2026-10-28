@@ -84,4 +84,26 @@ final class GameWorldTests: XCTestCase {
             XCTAssertNotEqual(RecordShelf.color(forYear: jahr), RecordShelf.blankSleeve, "\(jahr)")
         }
     }
+
+    /// Die Abfahrtstafel des Wuerfels bricht an Wortgrenzen – aber nur, wenn
+    /// jedes Wort in eine Zeile passt. Sonst steht "REAKTIONSDUE" ueber
+    /// "LL". Und mehr Zeilen, als die Tafel hat, liessen die Karte beim
+    /// Wuerfeln huepfen.
+    func testEveryTitleFitsTheDepartureBoard() {
+        for game in PartyGame.allCases {
+            let zeilen = DepartureBoard.lines(game.title, width: DepartureBoard.columns)
+            let woerter = game.title.uppercased().split(separator: " ").joined(separator: " ")
+
+            XCTAssertEqual(zeilen.joined(separator: " "), woerter, "\(game.title) bricht mitten im Wort")
+            XCTAssertLessThanOrEqual(zeilen.count, DepartureBoard.rows, game.title)
+        }
+    }
+
+    /// Der Umbruch selbst: an Wortgrenzen, und ein Wort, das allein zu lang
+    /// ist, wird geteilt statt abgeschnitten.
+    func testTheBoardBreaksAtWordsAndSplitsOnlyWhatCannotFit() {
+        XCTAssertEqual(DepartureBoard.lines("Ich hab noch nie", width: 14), ["ICH HAB NOCH", "NIE"])
+        XCTAssertEqual(DepartureBoard.lines("Reaktionsduell", width: 10), ["REAKTIONSD", "UELL"])
+        XCTAssertEqual(DepartureBoard.lines("", width: 14), [""])
+    }
 }

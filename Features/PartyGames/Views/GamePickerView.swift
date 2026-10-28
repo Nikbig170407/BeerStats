@@ -176,21 +176,65 @@ struct GamePickerView: View {
         }
     }
 
+    /// Das Ergebnis als Abfahrtstafel: Der Spielname klappert auf
+    /// Fallblaettern durch und bleibt stehen, darunter Dauer und Spieler.
+    ///
+    /// Die Schrift kommt direkt aus der Welt und nicht aus der Umgebung:
+    /// Die Welt setzt diese Ansicht selbst, fuer ihre Kinder – hier oben
+    /// gilt sie noch nicht.
     private func card(_ game: PartyGame) -> some View {
-        VStack(spacing: 14) {
+        let tafel = GameWorld.departureBoard
+
+        return VStack(spacing: 14) {
             Spacer(minLength: 0)
 
-            Text(game.emoji)
-                .font(.system(size: 64))
-                // Waehrend des Wuerfelns wechselt nur der Inhalt, nicht die
-                // Groesse – sonst huepft die Karte.
-                .animation(nil, value: game)
+            HStack {
+                Text("ABFAHRT")
+                    .font(tafel.font(13, weight: .bold))
+                    .kerning(3)
+                    .foregroundStyle(Color.white.opacity(0.8))
+                Spacer()
+                Text(Date(), style: .time)
+                    .font(tafel.font(13, weight: .bold))
+                    .foregroundStyle(DepartureBoard.yellow)
+            }
 
-            Text(game.title)
-                .font(.scaled(30, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 10) {
+                Text(game.emoji)
+                    .font(.system(size: 30))
+                    // Waehrend des Wuerfelns wechselt nur der Inhalt, nicht
+                    // die Groesse – sonst huepft die Karte.
+                    .animation(nil, value: game)
+                Text("SPIEL")
+                    .font(tafel.font(11, weight: .semibold))
+                    .kerning(2)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                Spacer(minLength: 0)
+            }
+
+            SplitFlapText(text: game.title)
+
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("DAUER")
+                        .font(tafel.font(11, weight: .semibold))
+                        .kerning(2)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                    Text(game.length.label.uppercased())
+                        .font(tafel.font(17, weight: .heavy))
+                        .foregroundStyle(DepartureBoard.yellow)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("SPIELER")
+                        .font(tafel.font(11, weight: .semibold))
+                        .kerning(2)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                    Text(game.playersLabel.uppercased())
+                        .font(tafel.font(17, weight: .heavy))
+                        .foregroundStyle(DepartureBoard.yellow)
+                }
+            }
 
             Text(game.subtitle)
                 .font(BeerStatsFont.body)
@@ -198,16 +242,15 @@ struct GamePickerView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("\(game.length.label) · \(game.playersLabel)")
-                .font(.scaled(12, weight: .heavy, design: .rounded))
-                .foregroundStyle(game.tint)
-
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
-        .glassPanel(cornerRadius: 24)
-        .neonEdge(game.tint, cornerRadius: 24, intensity: phase == .drawn ? 0.8 : 0.3)
+        .padding(20)
+        .background(DepartureBoard.housing, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(DepartureBoard.rim, lineWidth: 2)
+        )
     }
 
     // MARK: - Ablauf
