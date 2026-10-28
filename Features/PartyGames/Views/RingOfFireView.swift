@@ -44,7 +44,15 @@
 //
 //  Vier Raenge wirken weiter, nachdem die Karte gezogen wurde. Sie landen in
 //  der Merkliste unter dem Ring, weil sie sonst mit der naechsten Karte aus
-//  dem Blick und aus dem Sinn waeren.
+//  dem Blick und aus dem Sinn waeren – und zwar erst, wenn die Karte
+//  gelesen ist, sonst verriete die Liste sie vorher.
+//
+//  Der Ring bewegt sich wie am Tisch (28. Oktober, auf Wunsch: "noch mehr
+//  Animationen"). Zu Beginn und nach jedem Riss wird aus einem Stapel in der
+//  Mitte ausgeteilt, Karte fuer Karte im Uhrzeigersinn – so SIEHT man, dass
+//  neu gemischt wurde. Die gezogene Karte hebt sich aus dem Ring, bevor der
+//  Kartenscreen kommt, das Lauflicht zieht einen Schweif, und wenn nichts
+//  mehr liegt, brennt ein Kranz (`RingFinale`).
 //
 
 import SwiftUI
@@ -107,6 +115,19 @@ struct RingOfFireView: View {
     @State private var isDrawing = false
     @State private var drawTask: Task<Void, Never>?
 
+    /// Liegen die Karten ausgeteilt im Kreis – oder als Stapel in der Mitte?
+    /// Beim Start und nach jedem Riss wird aus dem Stapel ausgeteilt.
+    @State private var dealt = true
+    /// Solange ausgeteilt oder eingesammelt wird, zieht niemand.
+    @State private var isDealing = false
+    @State private var dealTask: Task<Void, Never>?
+    /// Die Karte, die gerade aus dem Ring gehoben wird, und wie weit.
+    @State private var lifting: RingLift?
+    @State private var liftProgress = 0.0
+    /// Der Kartenscreen kommt erst, wenn die Karte aus dem Ring ist.
+    @State private var actionTask: Task<Void, Never>?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     // Laufende Rollen – ein Eintrag je vergebener Karte, weil jede weitere
     // Karte desselben Rangs eine weitere Person in dieselbe Rolle bringt:
     // Am Tisch liegen dann eben zwei Buben vor zwei Leuten.
@@ -120,6 +141,11 @@ struct RingOfFireView: View {
     // jemand dazu, verschiebt `position(forTurn:)` sich – und die Rolle
     // saesse ploetzlich bei jemand anderem, ohne dass es auffiele.
     @State private var roleHolders: [RingRoleHolder] = []
+    /// Die Rolle der Karte, die gerade gelesen wird. In die Merkliste kommt
+    /// sie erst, wenn der Kartenscreen zu ist: Die Karte hebt sich zuerst
+    /// aus dem Ring, und eine Zeile "Daumenmeister", die in dieser Zeit
+    /// unter dem Ring auftaucht, verriete die Karte, bevor man sie sieht.
+    @State private var pendingRole: RingRoleHolder?
     @State private var houseRules: [RingHouseRule] = []
     /// Wer die Regel aufstellt, die gleich eingetippt wird. Muss beim Ziehen
     /// gemerkt werden: Gefragt wird erst, wenn der Aktionsscreen zu ist, und
@@ -148,6 +174,14 @@ struct RingOfFireView: View {
             drawTask?.cancel()
             tearTask?.cancel()
             heldTask?.cancel()
+            dealTask?.cancel()
+            actionTask?.cancel()
+            // Abgebrochen darf der Ring nicht halb ausgeteilt liegen bleiben,
+            // und ein Aufleuchten, das niemand mehr zuruecknimmt, liesse den
+            // Faden ewig neu zeichnen
+            dealt = true
+            isDealing = false
+            held = nil
         }
         .sheet(isPresented: $isAskingForRule) {
             rulePrompt
@@ -254,6 +288,13 @@ struct RingOfFireView: View {
             // Der dritte Riss: Die Glut geht aus, und das hoert man
             if currentTore, ruleIsSpent { SoundManager.play(.ringOut) }
 
+            // Die Rolle der gelesenen Karte rutscht jetzt in die Merkliste –
+            // sichtbar, waehrend der Kartenscreen nach unten wegfaehrt
+            if let neu = pendingRole {
+                pendingRole = nil
+                withAnimation(AppAnimation.standard) { roleHolders.append(neu) }
+            }
+
             // Erst neu legen, dann die Hausregel fragen: Das Textfeld legt
             // sich ueber den Ring, und man soll vorher gesehen haben, dass
             // er neu liegt.
@@ -290,6 +331,12 @@ struct RingOfFireView: View {
             let innen = radius - cardHeight / 2
 
             ZStack {
+                // Ring durch: Wo die Karten lagen, brennt jetzt ein Kranz
+                // (`RingFinale`). Hinter der Zahl, damit sie lesbar bleibt.
+                if showsFinale {
+                    RingFinale(radius: radius)
+                }
+
                 VStack(spacing: 2) {
                     if innen > 56 {
                         Text("🍾").font(.system(size: innen * 0.5))
@@ -298,6 +345,8 @@ struct RingOfFireView: View {
                         .font(.system(size: innen * 0.45, weight: .heavy, design: .rounded))
                         .foregroundStyle(BeerStatsColor.error)
                         .monospacedDigit()
+                        // Die Zahl rollt herunter, statt zu springen
+                        .contentTransition(.numericText())
                     if innen > 56 {
                         Text("übrig")
                             .font(BeerStatsFont.statLabel)
@@ -315,6 +364,11 @@ struct RingOfFireView: View {
                     tearing: tearMoment?.link,
                     held: held
                 )
+                // Liegen die Karten als Stapel in der Mitte, liegt auch kein
+                // Faden im Kreis – er gluehte sonst unter Karten, die gar
+                // nicht da sind
+                .opacity(dealt ? 1 : 0)
+                .animation(embersAnimation, value: dealt)
 
                 ForEach(ring.indices, id: \.self) { position in
                     ringCard(
@@ -323,16 +377,37 @@ struct RingOfFireView: View {
                         isLit: spotlight == position,
                         isEmpty: ring[position] == nil
                     )
+                        // Als Stapel in der Mitte kleiner und leicht verdreht
+                        .scaleEffect(dealt ? 1 : RingMotion.pileScale)
                         // Erst nach aussen schieben, dann um die Mitte
                         // drehen: `offset` verschiebt nur die Darstellung,
                         // nicht den Rahmen – der Drehpunkt bleibt also die
                         // Mitte des Rings.
-                        .offset(y: -radius)
-                        .rotationEffect(.degrees(angle(for: position) + jolt(for: position)))
+                        .offset(y: dealt ? -radius : 0)
+                        .rotationEffect(.degrees(angle(for: position) + jolt(for: position) - (dealt ? 0 : RingMotion.pileTwist)))
+                        .animation(dealAnimation(at: position), value: dealt)
                         // Muss sein, seit die Karten sich ueberlappen: Der
                         // Lichtpunkt laege sonst unter der naechsten Karte,
                         // weil ein ZStack in Reihenfolge zeichnet.
                         .zIndex(spotlight == position ? 1 : 0)
+                }
+
+                // Die gezogene Karte hebt sich aus dem Ring und verschwindet
+                // zur Mitte – man sieht, woher sie kam, bevor der
+                // Kartenscreen sie zeigt
+                if let lift = lifting {
+                    liftedCard(lift, radius: radius, width: cardWidth, height: cardHeight)
+                        .zIndex(2)
+                        .allowsHitTesting(false)
+                        // Ohne Einblenden: Sie steht sofort genau da, wo die
+                        // Karte lag. Mit dem ueblichen Einblenden liefe sie
+                        // gleichzeitig hinein und hinaus und waere kaum zu
+                        // sehen – die Zahl in der Mitte aendert sich im selben
+                        // Moment, und deren Animation gilt fuer den ganzen Ring.
+                        .transition(.identity)
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: RingMotion.lift)) { liftProgress = 1 }
+                        }
                 }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
@@ -456,7 +531,14 @@ struct RingOfFireView: View {
         isLit: Bool,
         isEmpty: Bool
     ) -> some View {
-        RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
+        let form = RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
+        let licht = LinearGradient(
+            colors: [BeerStatsColor.error, BeerStatsColor.warning],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+
+        return form
             .fill(
                 isEmpty
                     ? LinearGradient(
@@ -465,19 +547,26 @@ struct RingOfFireView: View {
                         endPoint: .bottom
                     )
                     : (isLit
-                        ? LinearGradient(
-                            colors: [BeerStatsColor.error, BeerStatsColor.warning],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                        ? licht
                         : LinearGradient(
                             colors: [BeerStatsColor.surfaceElevated, BeerStatsColor.backgroundPrimary],
                             startPoint: .top,
                             endPoint: .bottom
                         ))
             )
+            // Das Licht glimmt nach: eine eigene Schicht, die beim Ausgehen
+            // langsam verblasst. So zieht es beim Losen einen Schweif hinter
+            // sich her, statt von Karte zu Karte zu springen. Nur die Farbe –
+            // Groesse und Schein springen wie vorher, sonst stuenden in der
+            // schnellen Phase dreissig aufgeblaehte Karten im Ring.
             .overlay(
-                RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
+                form
+                    .fill(licht)
+                    .opacity(isLit ? 1 : 0)
+                    .animation(afterglow(isLit), value: isLit)
+            )
+            .overlay(
+                form
                     .strokeBorder(
                         BeerStatsColor.error.opacity(isEmpty ? 0 : (isLit ? 1 : 0.7)),
                         lineWidth: isLit ? 1.8 : 1.1
@@ -489,6 +578,37 @@ struct RingOfFireView: View {
             // Der leere Platz ist unsichtbar: Mit einem Platzhalter saehe
             // jeder Zug gleich aus.
             .opacity(isEmpty ? 0 : 1)
+    }
+
+    /// Das Licht springt an und verblasst langsam.
+    private func afterglow(_ isLit: Bool) -> Animation? {
+        guard !isLit else { return nil }
+        return .easeOut(duration: RingMotion.afterglow)
+    }
+
+    /// Die gezogene Karte auf dem Weg aus dem Ring: Sie hebt sich von ihrem
+    /// Platz, wird kleiner und verschwindet zur Mitte.
+    private func liftedCard(_ lift: RingLift, radius: CGFloat, width: CGFloat, height: CGFloat) -> some View {
+        let weg = CGFloat(liftProgress)
+        return ringCard(width: width, height: height, isLit: true, isEmpty: false)
+            .scaleEffect(1 - RingMotion.liftShrink * weg)
+            .offset(y: -radius * (1 - RingMotion.liftInward * weg))
+            .rotationEffect(.degrees(lift.angle))
+            .opacity(1 - liftProgress)
+    }
+
+    /// Der Faden kommt, wenn die Karten ausgeteilt sind, und geht mit dem
+    /// Einsammeln.
+    private var embersAnimation: Animation? {
+        guard !reduceMotion else { return nil }
+        guard dealt else { return .easeOut(duration: RingMotion.gather) }
+        return .easeIn(duration: RingMotion.dealDuration).delay(RingMotion.dealSpread)
+    }
+
+    /// Der Kranz brennt, wenn nichts mehr liegt UND die letzte Karte gelesen
+    /// ist – sonst liefe sein Anfang unter dem Kartenscreen.
+    private var showsFinale: Bool {
+        remaining == 0 && !isDrawing && !showsAction
     }
 
     // MARK: - Ring durch
@@ -518,14 +638,27 @@ struct RingOfFireView: View {
     private var drawButton: some View {
         if remaining > 0 {
             PrimaryButton(
-                title: isDrawing ? "Läuft …" : "Karte ziehen",
-                systemImage: isDrawing ? "hourglass" : "hand.tap.fill"
+                title: isBusy ? "Läuft …" : "Karte ziehen",
+                systemImage: isBusy ? "hourglass" : "hand.tap.fill"
             ) {
                 drawRandom()
             }
-            .opacity(isDrawing ? 0.5 : 1)
-            .disabled(isDrawing)
+            .opacity(isBusy ? 0.5 : 1)
+            .disabled(isBusy)
         }
+    }
+
+    /// Gezogen wird nicht, solange das Licht laeuft, ein Moment laeuft oder
+    /// ausgeteilt wird.
+    private var isBusy: Bool { isDrawing || isDealing }
+
+    /// Austeilen: Karte fuer Karte im Uhrzeigersinn, aus dem Stapel in der
+    /// Mitte nach aussen. Einsammeln: alle zugleich, nach innen.
+    private func dealAnimation(at position: Int) -> Animation? {
+        guard !reduceMotion else { return nil }
+        guard dealt else { return .easeIn(duration: RingMotion.gather) }
+        let reihe = Double(position) / Double(max(1, ring.count))
+        return .easeOut(duration: RingMotion.dealDuration).delay(reihe * RingMotion.dealSpread)
     }
 
     // MARK: - Merkliste
@@ -552,36 +685,13 @@ struct RingOfFireView: View {
                     let halter = roleHolders.filter { $0.role == role }
                     if !halter.isEmpty {
                         roleChip(role, holders: halter.map(\.name))
+                            .transition(.move(edge: .top).combined(with: .opacity))
                     }
                 }
 
                 ForEach(houseRules) { regel in
-                    HStack(alignment: .top, spacing: 8) {
-                        Text("📜")
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(regel.text)
-                                .font(BeerStatsFont.caption)
-                                .foregroundStyle(BeerStatsColor.textPrimary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            if let author = regel.author {
-                                Text("von \(author)")
-                                    .font(BeerStatsFont.statLabel)
-                                    .foregroundStyle(BeerStatsColor.textSecondary)
-                            }
-                        }
-                        Spacer(minLength: 0)
-                        // Ueber die ID und nicht ueber den Platz in der
-                        // Liste: Mit dem Index trifft ein zweiter Druck,
-                        // bevor die Ansicht neu gezeichnet ist, die falsche
-                        // Regel.
-                        Button {
-                            houseRules.removeAll { $0.id == regel.id }
-                            HapticManager.lightImpact()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(BeerStatsColor.textSecondary)
-                        }
-                    }
+                    houseRuleRow(regel)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
                 QuietButton(title: "Alles zurücksetzen") { clearRoles() }
@@ -589,6 +699,40 @@ struct RingOfFireView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
             .glassPanel(cornerRadius: 18)
+            .transition(.opacity)
+        }
+    }
+
+    private func houseRuleRow(_ regel: RingHouseRule) -> some View {
+        // Eine Regel, die jemand mit der Zehn aufgestellt hat – samt Knopf,
+        // der sie wieder streicht.
+        HStack(alignment: .top, spacing: 8) {
+            Text("📜")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(regel.text)
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let author = regel.author {
+                    Text("von \(author)")
+                        .font(BeerStatsFont.statLabel)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                }
+            }
+            Spacer(minLength: 0)
+            // Ueber die ID und nicht ueber den Platz in der
+            // Liste: Mit dem Index trifft ein zweiter Druck,
+            // bevor die Ansicht neu gezeichnet ist, die falsche
+            // Regel.
+            Button {
+                withAnimation(AppAnimation.standard) {
+                    houseRules.removeAll { $0.id == regel.id }
+                }
+                HapticManager.lightImpact()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
         }
     }
 
@@ -650,7 +794,9 @@ struct RingOfFireView: View {
     private func saveRule() {
         let text = ruleDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        houseRules.append(RingHouseRule(author: ruleAuthor, text: text))
+        withAnimation(AppAnimation.standard) {
+            houseRules.append(RingHouseRule(author: ruleAuthor, text: text))
+        }
         ruleDraft = ""
         ruleAuthor = nil
         isAskingForRule = false
@@ -672,6 +818,13 @@ struct RingOfFireView: View {
         let reisst = !ruleIsSpent
             && layout.tearsRing(at: position, present: ring.map { $0 != nil })
 
+        // Die Karte verlaesst den Ring als eigene Ansicht, die sich heraushebt
+        // und zur Mitte verschwindet (`liftedCard`) – ihr Platz ist sofort
+        // leer, damit sie nicht zweimal zu sehen ist
+        if !reduceMotion {
+            lifting = RingLift(angle: angle(for: position))
+            liftProgress = 0
+        }
         withAnimation(AppAnimation.standard) { ring[position] = nil }
         SoundManager.play(.ringDraw)
 
@@ -723,8 +876,22 @@ struct RingOfFireView: View {
             SoundManager.play(.victory)
         }
 
-        isDrawing = false
-        showsAction = true
+        // Der Kartenscreen kommt, wenn die Karte aus dem Ring ist – sonst
+        // faehrt er ueber ihren Weg hinweg, und man saehe nicht, woher sie kam
+        openAction(after: reduceMotion ? 0 : RingMotion.actionDelay)
+    }
+
+    private func openAction(after pause: Double) {
+        actionTask?.cancel()
+        actionTask = Task { @MainActor in
+            if pause > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(pause * 1_000_000_000))
+            }
+            guard !Task.isCancelled else { return }
+            lifting = nil
+            isDrawing = false
+            showsAction = true
+        }
     }
 
     /// Der Ring ist gerissen, und der Moment gehoert erst ihm: Der Faden
@@ -762,6 +929,7 @@ struct RingOfFireView: View {
             HapticManager.error()
             try? await Task.sleep(nanoseconds: UInt64((RingTearArt.duration - 0.18) * 1_000_000_000))
             guard !Task.isCancelled else { return }
+            lifting = nil
             isDrawing = false
             showsAction = true
         }
@@ -786,6 +954,11 @@ struct RingOfFireView: View {
     /// legt es neu im Kreis. Gemischt wird dabei auch – laegen dieselben
     /// Karten in derselben Reihenfolge, waere nur der Abstand neu, und wer
     /// die Reihenfolge gemerkt hat, wuesste weiter, was kommt.
+    ///
+    /// Und man SIEHT es: Die Karten werden zur Mitte eingesammelt, dort neu
+    /// gemischt und dann Karte fuer Karte im Uhrzeigersinn ausgeteilt. Vorher
+    /// rutschten sie nur an neue Plaetze, und ob gemischt wurde, musste man
+    /// glauben.
     private func relayout() {
         needsRelayout = false
 
@@ -793,16 +966,53 @@ struct RingOfFireView: View {
         guard !uebrig.isEmpty else { return }
 
         tearTask?.cancel()
-        withAnimation(AppAnimation.standard) {
-            ring = uebrig.shuffled().map { Optional($0) }
-            layout = RingLayout.random(count: ring.count)
-        }
+        dealTask?.cancel()
         spotlight = nil
         tearMoment = nil
         held = nil
+        lifting = nil
 
-        HapticManager.mediumImpact()
-        SoundManager.play(.ringShuffle)
+        // Mit "Bewegung reduzieren" liegt der Ring einfach neu
+        guard !reduceMotion else {
+            HapticManager.mediumImpact()
+            SoundManager.play(.ringShuffle)
+            ring = uebrig.shuffled().map { Optional($0) }
+            layout = RingLayout.random(count: ring.count)
+            return
+        }
+
+        isDealing = true
+        dealTask = Task { @MainActor in
+            // Erst muss der Kartenscreen weg sein: Er faehrt nach unten aus
+            // dem Bild, und darunter saehe man vom Einsammeln nur das Ende.
+            // So steht der Ring noch einen Augenblick mit seiner Luecke da.
+            try? await Task.sleep(nanoseconds: UInt64(RingMotion.coverAway * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            HapticManager.mediumImpact()
+            SoundManager.play(.ringShuffle)
+            // Einsammeln – jede Karte animiert sich selbst (`dealAnimation`)
+            dealt = false
+            try? await Task.sleep(nanoseconds: UInt64(RingMotion.gather * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            // Im Stapel neu mischen und neu legen – man sieht es nicht, weil
+            // gerade alles in der Mitte liegt
+            ring = uebrig.shuffled().map { Optional($0) }
+            layout = RingLayout.random(count: ring.count)
+            await dealOut()
+        }
+    }
+
+    /// Teilt aus dem Stapel in der Mitte aus und gibt den Knopf danach
+    /// wieder frei.
+    private func dealOut() async {
+        // Eine kurze Pause, damit der Stapel mit den neuen Karten gezeichnet
+        // ist, bevor er sich aufloest (Lessons Learned Nr. 17)
+        try? await Task.sleep(nanoseconds: UInt64(RingMotion.pause * 1_000_000_000))
+        guard !Task.isCancelled else { return }
+        dealt = true
+        try? await Task.sleep(nanoseconds: UInt64((RingMotion.dealSpread + RingMotion.dealDuration) * 1_000_000_000))
+        guard !Task.isCancelled else { return }
+        isDealing = false
     }
 
     private func apply(_ rule: RingOfFireRule, holder: String?) {
@@ -812,12 +1022,12 @@ struct RingOfFireView: View {
         // dem Kartenscreen (`RingOfFireActionView`): Er gehoert zu dem
         // Moment, in dem man sie sieht.
         switch rule.role {
-        case .thumbMaster:
-            roleHolders.append(RingRoleHolder(role: .thumbMaster, name: holder))
-        case .questionQueen:
-            roleHolders.append(RingRoleHolder(role: .questionQueen, name: holder))
-        case .drinkingMate:
-            roleHolders.append(RingRoleHolder(role: .drinkingMate, name: holder))
+        case .thumbMaster, .questionQueen, .drinkingMate:
+            // Erst gemerkt, in die Liste kommt sie nach dem Kartenscreen
+            // (`pendingRole`)
+            if let rolle = rule.role {
+                pendingRole = RingRoleHolder(role: rolle, name: holder)
+            }
         case .houseRule:
             // Nicht sofort: Erst liest man die Karte zu Ende, dann tippt
             // man. Ausgeloest wird die Frage beim Schliessen des
@@ -846,17 +1056,37 @@ struct RingOfFireView: View {
         spotlight = nil
         tearMoment = nil
         held = nil
+        lifting = nil
+        pendingRole = nil
         isDrawing = false
         clearRoles()
         hasStarted = true
         HapticManager.success()
         SoundManager.play(.ringShuffle)
+
+        // Die Karten liegen erst als Stapel in der Mitte und werden dann
+        // ausgeteilt – wie am Tisch. Mit "Bewegung reduzieren" liegen sie
+        // gleich im Kreis.
+        dealTask?.cancel()
+        dealt = reduceMotion
+        isDealing = !reduceMotion
+        guard !reduceMotion else { return }
+        dealTask = Task { @MainActor in
+            // Erst den Wechsel vom Vorspann zum Tisch abwarten
+            try? await Task.sleep(nanoseconds: UInt64(RingMotion.beforeFirstDeal * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await dealOut()
+        }
     }
 
     private func restart() {
         drawTask?.cancel()
         tearTask?.cancel()
         heldTask?.cancel()
+        dealTask?.cancel()
+        actionTask?.cancel()
+        isDealing = false
+        lifting = nil
         isDrawing = false
         spotlight = nil
         tearMoment = nil
@@ -869,7 +1099,7 @@ struct RingOfFireView: View {
     /// laufen. Gelost wird vorher und nicht ganz gleich verteilt: Der Rang
     /// von eben kommt nicht gleich wieder (`RingDraw`).
     private func drawRandom() {
-        guard !isDrawing else { return }
+        guard !isBusy else { return }
 
         let liegende = ring.indices.filter { ring[$0] != nil }
         guard let ziel = RingDraw.pick(ring: ring, recentRanks: recentRanks) else { return }
@@ -944,8 +1174,10 @@ struct RingOfFireView: View {
     }
 
     private func clearRoles() {
-        roleHolders.removeAll()
-        houseRules.removeAll()
+        withAnimation(AppAnimation.standard) {
+            roleHolders.removeAll()
+            houseRules.removeAll()
+        }
         ruleAuthor = nil
     }
 
@@ -978,4 +1210,45 @@ private struct RingHouseRule: Identifiable {
     let id = UUID()
     let author: String?
     let text: String
+}
+
+/// Die Karte, die gerade aus dem Ring gehoben wird.
+private struct RingLift {
+    /// Wo sie lag – von dort hebt sie sich heraus.
+    let angle: Double
+}
+
+/// Wie sich der Ring bewegt. Einsammeln und Herausheben sind zuerst in der
+/// Vorschau "Riss im Ring" gezeichnet worden, mit denselben Zahlen.
+private enum RingMotion {
+    /// So lange faehrt der Kartenscreen nach unten weg, bevor nach einem
+    /// Riss eingesammelt wird.
+    static let coverAway = 0.3
+    /// Einsammeln zur Mitte, alle zugleich.
+    static let gather = 0.28
+    /// So lange fliegt eine einzelne Karte beim Austeilen.
+    static let dealDuration = 0.34
+    /// Ueber so viel Zeit verteilt sich das Austeilen um den Ring – die
+    /// letzte Karte startet so viel spaeter als die erste.
+    static let dealSpread = 0.55
+    /// Vor dem ersten Austeilen: der Wechsel vom Vorspann zum Tisch.
+    static let beforeFirstDeal = 0.25
+    /// Eine kurze Pause zwischen Setzen und Animieren.
+    static let pause = 0.05
+    /// Der Stapel in der Mitte: kleiner als die Karten im Ring und etwas
+    /// gegen den Uhrzeigersinn verdreht, damit er nach Stapel aussieht.
+    static let pileScale: CGFloat = 0.6
+    static let pileTwist = 40.0
+    /// Die gezogene Karte hebt sich heraus: so lange, so weit nach innen,
+    /// und so viel kleiner wird sie dabei – am Ende so gross wie eine
+    /// Karte im Stapel.
+    static let lift = 0.38
+    static let liftInward: CGFloat = 0.75
+    static let liftShrink: CGFloat = 0.62
+    /// Der Kartenscreen kommt, wenn die Karte aus dem Ring ist.
+    static let actionDelay = 0.42
+    /// So lange glimmt das Lauflicht auf einer Karte nach. In der schnellen
+    /// Phase wird daraus ein langer Schweif, im Auslaufen einer ueber wenige
+    /// Karten.
+    static let afterglow = 0.35
 }

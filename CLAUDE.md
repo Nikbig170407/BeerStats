@@ -243,7 +243,9 @@ den nachgespielten Wurf-Log alter Partien.
   Extreme-Karten, und hinter der Karte läuft eine eigene Szene je Rang
   (`RingCardFlourish`). Der Ring liegt **geschuppt** und spielt mit – wer
   ihn reißt, trinkt. Das ganze Regelwerk dazu steht unten als Vertrag; es
-  ist die am häufigsten missverstandene Stelle im Projekt.
+  ist die am häufigsten missverstandene Stelle im Projekt. Er bewegt sich
+  wie am Tisch: wird ausgeteilt, hebt die gezogene Karte heraus und brennt
+  am Ende als Kranz.
 - **Bussfahrer hat sein Ende** (17. Oktober): Zwei Hälften, wie am Tisch –
   erst die Fragerunde, dann **die Busfahrt**. Die hatte gefehlt: Das Spiel
   hörte nach der vierten richtigen Antwort auf („Das Handy geht weiter"),
@@ -568,9 +570,11 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   `EffectConfetti` und `EffectFlash`. Szenen stehen hinter
   jeder Ring-Karte, im Sieger-Screen (Feuerwerk und Konfetti, nur bei einem
   Sieger, nie beim Unentschieden), in der Bombe (Rauch und Splitter, einmal),
-  beim Zeitstrahl-Sieg (eine Schallplatte) und am Pokal des Abends (ein
+  beim Zeitstrahl-Sieg (eine Schallplatte), am Pokal des Abends (ein
   Goldglanz, leise – er steht in einer **Liste**, und eine Liste, in der an
-  mehreren Stellen etwas fliegt, liest sich nicht mehr).
+  mehreren Stellen etwas fliegt, liest sich nicht mehr) und im leeren Ring,
+  wenn eine Runde Ring of Fire durch ist (ein Flammenkranz, `RingFinale` –
+  bewusst kein zweites Feuerwerk, das gehört dem Beerpong-Sieg).
 
   **Dieselbe Kostenart sieht überall gleich aus.** Ein Shot glüht wie das
   Ass, Schlücke steigen als Bier wie bei der Drei, wer nichts trinkt, atmet
@@ -1048,6 +1052,33 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     Wiederholungen am Ende. Gelost wird **vorher**, das Licht läuft nur hin
     und hält dort, wo die Karte herkommt. `RingDrawTests` rechnet ganze
     Runden mit festem Startwert durch.
+  - **Der Tisch bewegt sich, aber er verrät nichts** (`RingMotion`, Wunsch
+    des Nutzers vom 28. Oktober: „noch mehr Animationen“). Zu Beginn und
+    nach jedem Riss wird aus einem Stapel in der Mitte ausgeteilt – so
+    **sieht** man, dass neu gemischt wurde. Eingesammelt wird erst, wenn der
+    Kartenscreen weg ist, sonst sähe man nur noch den Stapel. Die gezogene
+    Karte hebt sich als eigene Ansicht heraus, ohne Einblenden
+    (`.transition(.identity)`): Die Animation der Restzahl gilt für den
+    ganzen Ring und blendete sie sonst gleichzeitig ein und aus. Der
+    Kartenscreen kommt erst danach. Dazu fünf Regeln:
+    - **Die Rolle kommt erst nach dem Kartenscreen in die Merkliste**
+      (`pendingRole`). Während die Karte sich heraushebt, steht die Liste
+      sichtbar darunter – „Daumenmeister“ verriete die Karte, bevor man
+      sie sieht.
+    - **Das Lauflicht glimmt nur in der Farbe nach**, Größe und Schein
+      springen. Glimmte die ganze Karte nach, stünden in der schnellen
+      Phase dreißig aufgeblähte Karten im Ring.
+    - **Der Kranz brennt erst, wenn die letzte Karte gelesen ist**
+      (`showsFinale`). Er beginnt mit einem Lauf einmal herum, und der lief
+      sonst unter dem Kartenscreen ab. Er bleibt in seiner Fläche – darüber
+      liegt nur ein schmaler Rand, und abgeschnittenes Feuer sieht aus wie
+      ein Bild, das nicht passt – und zeichnet höchstens dreißigmal je
+      Sekunde (`EffectCanvas.minimumInterval`), weil „Ring durch“ oft
+      minutenlang dasteht.
+    - **Mit „Bewegung reduzieren“** liegen die Karten gleich im Kreis, es
+      hebt sich nichts heraus, und der Kranz steht als stilles Bild da.
+    - **Gezogen wird erst, wenn alles liegt** (`isBusy`): Ein Zug während
+      des Austeilens ginge an eine Karte, die noch fliegt.
   - **Das Rad tickt von der ersten Sekunde.** Die Auslosung tickte nur im
     Auslaufen; man drückte, es drehte sich, und man hörte nichts. Jetzt
     kommt beim Druck sofort ein Klang, und die schnelle Phase tickt auf
@@ -1329,6 +1360,30 @@ oben; was schief aussieht, unten.
   Firestore-Cache ist nirgends im Code konfiguriert – auf iOS ist er
   standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.
 ### Was zuletzt gebaut wurde und nie lief
+
+- **Ring of Fire bewegt sich, und derselbe Rang kommt seltener**
+  (28. Oktober, auf Wunsch – Austeilen und Herausheben in der Vorschau
+  „Riss im Ring“ gezeichnet, der Kranz im Browser, auf dem Gerät nichts
+  davon). Zu prüfen:
+  - **Kommt derselbe Rang noch direkt hintereinander?** Gerechnet
+    praktisch nie, mit einer Karte dazwischen etwa halb so oft wie vorher.
+    Fühlt sich das Ziehen trotzdem noch nach Zufall an?
+  - **Austeilen**: Beim Start und nach jedem Riss liegt erst ein Stapel in
+    der Mitte, dann wird im Uhrzeigersinn ausgeteilt. Dauert es zu lange,
+    bis man ziehen kann? Sieht man nach einem Riss erst die Lücke, dann
+    das Einsammeln?
+  - **Herausheben**: Sieht man, woher die Karte kommt, bevor der
+    Kartenscreen sie zeigt – oder wirkt die Pause wie ein Hänger?
+  - **Schweif**: Zieht das Licht beim Losen einen Schweif, ohne dass der
+    Ring in der schnellen Phase nur noch rot ist?
+  - **Merkliste**: Taucht „Daumenmeister“ erst nach „Verstanden“ auf und
+    rutscht dann hinein – nicht schon, während die Karte herausgehoben
+    wird?
+  - **Ring durch**: Läuft das Feuer einmal herum und schließt sich oben?
+    Ruckelt der Kranz auf dem iPhone 13, und stört er die Zahl in der
+    Mitte?
+  - Mit „Bewegung reduzieren“: Karten gleich im Kreis, kein Herausheben,
+    der Kranz als stilles Bild.
 
 - **Jede Karte kommt anders** (28. Oktober, auf Wunsch – die Auftritte
   im Browser gezeichnet, auf dem Gerät nie gelaufen). Zu prüfen:

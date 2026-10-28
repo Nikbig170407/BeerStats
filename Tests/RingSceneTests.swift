@@ -43,4 +43,12 @@ final class RingSceneTests: XCTestCase {
             )
         }
     }
+
+    /// Der Kranz am Ende der Runde ist eine eigene Szene und nicht die
+    /// Bewegung eines Rangs mit anderem Anlass – fuer ihn gilt dieselbe
+    /// Satz-Regel.
+    func testFinaleHasItsOwnSentence() {
+        XCTAssertFalse(RingScene.allCases.map(\.motion).contains(RingFinaleArt.motion))
+        XCTAssertFalse(RingFinaleArt.motion.unicodeScalars.contains { $0.properties.isEmojiPresentation })
+    }
 }

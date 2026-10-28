@@ -51,6 +51,10 @@ struct EffectCanvas: View {
     /// Screens, die selbst erst hereinfahren. Ihr Anfang liefe sonst in
     /// der Bewegung des ganzen Screens unter.
     var delay: Double = 0
+    /// Hoechstens so oft wird neu gezeichnet, in Sekunden je Bild. Ohne
+    /// Angabe so oft wie der Bildschirm – fuer Szenen, die lange stehen
+    /// bleiben, reichen dreissig Bilder je Sekunde.
+    var minimumInterval: Double?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var start = Date()
@@ -65,7 +69,7 @@ struct EffectCanvas: View {
             } else {
                 // Voll ausgeschrieben: `TimelineView` allein ist im Projekt der
                 // Screen des Zeitstrahl-Spiels und verdeckt den von SwiftUI.
-                SwiftUI.TimelineView(.animation) { timeline in
+                SwiftUI.TimelineView(.animation(minimumInterval: minimumInterval)) { timeline in
                     Canvas { context, size in
                         draw(&context, size, max(0, timeline.date.timeIntervalSince(start) - delay))
                     }

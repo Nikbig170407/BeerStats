@@ -333,8 +333,9 @@ enum RingTearArt {
         }
     }
 
-    /// Eine Flammenzunge: unten breit und hell, oben spitz und rot.
-    private static func tongue(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ richtung: Double,
+    /// Eine Flammenzunge: unten breit und hell, oben spitz und rot. Auch der
+    /// Flammenkranz am Ende der Runde brennt mit ihr (`RingFinaleArt`).
+    static func tongue(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ richtung: Double,
                                _ laenge: Double, _ breite: Double, _ alpha: Double, _ t: Double, _ k: Int) {
         guard laenge > 2, alpha > 0 else { return }
         let nx = cos(richtung), ny = sin(richtung)
