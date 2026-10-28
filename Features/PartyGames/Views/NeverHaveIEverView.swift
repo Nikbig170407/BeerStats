@@ -30,6 +30,12 @@ struct NeverHaveIEverView: View {
     /// Wie oft weitergegeben wurde. Wer das ist, rechnet `TurnRow`.
     @State private var turn = 0
 
+    /// Das Blatt mit den Einstellungen mitten in der Runde – und was beim
+    /// Oeffnen eingestellt war, um beim Schliessen zu wissen, ob sich etwas
+    /// geaendert hat.
+    @State private var showsSettings = false
+    @State private var settingsBefore: SettingsSnapshot?
+
     @Environment(\.gameWorld) private var world
 
     private var currentCard: NeverHaveIEverCard? {
@@ -66,6 +72,21 @@ struct NeverHaveIEverView: View {
         }
         .navigationTitle("Ich hab noch nie")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                // Vor dem Start ist der Vorspann selbst die Einstellung
+                if hasStarted {
+                    RoundSettingsButton { openSettings() }
+                }
+            }
+        }
+        .sheet(isPresented: $showsSettings, onDismiss: applySettings) {
+            RoundSettingsSheet(note: "Gilt ab der nächsten Karte. Fragen, die schon dran waren, kommen nicht wieder.") {
+                settingsControls
+            }
+            // Das Blatt gehoert zum Spiel und steht deshalb in seiner Welt
+            .environment(\.gameWorld, world)
+        }
         .onDisappear { flashTask?.cancel() }
     }
 
@@ -119,6 +140,21 @@ struct NeverHaveIEverView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
 
+            settingsControls
+
+            Spacer(minLength: 0)
+
+            PrimaryButton(title: "Los geht's", systemImage: "play.fill") { start() }
+                .opacity(categories.isEmpty ? 0.4 : 1)
+                .disabled(categories.isEmpty)
+        }
+    }
+
+    /// Kategorien, Strafen und Haerte – im Vorspann und im Blatt mitten in
+    /// der Runde DIESELBEN Schalter. Zwei Kopien liefen auseinander, und
+    /// dann stuende im Blatt etwas anderes als vor dem Start.
+    private var settingsControls: some View {
+        VStack(spacing: 18) {
             // Zwei Gruppen: wie hart, und worum es geht. Gemischt wird alles,
             // was angehakt ist – die Gruppen sagen nur, dass ein Thema keine
             // Stufe ist. "Peinlich" ist nicht zahmer als "Extrem", sondern
@@ -140,12 +176,6 @@ struct NeverHaveIEverView: View {
             penaltyToggle
 
             DrinkIntensityPicker(game: .neverHaveIEver)
-
-            Spacer(minLength: 0)
-
-            PrimaryButton(title: "Los geht's", systemImage: "play.fill") { start() }
-                .opacity(categories.isEmpty ? 0.4 : 1)
-                .disabled(categories.isEmpty)
         }
     }
 
@@ -340,5 +370,45 @@ struct NeverHaveIEverView: View {
         index = 0
         hasStarted = true
         HapticManager.success()
+    }
+
+    // MARK: - Einstellungen mitten in der Runde
+
+    /// Was beim Oeffnen des Blatts galt.
+    private struct SettingsSnapshot: Equatable {
+        let categories: Set<NeverHaveIEverCategory>
+        let includePenalties: Bool
+        /// Auch die Haerte: Strafen werden beim Mischen ausformuliert, eine
+        /// neue Haerte braucht also neu gemischte Strafen.
+        let intensity: DrinkIntensity
+    }
+
+    private var currentSettings: SettingsSnapshot {
+        SettingsSnapshot(categories: categories, includePenalties: includePenalties, intensity: DrinkIntensity.current)
+    }
+
+    private func openSettings() {
+        settingsBefore = currentSettings
+        showsSettings = true
+    }
+
+    /// Nach dem Schliessen: Alles, was schon gespielt ist, bleibt, wie es
+    /// war – auch die Karte, die gerade dasteht, denn die wird vielleicht
+    /// noch gelesen. Ab der naechsten Karte gilt die neue Auswahl, und was
+    /// schon dran war, kommt nicht wieder.
+    ///
+    /// Auch nach "Stapel durch" geht das: Wer dann eine Kategorie dazunimmt,
+    /// spielt mit ihr weiter, statt von vorn anzufangen.
+    private func applySettings() {
+        defer { settingsBefore = nil }
+        guard hasStarted, let vorher = settingsBefore, vorher != currentSettings else { return }
+
+        let gespielt = Array(deck.prefix(index + 1))
+        let rest = NeverHaveIEverDeck.shuffled(
+            categories: categories,
+            includePenalties: includePenalties,
+            excluding: Set(gespielt.filter { !$0.isPenalty }.map(\.text))
+        )
+        deck = gespielt + rest
     }
 }

@@ -149,9 +149,15 @@ enum NeverHaveIEverDeck {
 
     /// Baut den Stapel fuer eine Runde: Fragen der gewaehlten Kategorien,
     /// gemischt, mit eingestreuten Strafen.
+    ///
+    /// `played` sind Fragen, die in dieser Runde schon dran waren. Wer
+    /// mitten im Spiel umstellt, bekommt sie nicht noch einmal – sie fallen
+    /// heraus, BEVOR die Strafen verteilt werden, sonst laegen dort, wo eine
+    /// Frage fehlt, zwei Strafen hintereinander.
     static func shuffled(
         categories: Set<NeverHaveIEverCategory>,
-        includePenalties: Bool
+        includePenalties: Bool,
+        excluding played: Set<String> = []
     ) -> [NeverHaveIEverCard] {
 
         // Eigene Karten kommen ohne Stufe dazu und gelten deshalb in jeder
@@ -170,7 +176,7 @@ enum NeverHaveIEverDeck {
 
         let questions = (statements
             .filter { card in card.category.map { categories.contains($0) } ?? false } + eigene)
-            .filter { !versteckt.contains($0.text) }
+            .filter { !versteckt.contains($0.text) && !played.contains($0.text) }
             .shuffled()
 
         guard includePenalties, !penaltyTemplates.isEmpty, questions.count > 2 else { return questions }

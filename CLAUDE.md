@@ -736,6 +736,17 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   trägt. „Tabulos“ heißt deutlicher und persönlicher, nicht derber – und
   nie auf Kosten von jemandem, der nicht gefragt wurde.
 
+- **Einstellungen mitten in der Runde: das Zahnrad** (`RoundSettings.swift`,
+  Wunsch des Nutzers vom 28. Oktober). Oben rechts sitzt während der Runde
+  ein Zahnrad, das ein Blatt mit den Einstellungen des Spiels öffnet –
+  bisher bei „Ich hab noch nie“. Zwei Regeln, damit es in jedem Spiel gleich
+  bleibt: Im Blatt stehen **dieselben** Schalter wie im Vorspann (eine
+  Eigenschaft, zwei Orte – zwei Kopien liefen auseinander), und das Blatt
+  sagt, **wann** die Änderung gilt. Bei „Ich hab noch nie“: ab der nächsten
+  Karte; die Karte, die gerade dasteht, bleibt, und gespielte Fragen kommen
+  nicht wieder (`shuffled(…, excluding:)` nimmt sie heraus, bevor die
+  Strafen verteilt werden – sonst lägen zwei Strafen hintereinander).
+
 - **Jede Karte leuchtet anders, aber Rot gehört den Strafen**
   (`NeonSign.Look`, 28. Oktober: „mehr Abwechslung, ändere zum Beispiel
   die Farben der LEDs“). Farbe, Kopfzeilenfarbe, Rahmen (Röhre, Doppelröhre,
@@ -1502,7 +1513,10 @@ oben; was schief aussieht, unten.
   Dazu der Vorspann: Bleiben die zwei Gruppen mit großer Schrift
   übersichtlich? Und die Schilder, die jetzt je Karte anders leuchten: zu
   bunt oder genau richtig? Bleibt die kursive und die schmale Schrift aus
-  anderthalb Metern lesbar, und ruckelt das Lauflicht nicht?
+  anderthalb Metern lesbar, und ruckelt das Lauflicht nicht? Und das
+  **Zahnrad** oben rechts: mitten in der Runde Tabulos dazunehmen, Fertig –
+  kommt ab der nächsten Karte die neue Mischung, und keine Frage doppelt?
+  Soll das Zahnrad auch in die anderen Spiele?
 - **Zeitstrahl (22. Oktober)**: Das Wichtigste – stimmen die Jahreszahlen?
   Beim ersten Durchgang auf Lieder achten, bei denen die Runde widerspricht,
   und sie mir nennen. Dann: Reicht die Übergabe ans Handy, oder sieht der
