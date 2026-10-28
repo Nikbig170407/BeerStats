@@ -51,21 +51,19 @@ struct HandoffPanel<Secret: View>: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Spieler \(player + 1)")
+            // Der Name, wenn die App ihn kennt – sonst "Spieler 3". Dieselbe
+            // Quelle wie die Aufloesung am Ende, sonst hiesse der Spion beim
+            // Verteilen anders als beim Enttarnen.
+            Text(PlayerNames.name(for: player))
                 .font(world == nil ? BeerStatsFont.title : Font.world(world, 24))
                 .foregroundStyle(BeerStatsColor.textPrimary)
+                .multilineTextAlignment(.center)
+
+            card
 
             if isRevealed {
-                VStack(spacing: 12) { secret }
-                    .frame(maxWidth: .infinity)
-                    .padding(26)
-                    .glassPanel(cornerRadius: 22)
-                    .neonEdge(tint, cornerRadius: 22, intensity: 0.8)
-
                 PrimaryButton(title: continueTitle, systemImage: "arrow.right", action: onContinue)
             } else {
-                coverCard
-
                 PrimaryButton(title: "Aufdecken", systemImage: "eye.fill") {
                     onReveal()
                     // Kraeftiger als der Standard-Tap von PrimaryButton: Das
@@ -75,6 +73,23 @@ struct HandoffPanel<Secret: View>: View {
                     SoundManager.play(.tap)
                 }
             }
+        }
+    }
+
+    /// Der Ablauf ist ueberall derselbe, die Karte kleidet sich nach der
+    /// Welt: Beim Spion ist sie eine Akte, deren Deckel aufklappt.
+    @ViewBuilder
+    private var card: some View {
+        if world == .secretFile {
+            Dossier(player: player, isOpen: isRevealed, alarm: tint == BeerStatsColor.error, secret: secret)
+        } else if isRevealed {
+            VStack(spacing: 12) { secret }
+                .frame(maxWidth: .infinity)
+                .padding(26)
+                .glassPanel(cornerRadius: 22)
+                .neonEdge(tint, cornerRadius: 22, intensity: 0.8)
+        } else {
+            coverCard
         }
     }
 

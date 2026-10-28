@@ -32,6 +32,11 @@ struct SchockenView: View {
 
     @State private var dice = [1, 1, 1]
     @State private var kept = [false, false, false]
+    /// Zaehlt je Wuerfel, wie oft er geworfen wurde – daran kullert er.
+    @State private var rolls = [0, 0, 0]
+    /// Die Wertung steht erst, wenn die Wuerfel liegen. Vorher verriete sie,
+    /// was gleich zu sehen ist.
+    @State private var settled = true
     @State private var throwsUsed = 0
     /// Vom ersten Spieler der Runde gesetzt. `nil`, solange niemand fertig ist.
     @State private var throwLimit: Int?
@@ -39,6 +44,9 @@ struct SchockenView: View {
 
     private let penalty = DrinkAmount.sips(3)
     private let schockAusPenalty = DrinkAmount.sips(6)
+
+    @Environment(\.gameWorld) private var world
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -64,10 +72,10 @@ struct SchockenView: View {
 
     private var setupView: some View {
         VStack(spacing: 18) {
-            Text("🎲").font(.system(size: 56))
+            DiceRow(values: [4, 5, 6], dieSize: 46)
 
             Text("Wie viele spielen mit?")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 22, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Drei Würfel, bis zu drei Würfe. Der Erste legt fest, wie viele Würfe die Runde hat.")
@@ -89,11 +97,11 @@ struct SchockenView: View {
     private var rankingCard: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text("RANGFOLGE, NIEDRIG NACH HOCH")
-                .font(.scaled(10, weight: .heavy, design: .rounded))
+                .font(Font.world(world, 10, weight: .heavy))
                 .kerning(1.4)
                 .foregroundStyle(BeerStatsColor.textSecondary)
             Text("Zahl · Straße · General · Schock · Schock aus")
-                .font(BeerStatsFont.caption)
+                .font(Font.world(world, 14, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
             Text("Bei der Zahl zählt die Eins 100, jeder andere Würfel zehnfach. 1-6-5 ergibt 210.")
                 .font(BeerStatsFont.caption)
@@ -110,12 +118,12 @@ struct SchockenView: View {
     private func handoffView(_ player: Int) -> some View {
         VStack(spacing: 18) {
             Text("\(PlayerNames.name(for: player))")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 26, weight: .bold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             if let throwLimit {
                 Text("Du hast \(throwLimit) \(throwLimit == 1 ? "Wurf" : "Würfe")")
-                    .font(BeerStatsFont.headline)
+                    .font(Font.world(world, 17, weight: .semibold).italic())
                     .foregroundStyle(BeerStatsColor.warning)
             } else {
                 Text("Du fängst an – bis zu drei Würfe. Womit du aufhörst, gilt für alle.")
@@ -124,7 +132,7 @@ struct SchockenView: View {
                     .multilineTextAlignment(.center)
             }
 
-            if !results.isEmpty { standings }
+            if !results.isEmpty { standings(loser: nil) }
 
             PrimaryButton(title: "Würfeln", systemImage: "dice") { beginTurn(player) }
         }
@@ -135,18 +143,22 @@ struct SchockenView: View {
     private func rollingView(_ player: Int) -> some View {
         VStack(spacing: 20) {
             Text("\(PlayerNames.name(for: player)) · Wurf \(throwsUsed) von \(throwLimit ?? 3)")
-                .font(BeerStatsFont.caption)
+                .font(Font.world(world, 15, weight: .regular).italic())
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
-            HStack(spacing: 12) {
-                ForEach(0..<3, id: \.self) { slot in
-                    dieButton(slot)
+            DiceBoard {
+                HStack(spacing: 4) {
+                    ForEach(0..<3, id: \.self) { slot in
+                        dieButton(slot)
+                    }
                 }
             }
 
             Text(SchockenThrow.evaluate(dice).label)
-                .font(.scaled(26, weight: .heavy, design: .rounded))
+                .font(Font.world(world, 30, weight: .bold))
                 .foregroundStyle(BeerStatsColor.warning)
+                .opacity(settled ? 1 : 0)
+                .animation(.easeOut(duration: 0.15), value: settled)
 
             Text("Würfel antippen heißt liegen lassen.")
                 .font(BeerStatsFont.caption)
@@ -173,43 +185,61 @@ struct SchockenView: View {
     }
 
     private func dieButton(_ slot: Int) -> some View {
-        let faces = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"]
         let isKept = kept[slot]
 
         return Button {
             kept[slot].toggle()
             HapticManager.lightImpact()
         } label: {
-            Text(faces[dice[slot]])
-                .font(.system(size: 52))
-                .foregroundStyle(isKept ? BeerStatsColor.warning : BeerStatsColor.textPrimary)
-                .frame(width: 78, height: 78)
-                .glassPanel(cornerRadius: 16)
-                .neonEdge(BeerStatsColor.warning, cornerRadius: 16, intensity: isKept ? 0.9 : 0.12)
-                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            VStack(spacing: 2) {
+                SchockenDie(value: dice[slot], kept: isKept, roll: rolls[slot], slot: slot)
+                    .frame(height: 92)
+
+                // Nicht nur Licht und Rahmen: Wer das Gelb nicht sieht, liest es
+                Text(isKept ? "liegt" : " ")
+                    .font(Font.world(world, 13, weight: .semibold).italic())
+                    .foregroundStyle(RegularsTable.lamp)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel("Würfel \(slot + 1): \(dice[slot])")
+        .accessibilityValue(isKept ? "liegt" : "wird mitgeworfen")
     }
 
     // MARK: - Zwischenstand und Ergebnis
 
-    private var standings: some View {
+    /// Der Zwischenstand. Am Ende der Runde faellt dem Verlierer ein
+    /// Bierdeckel auf die Zeile – wie am Stammtisch.
+    private func standings(loser: Int?, mats: Int = 1) -> some View {
         VStack(spacing: 6) {
             ForEach(results.indices, id: \.self) { index in
                 if let result = results[index] {
-                    HStack {
+                    HStack(spacing: 10) {
                         Text("\(PlayerNames.name(for: index))")
-                            .font(BeerStatsFont.caption)
+                            .font(Font.world(world, 14, weight: .semibold))
                             .foregroundStyle(BeerStatsColor.textSecondary)
-                        Spacer()
-                        Text(result.symbols)
+                            .lineLimit(1)
+                        Spacer(minLength: 4)
+                        DiceRow(values: result.dice)
                         Text(result.label)
-                            .font(BeerStatsFont.caption)
+                            .font(Font.world(world, 14, weight: .bold))
                             .foregroundStyle(BeerStatsColor.textPrimary)
+                            .lineLimit(1)
                     }
-                    .padding(.horizontal, 14)
+                    .padding(.leading, 14)
+                    .padding(.trailing, index == loser ? 30 : 14)
                     .padding(.vertical, 9)
                     .glassPanel(cornerRadius: 12)
+                    // Der Deckel liegt auf der Kante, nicht in der Zeile –
+                    // dort ist neben Name, Wuerfeln und Wertung kein Platz
+                    .overlay(alignment: .trailing) {
+                        if index == loser {
+                            FallingBeerMat(size: 34, count: mats).offset(x: 14)
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
                 }
             }
         }
@@ -221,13 +251,14 @@ struct SchockenView: View {
         let amount = hadSchockAus ? schockAusPenalty : penalty
 
         return VStack(spacing: 16) {
-            Text(hadSchockAus ? "💥" : "🍺").font(.system(size: 54))
+            // Doppelt so teuer, doppelt so viele Deckel
+            FallingBeerMat(size: 72, count: hadSchockAus ? 2 : 1)
 
-            standings
+            standings(loser: loser, mats: hadSchockAus ? 2 : 1)
 
             if let loser {
                 Text("\(PlayerNames.name(for: loser)) trinkt \(amount.text)")
-                    .font(.scaled(22, weight: .bold, design: .rounded))
+                    .font(Font.world(world, 22, weight: .bold))
                     .foregroundStyle(BeerStatsColor.error)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
@@ -283,10 +314,21 @@ struct SchockenView: View {
     private func rollDice() {
         for slot in 0..<3 where !kept[slot] {
             dice[slot] = Int.random(in: 1...6)
+            rolls[slot] += 1
         }
         throwsUsed += 1
         HapticManager.mediumImpact()
         SoundManager.play(.cupHit)
+
+        // Die Wertung kommt, wenn die Wuerfel liegen – nicht vorher
+        guard !reduceMotion else { return }
+        settled = false
+        let wurf = rolls
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(SchockenDie.duration * 0.8 * 1_000_000_000))
+            // Ein schnellerer zweiter Wurf hat seine eigene Wartezeit
+            if rolls == wurf { settled = true }
+        }
     }
 
     private func finishTurn(_ player: Int) {

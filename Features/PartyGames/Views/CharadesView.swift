@@ -38,6 +38,12 @@ struct CharadesView: View {
     /// Wie oft weitergegeben wurde – daraus macht `TurnRow` einen Namen.
     @State private var turn = 0
     @State private var tickTask: Task<Void, Never>?
+    /// Wann die Runde losging – daran haengt der Zeiger des Film-Vorlaufs.
+    @State private var startedAt = Date()
+    /// Jeder neue Begriff ist ein Schnitt.
+    @State private var cuts = 0
+
+    @Environment(\.gameWorld) private var world
 
     private var current: String? { deck.indices.contains(index) ? deck[index] : nil }
 
@@ -110,19 +116,22 @@ struct CharadesView: View {
                     VStack(spacing: 16) {
                         Spacer(minLength: 0)
 
-                        Text("🤸").font(.system(size: 56))
-
                         TurnRow(turn: turn, tint: BeerStatsColor.success)
 
-                        Text("Nimm das Handy")
-                            .font(BeerStatsFont.title)
-                            .foregroundStyle(BeerStatsColor.textPrimary)
+                        Intertitle {
+                            Text("— PANTOMIME —")
+                                .font(Font.world(world, 13, weight: .semibold))
+                                .kerning(3)
+                                .opacity(0.75)
 
-                        Text("Nur du siehst die Begriffe. Die anderen rufen, was sie erkennen – du tippst unten, ob es gepasst hat.")
-                            .font(BeerStatsFont.body)
-                            .foregroundStyle(BeerStatsColor.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
+                            Text("Nimm das Handy")
+                                .font(Font.world(world, 32, weight: .bold))
+
+                            Text("Nur du siehst die Begriffe. Die anderen rufen, was sie erkennen – du tippst unten, ob es gepasst hat.")
+                                .font(Font.world(world, 16, weight: .regular).italic())
+                                .opacity(0.7)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
 
                         Spacer(minLength: 0)
 
@@ -147,27 +156,38 @@ struct CharadesView: View {
             AmbientBackdrop(glow: BeerStatsColor.success)
 
             VStack(spacing: 0) {
-                HStack(spacing: 14) {
-                    Text(String(format: "%.0f", remaining))
-                        .font(.scaled(30, weight: .heavy, design: .rounded))
-                        .foregroundStyle(remaining <= 10 ? BeerStatsColor.error : BeerStatsColor.textSecondary)
-                        .monospacedDigit()
+                HStack(spacing: 18) {
+                    FilmLeader(
+                        seconds: Int(remaining.rounded()),
+                        startedAt: startedAt,
+                        warning: remaining <= 10
+                    )
 
                     Text("\(hits) geschafft")
-                        .font(BeerStatsFont.caption)
+                        .font(Font.world(world, 18, weight: .regular).italic())
                         .foregroundStyle(BeerStatsColor.success)
                 }
                 .padding(.top, 8)
 
                 Spacer(minLength: 0)
 
-                Text(current ?? "")
-                    .font(.scaled(44, weight: .heavy, design: .rounded))
-                    .foregroundStyle(BeerStatsColor.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.4)
-                    .lineLimit(3)
-                    .padding(.horizontal, 20)
+                Intertitle {
+                    Text("— DER BEGRIFF —")
+                        .font(Font.world(world, 13, weight: .semibold))
+                        .kerning(3)
+                        .opacity(0.75)
+
+                    Text(current ?? "")
+                        .font(Font.world(world, 44, weight: .bold))
+                        .minimumScaleFactor(0.4)
+                        .lineLimit(3)
+
+                    Text(category.title)
+                        .font(Font.world(world, 17, weight: .regular).italic())
+                        .opacity(0.62)
+                }
+                .modifier(FilmCut(trigger: cuts))
+                .padding(.horizontal, 20)
 
                 Spacer(minLength: 0)
 
@@ -191,13 +211,16 @@ struct CharadesView: View {
                     VStack(spacing: 16) {
                         Spacer(minLength: 0)
 
-                        Text("⏱️").font(.system(size: 54))
+                        Intertitle {
+                            Text("— ENDE —")
+                                .font(Font.world(world, 13, weight: .semibold))
+                                .kerning(3)
+                                .opacity(0.75)
 
-                        Text("\(hits) erraten, \(misses) liegen geblieben")
-                            .font(BeerStatsFont.title)
-                            .foregroundStyle(BeerStatsColor.textPrimary)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
+                            Text("\(hits) erraten, \(misses) liegen geblieben")
+                                .font(Font.world(world, 26, weight: .bold))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
 
                         // Nur nennen, was wirklich anfaellt: `DrinkAmount`
                         // rundet auf mindestens einen Schluck auf, sonst
@@ -206,11 +229,11 @@ struct CharadesView: View {
                         VStack(spacing: 10) {
                             if misses > 0 {
                                 Text("Du trinkst \(DrinkAmount.sips(misses).text)")
-                                    .font(.scaled(22, weight: .bold, design: .rounded))
+                                    .font(Font.world(world, 22, weight: .bold))
                                     .foregroundStyle(BeerStatsColor.error)
                             } else {
                                 Text("Alles rübergebracht")
-                                    .font(.scaled(22, weight: .bold, design: .rounded))
+                                    .font(Font.world(world, 22, weight: .bold))
                                     .foregroundStyle(BeerStatsColor.success)
                             }
 
@@ -253,6 +276,7 @@ struct CharadesView: View {
         hits = 0
         misses = 0
         remaining = Self.roundSeconds
+        startedAt = Date()
         withAnimation(AppAnimation.standard) { phase = .playing }
         HapticManager.success()
 
@@ -278,6 +302,8 @@ struct CharadesView: View {
             HapticManager.error()
             SoundManager.play(.miss)
         }
+
+        cuts += 1
 
         // Ist der Stapel durch, wird neu gemischt statt abgebrochen –
         // dieselbe Entscheidung wie bei "Wer bin ich?": Wer schnell ist,

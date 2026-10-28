@@ -46,6 +46,8 @@ struct SpyView: View {
     private let spyPenalty = DrinkAmount.shot
     private let groupPenalty = DrinkAmount.sips(3)
 
+    @Environment(\.gameWorld) private var world
+
     var body: some View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.accentSecondary)
@@ -71,10 +73,10 @@ struct SpyView: View {
 
     private var setupView: some View {
         VStack(spacing: 18) {
-            Text("🕵️").font(.system(size: 56))
+            RubberStamp(text: "STRENG GEHEIM")
 
             Text("Wie viele spielen mit?")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 22, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Alle bekommen dasselbe Wort – außer einem. Reihum beschreibt jeder das Wort mit einem Satz, ohne es zu nennen.")
@@ -105,19 +107,36 @@ struct SpyView: View {
             },
             onContinue: { nextPlayer(after: index) }
         ) {
-            Text(isSpy ? "🕵️" : "📍").font(.system(size: 54))
+            // Die Farbe kommt vom Blatt – rotes Papier fuer den Spion, die
+            // Tinte stellt die Akte. Deshalb hier keine eigene Farbe.
+            Text(isSpy ? "ACHTUNG" : "AUFTRAG")
+                .font(Font.world(world, 13, weight: .bold))
+                .kerning(3)
+                .opacity(0.75)
 
-            Text(isSpy ? "Du bist der Spion" : word)
-                .font(.scaled(30, weight: .heavy, design: .rounded))
-                .foregroundStyle(isSpy ? BeerStatsColor.error : BeerStatsColor.success)
-                .multilineTextAlignment(.center)
+            Rectangle()
+                .frame(height: 1)
+                .opacity(0.35)
+
+            Text(isSpy ? "Deine Rolle:" : "Dein Wort lautet:")
+                .font(Font.world(world, 15, weight: .regular))
+                .opacity(0.85)
+
+            // Ein Wort in einer Zeile, lieber kleiner: Ein langes
+            // zusammengesetztes Wort braeche sonst mitten im Wort um.
+            TypewriterText(
+                text: isSpy ? "DU BIST\nDER SPION" : word.uppercased(),
+                font: Font.world(world, 30, weight: .heavy)
+            )
+            .lineLimit(isSpy ? 2 : 1)
+            .minimumScaleFactor(0.4)
 
             Text(isSpy
                  ? "Du kennst das Wort nicht. Tu so, als wüsstest du es."
                  : "Beschreibe es mit einem Satz, ohne es zu nennen.")
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
-                .multilineTextAlignment(.center)
+                .font(Font.world(world, 13, weight: .regular))
+                .opacity(0.75)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -125,13 +144,13 @@ struct SpyView: View {
 
     private var describingView: some View {
         VStack(spacing: 18) {
-            Text("🗣️").font(.system(size: 54))
+            RubberStamp(text: "BEFRAGUNG", angle: 5)
 
             Text("Reihum beschreiben")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 22, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Spieler 1 fängt an. Jeder sagt genau einen Satz über das Wort – nicht zu genau, sonst hilft er dem Spion.")
+            Text("\(PlayerNames.plainName(for: 0)) fängt an. Jeder sagt genau einen Satz über das Wort – nicht zu genau, sonst hilft er dem Spion.")
                 .font(BeerStatsFont.body)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -147,10 +166,10 @@ struct SpyView: View {
 
     private var verdictView: some View {
         VStack(spacing: 14) {
-            Text("🗳️").font(.system(size: 48))
+            RubberStamp(text: "ABSTIMMUNG", angle: -4)
 
             Text("Wer war es?")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 22, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Einigt euch auf einen Verdächtigen und tippt, was passiert ist.")
@@ -188,7 +207,7 @@ struct SpyView: View {
         } label: {
             VStack(spacing: 3) {
                 Text(title)
-                    .font(BeerStatsFont.headline)
+                    .font(Font.world(world, 17, weight: .semibold))
                     .foregroundStyle(BeerStatsColor.textPrimary)
                 Text(detail)
                     .font(BeerStatsFont.caption)
@@ -207,19 +226,19 @@ struct SpyView: View {
 
     private func resultView(_ outcome: Outcome) -> some View {
         VStack(spacing: 16) {
-            Text(outcome == .spyCaught ? "🎉" : "🕵️").font(.system(size: 56))
+            stamp(for: outcome)
 
             Text("\(PlayerNames.name(for: spyIndex)) war der Spion")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 22, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
 
             Text("Das Wort war „\(word)“")
-                .font(BeerStatsFont.headline)
-                .foregroundStyle(BeerStatsColor.accentSecondary)
+                .font(Font.world(world, 17, weight: .semibold))
+                .foregroundStyle(SecretFile.folderLight)
 
             Text(penaltyText(for: outcome))
-                .font(.scaled(22, weight: .bold, design: .rounded))
+                .font(Font.world(world, 22, weight: .bold))
                 .foregroundStyle(BeerStatsColor.error)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -233,6 +252,19 @@ struct SpyView: View {
             QuietButton(title: "Spielerzahl ändern") {
                 withAnimation(AppAnimation.standard) { phase = .setup }
             }
+        }
+    }
+
+    /// Der Stempel auf der Akte. Gruen nur, wenn die Runde gewonnen hat –
+    /// dieselbe Bedeutung wie ueberall in der App.
+    private func stamp(for outcome: Outcome) -> some View {
+        switch outcome {
+        case .spyCaught:
+            return RubberStamp(text: "ENTTARNT", color: BeerStatsColor.success, angle: -8)
+        case .spyEscaped:
+            return RubberStamp(text: "ENTKOMMEN", angle: -8)
+        case .spyGuessedWord:
+            return RubberStamp(text: "WORT GEKNACKT", angle: -8)
         }
     }
 
