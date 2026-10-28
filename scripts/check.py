@@ -22,6 +22,12 @@ Fehler, die in diesem Projekt tatsaechlich vorgekommen sind:
      Zeitstrahl-Spiels - `TimelineView(.animation)` ruft also den Screen auf,
      und der Lauf scheitert mit "argument passed to call that takes no
      arguments" (Lessons Learned Nr. 15).
+  6. Ein `map`, dessen Closure in einem Ausdruck ein Paar aus Tupeln baut –
+     `.map { k in ((x, 0), (x, h)) }`. Lauter Zahlenliterale, deren Typ erst
+     aus dem Ziel folgt: Der Compiler probiert jede Kombination durch und
+     gibt mit "unable to type-check this expression in reasonable time" auf
+     (Lauf 165, Lessons Learned Nr. 16). Eine Schleife mit benannten Punkten
+     hat das Problem nicht.
 
 Rueckgabewert 1, wenn etwas gefunden wurde - damit es sich in eine
 Befehlskette haengen laesst.
@@ -205,6 +211,17 @@ def main():
                     f"{rel}:{zeile}  {name}(.…) meint vermutlich SwiftUI.{name} - "
                     f"ein eigener Typ im Projekt verdeckt den Namen"
                 )
+
+    # Tupel aus Tupeln in einer einzeiligen map-Closure: Daran hat sich der
+    # Typpruefer zweimal festgerechnet, und das sieht man erst nach Minuten.
+    tupel_map = re.compile(r"\.map\s*\{\s*\w+\s+in\s*\(\s*\(")
+    for rel, code in dateien:
+        for treffer in tupel_map.finditer(code):
+            zeile = code[:treffer.start()].count("\n") + 1
+            funde.append(
+                f"{rel}:{zeile}  map-Closure baut ein Tupel aus Tupeln - "
+                f"als Schleife mit benannten Punkten schreiben"
+            )
 
     # Dateien, die in keinem Quellordner liegen, werden nie uebersetzt - der
     # Build bleibt gruen und die Aenderung wirkt trotzdem nicht.

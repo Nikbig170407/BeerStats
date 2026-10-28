@@ -1131,6 +1131,15 @@ Regel gilt für Abschnitt 9.
     Aufruf seitdem selbst – der Name allein ist kein Fehler, aber ein
     Aufruf mit Punkt-Argument (`(.animation)`) meint fast immer SwiftUI.
 
+16. **Ein Tupel aus Tupeln in einer `map`-Closure kann den Typprüfer
+    aufhängen.** `.map { k in ((Double(k) * 48 + 10, 0), (… , h)) }`
+    sieht harmlos aus, aber jedes Zahlenliteral darin bekommt seinen Typ
+    erst vom Ziel, und der Compiler probiert die Kombinationen durch, bis
+    er mit „unable to type-check this expression in reasonable time“
+    aufgibt (28. Oktober, Lauf 165, zweimal in den Gründen der
+    Spielwelten). Eine Schleife mit benannten Punkten (`let oben: Point =
+    (x, 0)`) hat das Problem nicht. `check.py` meldet das Muster seitdem.
+
 ---
 
 ## 8. Arbeitsweise

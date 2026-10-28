@@ -193,7 +193,11 @@ extension SceneArt {
                 box(&g, x0, 0, 60, h, rgb(44, 30, 19), unit(b, 6) * 0.8)
                 for k in 0..<5 {
                     let xx = x0 + 8 + Double(k) * 11 + noise(k + b * 9, 3) * 3
-                    let punkte: [Point] = stride(from: -10.0, through: h + 10, by: 24).map { y in (xx + 1.8 * sin(y * 0.018 + Double(k + b)), y) }
+                    var punkte: [Point] = []
+                    for y in stride(from: -10.0, through: h + 10, by: 24) {
+                        let welle = 1.8 * sin(y * 0.018 + Double(k + b))
+                        punkte.append((xx + welle, y))
+                    }
                     stroke(&g, punkte, rgb(8, 5, 3), 0.25, 1)
                 }
                 naehte.append(((x0, 0), (x0, h)))
@@ -281,7 +285,13 @@ extension SceneArt {
     private static func recordShelfGround(_ g: inout GraphicsContext, _ w: Double, _ h: Double, _ plain: Bool) {
         wash(&g, full(w, h), from: (0, 0), to: (0, h), [(0, rgb(30, 21, 14), 1), (1, rgb(16, 11, 8), 1)])
         if !plain {
-            let paneele: [(Point, Point)] = (0...Int(w / 48)).map { k in ((Double(k) * 48 + 10, 0), (Double(k) * 48 + 10, h)) }
+            var paneele: [(Point, Point)] = []
+            for k in 0...Int(w / 48) {
+                let x = Double(k) * 48 + 10
+                let oben: Point = (x, 0)
+                let unten: Point = (x, h)
+                paneele.append((oben, unten))
+            }
             lines(&g, paneele, rgb(10, 6, 4), 0.4, 2)
         }
         vignette(&g, full(w, h), 0.55, inner: 0.3)
@@ -297,7 +307,12 @@ extension SceneArt {
                 box(&g, 0, y0, w, 150, rgb(70, 45, 26), unit(b, 4) * 0.6)
                 for k in 0..<13 {
                     let yy = y0 + 8 + Double(k) * 11 + noise(k + b * 20, 2) * 3
-                    let punkte: [Point] = stride(from: -10.0, through: w + 10, by: 18).map { x in (x, yy + 2.2 * sin(x * 0.021 + Double(k + b)) + 1.2 * sin(x * 0.08 + Double(b) * 3)) }
+                    var punkte: [Point] = []
+                    for x in stride(from: -10.0, through: w + 10, by: 18) {
+                        let welle = 2.2 * sin(x * 0.021 + Double(k + b))
+                        let kraeuseln = 1.2 * sin(x * 0.08 + Double(b) * 3)
+                        punkte.append((x, yy + welle + kraeuseln))
+                    }
                     stroke(&g, punkte, k % 3 == 0 ? rgb(110, 74, 44) : rgb(20, 12, 7), k % 3 == 0 ? 0.1 : 0.18, k % 4 == 0 ? 2 : 1)
                 }
                 fugen.append(((0, y0), (w, y0)))
@@ -436,7 +451,13 @@ extension SceneArt {
     private static func graphiteGround(_ g: inout GraphicsContext, _ w: Double, _ h: Double, _ plain: Bool) {
         box(&g, 0, 0, w, h, rgb(16, 18, 22), 1)
         if !plain {
-            let schraegen: [(Point, Point)] = (-Int(h / 16)...Int(w / 16)).map { i in ((Double(i) * 16, 0), (Double(i) * 16 + h * 0.6, h)) }
+            var schraegen: [(Point, Point)] = []
+            for i in -Int(h / 16)...Int(w / 16) {
+                let x = Double(i) * 16
+                let oben: Point = (x, 0)
+                let unten: Point = (x + h * 0.6, h)
+                schraegen.append((oben, unten))
+            }
             lines(&g, schraegen, .white, 0.025, 1)
         }
         glow(&g, w / 2, h * 0.45, 300, .white, 0.05)
@@ -602,7 +623,13 @@ extension SceneArt {
     private static func boardRoomGround(_ g: inout GraphicsContext, _ w: Double, _ h: Double, _ plain: Bool) {
         box(&g, 0, 0, w, h, rgb(12, 12, 13), 1)
         if !plain {
-            let zeilen: [(Point, Point)] = (0...Int(h / 4)).map { k in ((0, Double(k) * 4), (w, Double(k) * 4)) }
+            var zeilen: [(Point, Point)] = []
+            for k in 0...Int(h / 4) {
+                let y = Double(k) * 4
+                let links: Point = (0, y)
+                let rechts: Point = (w, y)
+                zeilen.append((links, rechts))
+            }
             lines(&g, zeilen, .white, 0.014, 1)
         }
         vignette(&g, full(w, h), 0.5, inner: 0.3)
