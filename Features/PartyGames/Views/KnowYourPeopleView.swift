@@ -27,6 +27,8 @@ struct KnowYourPeopleView: View {
 
     private let penalty = DrinkAmount.sips(2)
 
+    @Environment(\.gameWorld) private var world
+
     private var current: PeopleQuestion? {
         questions.indices.contains(index) ? questions[index] : nil
     }
@@ -73,17 +75,20 @@ struct KnowYourPeopleView: View {
                     .foregroundStyle(BeerStatsColor.textSecondary)
             }
 
-            Text(frage.kind.emoji).font(.system(size: 44))
-
             Text(frage.kind.question)
-                .font(.scaled(26, weight: .heavy, design: .rounded))
+                .font(Font.world(world, 30, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
+            Text("Aus euren Beerpong-Zahlen")
+                .font(Font.world(world, 15, weight: .medium))
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            // Zwei Sammelkarten, die von beiden Seiten hereinkommen
             HStack(spacing: 12) {
-                answerButton(frage, profile: frage.left)
-                answerButton(frage, profile: frage.right)
+                answerButton(frage, profile: frage.left, isLeft: true)
+                answerButton(frage, profile: frage.right, isLeft: false)
             }
 
             if answeredId != nil {
@@ -98,10 +103,14 @@ struct KnowYourPeopleView: View {
         .neonEdge(BeerStatsColor.accentSecondary, cornerRadius: 22, intensity: 0.6)
     }
 
-    private func answerButton(_ frage: PeopleQuestion, profile: PlayerProfile) -> some View {
+    private func answerButton(_ frage: PeopleQuestion, profile: PlayerProfile, isLeft: Bool) -> some View {
         let isAnswered = answeredId != nil
         let isCorrect = profile.id == frage.correctId
         let isChosen = profile.id == answeredId
+        let wert = isLeft ? frage.leftValue : frage.rightValue
+        let punkte = isLeft ? frage.leftScore : frage.rightScore
+        let bester = max(frage.leftScore, frage.rightScore, 0.0001)
+        let verliert = isAnswered && !isCorrect
 
         return Button {
             guard !isAnswered, let id = profile.id else { return }
@@ -121,33 +130,39 @@ struct KnowYourPeopleView: View {
                 }
             }
         } label: {
-            VStack(spacing: 8) {
-                ProfileAvatarView(profile: profile, size: 54)
-                Text(profile.name)
-                    .font(BeerStatsFont.headline)
-                    .foregroundStyle(BeerStatsColor.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+            // Bis geraten ist, steht auf beiden Karten ein Fragezeichen.
+            // Danach zeigen BEIDE Seiten Farbe: die richtige gruen, die
+            // falsch gewaehlte rot – nur die gewaehlte zu markieren hiesse,
+            // die Antwort noch einmal suchen zu muessen.
+            QuartetCard(
+                name: profile.name,
+                color: profile.color.color,
+                statLabel: frage.kind.statLabel,
+                value: isAnswered ? wert : nil,
+                share: punkte / bester,
+                isBetter: isAnswered && isCorrect,
+                shineOffset: isLeft ? 0 : 0.5
+            ) {
+                ProfileAvatarView(profile: profile, size: 48)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(
-                background(isAnswered: isAnswered, isCorrect: isCorrect, isChosen: isChosen),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                if isAnswered, isCorrect || isChosen {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isCorrect ? BeerStatsColor.success : BeerStatsColor.error, lineWidth: 3)
+                }
+            }
+            // Wer verliert, kippt weg
+            .rotationEffect(.degrees(verliert ? (isLeft ? -7 : 7) : 0), anchor: .bottom)
+            .opacity(verliert ? 0.6 : 1)
+            .animation(.easeOut(duration: 0.4), value: isAnswered)
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(PressableButtonStyle())
         .disabled(isAnswered)
-    }
-
-    /// Nach der Antwort faerben sich BEIDE Seiten: die richtige gruen, die
-    /// falsch gewaehlte rot. Nur die gewaehlte zu faerben hiesse, die
-    /// Antwort noch einmal suchen zu muessen.
-    private func background(isAnswered: Bool, isCorrect: Bool, isChosen: Bool) -> Color {
-        guard isAnswered else { return BeerStatsColor.surfaceElevated.opacity(0.6) }
-        if isCorrect { return BeerStatsColor.success.opacity(0.3) }
-        return isChosen ? BeerStatsColor.error.opacity(0.3) : BeerStatsColor.surfaceElevated.opacity(0.4)
+        .id(frage.id)
+        .transition(.move(edge: isLeft ? .leading : .trailing).combined(with: .opacity))
+        .accessibilityLabel(profile.name)
+        .accessibilityValue(isAnswered ? "\(frage.kind.statLabel) \(wert)" : "")
     }
 
     private func revealPanel(_ frage: PeopleQuestion) -> some View {
@@ -155,7 +170,7 @@ struct KnowYourPeopleView: View {
 
         return VStack(spacing: 10) {
             Text(frage.revealText)
-                .font(.scaled(22, weight: .heavy, design: .rounded))
+                .font(Font.world(world, 24, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .monospacedDigit()
 
@@ -210,16 +225,18 @@ struct KnowYourPeopleView: View {
     }
 
     private func next() {
-        answeredId = nil
-        askedCount += 1
+        withAnimation(AppAnimation.standard) {
+            answeredId = nil
+            askedCount += 1
 
-        if index + 1 < questions.count {
-            index += 1
-        } else {
-            // Von vorn, neu gemischt: Lieber eine Frage zweimal am Abend als
-            // ein Spiel, das nach acht Runden zu Ende ist.
-            questions = KnowYourPeople.questions(for: tablePlayers)
-            index = 0
+            if index + 1 < questions.count {
+                index += 1
+            } else {
+                // Von vorn, neu gemischt: Lieber eine Frage zweimal am Abend
+                // als ein Spiel, das nach acht Runden zu Ende ist.
+                questions = KnowYourPeople.questions(for: tablePlayers)
+                index = 0
+            }
         }
     }
 }

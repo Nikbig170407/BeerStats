@@ -30,6 +30,8 @@ struct MostLikelyView: View {
     /// damit greift die Haerte auch hier.
     private let penalty = DrinkAmount.sips(3)
 
+    @Environment(\.gameWorld) private var world
+
     private var currentCard: MostLikelyCard? {
         deck.indices.contains(index) ? deck[index] : nil
     }
@@ -69,8 +71,6 @@ struct MostLikelyView: View {
         VStack(spacing: 18) {
             Spacer(minLength: 0)
 
-            Text("👉").font(.system(size: 34))
-
             Text(card.text)
                 .font(.scaled(25, weight: .bold, design: .rounded))
                 .foregroundStyle(BeerStatsColor.textPrimary)
@@ -86,6 +86,13 @@ struct MostLikelyView: View {
         // wie ihr Text. Die Spacer INNEN halten den Text in der Mitte.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(28)
+        // Bei null zeigen alle – die Finger schnappen von den Raendern
+        // herein, hinter dem Text, damit er lesbar bleibt
+        .background {
+            if phase == .reveal {
+                PointingFingers()
+            }
+        }
         .glassPanel(cornerRadius: 24)
         .neonEdge(BeerStatsColor.warning, cornerRadius: 24, intensity: 0.6)
         .id(card.id)
@@ -102,17 +109,15 @@ struct MostLikelyView: View {
         case .reading:
             EmptyView()
         case .counting(let value):
-            Text("\(value)")
-                .font(.scaled(64, weight: .heavy, design: .rounded))
-                .foregroundStyle(BeerStatsColor.warning)
-                .transition(.scale.combined(with: .opacity))
+            // Jede Zahl faellt mit Wumms herein und federt ein
+            CountdownDigit(value: value)
                 .id(value)
         case .reveal:
             VStack(spacing: 6) {
-                Text("ZEIGEN!")
-                    .font(.scaled(34, weight: .heavy, design: .rounded))
-                    .kerning(3)
-                    .foregroundStyle(BeerStatsColor.success)
+                Text("ZEIGT!")
+                    .font(Font.world(world, 64, weight: .black))
+                    .kerning(2)
+                    .foregroundStyle(ShowOfHands.yellow)
 
                 Text("Die meisten Finger: \(penalty.text)")
                     .font(BeerStatsFont.caption)
@@ -160,10 +165,8 @@ struct MostLikelyView: View {
     /// geht, sitzt vor einem Spiel ohne Inhalt.
     private var finishedView: some View {
         VStack(spacing: 18) {
-            Text(deck.isEmpty ? "🫥" : "🏁").font(.system(size: 60))
-
             Text(deck.isEmpty ? "Keine Karte übrig" : "Stapel durch")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 30, weight: .black))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text(deck.isEmpty

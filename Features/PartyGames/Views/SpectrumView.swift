@@ -47,6 +47,8 @@ struct SpectrumView: View {
     private let penalty = DrinkAmount.sips(2)
     private let reward = DrinkAmount.sips(3)
 
+    @Environment(\.gameWorld) private var world
+
     private var distance: Double { abs(guess - target) }
     private var isBullseye: Bool { distance <= Self.bullseye }
     private var isNear: Bool { distance <= Self.nearMiss }
@@ -82,12 +84,10 @@ struct SpectrumView: View {
         VStack(spacing: 16) {
             Spacer(minLength: 0)
 
-            Text("🎚️").font(.system(size: 56))
-
             TurnRow(turn: turn, tint: BeerStatsColor.accent)
 
             Text("Nur du schaust")
-                .font(BeerStatsFont.title)
+                .font(Font.world(world, 30, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
             Text("Du siehst gleich eine Stelle zwischen zwei Begriffen. Gib der Runde einen Hinweis, der genau dorthin führt – ein Wort oder ein Beispiel, keine Zahl.")
@@ -111,9 +111,9 @@ struct SpectrumView: View {
         VStack(spacing: 18) {
             Spacer(minLength: 0)
 
-            poles
+            dial(open: true, needle: false)
 
-            scale(showingTarget: true, marker: nil)
+            poles
 
             Text("Dein Hinweis muss hierher führen. Sag ihn laut – dann weitergeben.")
                 .font(BeerStatsFont.caption)
@@ -137,14 +137,11 @@ struct SpectrumView: View {
         VStack(spacing: 18) {
             Spacer(minLength: 0)
 
+            dial(open: false, needle: true)
+
             poles
 
-            scale(showingTarget: false, marker: guess)
-
-            Slider(value: $guess, in: 0...100)
-                .tint(BeerStatsColor.accent)
-
-            Text("Schiebt gemeinsam. Wenn ihr euch einig seid, festlegen.")
+            Text("Zieht die Nadel gemeinsam am Bogen entlang. Wenn ihr euch einig seid, festlegen.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -161,15 +158,13 @@ struct SpectrumView: View {
         VStack(spacing: 16) {
             Spacer(minLength: 0)
 
-            Text(isBullseye ? "🎯" : (isNear ? "😌" : "💀"))
-                .font(.system(size: 54))
+            // Die Klappe dreht sich weg und gibt die Zielzone frei
+            dial(open: true, needle: true, reveal: true)
 
             poles
 
-            scale(showingTarget: true, marker: guess)
-
             Text(verdict)
-                .font(BeerStatsFont.headline)
+                .font(Font.world(world, 20, weight: .bold))
                 .foregroundStyle(isBullseye ? BeerStatsColor.success : (isNear ? BeerStatsColor.textSecondary : BeerStatsColor.error))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -193,58 +188,39 @@ struct SpectrumView: View {
 
     // MARK: - Bausteine
 
+    /// Die beiden Pole in den Farben der Enden des Bogens.
     private var poles: some View {
         HStack(alignment: .top, spacing: 12) {
             Text(card?.left ?? "")
-                .font(BeerStatsFont.headline)
-                .foregroundStyle(BeerStatsColor.accentSecondary)
+                .font(Font.world(world, 18, weight: .bold))
+                .foregroundStyle(Wavelength.cool)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(card?.right ?? "")
-                .font(BeerStatsFont.headline)
-                .foregroundStyle(BeerStatsColor.warning)
+                .font(Font.world(world, 18, weight: .bold))
+                .foregroundStyle(Wavelength.warm)
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// Der Balken. Die Zonen werden in Anteilen der Breite gezeichnet, nicht
-    /// in Punkten – sonst sieht die Trefferzone auf jedem Geraet anders
-    /// gross aus, als sie gerechnet wird.
-    private func scale(showingTarget: Bool, marker: Double?) -> some View {
-        GeometryReader { geo in
-            let breite = geo.size.width
-
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(BeerStatsColor.surfaceElevated.opacity(0.6))
-
-                if showingTarget {
-                    zone(width: breite, half: Self.nearMiss, color: BeerStatsColor.accent.opacity(0.25))
-                    zone(width: breite, half: Self.bullseye, color: BeerStatsColor.accent.opacity(0.85))
-                }
-
-                if let marker {
-                    Capsule()
-                        .fill(BeerStatsColor.textPrimary)
-                        .frame(width: 3)
-                        .offset(x: breite * CGFloat(marker / 100) - 1.5)
-                }
-            }
-        }
-        .frame(height: 26)
-    }
-
-    private func zone(width: CGFloat, half: Double, color: Color) -> some View {
-        let von = max(0, target - half) / 100
-        let bis = min(100, target + half) / 100
-
-        return Capsule()
-            .fill(color)
-            .frame(width: width * CGFloat(bis - von))
-            .offset(x: width * CGFloat(von))
+    /// Das Rad. Die Zonen werden als Anteil des Bogens gezeichnet, nicht in
+    /// Punkten – sonst saehe die Trefferzone auf jedem Geraet anders gross
+    /// aus, als sie gerechnet wird.
+    private func dial(open: Bool, needle: Bool, reveal: Bool = false) -> some View {
+        WavelengthDial(
+            target: target,
+            bullseye: Self.bullseye,
+            nearMiss: Self.nearMiss,
+            guess: $guess,
+            showsNeedle: needle,
+            isOpen: open,
+            leftPole: card?.left ?? "",
+            rightPole: card?.right ?? "",
+            opensOnAppear: reveal
+        )
     }
 
     // MARK: - Ablauf

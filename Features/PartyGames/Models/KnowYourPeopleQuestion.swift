@@ -49,6 +49,18 @@ struct PeopleQuestion: Identifiable, Equatable {
             }
         }
 
+        /// Die Zeile auf der Quartettkarte.
+        var statLabel: String {
+            switch self {
+            case .hitRate:      return "Trefferquote"
+            case .airballs:     return "Airballs"
+            case .onFireStreak: return "Längste Serie"
+            case .wins:         return "Siege"
+            case .games:        return "Partien"
+            case .bounces:      return "Bounce Shots"
+            }
+        }
+
         var emoji: String {
             switch self {
             case .hitRate:      return "🎯"
@@ -68,8 +80,15 @@ struct PeopleQuestion: Identifiable, Equatable {
     let right: PlayerProfile
     /// Die Profil-ID der richtigen Antwort.
     let correctId: String
+    /// Die Werte beider Seiten, wie sie auf der Karte stehen: „41 %".
+    let leftValue: String
+    let rightValue: String
+    /// Dieselben Werte als Zahl – fuer die Balken auf den Karten.
+    let leftScore: Double
+    let rightScore: Double
+
     /// Was danach dasteht: „41 % zu 29 %".
-    let revealText: String
+    var revealText: String { "\(leftValue) zu \(rightValue)" }
 }
 
 enum KnowYourPeople {
@@ -157,7 +176,10 @@ enum KnowYourPeople {
             left: links,
             right: rechts,
             correctId: linksGewinnt ? linksId : rechtsId,
-            revealText: "\(text(linkerWert)) zu \(text(rechterWert))"
+            leftValue: text(linkerWert),
+            rightValue: text(rechterWert),
+            leftScore: linkerWert,
+            rightScore: rechterWert
         )
     }
 

@@ -27,6 +27,10 @@ struct CategoriesView: View {
     @State private var turnLimit: Double = Self.startLimit
     @State private var turns = 0
     @State private var tickTask: Task<Void, Never>?
+    /// Jedes "Gesagt" dreht die Sanduhr einmal um.
+    @State private var flips = 0
+
+    @Environment(\.gameWorld) private var world
 
     /// Erste Bedenkzeit und wie schnell sie schrumpft. Die Untergrenze ist
     /// bewusst nicht null: Unter zwei Sekunden gewinnt nur noch, wer den
@@ -47,7 +51,7 @@ struct CategoriesView: View {
                 // weil eine Runde eine Person ist.
                 TurnRow(turn: turns, tint: BeerStatsColor.warning)
                 categoryCard
-                timerRing
+                hourglass
                 Spacer(minLength: 0)
                 controls
             }
@@ -63,12 +67,12 @@ struct CategoriesView: View {
     private var categoryCard: some View {
         VStack(spacing: 10) {
             Text("KATEGORIE")
-                .font(.scaled(12, weight: .heavy, design: .rounded))
+                .font(Font.world(world, 13, weight: .heavy))
                 .kerning(2.6)
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
             Text(category)
-                .font(.scaled(28, weight: .bold, design: .rounded))
+                .font(Font.world(world, 30, weight: .bold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -87,36 +91,34 @@ struct CategoriesView: View {
 
     // MARK: - Uhr
 
-    private var timerRing: some View {
-        ZStack {
-            Circle()
-                .stroke(BeerStatsColor.textSecondary.opacity(0.18), lineWidth: 12)
+    /// Die Sanduhr: Der Sand rieselt, solange jemand ueberlegt, und sie
+    /// wird mit jeder Runde kleiner – so knapp, wie die Bedenkzeit wird.
+    private var hourglass: some View {
+        VStack(spacing: 4) {
+            HourglassView(
+                fill: phase == .lost ? 0 : Double(progress),
+                scale: 0.55 + 0.45 * turnLimit / Self.startLimit,
+                running: phase == .running,
+                flips: flips
+            )
+            .frame(width: 190, height: 190)
 
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(ringColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-
-            VStack(spacing: 2) {
-                switch phase {
-                case .ready:
-                    Text("Bereit")
-                        .font(BeerStatsFont.headline)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                case .running:
-                    Text(String(format: "%.1f", remaining))
-                        .font(.scaled(42, weight: .heavy, design: .rounded))
-                        .foregroundStyle(ringColor)
-                        .monospacedDigit()
-                    Text("Sekunden")
-                        .font(BeerStatsFont.statLabel)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                case .lost:
-                    Text("🍺").font(.system(size: 44))
-                }
+            switch phase {
+            case .ready:
+                Text("Bereit")
+                    .font(Font.world(world, 18, weight: .semibold))
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            case .running:
+                Text(String(format: "%.1f Sekunden", remaining))
+                    .font(Font.world(world, 20, weight: .heavy))
+                    .foregroundStyle(ringColor)
+                    .monospacedDigit()
+            case .lost:
+                Text("Abgelaufen")
+                    .font(Font.world(world, 20, weight: .heavy))
+                    .foregroundStyle(BeerStatsColor.error)
             }
         }
-        .frame(width: 190, height: 190)
         .animation(AppAnimation.standard, value: phase)
     }
 
@@ -199,6 +201,7 @@ struct CategoriesView: View {
 
     private func nextTurn() {
         turns += 1
+        flips += 1
         // Dieselbe Zahl zaehlt zwei Dinge: wie viele Runden gespielt sind
         // (die Bedenkzeit haengt daran) und wer dran ist. Das geht auf, weil
         // beides im selben Takt laeuft – eine Runde ist eine Person.
