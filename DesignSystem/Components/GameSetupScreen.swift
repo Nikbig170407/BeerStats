@@ -78,6 +78,7 @@ struct GameSetupScreen<Content: View>: View {
             Text(title)
                 .font(world == nil ? BeerStatsFont.title : Font.world(world, 26))
                 .foregroundStyle(BeerStatsColor.textPrimary)
+                .keepsWordsWhole(title)
 
             Text(subtitle)
                 .font(BeerStatsFont.caption)

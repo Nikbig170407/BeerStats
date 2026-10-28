@@ -118,14 +118,14 @@ struct SplitFlapText: View {
         let alphabet = DepartureBoard.alphabet
 
         for (reihe, zeile) in zeilen.enumerated() {
-            // Mittig in der Zeile, wie auf der Tafel
+            // Linksbuendig, wie am Bahnhof. Mittig ginge auf festen Klappen
+            // nur bei gerader Restbreite – bei ungerader stuende der Titel
+            // eine halbe Klappe neben der Mitte, und genau so sah er aus.
             let zeichen = Array(zeile)
-            let einzug = (columns - zeichen.count) / 2
             for spalte in 0..<columns {
                 let x = Double(spalte) * (breite + luecke)
                 let y = Double(reihe) * (hoehe + luecke)
-                let stelle = spalte - einzug
-                let ziel: Character = zeichen.indices.contains(stelle) ? zeichen[stelle] : " "
+                let ziel: Character = zeichen.indices.contains(spalte) ? zeichen[spalte] : " "
 
                 var jetzt = ziel, vorher = ziel, fall = 1.0
                 if let zielIndex = alphabet.firstIndex(of: ziel) {

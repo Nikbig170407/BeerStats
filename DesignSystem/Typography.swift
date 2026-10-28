@@ -35,3 +35,17 @@ enum BeerStatsFont {
     static let statValue = Font.system(.title, design: .monospaced).weight(.semibold)
     static let statLabel = Font.system(.caption, design: .monospaced).weight(.medium)
 }
+
+extension View {
+    /// Ein Titel bricht zwischen Wörtern um, nie mitten im Wort.
+    ///
+    /// Jedes Wort bekommt höchstens eine Zeile; was dann noch nicht passt,
+    /// wird kleiner statt geteilt. Die Schriften der Spielwelten sind teils
+    /// so breit, dass in einer Kachel sonst „Schätzmeiste“ über einem
+    /// einzelnen „r“ stand – und mit großer Systemschrift trifft es jeden
+    /// langen Titel.
+    func keepsWordsWhole(_ text: String, minimumScale: CGFloat = 0.5) -> some View {
+        lineLimit(max(1, text.split(separator: " ").count))
+            .minimumScaleFactor(minimumScale)
+    }
+}

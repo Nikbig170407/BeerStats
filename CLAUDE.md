@@ -520,6 +520,9 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     aufs Lesen.
   - **Nur Systemschriften**, über `Font.scaled(…, width:)` auch schmal oder
     breit – keine Schriftdatei, keine Lizenzfrage, die Systemgröße gilt.
+    Breite Schriften brauchen Platz: Ein Spieltitel läuft deshalb über
+    `keepsWordsWhole` – Umbruch nur zwischen Wörtern, sonst wird er
+    kleiner. Ohne das stand in der Kachel „Schätzmeiste“ über einem „r“.
   - **Texturen werden einmal gezeichnet** (`WorldGround` ist
     gleichsetzbar, ein Tastendruck rechnet den Grund nicht neu), leise
     Bewegung höchstens mit 30 Bildern je Sekunde.
@@ -1289,7 +1292,9 @@ oben; was schief aussieht, unten.
     Ordner, die jetzt den Grund ihrer Welt als Deckel trägt.
   - **Bleibt aller Text lesbar**, mit großer Schrift und im Tischmodus?
     Am ehesten eng: die Abfahrtstafel beim Würfel, die Stirnkarte bei
-    „Wer bin ich?" und die Anzeigetafel im Turnier.
+    „Wer bin ich?" und die Anzeigetafel im Turnier. Und bricht nirgends
+    mehr ein Titel mitten im Wort um (gemeldet: Schätzmeister und
+    Reaktionsduell in den Kacheln)?
   - **Ruckelt etwas auf dem iPhone 13?** Am meisten zu tun haben die
     Leuchtreklame bei „Ich hab noch nie", das Casino-Rad, die Herde, die
     Fallblätter und die Gründe mit Bewegung (Glut, Lampe, Filmkorn).

@@ -147,6 +147,7 @@ struct TournamentView: View {
                     .font(stadion.font(28, weight: .heavy))
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .multilineTextAlignment(.center)
+                    .keepsWordsWhole(game.title)
 
                 Text(game.subtitle)
                     .font(BeerStatsFont.caption)

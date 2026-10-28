@@ -149,6 +149,7 @@ struct PartyGameCard: View {
                     Text(game.title)
                         .font(Font.world(game.world, 17, weight: .bold))
                         .foregroundStyle(BeerStatsColor.textPrimary)
+                        .keepsWordsWhole(game.title)
                     Text(game.subtitle)
                         .font(BeerStatsFont.caption)
                         .foregroundStyle(BeerStatsColor.textSecondary)
@@ -245,6 +246,7 @@ struct PartyGameRulesView: View {
                         Text(game.title)
                             .font(BeerStatsFont.title)
                             .foregroundStyle(BeerStatsColor.textPrimary)
+                            .keepsWordsWhole(game.title)
 
                         Text(game.subtitle)
                             .font(BeerStatsFont.caption)
