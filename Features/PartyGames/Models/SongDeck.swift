@@ -91,7 +91,7 @@ enum SongDeck {
         SongCard(title: "Rasputin", artist: "Boney M.", year: 1978, appleId: 824394483),
         SongCard(title: "I Will Survive", artist: "Gloria Gaynor", year: 1978, appleId: 1475006475),
         SongCard(title: "Le Freak", artist: "Chic", year: 1978, appleId: 734291654),
-        SongCard(title: "Another Brick in the Wall", artist: "Pink Floyd", year: 1979)
+        SongCard(title: "Another Brick in the Wall", artist: "Pink Floyd", year: 1979, appleId: 1065975638)
     ]
 
     // MARK: - 1980er
@@ -118,7 +118,7 @@ enum SongDeck {
         SongCard(title: "Take On Me", artist: "a-ha", year: 1985, appleId: 380907765),
         SongCard(title: "Rock Me Amadeus", artist: "Falco", year: 1985, appleId: 1826810978),
         SongCard(title: "Money for Nothing", artist: "Dire Straits", year: 1985, appleId: 1440912599),
-        SongCard(title: "We Are the World", artist: "USA for Africa", year: 1985),
+        SongCard(title: "We Are the World", artist: "USA for Africa", year: 1985, appleId: 41737859),
         SongCard(title: "The Final Countdown", artist: "Europe", year: 1986, appleId: 196480329),
         SongCard(title: "Livin' on a Prayer", artist: "Bon Jovi", year: 1986, appleId: 1794889306),
         SongCard(title: "Never Gonna Give You Up", artist: "Rick Astley", year: 1987, appleId: 1559523359),
@@ -175,7 +175,6 @@ enum SongDeck {
         SongCard(title: "Hey Ya!", artist: "OutKast", year: 2003, appleId: 1774799818),
         SongCard(title: "Crazy in Love", artist: "Beyoncé", year: 2003, appleId: 250776858),
         SongCard(title: "In da Club", artist: "50 Cent", year: 2003, appleId: 1440907550),
-        SongCard(title: "Mein Block", artist: "Sido", year: 2004),
         SongCard(title: "Perfekte Welle", artist: "Juli", year: 2004, appleId: 1442684499),
         SongCard(title: "Feel Good Inc.", artist: "Gorillaz", year: 2005, appleId: 850583586),
         SongCard(title: "Nur ein Wort", artist: "Wir sind Helden", year: 2005, appleId: 715689465),
@@ -190,7 +189,7 @@ enum SongDeck {
         SongCard(title: "Sex on Fire", artist: "Kings of Leon", year: 2008, appleId: 290303003),
         SongCard(title: "I Kissed a Girl", artist: "Katy Perry", year: 2008, appleId: 716036187),
         SongCard(title: "Haus am See", artist: "Peter Fox", year: 2008, appleId: 312318468),
-        SongCard(title: "I Gotta Feeling", artist: "The Black Eyed Peas", year: 2009)
+        SongCard(title: "I Gotta Feeling", artist: "The Black Eyed Peas", year: 2009, appleId: 1446016735)
     ]
 
     // MARK: - 2010er
@@ -199,7 +198,6 @@ enum SongDeck {
         SongCard(title: "Rolling in the Deep", artist: "Adele", year: 2010, appleId: 413623677),
         SongCard(title: "Somebody That I Used to Know", artist: "Gotye", year: 2011, appleId: 1442387291),
         SongCard(title: "Gangnam Style", artist: "PSY", year: 2012, appleId: 1452862511),
-        SongCard(title: "Thrift Shop", artist: "Macklemore & Ryan Lewis", year: 2012),
         SongCard(title: "Radioactive", artist: "Imagine Dragons", year: 2012, appleId: 1440830119),
         SongCard(title: "Tage wie diese", artist: "Die Toten Hosen", year: 2012, appleId: 512313000),
         SongCard(title: "Get Lucky", artist: "Daft Punk", year: 2013, appleId: 1673536443),

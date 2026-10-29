@@ -410,7 +410,15 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     nie selbst. Apple sperrt bei zu vielen Anfragen minutenlang, aus der
     Sitzung heraus kam am 29. Oktober kaum ein Lied durch. Deshalb läuft es
     als von Hand gestartete Action (`song-ids.yml`), und die Zeilen aus
-    ihrem Log werden übernommen und gelesen.
+    ihrem Log werden übernommen und gelesen. Sie lässt sich auf dem
+    Arbeitszweig starten – dann muss `main` nicht halb fertig sein.
+    **Gelesen heißt:** Die Liste „Apple nennt ein anderes Jahr“ ist kein
+    Rauschen. Meist liegen dort Album und Single auseinander, und dann
+    fliegt das Lied nach der Stapel-Regel raus, statt dass das Jahr
+    angepasst wird. Heißt ein Lied bei Apple nur anders („Pt. 2“), gehört
+    es in `APPLE_TITEL` im Skript; der Stapel behält den Namen, den man am
+    Tisch kennt. Und die gefundene **Fassung** wird mitgelesen: Einmal kam
+    die WM-Fassung von „Hips Don't Lie“ statt des Originals.
   - **Während des Lieds eine andere Tonsitzung**: `.playback`, damit es auch
     bei stummgeschaltetem iPhone läuft – die Musik ist hier der Inhalt und
     keine Zierde. Danach zurück zu den App-Klängen

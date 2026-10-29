@@ -59,6 +59,9 @@ FALSCHE_FASSUNG = [
     r"\bextended\b", r"\bclub mix\b", r"\bvip\b", r"\blullaby\b",
     # Neu eingespielt fuer einen Anlass, etwa "Hips Don't Lie" zur WM 2006
     r"\bbamboo\b",
+    # Andere Sprache – am Tisch ein anderes Lied. Nur die spanische: Bei
+    # "Deutsche Version" ist das Original oft gerade die deutsche
+    r"en espa", r"spanish version",
 ]
 # Sammlungen: zur Not erlaubt, aber das Album oder die Single ist besser
 SAMMLUNG = [r"best of", r"greatest", r"\bhits\b", r"collection", r"anthology", r"essential", r"\bgold\b",
