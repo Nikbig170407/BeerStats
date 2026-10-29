@@ -57,10 +57,18 @@ FALSCHE_FASSUNG = [
     r"in the style of", r"made famous", r"originally performed", r"\borchestral\b", r"\bsymphonic\b",
     r"piano version", r"sped up", r"\bslowed\b", r"nightcore", r"\bmashup\b", r"\bmedley\b", r"\breprise\b",
     r"\bextended\b", r"\bclub mix\b", r"\bvip\b", r"\blullaby\b",
+    # Neu eingespielt fuer einen Anlass, etwa "Hips Don't Lie" zur WM 2006
+    r"\bbamboo\b",
 ]
 # Sammlungen: zur Not erlaubt, aber das Album oder die Single ist besser
 SAMMLUNG = [r"best of", r"greatest", r"\bhits\b", r"collection", r"anthology", r"essential", r"\bgold\b",
             r"bravo", r"now that", r"kuschelrock", r"ballermann", r"\bparty\b", r"compilation", r"ultimate"]
+
+# Wo Apple ein Lied anders fuehrt, als es am Tisch heisst. Der Stapel behaelt
+# den Namen, den man kennt; gesucht und verglichen wird mit Apples Namen.
+APPLE_TITEL = {
+    ("Pink Floyd", "Another Brick in the Wall"): "Another Brick in the Wall, Pt. 2",
+}
 
 
 def normal(text):
@@ -68,6 +76,8 @@ def normal(text):
     text = "".join(c for c in text if not unicodedata.combining(c))
     text = text.replace("&", " and ").replace("ß", "ss")
     text = re.sub(r"[’'`´]", "", text)
+    # Punkte in Abkuerzungen zaehlen nicht: "U.S.A." ist "USA"
+    text = re.sub(r"(?<=[a-z0-9])\.(?=[a-z0-9])", "", text)
     text = re.sub(r"[^a-z0-9 ]+", " ", text)
     return " ".join(text.split())
 
@@ -81,7 +91,8 @@ def ohne_zusatz(text):
 
 def haupt_interpret(text):
     teile = re.split(r"\s+(?:feat\.?|ft\.?|featuring|with|x|&|und|and)\s+|,", text, flags=re.I)
-    return normal(teile[0])
+    # "The Black Eyed Peas" heisst bei Apple "Black Eyed Peas" – und umgekehrt
+    return re.sub(r"^the ", "", normal(teile[0]))
 
 
 def titel_passt(gesucht, gefunden):
@@ -132,23 +143,26 @@ def suche(begriff, pause):
 
 
 def finde(lied, pause):
-    begriffe = [f'{lied["title"]} {haupt_interpret(lied["artist"])}']
-    kurz = re.sub(r"\s*\([^)]*\)", "", lied["title"]).strip()
-    if kurz != lied["title"]:
+    titel = APPLE_TITEL.get((lied["artist"], lied["title"]), lied["title"])
+    begriffe = [f'{titel} {haupt_interpret(lied["artist"])}']
+    kurz = re.sub(r"\s*\([^)]*\)", "", titel).strip()
+    if kurz != titel:
         begriffe.append(f'{kurz} {haupt_interpret(lied["artist"])}')
+    gesehen = []
     for begriff in begriffe:
         treffer = suche(begriff, pause)
         time.sleep(pause)
+        gesehen += treffer
         passend = [
             t for t in treffer
             if t.get("previewUrl") and t.get("trackId")
-            and titel_passt(lied["title"], t.get("trackName", ""))
+            and titel_passt(titel, t.get("trackName", ""))
             and haupt_interpret(lied["artist"]) in normal(t.get("artistName", ""))
-            and not falsche_fassung(lied["title"], t)
+            and not falsche_fassung(titel, t)
         ]
         if passend:
-            return max(passend, key=lambda t: bewertung(lied, t))
-    return None
+            return max(passend, key=lambda t: bewertung(dict(lied, title=titel), t)), gesehen
+    return None, gesehen
 
 
 def main():
@@ -165,11 +179,16 @@ def main():
 
     fehlt, abweichend = [], []
     for nummer, lied in enumerate(offen, 1):
-        treffer = finde(lied, optionen.pause)
+        treffer, gesehen = finde(lied, optionen.pause)
         name = f'{lied["artist"]} – {lied["title"]} ({lied["year"]})'
         if not treffer:
             fehlt.append(name)
             print(f"[{nummer}/{len(offen)}] NICHT GEFUNDEN  {name}", flush=True)
+            # Was Apple stattdessen hatte – daran sieht man, ob das Lied
+            # fehlt oder nur anders heisst (dann gehoert es in APPLE_TITEL)
+            for t in gesehen[:6]:
+                print(f'      {t.get("trackName", "")} | {t.get("artistName", "")} | '
+                      f'{t.get("collectionName", "")} | {(t.get("releaseDate") or "")[:4]}', flush=True)
             continue
         jahr = int((treffer.get("releaseDate") or "0")[:4] or 0)
         if jahr != lied["year"]:
