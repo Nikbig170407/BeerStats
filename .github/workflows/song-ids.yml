@@ -1,0 +1,33 @@
+# .github/workflows/song-ids.yml
+#
+# Sucht die Apple-Nummern der Hitparade (scripts/find_song_ids.py) – von Hand
+# gestartet, nicht bei jedem Push.
+#
+# Warum hier und nicht in der Sitzung: Apple laesst nur langsame Anfragen zu
+# und sperrt sonst minutenlang. Aus der Sitzung heraus, ueber einen
+# geteilten Ausgang, kam am 29. Oktober kaum ein Lied je fuenf Minuten
+# durch. Ein frischer Runner hat seine eigene Adresse.
+#
+# Das Ergebnis steht im Log: Der letzte Schritt zeigt die geaenderten Zeilen
+# des Stapels, und die werden von Hand uebernommen und geprueft. Committet
+# wird hier nichts – was in den Stapel kommt, soll jemand gelesen haben.
+
+name: Hitparade – Apple-Nummern suchen
+
+on:
+  workflow_dispatch:
+
+jobs:
+  suchen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Nummern suchen
+        run: python3 -u scripts/find_song_ids.py --pause 4
+
+      - name: Gefundene Zeilen zeigen
+        if: always()
+        run: git diff --unified=0 Features/PartyGames/Models/SongDeck.swift | grep '^+ ' || true
