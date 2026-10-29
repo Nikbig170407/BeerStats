@@ -178,7 +178,6 @@ enum SongDeck {
         SongCard(title: "Perfekte Welle", artist: "Juli", year: 2004, appleId: 1442684499),
         SongCard(title: "Feel Good Inc.", artist: "Gorillaz", year: 2005, appleId: 850583586),
         SongCard(title: "Nur ein Wort", artist: "Wir sind Helden", year: 2005, appleId: 715689465),
-        SongCard(title: "Hips Don't Lie", artist: "Shakira", year: 2006),
         SongCard(title: "Rehab", artist: "Amy Winehouse", year: 2006, appleId: 1440856220),
         SongCard(title: "Das Beste", artist: "Silbermond", year: 2006, appleId: 1105987739),
         SongCard(title: "Umbrella", artist: "Rihanna", year: 2007, appleId: 1441154437),
