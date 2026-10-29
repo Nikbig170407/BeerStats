@@ -60,6 +60,7 @@ struct KnowYourPeopleView: View {
         }
         .navigationTitle("Kennst du deine Leute?")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .knowYourPeople)
         .onAppear(perform: buildQuestionsIfNeeded)
     }
 

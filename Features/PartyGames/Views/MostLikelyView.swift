@@ -21,6 +21,11 @@ struct MostLikelyView: View {
     @State private var phase: Phase = .reading
     @State private var countTask: Task<Void, Never>?
 
+    private var isCounting: Bool {
+        if case .counting = phase { return true }
+        return false
+    }
+
     /// Was die meisten Finger kosten.
     ///
     /// Stand bis Oktober 2026 nirgends: Das Spiel sagte "die meisten Finger
@@ -54,6 +59,8 @@ struct MostLikelyView: View {
         }
         .navigationTitle("Wer würde eher?")
         .navigationBarTitleDisplayMode(.inline)
+        // Nicht waehrend des Countdowns – das Blatt laege darueber
+        .roundSettings(for: .mostLikely, isAvailable: !isCounting)
         .onDisappear { countTask?.cancel() }
     }
 

@@ -53,6 +53,7 @@ struct ForbiddenWordsView: View {
         }
         .navigationTitle("Verbotene Wörter")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .forbiddenWords, isAvailable: phase != .setup)
     }
 
     // MARK: - Vorbereitung

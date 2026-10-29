@@ -47,6 +47,7 @@ struct EstimationView: View {
         }
         .navigationTitle("Schätzmeister")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .estimation)
     }
 
     private var progressLine: some View {

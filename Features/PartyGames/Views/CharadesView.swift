@@ -58,6 +58,15 @@ struct CharadesView: View {
         }
         .navigationTitle("Pantomime")
         .navigationBarTitleDisplayMode(.inline)
+        // Nur zwischen den Runden: Waehrend der 90 Sekunden laege das Blatt
+        // ueber der Uhr, und gemischt wird ohnehin erst beim naechsten Start
+        .roundSettings(
+            for: .charades,
+            isAvailable: phase == .ready || phase == .finished,
+            note: "Die Kategorie gilt ab der nächsten Runde, die Härte ab der nächsten Strafe."
+        ) {
+            categoryChoice
+        }
         .onDisappear { tickTask?.cancel() }
     }
 
@@ -73,22 +82,7 @@ struct CharadesView: View {
             onStart: { withAnimation(AppAnimation.standard) { phase = .ready } }
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("WORUM GEHT ES?")
-                    .font(.scaled(11, weight: .heavy, design: .rounded))
-                    .kerning(1.8)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-
-                ForEach(HeadsUpCategory.allCases) { option in
-                    OptionRow(
-                        emoji: option.emoji,
-                        title: option.title,
-                        detail: "\(HeadsUpDeck.count(option)) Begriffe",
-                        isOn: category == option,
-                        tint: BeerStatsColor.success
-                    ) {
-                        category = option
-                    }
-                }
+                categoryChoice
 
                 Text("Kein Wort, kein Laut, nichts aufmalen – nur spielen. Zeigen auf Dinge im Raum zählt nicht.")
                     .font(BeerStatsFont.caption)
@@ -96,6 +90,28 @@ struct CharadesView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 DrinkIntensityPicker(game: .charades)
+            }
+        }
+    }
+
+    /// Im Vorspann und im Zahnrad dieselbe Auswahl.
+    private var categoryChoice: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("WORUM GEHT ES?")
+                .font(.scaled(11, weight: .heavy, design: .rounded))
+                .kerning(1.8)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            ForEach(HeadsUpCategory.allCases) { option in
+                OptionRow(
+                    emoji: option.emoji,
+                    title: option.title,
+                    detail: "\(HeadsUpDeck.count(option)) Begriffe",
+                    isOn: category == option,
+                    tint: BeerStatsColor.success
+                ) {
+                    category = option
+                }
             }
         }
     }

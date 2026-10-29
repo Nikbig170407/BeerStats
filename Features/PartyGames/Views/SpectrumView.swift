@@ -75,6 +75,7 @@ struct SpectrumView: View {
         }
         .navigationTitle("Die Skala")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .spectrum)
         .onAppear(perform: startIfNeeded)
     }
 

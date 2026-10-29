@@ -62,6 +62,7 @@ struct MaexchenView: View {
         }
         .navigationTitle("Mäxchen")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .maexchen, isAvailable: phase != .setup)
     }
 
     // MARK: - Vorbereitung

@@ -46,6 +46,7 @@ struct CountTo21View: View {
         }
         .navigationTitle("21")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .countTo21)
         .sheet(item: Binding(
             get: { editingNumber.map { EditTarget(number: $0) } },
             set: { if $0 == nil { editingNumber = nil } }

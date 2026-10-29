@@ -797,15 +797,37 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   nie auf Kosten von jemandem, der nicht gefragt wurde.
 
 - **Einstellungen mitten in der Runde: das Zahnrad** (`RoundSettings.swift`,
-  Wunsch des Nutzers vom 28. Oktober). Oben rechts sitzt während der Runde
-  ein Zahnrad, das ein Blatt mit den Einstellungen des Spiels öffnet –
-  bisher bei „Ich hab noch nie“. Zwei Regeln, damit es in jedem Spiel gleich
-  bleibt: Im Blatt stehen **dieselben** Schalter wie im Vorspann (eine
-  Eigenschaft, zwei Orte – zwei Kopien liefen auseinander), und das Blatt
-  sagt, **wann** die Änderung gilt. Bei „Ich hab noch nie“: ab der nächsten
-  Karte; die Karte, die gerade dasteht, bleibt, und gespielte Fragen kommen
-  nicht wieder (`shuffled(…, excluding:)` nimmt sie heraus, bevor die
-  Strafen verteilt werden – sonst lägen zwei Strafen hintereinander).
+  Wunsch des Nutzers vom 28. Oktober, am 29. auf **jedes** Partyspiel
+  ausgeweitet). Oben rechts sitzt während der Runde ein Zahnrad, das ein
+  Blatt mit den Einstellungen des Spiels öffnet. Eingehängt wird es mit
+  `.roundSettings(for:)` am Screen, und `check.py` meldet jedes Spiel aus
+  dem Katalog, dem der Aufruf fehlt. Die **Härte bringt der Baustein
+  selbst mit** – die hat jedes Spiel; was ein Spiel darüber hinaus hat,
+  reicht es als `extra` herein. Die Regeln:
+  - **Dieselben Schalter wie im Vorspann** – eine Eigenschaft, zwei Orte,
+    aber eine Ansicht (`categoryChoice`, `cardCountChoice` …). Zwei Kopien
+    liefen auseinander.
+  - **Das Blatt sagt, wann die Änderung gilt.** Eine Menge, die gerade
+    dasteht, bleibt stehen; die nächste ist neu. Bei „Ich hab noch nie“ gilt
+    alles ab der nächsten Karte, und gespielte Fragen kommen nicht wieder
+    (`shuffled(…, excluding:)` nimmt sie heraus, bevor die Strafen verteilt
+    werden – sonst lägen zwei Strafen hintereinander).
+  - **Nur, was mitten in der Runde gehen kann.** Spielerzahl, Ziel und
+    Rundenzahl legen die Partie fest und fehlen deshalb; wer sie ändern
+    will, fängt neu an. Drin sind Inhalt und Härte: Kategorien („Ich hab
+    noch nie“, „Wer bin ich?“, Pantomime), Fragen und Musikquelle der
+    Hitparade, die Kartenzahl von Ring of Fire – jeweils ab dem nächsten
+    Lied, der nächsten Runde.
+  - **Nicht im Vorspann, nicht, solange eine Uhr läuft, und nicht, wenn
+    das Spiel gleich selbst etwas aufmacht** (`isAvailable`). Über einer
+    laufenden Bombe läge das Blatt auf der Uhr, und die Runde liefe
+    ungesehen ab. Und zwei Blätter zugleich zeigt SwiftUI nicht: Öffnete
+    jemand das Zahnrad, während Ring of Fire zieht, fiele der Kartenscreen
+    danach stillschweigend weg.
+  - **Ein Zug merkt sich, was für ihn gilt**, wo die Einstellung sonst
+    mitten im Zug durchschlüge: Die Hitparade kopiert die Musikquelle beim
+    Zugbeginn (`turnSource`) – sonst stünde nach einem Wechsel auf „Box“
+    sofort die Hülle mit dem Titel da, während noch geraten wird.
 
 - **Jede Karte leuchtet anders, aber Rot gehört den Strafen**
   (`NeonSign.Look`, 28. Oktober: „mehr Abwechslung, ändere zum Beispiel
@@ -1636,7 +1658,14 @@ oben; was schief aussieht, unten.
   anderthalb Metern lesbar, und ruckelt das Lauflicht nicht? Und das
   **Zahnrad** oben rechts: mitten in der Runde Tabulos dazunehmen, Fertig –
   kommt ab der nächsten Karte die neue Mischung, und keine Frage doppelt?
-  Soll das Zahnrad auch in die anderen Spiele?
+- **Das Zahnrad in jedem Spiel (29. Oktober)**: Ist es überall da, wo man
+  es sucht – und nirgends, solange eine Uhr läuft (Bombe, Reaktionsduell,
+  Kategorien, Countdown bei „Wer würde eher?“, die Runde bei „Wer bin
+  ich?“ und Pantomime)? In einem Spiel hart einstellen: Kommt die nächste
+  Strafe in der neuen Härte? In Ring of Fire: Kommt nach dem Zahnrad jeder
+  Kartenscreen, und gilt eine neue Kartenzahl erst ab der nächsten Runde?
+  In der Hitparade: Gelten neue Fragen ab dem nächsten Lied, und zeigt ein
+  Wechsel auf „Box“ mitten im Zug **nicht** sofort den Titel?
 - **Hitparade (29. Oktober, vorher Zeitstrahl)**: Das Wichtigste –
   stimmen die Jahreszahlen, und läuft das richtige Lied? Beim ersten
   Durchgang auf Lieder achten, bei denen die Runde widerspricht oder eine

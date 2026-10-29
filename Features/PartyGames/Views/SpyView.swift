@@ -67,6 +67,7 @@ struct SpyView: View {
         }
         .navigationTitle("Der Spion")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .spy, isAvailable: phase != .setup)
     }
 
     // MARK: - Vorbereitung

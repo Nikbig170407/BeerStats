@@ -72,6 +72,7 @@ struct DrinkRouletteView: View {
         }
         .navigationTitle("Trink-Roulette")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .drinkRoulette, isAvailable: hasStarted && !isSpinning)
         .onDisappear { spinTask?.cancel() }
         .sheet(isPresented: $isEditing) {
             RouletteWedgeEditor()

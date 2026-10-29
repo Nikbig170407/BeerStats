@@ -14,9 +14,9 @@
 //  und nicht hier: Ein neues Spiel soll an einer Stelle beschrieben werden,
 //  nicht an zwei.
 //
-//  Der Vorspann kommt genau einmal. Wer eine Runde spielt, die Haerte
-//  danach anders will, geht zurueck und wieder rein – das ist derselbe Weg
-//  wie bei der Spielerzahl und braucht keinen zweiten Knopf im Spiel.
+//  Der Vorspann kommt genau einmal. Wer die Haerte danach anders will,
+//  nimmt das Zahnrad oben rechts (`roundSettings`) – das hat seit dem
+//  29. Oktober jedes Spiel, und es oeffnet denselben Schalter wie hier.
 //
 
 import SwiftUI

@@ -103,8 +103,9 @@ struct HitparadeGame: Equatable {
 
     let playerCount: Int
     let target: Int
-    /// Die angehakten Fragen, in der Reihenfolge des Katalogs.
-    let questions: [HitQuestion]
+    /// Die angehakten Fragen, in der Reihenfolge des Katalogs. Aenderbar
+    /// ueber das Zahnrad (`choose`), deshalb kein `let`.
+    private(set) var questions: [HitQuestion]
 
     private(set) var timelines: [SongTimeline]
     private(set) var player = 0
@@ -128,8 +129,7 @@ struct HitparadeGame: Equatable {
     ) {
         self.playerCount = max(1, playerCount)
         self.target = max(1, target)
-        let gewaehlt = HitQuestion.allCases.filter { questions.contains($0) }
-        self.questions = gewaehlt.isEmpty ? [.placement] : gewaehlt
+        self.questions = Self.ordered(questions)
         self.pool = songs
         self.deck = songs.shuffled(using: &generator)
         self.timelines = Array(repeating: SongTimeline(), count: max(1, playerCount))
@@ -202,6 +202,14 @@ struct HitparadeGame: Equatable {
         question = drawQuestion(after: question, using: &generator)
     }
 
+    /// Andere Fragen fuer den Rest der Partie – aus dem Zahnrad. Die Frage,
+    /// die gerade dasteht, bleibt: Mitten im Zug die Frage zu tauschen,
+    /// waehrend das Lied schon laeuft, hiesse, dass jemand auf eine Frage
+    /// geantwortet hat, die es nicht mehr gibt. Gelost wird ab dem naechsten.
+    mutating func choose(_ fragen: Set<HitQuestion>) {
+        questions = Self.ordered(fragen)
+    }
+
     /// Ein anderes Lied fuer denselben Zug, dieselbe Frage – wenn sich die
     /// Hoerprobe nicht laden laesst. Dafuer zahlt niemand.
     mutating func replaceSong<G: RandomNumberGenerator>(using generator: inout G) {
@@ -209,6 +217,13 @@ struct HitparadeGame: Equatable {
     }
 
     // MARK: - Intern
+
+    /// In der Reihenfolge des Katalogs, und nie leer: Ohne Frage gaebe es
+    /// keinen Zug, also bleibt dann das Einsortieren.
+    private static func ordered(_ fragen: Set<HitQuestion>) -> [HitQuestion] {
+        let gewaehlt = HitQuestion.allCases.filter { fragen.contains($0) }
+        return gewaehlt.isEmpty ? [.placement] : gewaehlt
+    }
 
     /// Die naechste Karte. Ist der Stapel leer, wird neu gemischt – aber
     /// nur, was nicht schon in einer Reihe liegt.

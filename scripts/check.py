@@ -28,6 +28,11 @@ Fehler, die in diesem Projekt tatsaechlich vorgekommen sind:
      gibt mit "unable to type-check this expression in reasonable time" auf
      (Lauf 165, Lessons Learned Nr. 16). Eine Schleife mit benannten Punkten
      hat das Problem nicht.
+  7. Ein Partyspiel ohne Zahnrad. Jedes Spiel aus dem Katalog `PartyGame`
+     haengt `.roundSettings(for:)` an seinen Screen (Wunsch des Nutzers vom
+     29. Oktober: das Zahnrad in jedem Spiel). Ein neues Spiel, das es
+     vergisst, faellt sonst erst am Tisch auf - als das eine Spiel, in dem
+     man die Haerte nicht umstellen kann.
 
 Rueckgabewert 1, wenn etwas gefunden wurde - damit es sich in eine
 Befehlskette haengen laesst.
@@ -225,6 +230,21 @@ def main():
                 f"{rel}:{zeile}  map-Closure baut ein Tupel aus Tupeln - "
                 f"als Schleife mit benannten Punkten schreiben"
             )
+
+    # Jeder Screen aus dem Katalog traegt das Zahnrad. Welche Screens das
+    # sind, steht in `PartyGame.screen` - gelesen wird von dort, damit ein
+    # neues Spiel ohne weiteres Zutun mitgeprueft wird.
+    katalog = next((code for rel, code in dateien if rel.name == "PartyGame.swift"), "")
+    screens = re.findall(r"case \.\w+: return AnyView\((\w+)\(", katalog)
+    if not screens:
+        funde.append("PartyGame.swift  keine Screens in `screen` gefunden - Muster in check.py anpassen")
+    for screen in screens:
+        datei = next(((rel, code) for rel, code in dateien
+                      if re.search(r"\bstruct\s+" + screen + r"\b", code)), None)
+        if datei is None:
+            funde.append(f"{screen}  steht im Katalog, die Datei dazu fehlt")
+        elif ".roundSettings(" not in datei[1]:
+            funde.append(f"{datei[0]}  {screen} hat kein Zahnrad - `.roundSettings(for:)` anhaengen")
 
     # Dateien, die in keinem Quellordner liegen, werden nie uebersetzt - der
     # Build bleibt gruen und die Aenderung wirkt trotzdem nicht.

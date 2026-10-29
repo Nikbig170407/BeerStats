@@ -59,8 +59,13 @@ struct HitparadeView: View {
     @State private var playerCount = 4
     @State private var game: HitparadeGame?
     @State private var yearGuess = HitparadeView.middleYear
-    /// Dieser eine Zug laeuft ueber die Box, weil die Hoerprobe nicht kam.
-    @State private var boxThisTurn = false
+    /// Woher die Musik in DIESEM Zug kommt – beim Zugbeginn aus der
+    /// Einstellung uebernommen, und auf die Box umgestellt, wenn die
+    /// Hoerprobe nicht kam. Eine eigene Kopie, weil die Einstellung sich
+    /// im Zahnrad mitten im Zug aendern laesst: Liesse der Zug sich davon
+    /// umstellen, stuende ploetzlich die Huelle mit Titel da, waehrend
+    /// geraten wird.
+    @State private var turnSource: MusicSource = .app
     /// Wurde fuer die falsche Antwort von eben schon getrunken? Dann bekommt
     /// man den Schluck zurueck, wenn die Runde das Jahr verwirft.
     @State private var bookedPenalty = false
@@ -93,7 +98,7 @@ struct HitparadeView: View {
     }
 
     private var source: MusicSource { MusicSource(rawValue: storedSource) ?? .app }
-    private var usesBox: Bool { source == .box || boxThisTurn }
+    private var usesBox: Bool { turnSource == .box }
 
     private var player: Int { game?.player ?? 0 }
     /// Wer ueber die Box anspielt: der Nachbar dessen, der dran ist.
@@ -113,6 +118,19 @@ struct HitparadeView: View {
         }
         .navigationTitle("Hitparade")
         .navigationBarTitleDisplayMode(.inline)
+        // Spielerzahl und Ziel fehlen im Zahnrad mit Absicht: Beides legt
+        // die Partie fest, und wer es aendern will, faengt eine neue an
+        .roundSettings(
+            for: .timeline,
+            isAvailable: phase != .setup,
+            note: "Fragen und Musik gelten ab dem nächsten Lied, die Härte ab der nächsten Strafe.",
+            onClose: applySettings
+        ) {
+            VStack(alignment: .leading, spacing: 20) {
+                questionsBlock
+                sourceBlock
+            }
+        }
         .onAppear(perform: adoptTableCount)
         // Nichts laeuft weiter, wenn das Spiel weg ist
         .onDisappear { music.stop() }
@@ -147,27 +165,35 @@ struct HitparadeView: View {
                     hint(lengthHint)
                 }
 
-                block("WAS GEFRAGT WIRD") {
-                    questionToggles
-                    hint("Jede Runde lost die App eine der angehakten Fragen aus. Wer richtig liegt, bekommt die Karte in seine Reihe – egal, was gefragt war.")
-                }
-
-                block("WOHER DIE MUSIK KOMMT") {
-                    ChoiceRow(
-                        options: [
-                            ChoiceOption(value: MusicSource.app.rawValue, title: "App", detail: "Hörprobe, braucht Netz"),
-                            ChoiceOption(value: MusicSource.box.rawValue, title: "Box", detail: "Nachbar spielt an")
-                        ],
-                        selection: $storedSource,
-                        tint: tint
-                    )
-                    hint(source == .app
-                         ? "Die App spielt 30 Sekunden des Lieds, ohne Titel oder Cover zu zeigen. Ein Knopf schickt den Ton auf eure Box."
-                         : "Der Nachbar sieht Titel und Interpret, sucht das Lied auf eurer Box und spielt es an, ohne den Titel vorzulesen.")
-                }
+                questionsBlock
+                sourceBlock
 
                 DrinkIntensityPicker(game: .timeline)
             }
+        }
+    }
+
+    /// Im Vorspann und im Zahnrad dieselben Schalter.
+    private var questionsBlock: some View {
+        block("WAS GEFRAGT WIRD") {
+            questionToggles
+            hint("Jede Runde lost die App eine der angehakten Fragen aus. Wer richtig liegt, bekommt die Karte in seine Reihe – egal, was gefragt war.")
+        }
+    }
+
+    private var sourceBlock: some View {
+        block("WOHER DIE MUSIK KOMMT") {
+            ChoiceRow(
+                options: [
+                    ChoiceOption(value: MusicSource.app.rawValue, title: "App", detail: "Hörprobe, braucht Netz"),
+                    ChoiceOption(value: MusicSource.box.rawValue, title: "Box", detail: "Nachbar spielt an")
+                ],
+                selection: $storedSource,
+                tint: tint
+            )
+            hint(source == .app
+                 ? "Die App spielt 30 Sekunden des Lieds, ohne Titel oder Cover zu zeigen. Ein Knopf schickt den Ton auf eure Box."
+                 : "Der Nachbar sieht Titel und Interpret, sucht das Lied auf eurer Box und spielt es an, ohne den Titel vorzulesen.")
         }
     }
 
@@ -680,7 +706,7 @@ struct HitparadeView: View {
     /// Ein neuer Zug: Zaehlwerk zurueck auf die Mitte, und ueber die App
     /// laeuft das Lied sofort los – niemand muss erst etwas antippen.
     private func beginTurn() {
-        boxThisTurn = false
+        turnSource = source
         bookedPenalty = false
         yearGuess = Self.middleYear
         withAnimation(AppAnimation.standard) {
@@ -748,6 +774,15 @@ struct HitparadeView: View {
         beginTurn()
     }
 
+    /// Nach dem Zahnrad: Die Partie lost ab dem naechsten Zug aus den neu
+    /// angehakten Fragen. Die Musikquelle braucht nichts – der naechste Zug
+    /// liest sie ohnehin neu (`turnSource`).
+    private func applySettings() {
+        guard var partie = game else { return }
+        partie.choose(chosenQuestions)
+        game = partie
+    }
+
     /// Die Hoerprobe kommt nicht: ein anderes Lied, dieselbe Frage, keine
     /// Strafe.
     private func replaceSong() {
@@ -761,7 +796,7 @@ struct HitparadeView: View {
     /// Ohne Hoerprobe weiter: Dieser Zug laeuft ueber die Box.
     private func switchToBox() {
         music.stop()
-        boxThisTurn = true
+        turnSource = .box
         withAnimation(AppAnimation.standard) { phase = .handoff }
     }
 

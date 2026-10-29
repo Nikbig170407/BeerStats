@@ -76,6 +76,8 @@ struct BombPassView: View {
         }
         .navigationTitle("Bombe")
         .navigationBarTitleDisplayMode(.inline)
+        // Nicht, solange die Bombe tickt – das Blatt laege darueber
+        .roundSettings(for: .bombPass, isAvailable: phase != .running)
         .onDisappear { stop() }
     }
 

@@ -54,6 +54,7 @@ struct TruthOrDareView: View {
         }
         .navigationTitle("Wahrheit oder Pflicht")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .truthOrDare)
         .onDisappear { refusalTask?.cancel() }
     }
 

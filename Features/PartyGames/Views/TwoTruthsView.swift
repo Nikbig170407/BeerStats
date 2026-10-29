@@ -67,6 +67,7 @@ struct TwoTruthsView: View {
         }
         .navigationTitle("Zwei Wahrheiten")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .twoTruths)
     }
 
     /// Das Thema als Beweisstueck mit laufender Nummer.

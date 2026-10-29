@@ -195,6 +195,30 @@ final class HitparadeTests: XCTestCase {
         XCTAssertGreaterThan(wiederholt, 0, "Die Frage von eben ist gedaempft, nicht verboten")
     }
 
+    // MARK: - Das Zahnrad
+
+    /// Mitten in der Partie andere Fragen: Die Frage, die gerade dasteht,
+    /// bleibt – erst ab dem naechsten Zug wird aus den neuen gelost.
+    func testChangedQuestionsApplyFromTheNextTurn() {
+        var partie = spiel(fragen: [.yearWithinThree])
+        var zufall = SeededGenerator(seed: 5)
+        partie.choose([.title])
+        XCTAssertEqual(partie.question, .yearWithinThree)
+        for _ in 0..<20 {
+            partie.advance(using: &zufall)
+            XCTAssertEqual(partie.question, .title)
+        }
+    }
+
+    func testChoosingNoQuestionsFallsBackToPlacement() {
+        var partie = spiel()
+        var zufall = SeededGenerator(seed: 6)
+        partie.choose([])
+        partie.advance(using: &zufall)
+        XCTAssertEqual(partie.questions, [.placement])
+        XCTAssertEqual(partie.question, .placement)
+    }
+
     // MARK: - Der echte Stapel
 
     /// Jedes Lied braucht seine Hoerprobe – ohne Nummer bei Apple liefe es

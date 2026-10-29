@@ -170,6 +170,16 @@ struct RingOfFireView: View {
         }
         .navigationTitle("Ring of Fire")
         .navigationBarTitleDisplayMode(.inline)
+        // Nicht, waehrend gezogen oder ausgeteilt wird, und nicht, solange
+        // eine Karte oder die Hausregel offen ist: Der Kartenscreen kommt von
+        // selbst, und ueber einem offenen Blatt fiele er stillschweigend weg
+        .roundSettings(
+            for: .ringOfFire,
+            isAvailable: hasStarted && !isBusy && !showsAction && !isAskingForRule,
+            note: "Die Kartenzahl gilt ab der nächsten Runde, die Härte ab der nächsten Karte."
+        ) {
+            cardCountChoice
+        }
         .onDisappear {
             drawTask?.cancel()
             tearTask?.cancel()
@@ -199,25 +209,7 @@ struct RingOfFireView: View {
             onStart: start
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("KARTEN IM RING")
-                    .font(.scaled(11, weight: .heavy, design: .rounded))
-                    .kerning(1.8)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-
-                ChoiceRow(
-                    options: [
-                        ChoiceOption(value: 20, title: "20", detail: "kurz"),
-                        ChoiceOption(value: 32, title: "32", detail: "mittel"),
-                        ChoiceOption(value: PlayingCardDeck.fullSize, title: "52", detail: "ganzer Stapel")
-                    ],
-                    selection: $cardCount,
-                    tint: BeerStatsColor.error
-                )
-
-                Text(stapelHinweis)
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                cardCountChoice
 
                 Text("Die Karten liegen geschuppt im Kreis, jede ein Stück unter der nächsten. Darunter glüht ein Faden: Kleine Lücken hält er, und je weiter sie werden, desto dünner glüht er. Reißt er nach deinem Zug, ist der Ring gerissen. Das kostet dich \(DrinkAmount.shot.text), und der Ring wird neu gelegt. Für dieselbe Lücke zahlt niemand zweimal, aber die Karte NEBEN einer Lücke reißt umso leichter. Drei Risse hat die Runde; danach ist die Glut aus.")
                     .font(BeerStatsFont.caption)
@@ -226,6 +218,32 @@ struct RingOfFireView: View {
             }
 
             DrinkIntensityPicker(game: .ringOfFire)
+        }
+    }
+
+    /// Im Vorspann und im Zahnrad dieselbe Auswahl. Gelesen wird die Zahl
+    /// nur beim Auslegen (`start`) – der Ring, der gerade liegt, bleibt.
+    private var cardCountChoice: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("KARTEN IM RING")
+                .font(.scaled(11, weight: .heavy, design: .rounded))
+                .kerning(1.8)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+
+            ChoiceRow(
+                options: [
+                    ChoiceOption(value: 20, title: "20", detail: "kurz"),
+                    ChoiceOption(value: 32, title: "32", detail: "mittel"),
+                    ChoiceOption(value: PlayingCardDeck.fullSize, title: "52", detail: "ganzer Stapel")
+                ],
+                selection: $cardCount,
+                tint: BeerStatsColor.error
+            )
+
+            Text(stapelHinweis)
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

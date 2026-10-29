@@ -135,6 +135,7 @@ struct BusRideView: View {
         }
         .navigationTitle(isRiding ? "Die Busfahrt" : "Bussfahrer")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .busRide)
     }
 
     // MARK: - Karten

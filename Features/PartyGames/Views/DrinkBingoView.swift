@@ -59,6 +59,7 @@ struct DrinkBingoView: View {
         }
         .navigationTitle("Trinkbingo")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .drinkBingo)
         .onDisappear { bingoTask?.cancel() }
         .sheet(isPresented: $showsHandout) {
             BingoHandoutView(

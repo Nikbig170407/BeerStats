@@ -58,6 +58,7 @@ struct HerdView: View {
         }
         .navigationTitle("Die Herde")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .herd, isAvailable: phase != .setup)
         .onAppear(perform: adoptTableCount)
     }
 

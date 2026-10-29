@@ -66,6 +66,7 @@ struct SchockenView: View {
         }
         .navigationTitle("Schocken")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .schocken, isAvailable: phase != .setup)
     }
 
     // MARK: - Vorbereitung

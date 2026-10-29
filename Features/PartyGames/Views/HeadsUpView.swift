@@ -54,6 +54,15 @@ struct HeadsUpView: View {
         }
         .navigationTitle("Wer bin ich?")
         .navigationBarTitleDisplayMode(.inline)
+        // Erst nach einer Runde: Waehrend der 60 Sekunden laege das Blatt
+        // ueber der Uhr, und gemischt wird ohnehin erst beim naechsten Start
+        .roundSettings(
+            for: .headsUp,
+            isAvailable: phase == .finished,
+            note: "Die Kategorie gilt ab der nächsten Runde, die Härte ab der nächsten Strafe."
+        ) {
+            categoryChoice
+        }
         .onDisappear { tickTask?.cancel() }
     }
 
@@ -70,17 +79,22 @@ struct HeadsUpView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
 
-            VStack(spacing: 8) {
-                ForEach(HeadsUpCategory.allCases) { option in
-                    categoryRow(option)
-                }
-            }
+            categoryChoice
 
             DrinkIntensityPicker(game: .headsUp)
 
             Spacer(minLength: 0)
 
             PrimaryButton(title: "60 Sekunden – los", systemImage: "play.fill") { start() }
+        }
+    }
+
+    /// Im Vorspann und im Zahnrad dieselbe Auswahl.
+    private var categoryChoice: some View {
+        VStack(spacing: 8) {
+            ForEach(HeadsUpCategory.allCases) { option in
+                categoryRow(option)
+            }
         }
     }
 

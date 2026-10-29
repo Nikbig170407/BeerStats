@@ -80,6 +80,7 @@ struct HorseRaceView: View {
         }
         .navigationTitle("Pferderennen")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .horseRace)
         .onAppear { if deck.isEmpty { newRace() } }
     }
 

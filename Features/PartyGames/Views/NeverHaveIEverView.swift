@@ -30,10 +30,8 @@ struct NeverHaveIEverView: View {
     /// Wie oft weitergegeben wurde. Wer das ist, rechnet `TurnRow`.
     @State private var turn = 0
 
-    /// Das Blatt mit den Einstellungen mitten in der Runde – und was beim
-    /// Oeffnen eingestellt war, um beim Schliessen zu wissen, ob sich etwas
-    /// geaendert hat.
-    @State private var showsSettings = false
+    /// Was beim Oeffnen des Zahnrads eingestellt war – um beim Schliessen
+    /// zu wissen, ob sich etwas geaendert hat.
     @State private var settingsBefore: SettingsSnapshot?
 
     @Environment(\.gameWorld) private var world
@@ -72,20 +70,14 @@ struct NeverHaveIEverView: View {
         }
         .navigationTitle("Ich hab noch nie")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                // Vor dem Start ist der Vorspann selbst die Einstellung
-                if hasStarted {
-                    RoundSettingsButton { openSettings() }
-                }
-            }
-        }
-        .sheet(isPresented: $showsSettings, onDismiss: applySettings) {
-            RoundSettingsSheet(note: "Gilt ab der nächsten Karte. Fragen, die schon dran waren, kommen nicht wieder.") {
-                settingsControls
-            }
-            // Das Blatt gehoert zum Spiel und steht deshalb in seiner Welt
-            .environment(\.gameWorld, world)
+        .roundSettings(
+            for: .neverHaveIEver,
+            isAvailable: hasStarted,
+            note: "Gilt ab der nächsten Karte. Fragen, die schon dran waren, kommen nicht wieder.",
+            onOpen: rememberSettings,
+            onClose: applySettings
+        ) {
+            settingsControls
         }
         .onDisappear { flashTask?.cancel() }
     }
@@ -142,6 +134,8 @@ struct NeverHaveIEverView: View {
 
             settingsControls
 
+            DrinkIntensityPicker(game: .neverHaveIEver)
+
             Spacer(minLength: 0)
 
             PrimaryButton(title: "Los geht's", systemImage: "play.fill") { start() }
@@ -150,9 +144,10 @@ struct NeverHaveIEverView: View {
         }
     }
 
-    /// Kategorien, Strafen und Haerte – im Vorspann und im Blatt mitten in
-    /// der Runde DIESELBEN Schalter. Zwei Kopien liefen auseinander, und
-    /// dann stuende im Blatt etwas anderes als vor dem Start.
+    /// Kategorien und Strafen – im Vorspann und im Blatt mitten in der
+    /// Runde DIESELBEN Schalter. Zwei Kopien liefen auseinander, und dann
+    /// stuende im Blatt etwas anderes als vor dem Start. Die Haerte bringt
+    /// das Zahnrad selbst mit.
     private var settingsControls: some View {
         VStack(spacing: 18) {
             // Zwei Gruppen: wie hart, und worum es geht. Gemischt wird alles,
@@ -174,8 +169,6 @@ struct NeverHaveIEverView: View {
             }
 
             penaltyToggle
-
-            DrinkIntensityPicker(game: .neverHaveIEver)
         }
     }
 
@@ -387,9 +380,8 @@ struct NeverHaveIEverView: View {
         SettingsSnapshot(categories: categories, includePenalties: includePenalties, intensity: DrinkIntensity.current)
     }
 
-    private func openSettings() {
+    private func rememberSettings() {
         settingsBefore = currentSettings
-        showsSettings = true
     }
 
     /// Nach dem Schliessen: Alles, was schon gespielt ist, bleibt, wie es

@@ -50,6 +50,7 @@ struct EveningRuleView: View {
         }
         .navigationTitle("Regel des Abends")
         .navigationBarTitleDisplayMode(.inline)
+        .roundSettings(for: .eveningRule, isAvailable: phase != .setup)
         .onAppear(perform: restore)
     }
 
