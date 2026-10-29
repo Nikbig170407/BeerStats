@@ -2,7 +2,7 @@
 //  SongTimelineTests.swift
 //  BeerStatsTests
 //
-//  Prueft den Zeitstrahl: ob eine Luecke richtig ist, und ob der Stapel
+//  Prueft die Reihe der Hitparade: ob eine Luecke richtig ist, und ob der Stapel
 //  taugt.
 //
 //  Beides sind Stellen, an denen ein Fehler am Tisch nicht auffaellt,
@@ -112,7 +112,7 @@ final class SongTimelineTests: XCTestCase {
 
     /// Der Stapel muss ueber die Jahrzehnte verteilt sein. Laegen achtzig
     /// Prozent in den Neunzigern, waere jede Karte nach der dritten
-    /// geraten – der Zeitstrahl haette dort keine Luecken mehr, die sich
+    /// geraten – die Reihe haette dort keine Luecken mehr, die sich
     /// unterscheiden lassen.
     func testEveryDecadeIsRepresented() {
         let jahrzehnte = Dictionary(grouping: SongDeck.all) { ($0.year / 10) * 10 }

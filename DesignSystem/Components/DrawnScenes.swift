@@ -67,8 +67,9 @@ struct EffectCanvas: View {
             } else if over, let lasts {
                 Canvas { context, size in draw(&context, size, lasts) }
             } else {
-                // Voll ausgeschrieben: `TimelineView` allein ist im Projekt der
-                // Screen des Zeitstrahl-Spiels und verdeckt den von SwiftUI.
+                // Voll ausgeschrieben: Bis zum 29. Oktober hiess ein eigener
+                // Screen `TimelineView` und verdeckte den von SwiftUI
+                // (Lessons Learned Nr. 15).
                 SwiftUI.TimelineView(.animation(minimumInterval: minimumInterval)) { timeline in
                     Canvas { context, size in
                         draw(&context, size, max(0, timeline.date.timeIntervalSince(start) - delay))
@@ -571,7 +572,7 @@ extension SceneArt {
         }
     }
 
-    /// Zeitstrahl-Sieg: eine Schallplatte dreht sich hinter dem Pokal.
+    /// Sieg in der Hitparade: eine Schallplatte dreht sich hinter dem Pokal.
     static func record(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
         let w = Double(size.width), h = Double(size.height)
         let cx = w / 2, cy = h / 2, r = min(w, h) * 0.48 * easeOut(t / 0.5), dreh = t * 3.5

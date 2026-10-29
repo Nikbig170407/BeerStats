@@ -246,6 +246,12 @@ den nachgespielten Wurf-Log alter Partien.
   ist die am häufigsten missverstandene Stelle im Projekt. Er bewegt sich
   wie am Tisch: wird ausgeteilt, hebt die gezogene Karte heraus und brennt
   am Ende als Kranz.
+- **Hitparade** (29. Oktober, vorher „Zeitstrahl“): ein Musikspiel nach
+  dem Vorbild von Hitster. Die App spielt die Hörprobe selbst, ohne Titel
+  oder Cover zu zeigen, und lost jede Runde aus, was gefragt wird:
+  einsortieren, Titel, Interpret, Jahr ± 3 oder Jahr ± 1. Wer richtig
+  liegt, bekommt die Karte in seine Reihe. Ohne Netz spielt der Nachbar das
+  Lied auf der Box an. Joker gibt es bewusst noch nicht.
 - **Bussfahrer hat sein Ende** (17. Oktober): Zwei Hälften, wie am Tisch –
   erst die Fragerunde, dann **die Busfahrt**. Die hatte gefehlt: Das Spiel
   hörte nach der vierten richtigen Antwort auf („Das Handy geht weiter"),
@@ -329,7 +335,7 @@ den nachgespielten Wurf-Log alter Partien.
   Mehr Karten wären dort ein anderes Spiel.
 - Fünfundzwanzig Partyspiele auf dem Handy, in vier Gruppen im Hauptmenü:
   *Mit Karten* – Ring of Fire, Pferderennen, Bussfahrer, Wahrheit oder
-  Pflicht, Ich hab noch nie, Zeitstrahl. *Raten & reden* – Schocken, Mäxchen, Zwei
+  Pflicht, Ich hab noch nie, Hitparade. *Raten & reden* – Schocken, Mäxchen, Zwei
   Wahrheiten, Der Spion, Wer bin ich?, 21, Schätzmeister, Kategorien,
   Wer würde eher?, Kennst du deine Leute?, Pantomime, Die Skala. *Schnell
   zwischendurch* – Bombe, Reaktionsduell, Trink-Roulette, Die Herde. *Läuft nebenher* –
@@ -372,15 +378,57 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   View schreibt, taucht in der Zusammenfassung nicht auf – und dann steht
   „Standard“ über einer Partie, die keiner ist.
 
-- **Beim Zeitstrahl muss der Inhalt stimmen** (22. Oktober). Für jeden
+- **In der Hitparade muss der Inhalt stimmen** (22. Oktober). Für jeden
   anderen Stapel gilt: Eine erfundene Karte ist eine Karte. Hier ist ein
   falsches Jahr eine falsche Entscheidung, für die jemand trinkt, ohne
   dass es auffällt. Deshalb stehen in `SongDeck` nur Lieder mit bekanntem
-  Jahr – lieber 174 sichere als 300 geschätzte –, und wo Album und Single
-  oder Original und Remix auseinanderliegen, steht das Lied gar nicht erst
-  drin. Dazu gibt es im Spiel den Knopf **„Jahr stimmt nicht"**: Weiß die
-  Runde es besser als die App, gewinnt die Runde. Ohne ihn tränke jemand
-  für einen Tippfehler.
+  Jahr – lieber weniger sichere als mehr geschätzte –, und wo Album und
+  Single oder Original und Remix auseinanderliegen, steht das Lied gar
+  nicht erst drin. Dazu gibt es im Spiel den Knopf **„Jahr stimmt
+  nicht"**: Weiß die Runde es besser als die App, gewinnt die Runde, und
+  wer dafür getrunken hat, bekommt den Schluck zurück. Ohne ihn tränke
+  jemand für einen Tippfehler.
+
+- **Die Hitparade spielt selbst, aber verrät nichts** (29. Oktober,
+  Entscheidungen des Nutzers: Name „Hitparade“, Hörprobe statt Spotify,
+  erst einmal ohne Joker).
+  - **Abgespielt wird Apples 30-Sekunden-Hörprobe** (`SongPreviewPlayer`),
+    ohne Abo, Konto oder fremde App. Ein Spotify-Link vor dem Aufdecken
+    ginge nicht: Die Spotify-App zeigt sofort den Titel, und unsichtbar
+    abspielen ginge nur mit Premium, installierter App und eigenem
+    Entwicklerkonto bei Spotify. Spotify gibt es deshalb erst **nach** dem
+    Aufdecken, als Suche zum Weiterhören.
+  - **Vor dem Aufdecken steht nirgends Titel, Interpret, Cover oder Jahr**,
+    auch nicht für VoiceOver. Das Etikett auf dem Plattenspieler bleibt
+    schwarz, das Cover kommt erst mit der Hülle beim Aufdecken.
+  - **Im Repository steht je Lied nur Apples Nummer** (`SongCard.appleId`),
+    nie Musik. Die Adresse der Hörprobe wird am Tisch geholt, weil Apple
+    sie ändern kann. Ein Test verlangt für jedes Lied eine eigene Nummer.
+  - **Neue Lieder bekommen ihre Nummer über `scripts/find_song_ids.py`.**
+    Das Skript nimmt nur passende Treffer ohne Live-, Remix-, Karaoke- und
+    Cover-Fassung, schreibt die Nummer in den Stapel und ändert das Jahr
+    nie selbst. Apple sperrt bei zu vielen Anfragen minutenlang, aus der
+    Sitzung heraus kam am 29. Oktober kaum ein Lied durch. Deshalb läuft es
+    als von Hand gestartete Action (`song-ids.yml`), und die Zeilen aus
+    ihrem Log werden übernommen und gelesen.
+  - **Während des Lieds eine andere Tonsitzung**: `.playback`, damit es auch
+    bei stummgeschaltetem iPhone läuft – die Musik ist hier der Inhalt und
+    keine Zierde. Danach zurück zu den App-Klängen
+    (`SoundManager.useAmbientSession`, an einer Stelle beschrieben).
+  - **Ohne Hörprobe geht es trotzdem weiter**: im Vorspann „Box“ wählen,
+    oder im Zug „Über die Box spielen“. Dann sieht der Nachbar Titel und
+    Interpret und spielt das Lied an, wie vor dem 29. Oktober. „Anderes
+    Lied“ tauscht nur das Lied, ohne Strafe.
+  - **Gefragt wird, was angehakt ist, und reihum gelost**
+    (`HitparadeGame`, reine Rechnung mit Tests). Die Frage von eben kommt
+    gedämpft wieder, nicht verboten – sonst wechselten sich zwei angehakte
+    Fragen stur ab. **Titel und Interpret entscheidet die Runde**, getippt
+    wird nicht: Am Tisch dauert Tippen zu lange, und an „feat.“ oder „The“
+    scheiterte eine richtige Antwort. Jahre zählen **einschließlich** der
+    Grenze – drei Jahre daneben ist bei ± 3 noch richtig.
+  - **Im Katalog heißt der Fall weiter `timeline`** (siehe „Ein Spiel
+    umbenennen“), der Screen dagegen `HitparadeView` – der alte Name
+    verdeckte SwiftUIs Zeitleiste (Lessons Learned Nr. 15).
 
 - **Die Partyspiele sind Verlierer-Spiele** (22. Oktober). Schocken
   rechnet aus, wer alle Deckel hat, die Bombe, wer draufsitzt, das Turnier,
@@ -389,7 +437,7 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   dorthin ist **nicht**, in jeder einzelnen Ansicht einen Sieger zu
   erfinden, sondern ihn dort anzutippen, wo der Abend ohnehin steht: Jede
   Zeile unter „Gespielt" öffnet `WinnerPickerView`. Spiele, die ihren
-  Sieger selbst kennen (Beerpong, Zeitstrahl), melden ihn weiterhin von
+  Sieger selbst kennen (Beerpong, Hitparade), melden ihn weiterhin von
   allein; dort lässt er sich nur korrigieren.
 
 - **Ein Sieg gehört einer PERSON, nicht einem Text** (22. Oktober).
@@ -570,7 +618,7 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   `EffectConfetti` und `EffectFlash`. Szenen stehen hinter
   jeder Ring-Karte, im Sieger-Screen (Feuerwerk und Konfetti, nur bei einem
   Sieger, nie beim Unentschieden), in der Bombe (Rauch und Splitter, einmal),
-  beim Zeitstrahl-Sieg (eine Schallplatte), am Pokal des Abends (ein
+  beim Sieg in der Hitparade (eine Schallplatte), am Pokal des Abends (ein
   Goldglanz, leise – er steht in einer **Liste**, und eine Liste, in der an
   mehreren Stellen etwas fliegt, liest sich nicht mehr) und im leeren Ring,
   wenn eine Runde Ring of Fire durch ist (ein Flammenkranz, `RingFinale` –
@@ -1270,8 +1318,8 @@ Regel gilt für Abschnitt 9.
     „fertig" meldet, ist schlimmer als eine, die scheitert.
 
 15. **Ein eigener Typ kann einen SwiftUI-Typ verdecken.** Der Screen des
-    Zeitstrahl-Spiels heißt `TimelineView` – genau wie SwiftUIs Zeitleiste.
-    `TimelineView(.animation)` rief deshalb den Spiel-Screen auf, und der
+    Musikspiels hieß bis zum 29. Oktober `TimelineView` – genau wie SwiftUIs
+    Zeitleiste. `TimelineView(.animation)` rief deshalb den Spiel-Screen auf, und der
     Lauf brach mit „argument passed to call that takes no arguments“ ab
     (27. Oktober, beim Bau von `EffectFlames`). Gemeint ist dann
     `SwiftUI.TimelineView`, voll ausgeschrieben. `check.py` meldet so einen
@@ -1470,7 +1518,7 @@ oben; was schief aussieht, unten.
 - **Jede Szene bewegt sich anders** (27. Oktober, auf Wunsch): Alle Szenen
   sind neu gezeichnet – dreizehn hinter den Ring-Karten, dazu Feuerwerk im
   Sieger-Screen, Rauch und Splitter in der Bombe, die Schallplatte beim
-  Zeitstrahl-Sieg, der Goldglanz am Pokal des Abends und die drei
+  Sieg in der Hitparade, der Goldglanz am Pokal des Abends und die drei
   Kostenarten im Trink-Roulette. Abgestimmt wurde im Browser, auf einem
   Gerät lief nichts davon. Zu prüfen, in dieser Reihenfolge:
   - **Unterscheidet man sie?** Einmal durch Ring of Fire, bis jeder Rang
@@ -1581,13 +1629,25 @@ oben; was schief aussieht, unten.
   **Zahnrad** oben rechts: mitten in der Runde Tabulos dazunehmen, Fertig –
   kommt ab der nächsten Karte die neue Mischung, und keine Frage doppelt?
   Soll das Zahnrad auch in die anderen Spiele?
-- **Zeitstrahl (22. Oktober)**: Das Wichtigste – stimmen die Jahreszahlen?
-  Beim ersten Durchgang auf Lieder achten, bei denen die Runde widerspricht,
-  und sie mir nennen. Dann: Reicht die Übergabe ans Handy, oder sieht der
-  Ratende doch den Titel? Und mit sieben Leuten: Dauert eine Runde mit fünf
-  Zielkarten zu lange? (Gerechnet: etwa 35 Lieder.)
+- **Hitparade (29. Oktober, vorher Zeitstrahl)**: Das Wichtigste –
+  stimmen die Jahreszahlen, und läuft das richtige Lied? Beim ersten
+  Durchgang auf Lieder achten, bei denen die Runde widerspricht oder eine
+  falsche Fassung läuft (live, Remix, Cover), und sie mir nennen. Dann:
+  - Startet das Lied von allein, auch bei stummgeschaltetem iPhone, und
+    hört die Playlist auf dem Handy dafür auf? Geht der Ton über den
+    Box-Knopf auf AirPlay oder Bluetooth – und **zeigt die Box irgendwo den
+    Titel an**?
+  - Steht vor dem Aufdecken wirklich nirgends Titel, Interpret oder Cover –
+    auch nicht auf dem Sperrbildschirm oder im Kontrollzentrum?
+  - Fühlen sich die Fragen richtig an? Ist ± 1 zu schwer, kommt eine Frage
+    zu oft? Und entscheidet die Runde bei Titel und Interpret ohne Streit?
+  - Ohne Netz (Flugmodus): Kommt die Meldung, und führen „Anderes Lied“ und
+    „Über die Box spielen“ sauber weiter?
+  - Dreht sich die Platte, liegt der Tonarm auf, läuft der Ring mit? Ist
+    das Zählwerk am Tisch schnell genug zu bedienen?
+  - Stimmt die geschätzte Dauer im Vorspann ungefähr?
 - **Pokal (22. Oktober)**: Stimmt die Wertung am Ende mit dem überein, was
-  ihr im Kopf habt? Von allein melden nur **Zeitstrahl** und **Beerpong**;
+  ihr im Kopf habt? Von allein melden nur **Hitparade** und **Beerpong**;
   bei allen anderen tippt ihr den Sieger im Abend-Screen an. Zu prüfen, ob
   das am Tisch tatsächlich jemand macht – wenn es vergessen wird, bleibt
   der Pokal leer, und dann gehört er näher ans Spielende statt in den

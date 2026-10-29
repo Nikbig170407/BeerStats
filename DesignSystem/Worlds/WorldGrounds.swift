@@ -284,7 +284,7 @@ extension SceneArt {
         glow(&g, w / 2, h * 0.45, 300, rgb(255, 72, 170), 0.1)
     }
 
-    // Zeitstrahl: Wand aus dunklem Nussbaum
+    // Hitparade: Wand aus dunklem Nussbaum
     private static func recordShelfGround(_ g: inout GraphicsContext, _ w: Double, _ h: Double, _ plain: Bool) {
         wash(&g, full(w, h), from: (0, 0), to: (0, h), [(0, rgb(30, 21, 14), 1), (1, rgb(16, 11, 8), 1)])
         if !plain {

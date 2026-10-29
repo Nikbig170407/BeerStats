@@ -36,8 +36,9 @@ struct TypewriterText: View {
             if done || reduceMotion {
                 Text(text).font(font)
             } else {
-                // Voll ausgeschrieben: `TimelineView` allein ist im Projekt der
-                // Screen des Zeitstrahl-Spiels (Lessons Learned Nr. 15).
+                // Voll ausgeschrieben: Bis zum 29. Oktober hiess ein eigener
+                // Screen `TimelineView` (Lessons Learned Nr. 15), und ein
+                // neuer koennte es wieder tun.
                 SwiftUI.TimelineView(.animation) { timeline in
                     typed(upTo: count(at: timeline.date.timeIntervalSince(start)))
                 }

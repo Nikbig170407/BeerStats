@@ -24,6 +24,9 @@ enum PartyGame: String, CaseIterable, Identifiable {
     case busRide
     case truthOrDare
     case neverHaveIEver
+    /// Heisst seit dem 29. Oktober "Hitparade". Der Fall bleibt `timeline`:
+    /// Sein Rohwert steckt in den Einstellungen (Haerte), und ein neuer
+    /// Name wuerfe sie stillschweigend weg.
     case timeline
 
     case schocken
@@ -139,7 +142,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .busRide: return "Bussfahrer"
         case .truthOrDare: return "Wahrheit oder Pflicht"
         case .neverHaveIEver: return "Ich hab noch nie"
-        case .timeline: return "Zeitstrahl"
+        case .timeline: return "Hitparade"
         case .schocken: return "Schocken"
         case .maexchen: return "Mäxchen"
         case .twoTruths: return "Zwei Wahrheiten"
@@ -203,7 +206,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .neverHaveIEver:
             return "\(NeverHaveIEverDeck.statements.count) Fragen in \(NeverHaveIEverCategory.allCases.count) Kategorien, dazu Strafen"
         case .timeline:
-            return "\(SongDeck.count) Lieder – in welches Jahr gehört das?"
+            return "\(SongDeck.count) Lieder – Titel, Interpret, Jahr oder wohin in deine Reihe?"
         case .schocken: return "Drei Würfel, drei Würfe – der schlechteste Wurf trinkt"
         case .maexchen: return "Verdeckt würfeln und lügen – die App weiß, wer geflunkert hat"
         case .twoTruths: return "Drei Sätze, einer erfunden – wer danebenliegt, trinkt"
@@ -253,7 +256,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .neverHaveIEver:
             return "Die App liest vor, was du noch nie getan hast. Wer es doch getan hat, trinkt. Ihr wählt, wie hart es wird – von harmlos bis tabulos – und worum es geht: Peinliches, Partygeschichten, Verbotenes, Ehrliches mit Tiefgang oder Abenteuer. Gemischt wird alles, was angehakt ist."
         case .timeline:
-            return "Jeder sammelt Lieder und legt sie nach Jahr nebeneinander. Wer dran ist, gibt das Handy dem Nachbarn – der sieht Titel und Interpret, sucht das Lied und spielt es über die Box an, ohne den Titel vorzulesen. Du hörst es und sagst, zwischen welche deiner Karten es gehört („nach 1991, vor 2003“). Der Nachbar tippt die Lücke an. Stimmt es, bleibt die Karte bei dir; sonst trinkst du. Das Jahr sieht übrigens niemand vorher – auch der Nachbar nicht. Wer zuerst genug Karten hat, gewinnt."
+            return "Wie Hitster: Jeder sammelt Lieder in seiner Reihe, sortiert nach Jahr, und beginnt mit einer offenen Karte. Wer dran ist, bekommt ein Lied – die App spielt 30 Sekunden davon, ohne Titel oder Cover zu zeigen. Vorher lost sie aus, was gefragt wird: wohin es in deine Reihe gehört, wie es heißt, wer es singt oder aus welchem Jahr es ist, auf drei oder auf ein Jahr genau. Titel und Interpret sagst du laut, die Runde entscheidet. Liegst du richtig, kommt die Karte in deine Reihe; sonst trinkst du. Wer zuerst genug Karten hat, gewinnt. Ohne Netz – oder wenn ihr wollt – spielt der Nachbar das Lied auf eurer Box an."
         case .schocken:
             return "Drei Würfel, bis zu drei Würfe pro Person. Wer in der Runde den schlechtesten Wurf hat, bekommt einen Deckel; wer alle Deckel hat, trinkt. Die App kennt die Rangfolge – Schock Aus schlägt alles."
         case .maexchen:
@@ -602,7 +605,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .busRide: return AnyView(BusRideView())
         case .truthOrDare: return AnyView(TruthOrDareView())
         case .neverHaveIEver: return AnyView(NeverHaveIEverView())
-        case .timeline: return AnyView(TimelineView())
+        case .timeline: return AnyView(HitparadeView())
         case .schocken: return AnyView(SchockenView())
         case .maexchen: return AnyView(MaexchenView())
         case .twoTruths: return AnyView(TwoTruthsView())

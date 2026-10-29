@@ -12,7 +12,7 @@
 //  Also wird es dort angetippt, wo der Abend ohnehin steht. Das ist nicht
 //  der bequemste Weg (bequem waere es direkt nach dem Spiel), aber der
 //  einzige, der fuer ALLE Spiele gilt und keines davon anfasst. Spiele,
-//  die ihren Sieger selbst kennen – Beerpong, Zeitstrahl – melden ihn
+//  die ihren Sieger selbst kennen – Beerpong, Hitparade – melden ihn
 //  weiterhin von allein; hier laesst er sich nur korrigieren.
 //
 //  Mehrere Namen sind erlaubt, weil ein Sieg zu zweit einer bleibt: Die

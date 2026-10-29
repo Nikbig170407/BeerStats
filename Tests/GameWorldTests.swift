@@ -62,7 +62,7 @@ final class GameWorldTests: XCTestCase {
         }
     }
 
-    // MARK: - Zeitstrahl: Farbe heisst Jahrzehnt
+    // MARK: - Hitparade: Farbe heisst Jahrzehnt
 
     /// Jedes Jahrzehnt im Stapel hat seine eigene Farbe. Zwei gleiche, und
     /// die Reihe im Regal sagte nicht mehr, was sie sagen soll.

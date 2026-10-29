@@ -18,10 +18,10 @@ Fehler, die in diesem Projekt tatsaechlich vorgekommen sind:
   4. Swift-Dateien, die in keinem Quellordner aus project.yml liegen und
      deshalb stillschweigend gar nicht uebersetzt werden.
   5. Ein eigener Typ, der einen SwiftUI-Typ verdeckt, und ein Aufruf, der
-     trotzdem SwiftUI meint. `TimelineView` ist hier der Screen des
-     Zeitstrahl-Spiels - `TimelineView(.animation)` ruft also den Screen auf,
-     und der Lauf scheitert mit "argument passed to call that takes no
-     arguments" (Lessons Learned Nr. 15).
+     trotzdem SwiftUI meint. Bis zum 29. Oktober hiess der Screen des
+     Musikspiels `TimelineView` - `TimelineView(.animation)` rief also den
+     Screen auf, und der Lauf scheiterte mit "argument passed to call that
+     takes no arguments" (Lessons Learned Nr. 15).
   6. Ein `map`, dessen Closure in einem Ausdruck ein Paar aus Tupeln baut –
      `.map { k in ((x, 0), (x, h)) }`. Lauter Zahlenliterale, deren Typ erst
      aus dem Ziel folgt: Der Compiler probiert jede Kombination durch und
@@ -78,11 +78,14 @@ IOS17_ONLY = [
     ".distortionEffect",
     "numericText(value:",
     "TextRenderer",
+    # Liegt nahe, sobald ein Rueckruf auf dem Hauptfaden laeuft, aber nicht
+    # als solcher markiert ist (Hoerprobe der Hitparade, 29. Oktober)
+    "assumeIsolated",
 ]
 
 
 # SwiftUI-Typen, die ein eigener Typ leicht verdecken kann. Gemeldet wird
-# nicht die Verdeckung selbst (die ist gewollt, siehe TimelineView), sondern
+# nicht die Verdeckung selbst (ein Name ist kein Fehler), sondern
 # ein Aufruf mit einem Argument, das mit einem Punkt beginnt - so sieht ein
 # SwiftUI-Aufruf aus (`TimelineView(.animation)`), ein eigener Screen nicht.
 SWIFTUI_TYPEN = {

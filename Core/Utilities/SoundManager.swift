@@ -174,6 +174,13 @@ enum SoundManager {
     private static func configureSessionIfNeeded() {
         guard !didConfigureSession else { return }
         didConfigureSession = true
+        useAmbientSession()
+    }
+
+    /// Die Sitzung der App-Klaenge. Oeffentlich, weil die Hitparade fuer die
+    /// Dauer eines Lieds eine andere braucht (`SongPreviewPlayer`) und danach
+    /// hierher zurueckkehren muss – an EINER Stelle steht, wie sie aussieht.
+    static func useAmbientSession() {
         do {
             try AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
             try AVAudioSession.sharedInstance().setActive(true)

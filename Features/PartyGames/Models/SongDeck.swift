@@ -2,14 +2,14 @@
 //  SongDeck.swift
 //  BeerStats
 //
-//  Songs mit ihrem Erscheinungsjahr – der Stapel fuer den Zeitstrahl.
+//  Songs mit ihrem Erscheinungsjahr – der Stapel fuer die Hitparade.
 //
 //  Hier gilt eine Regel, die fuer keinen anderen Stapel im Projekt gilt:
 //  **Der Inhalt muss stimmen.** Eine erfundene Frage bei "Ich hab noch nie"
 //  ist eine Frage; ein falsches Jahr hier ist eine falsche Entscheidung,
 //  fuer die jemand trinkt, ohne dass es auffaellt. Deshalb stehen hier nur
-//  Lieder, deren Jahr bekannt ist – lieber hundertvierzig sichere als
-//  dreihundert geschaetzte.
+//  Lieder, deren Jahr bekannt ist – lieber weniger sichere als mehr
+//  geschaetzte.
 //
 //  Zweite Regel: Das Lied muss am Tisch erkannt werden. Ein Song, den
 //  niemand kennt, ist keine schwere Aufgabe, sondern eine unloesbare – man
@@ -21,6 +21,11 @@
 //  die Auswahl bewusst duenn: Wo zwei Jahreszahlen vertretbar waeren,
 //  steht das Lied gar nicht erst im Stapel.
 //
+//  Dritte Regel: Jedes Lied traegt Apples Nummer (`appleId`), damit die App
+//  die Hoerprobe abspielen kann. Eingetragen wird sie von
+//  `scripts/find_song_ids.py`, nie geraten – eine falsche Nummer spielt ein
+//  anderes Lied, und die Runde raet dann das Jahr des falschen.
+//
 
 import Foundation
 
@@ -28,6 +33,10 @@ struct SongCard: Equatable, Identifiable {
     let title: String
     let artist: String
     let year: Int
+    /// Apples Nummer fuer die Hoerprobe. Null heisst "keine" – im Stapel
+    /// verbietet das ein Test; die Vorgabe gibt es nur, damit Tests Karten
+    /// bauen koennen, ohne eine Nummer zu erfinden.
+    var appleId = 0
 
     var id: String { "\(artist) – \(title)" }
 }
@@ -39,7 +48,7 @@ enum SongDeck {
     static func shuffled() -> [SongCard] { all.shuffled() }
 
     /// Das frueheste und spaeteste Jahr im Stapel – fuer die Beschriftung
-    /// der Raender des Zeitstrahls.
+    /// der Raender der Reihe und den Anfang des Zaehlwerks.
     static var span: ClosedRange<Int> {
         let jahre = all.map(\.year)
         return (jahre.min() ?? 1960)...(jahre.max() ?? 2024)
@@ -50,13 +59,13 @@ enum SongDeck {
     // MARK: - 1960er
 
     private static let sixties: [SongCard] = [
-        SongCard(title: "(I Can't Get No) Satisfaction", artist: "The Rolling Stones", year: 1965),
-        SongCard(title: "Hey Jude", artist: "The Beatles", year: 1968),
-        SongCard(title: "Respect", artist: "Aretha Franklin", year: 1967),
-        SongCard(title: "Born to Be Wild", artist: "Steppenwolf", year: 1968),
-        SongCard(title: "Sunshine of Your Love", artist: "Cream", year: 1967),
-        SongCard(title: "I Want to Hold Your Hand", artist: "The Beatles", year: 1963),
-        SongCard(title: "Good Vibrations", artist: "The Beach Boys", year: 1966),
+        SongCard(title: "(I Can't Get No) Satisfaction", artist: "The Rolling Stones", year: 1965, appleId: 1440743544),
+        SongCard(title: "Hey Jude", artist: "The Beatles", year: 1968, appleId: 1441134371),
+        SongCard(title: "Respect", artist: "Aretha Franklin", year: 1967, appleId: 266602664),
+        SongCard(title: "Born to Be Wild", artist: "Steppenwolf", year: 1968, appleId: 1440860171),
+        SongCard(title: "Sunshine of Your Love", artist: "Cream", year: 1967, appleId: 1489665552),
+        SongCard(title: "I Want to Hold Your Hand", artist: "The Beatles", year: 1963, appleId: 1468023761),
+        SongCard(title: "Good Vibrations", artist: "The Beach Boys", year: 1966, appleId: 1442865074),
         SongCard(title: "Space Oddity", artist: "David Bowie", year: 1969)
     ]
 
