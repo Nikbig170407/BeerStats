@@ -62,6 +62,9 @@ FALSCHE_FASSUNG = [
     # Andere Sprache – am Tisch ein anderes Lied. Nur die spanische: Bei
     # "Deutsche Version" ist das Original oft gerade die deutsche
     r"en espa", r"spanish version",
+    # Neu gemischt oder fuer einen Film neu besetzt – kam beides am
+    # 30. Oktober statt des Originals ("Waka Waka", "Can't Stop the Feeling!")
+    r"\bk-mix\b", r"film version",
 ]
 # Sammlungen: zur Not erlaubt, aber das Album oder die Single ist besser
 SAMMLUNG = [r"best of", r"greatest", r"\bhits\b", r"collection", r"anthology", r"essential", r"\bgold\b",
