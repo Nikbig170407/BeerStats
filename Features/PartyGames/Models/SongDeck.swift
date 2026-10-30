@@ -208,7 +208,7 @@ enum SongDeck {
 
     private static let tens: [SongCard] = [
         SongCard(title: "Rolling in the Deep", artist: "Adele", year: 2010, appleId: 413623677),
-        SongCard(title: "Waka Waka (This Time for Africa)", artist: "Shakira", year: 2010),
+        SongCard(title: "Waka Waka (This Time for Africa)", artist: "Shakira", year: 2010, appleId: 843677867),
         SongCard(title: "We No Speak Americano", artist: "Yolanda Be Cool", year: 2010, appleId: 1381310670),
         SongCard(title: "Somebody That I Used to Know", artist: "Gotye", year: 2011, appleId: 1442387291),
         SongCard(title: "Party Rock Anthem", artist: "LMFAO", year: 2011, appleId: 1445840683),
@@ -234,7 +234,7 @@ enum SongDeck {
         SongCard(title: "Hulapalu", artist: "Andreas Gabalier", year: 2015, appleId: 1442675084),
         SongCard(title: "One Dance", artist: "Drake", year: 2016, appleId: 1440841384),
         SongCard(title: "Barfuß am Klavier", artist: "AnnenMayKantereit", year: 2016, appleId: 1440842648),
-        SongCard(title: "Can't Stop the Feeling!", artist: "Justin Timberlake", year: 2016),
+        SongCard(title: "Can't Stop the Feeling!", artist: "Justin Timberlake", year: 2016, appleId: 1164253140),
         SongCard(title: "Shape of You", artist: "Ed Sheeran", year: 2017, appleId: 1193700923),
         SongCard(title: "Despacito", artist: "Luis Fonsi", year: 2017, appleId: 1447401620),
         SongCard(title: "Havana", artist: "Camila Cabello", year: 2017, appleId: 1321217032),

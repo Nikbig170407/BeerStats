@@ -51,7 +51,7 @@ struct HitparadeView: View {
         case box
     }
 
-    @AppStorage("hitparade.questions") private var storedQuestions = HitQuestion.allCases.map(\.rawValue).joined(separator: ",")
+    @AppStorage("hitparade.questions") private var storedQuestions = HitQuestion.standard.map(\.rawValue).joined(separator: ",")
     @AppStorage("hitparade.source") private var storedSource = MusicSource.app.rawValue
     @AppStorage("hitparade.target") private var target = 7
 
@@ -85,6 +85,14 @@ struct HitparadeView: View {
     /// gemessen – steht deshalb auch unter den Pruefpunkten am Geraet.
     private static let hitRate = 0.6
     private static let minutesPerSong = 0.75
+
+    /// Der Aufkleber im Zug – klein genug fuer eine Zeile mit dem Namen.
+    private static let stickerSize: CGFloat = 100
+    /// So klein und so gross darf der Plattenspieler werden. Darunter waere
+    /// er nur noch ein Knopf, darueber schoebe er die Antwort aus dem Bild.
+    private static let deckRange: ClosedRange<CGFloat> = 130...240
+    /// Ein Plus in der Reihe: Apples Mindestgroesse fuer einen Tipp.
+    private static let gapTarget: CGFloat = 44
 
     /// Wo das Zaehlwerk steht, bevor jemand dreht: die Mitte des Stapels.
     /// Ein Anfang am Rand waere ein Hinweis, wo die Antwort liegt.
@@ -142,12 +150,15 @@ struct HitparadeView: View {
         GameSetupScreen(
             emoji: "🎵",
             title: "Hitparade",
-            subtitle: "Ein Lied läuft – die App fragt, wie es heißt, wer es singt, aus welchem Jahr es ist oder wohin es in deine Reihe gehört.",
+            subtitle: "Ein Lied läuft, die App fragt etwas dazu. Wer richtig liegt, bekommt die Karte.",
             tint: tint,
             startTitle: "Los geht's",
             onStart: start
         ) {
-            VStack(alignment: .leading, spacing: 20) {
+            // Knapp gehalten (30. Oktober: "nicht viel scrollen"): Was die
+            // Knoepfe selbst sagen, steht nicht noch einmal als Satz darunter,
+            // und die Regeln stehen in der Anleitung am Fragezeichen
+            VStack(alignment: .leading, spacing: 16) {
                 block("WIE VIELE SPIELT IHR?") {
                     PlayerCountStepper(count: $playerCount, range: 2...PartyGame.manyPlayers, tint: tint)
                 }
@@ -175,9 +186,8 @@ struct HitparadeView: View {
 
     /// Im Vorspann und im Zahnrad dieselben Schalter.
     private var questionsBlock: some View {
-        block("WAS GEFRAGT WIRD") {
+        block("WAS GEFRAGT WIRD – JEDE RUNDE EINE DAVON") {
             questionToggles
-            hint("Jede Runde lost die App eine der angehakten Fragen aus. Wer richtig liegt, bekommt die Karte in seine Reihe – egal, was gefragt war.")
         }
     }
 
@@ -191,9 +201,6 @@ struct HitparadeView: View {
                 selection: $storedSource,
                 tint: tint
             )
-            hint(source == .app
-                 ? "Die App spielt 30 Sekunden des Lieds, ohne Titel oder Cover zu zeigen. Ein Knopf schickt den Ton auf eure Box."
-                 : "Der Nachbar sieht Titel und Interpret, sucht das Lied auf eurer Box und spielt es an, ohne den Titel vorzulesen.")
         }
     }
 
@@ -203,29 +210,27 @@ struct HitparadeView: View {
         return "Mit \(playerCount) Leuten sind das ungefähr \(lieder) Lieder, also gut \(minuten) Minuten."
     }
 
+    /// Fuenf Schalter als umbrechende Reihe statt als Raster: Ein Raster
+    /// gibt jedem dieselbe Breite, und "Titel" braucht weniger Platz als
+    /// "Einsortieren" – so sind es zwei Zeilen statt drei.
     private var questionToggles: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+        WrappingRow(spacing: 8, lineSpacing: 8, alignment: .leading) {
             ForEach(HitQuestion.allCases) { frage in
                 let an = chosenQuestions.contains(frage)
                 Button {
                     toggle(frage)
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Image(systemName: an ? "checkmark.circle.fill" : "circle")
                         Text(frage.title)
                             .font(BeerStatsFont.headline)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                        Spacer(minLength: 0)
                     }
                     .foregroundStyle(an ? BeerStatsColor.textOnAccent : BeerStatsColor.textSecondary)
-                    .padding(.horizontal, 12)
-                    .frame(minHeight: 48)
-                    .background(
-                        an ? tint : BeerStatsColor.surfaceElevated.opacity(0.6),
-                        in: RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    )
-                    .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 44)
+                    .background(an ? tint : BeerStatsColor.surfaceElevated.opacity(0.6), in: Capsule())
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(PressableButtonStyle())
                 .accessibilityAddTraits(an ? .isSelected : [])
@@ -296,25 +301,19 @@ struct HitparadeView: View {
         ZStack {
             AmbientBackdrop(glow: tint)
 
+            // Alles auf einen Screen (Wunsch des Nutzers vom 30. Oktober:
+            // "sodass man nicht viel scrollen muss"). Vorher standen Name,
+            // grosser Aufkleber, grosser Plattenspieler, Antwort und die
+            // ganze Reihe untereinander, und "Aufdecken" lag unter dem Rand.
+            // Jetzt teilen sich Name und Frage eine Zeile, der Plattenspieler
+            // nimmt nur den Platz, der uebrig ist, und die Reihe bricht um.
+            // Scrollen geht weiterhin – mit sehr grosser Schrift muss es.
             FillingScrollView(alignment: .top) {
-                VStack(spacing: 18) {
+                VStack(spacing: 14) {
                     scoreboard
 
                     if let game {
-                        Text(name + " ist dran")
-                            .font(Font.world(world, 22, weight: .heavy))
-                            .foregroundStyle(BeerStatsColor.textPrimary)
-                            .multilineTextAlignment(.center)
-
-                        QuestionSticker(question: game.question)
-                            .id(turnCount)
-                            .transition(.scale(scale: 1.35).combined(with: .opacity))
-
-                        Text(game.question.prompt)
-                            .font(BeerStatsFont.caption)
-                            .foregroundStyle(BeerStatsColor.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
+                        turnHeader(game)
 
                         if usesBox {
                             boxSleeve(game)
@@ -325,7 +324,8 @@ struct HitparadeView: View {
                         answerArea(game)
                     }
                 }
-                .padding(20)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
             }
         }
     }
@@ -353,38 +353,70 @@ struct HitparadeView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// Der Plattenspieler mit seinen Knoepfen.
-    private var playerDeck: some View {
-        VStack(spacing: 12) {
-            Turntable(
-                isPlaying: music.state == .playing,
-                progress: music.progress,
-                isLoading: music.state == .loading,
-                tint: tint
-            )
-            .frame(maxWidth: 280)
+    /// Wer dran ist und was gefragt wird – in einer Zeile neben dem
+    /// Aufkleber statt in drei Zeilen untereinander.
+    private func turnHeader(_ game: HitparadeGame) -> some View {
+        HStack(spacing: 14) {
+            QuestionSticker(question: game.question, diameter: Self.stickerSize)
+                .id(turnCount)
+                .transition(.scale(scale: 1.35).combined(with: .opacity))
 
-            HStack(spacing: 18) {
-                Button {
-                    music.restart()
-                } label: {
-                    Image(systemName: "backward.end.fill")
-                        .font(.scaled(17, weight: .bold))
-                        .foregroundStyle(BeerStatsColor.textPrimary)
-                        .frame(width: 48, height: 48)
-                        .background(Color.white.opacity(0.08), in: Circle())
-                        .contentShape(Circle())
-                }
-                .buttonStyle(PressableButtonStyle())
-                .accessibilityLabel("Von vorn")
-                .disabled(music.state == .loading || music.state == .idle || music.state == .failed)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name + " ist dran")
+                    .font(Font.world(world, 22, weight: .heavy))
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
 
-                playButton
-
-                AudioRoutePicker()
-                    .frame(width: 48, height: 48)
-                    .accessibilityLabel("Ton auf eine Box schicken")
+                Text(game.question.prompt)
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Der Plattenspieler mit seinen Knoepfen daneben. Er waechst in den
+    /// Platz, der uebrig bleibt, und schrumpft, wenn keiner da ist: Er ist
+    /// die Buehne, aber die Antwort darunter darf nie aus dem Bild rutschen.
+    private var playerDeck: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 18) {
+                Turntable(
+                    isPlaying: music.state == .playing,
+                    progress: music.progress,
+                    isLoading: music.state == .loading,
+                    tint: tint
+                )
+                .frame(
+                    minWidth: Self.deckRange.lowerBound, maxWidth: Self.deckRange.upperBound,
+                    minHeight: Self.deckRange.lowerBound, maxHeight: Self.deckRange.upperBound
+                )
+
+                VStack(spacing: 12) {
+                    playButton
+
+                    Button {
+                        music.restart()
+                    } label: {
+                        Image(systemName: "backward.end.fill")
+                            .font(.scaled(17, weight: .bold))
+                            .foregroundStyle(BeerStatsColor.textPrimary)
+                            .frame(width: 48, height: 48)
+                            .background(Color.white.opacity(0.08), in: Circle())
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                    .accessibilityLabel("Von vorn")
+                    .disabled(music.state == .loading || music.state == .idle || music.state == .failed)
+
+                    AudioRoutePicker()
+                        .frame(width: 48, height: 48)
+                        .accessibilityLabel("Ton auf eine Box schicken")
+                }
+            }
+            .frame(maxWidth: .infinity)
 
             if music.state == .failed {
                 Text("Die Hörprobe kommt nicht – vielleicht kein Netz.")
@@ -410,9 +442,9 @@ struct HitparadeView: View {
             }
         } label: {
             Image(systemName: spielt ? "pause.fill" : "play.fill")
-                .font(.scaled(26, weight: .bold))
+                .font(.scaled(24, weight: .bold))
                 .foregroundStyle(BeerStatsColor.textOnAccent)
-                .frame(width: 68, height: 68)
+                .frame(width: 60, height: 60)
                 .background(tint, in: Circle())
                 .contentShape(Circle())
         }
@@ -431,7 +463,11 @@ struct HitparadeView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
 
             RecordSleeve(title: game.current?.title ?? "–", artist: game.current?.artist ?? "", year: nil)
-                .frame(width: 210, height: 210)
+                // Waechst und schrumpft wie der Plattenspieler an derselben Stelle
+                .frame(
+                    minWidth: Self.deckRange.lowerBound, maxWidth: Self.deckRange.upperBound,
+                    minHeight: Self.deckRange.lowerBound, maxHeight: Self.deckRange.upperBound
+                )
 
             Text("Titel nicht vorlesen – vielleicht ist er die Frage.")
                 .font(BeerStatsFont.caption)
@@ -444,42 +480,61 @@ struct HitparadeView: View {
     private func answerArea(_ game: HitparadeGame) -> some View {
         switch game.question {
         case .placement:
-            VStack(spacing: 8) {
-                hint("Tipp die Lücke, in die es gehört.")
-                shelf(game.timeline, interactive: true)
+            VStack(spacing: 10) {
+                centeredHint("Tipp auf das Plus, wo das Lied in deine Reihe gehört.")
+                timelineStrip(game.timeline)
             }
         case .yearWithinThree, .yearWithinOne:
-            VStack(spacing: 14) {
+            VStack(spacing: 12) {
                 YearCounter(year: $yearGuess, range: Self.yearRange, tint: tint)
                 PrimaryButton(title: "Aufdecken", systemImage: "eye") { answer(.year(yearGuess)) }
-                shelf(game.timeline, interactive: false)
             }
         case .title, .artist:
-            VStack(spacing: 14) {
-                hint("Laut sagen, dann aufdecken. Die Runde entscheidet, ob es zählt.")
+            VStack(spacing: 10) {
+                centeredHint("Laut sagen, dann aufdecken. Die Runde entscheidet, ob es zählt.")
                 PrimaryButton(title: "Aufdecken", systemImage: "eye") {
                     withAnimation(AppAnimation.standard) { phase = .judging }
                 }
-                shelf(game.timeline, interactive: false)
             }
         }
     }
 
-    /// Die Reihe dessen, der dran ist: Karten, und beim Einsortieren die
-    /// Luecken dazwischen.
-    private func shelf(_ reihe: SongTimeline, interactive: Bool) -> some View {
-        VStack(spacing: 8) {
-            if !interactive {
-                label("DEINE REIHE")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 6)
+    private func centeredHint(_ text: String) -> some View {
+        Text(text)
+            .font(BeerStatsFont.caption)
+            .foregroundStyle(BeerStatsColor.textSecondary)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Ein Platz in der Reihe: eine Luecke zum Antippen oder eine Karte.
+    private enum ShelfSlot: Hashable {
+        case gap(Int)
+        case card(Int)
+
+        /// Luecke, Karte, Luecke, Karte … Luecke – vor der ersten, zwischen
+        /// allen und nach der letzten Karte.
+        static func slots(for reihe: SongTimeline) -> [ShelfSlot] {
+            (0..<reihe.gapCount).flatMap { luecke -> [ShelfSlot] in
+                luecke < reihe.count ? [.gap(luecke), .card(luecke)] : [.gap(luecke)]
             }
-            ForEach(Array(0..<reihe.gapCount), id: \.self) { luecke in
-                if interactive {
+        }
+    }
+
+    /// Die eigene Reihe als Jahres-Chips, dazwischen die Luecken als Plus.
+    /// Umbrechend statt als Liste: Mit zehn Karten waren das einundzwanzig
+    /// Zeilen untereinander, und die Antwort lag unter dem Rand. Gezeigt
+    /// wird nur das Jahr – nur das entscheidet hier, und Titel stehen fuer
+    /// VoiceOver dabei.
+    private func timelineStrip(_ reihe: SongTimeline) -> some View {
+        WrappingRow(spacing: 6, lineSpacing: 8) {
+            ForEach(ShelfSlot.slots(for: reihe), id: \.self) { slot in
+                switch slot {
+                case .gap(let luecke):
                     gapButton(luecke, label: reihe.label(forGap: luecke))
-                }
-                if luecke < reihe.count {
-                    cardRow(reihe.cards[luecke])
+                case .card(let index):
+                    RecordSpine(year: reihe.cards[index].year)
+                        .accessibilityLabel("\(reihe.cards[index].year): \(reihe.cards[index].title)")
                 }
             }
         }
@@ -489,42 +544,18 @@ struct HitparadeView: View {
         Button {
             answer(.gap(gap))
         } label: {
-            Text(text)
-                .font(.scaled(13, weight: .heavy, design: .rounded))
+            Image(systemName: "plus")
+                .font(.scaled(15, weight: .heavy))
                 .foregroundStyle(tint)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .frame(width: Self.gapTarget, height: Self.gapTarget)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(tint.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                    Capsule()
+                        .strokeBorder(tint.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
                 )
-                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .contentShape(Capsule())
         }
         .buttonStyle(PressableButtonStyle())
-    }
-
-    /// Ein Lied im Regal: der Ruecken in der Farbe seines Jahrzehnts.
-    private func cardRow(_ card: SongCard) -> some View {
-        HStack(spacing: 12) {
-            RecordSpine(year: card.year)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(card.title)
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textPrimary)
-                    .lineLimit(1)
-                Text(card.artist)
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassPanel(cornerRadius: 12)
+        .accessibilityLabel(text)
     }
 
     // MARK: - Aufdecken
@@ -606,15 +637,21 @@ struct HitparadeView: View {
         } buttons: {
             PrimaryButton(title: "Weiter", systemImage: "arrow.right") { nextTurn() }
 
-            if let card = game?.current, let spotify = spotifyLink(for: card) {
-                // Erst jetzt: Spotify zeigt den Titel, sobald es aufgeht
-                QuietButton(title: "Auf Spotify weiterhören", systemImage: "arrow.up.right") { openURL(spotify) }
-            }
+            // Beide Nebenhandlungen in einer Zeile – eine Zeile weniger, die
+            // den Weiter-Knopf nach unten schiebt
+            HStack(spacing: 4) {
+                if let card = game?.current, let spotify = spotifyLink(for: card) {
+                    // Erst jetzt: Spotify zeigt den Titel, sobald es aufgeht
+                    QuietButton(title: "Auf Spotify", systemImage: "arrow.up.right") { openURL(spotify) }
+                }
 
-            // Die Notbremse: Der Stapel ist von Hand geschrieben, und wenn
-            // die Runde das Jahr besser weiss als die App, gewinnt die
-            // Runde. Ohne diesen Knopf traenke jemand fuer meinen Tippfehler.
-            QuietButton(title: "Jahr stimmt nicht – Karte verwerfen") { discard() }
+                // Die Notbremse: Der Stapel ist von Hand geschrieben, und
+                // wenn die Runde das Jahr besser weiss als die App, gewinnt
+                // die Runde. Ohne diesen Knopf traenke jemand fuer meinen
+                // Tippfehler. Die Karte faellt dabei weg.
+                QuietButton(title: "Jahr stimmt nicht") { discard() }
+                    .accessibilityHint("Verwirft die Karte. Wer dafür getrunken hat, bekommt es zurück.")
+            }
         }
     }
 

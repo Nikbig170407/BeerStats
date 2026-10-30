@@ -22,11 +22,15 @@
 //  Zwei Regeln, die nicht von selbst gelten:
 //  - **Nicht im Vorspann**: Dort ist der Vorspann selbst die Einstellung.
 //  - **Nicht, solange eine Uhr laeuft** (Bombe, Sanduhr, Countdown): Das
-//    Blatt laege ueber der Uhr, und die Runde liefe ungesehen ab. Ebenso
-//    nicht, waehrend ein Spiel selbst gleich etwas aufmacht (der
-//    Kartenscreen in Ring of Fire) – zwei Blaetter zugleich zeigt SwiftUI
-//    nicht, das zweite fiele stillschweigend weg.
+//    Blatt laege ueber der Uhr, und die Runde liefe ungesehen ab.
 //  Beides sagt das Spiel ueber `isAvailable`.
+//
+//  Macht ein Spiel selbst gleich etwas auf (der Kartenscreen in Ring of
+//  Fire), verschwindet das Zahnrad dafuer NICHT – zwei Blaetter zugleich
+//  zeigt SwiftUI zwar nicht, aber ein Zahnrad, das bei jedem Zug geht und
+//  wiederkommt, war am Geraet die schlechtere Loesung. Das Spiel merkt sich
+//  ueber `onOpen`/`onClose`, dass das Blatt offen ist, und zeigt seinen
+//  Screen danach.
 //
 
 import SwiftUI

@@ -32,6 +32,13 @@ enum HitQuestion: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Was angehakt ist, bevor jemand etwas aendert – alles ausser "Jahr ± 1".
+    /// Auf ein Jahr genau trifft am Tisch kaum jemand, und eine Frage, an der
+    /// fast alle scheitern, ist keine schwere Frage, sondern eine Strafrunde
+    /// (Rueckmeldung des Nutzers vom 30. Oktober: "nicht zu schwierig").
+    /// Zuschalten laesst sie sich weiter.
+    static let standard: [HitQuestion] = [.placement, .title, .artist, .yearWithinThree]
+
     var title: String {
         switch self {
         case .placement: return "Einsortieren"

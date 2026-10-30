@@ -416,33 +416,45 @@ struct Turntable: View {
 struct QuestionSticker: View {
 
     let question: HitQuestion
+    /// Durchmesser. Im Zug steht der Aufkleber klein neben dem Namen: Der
+    /// Platz gehoert dem Plattenspieler und der Antwort, die ohne Scrollen
+    /// zu sehen sein muss.
+    var diameter: CGFloat = QuestionSticker.fullSize
 
+    static let fullSize: CGFloat = 150
+    /// Darunter waere "FRAGE" nur noch Kruemel – dann steht es nicht da.
+    private static let labelMinimum: CGFloat = 130
     private static let paper = SceneArt.rgb(244, 236, 214)
 
     var body: some View {
-        VStack(spacing: 4) {
+        // Alles waechst und schrumpft mit dem Durchmesser
+        let k = diameter / Self.fullSize
+
+        VStack(spacing: 4 * k) {
             Image(systemName: question.symbol)
-                .font(.scaled(18, weight: .heavy, design: .default))
-            Text("FRAGE")
-                .font(.scaled(10, weight: .heavy, design: .default, width: .expanded))
-                .kerning(1.6)
-                .opacity(0.65)
+                .font(.scaled(18 * k, weight: .heavy, design: .default))
+            if diameter >= Self.labelMinimum {
+                Text("FRAGE")
+                    .font(.scaled(10 * k, weight: .heavy, design: .default, width: .expanded))
+                    .kerning(1.6)
+                    .opacity(0.65)
+            }
             Text(question.title)
-                .font(.scaled(19, weight: .heavy, design: .default, width: .expanded))
+                .font(.scaled(19 * k, weight: .heavy, design: .default, width: .expanded))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.6)
         }
         .foregroundStyle(RecordShelf.ink)
-        .padding(18)
-        .frame(width: 150, height: 150)
+        .padding(18 * k)
+        .frame(width: diameter, height: diameter)
         .background {
             Circle()
                 .fill(Self.paper)
                 .overlay(
                     Circle()
                         .strokeBorder(RecordShelf.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
-                        .padding(7)
+                        .padding(7 * k)
                 )
                 .shadow(color: .black.opacity(0.45), radius: 10, y: 5)
         }
@@ -475,10 +487,12 @@ struct YearCounter: View {
             HStack(spacing: 6) {
                 ForEach(Array(String(year).enumerated()), id: \.offset) { _, ziffer in
                     Text(String(ziffer))
-                        .font(.scaled(40, weight: .heavy, design: .monospaced))
+                        .font(.scaled(34, weight: .heavy, design: .monospaced))
                         .foregroundStyle(SceneArt.rgb(244, 236, 214))
                         .contentTransition(.numericText())
-                        .frame(width: 52, height: 70)
+                        // Kompakt: Das Zaehlwerk steht im Zug unter dem
+                        // Plattenspieler, und beides muss ohne Scrollen passen
+                        .frame(width: 46, height: 58)
                         .background {
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
                                 .fill(LinearGradient(colors: [SceneArt.rgb(46, 42, 40), SceneArt.rgb(14, 13, 12), SceneArt.rgb(46, 42, 40)],

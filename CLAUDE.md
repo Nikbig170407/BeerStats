@@ -427,6 +427,20 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     oder im Zug „Über die Box spielen“. Dann sieht der Nachbar Titel und
     Interpret und spielt das Lied an, wie vor dem 29. Oktober. „Anderes
     Lied“ tauscht nur das Lied, ohne Strafe.
+  - **Bekannt vor vollständig** (30. Oktober: „achte darauf, dass es
+    bekannte Songs sind und nicht zu schwierig wird“). In den Stapel kommen
+    Lieder, die eine Partyrunde mitsingt – Charthits und deutsche
+    Partyklassiker, keine Kritikerlieblinge. Ein Lied, das niemand
+    erkennt, ist keine schwere Frage, sondern Würfeln. **„Jahr ± 1“ ist
+    nicht vorab angehakt** (`HitQuestion.standard`): Auf ein Jahr genau
+    trifft am Tisch kaum jemand.
+  - **Der Zug passt auf einen Screen** (30. Oktober: „alles auf einen
+    Screen, sodass man nicht viel scrollen muss“). Name und Frage teilen
+    sich eine Zeile neben einem kleinen Aufkleber, der Plattenspieler
+    nimmt nur den Platz, der übrig ist (`deckRange`), und die Reihe ist
+    eine umbrechende Zeile aus Jahres-Chips (`WrappingRow`) statt einer
+    Liste. Was neu dazukommt, muss sich dort einfügen, ohne „Aufdecken“
+    unter den Rand zu schieben.
   - **Gefragt wird, was angehakt ist, und reihum gelost**
     (`HitparadeGame`, reine Rechnung mit Tests). Die Frage von eben kommt
     gedämpft wieder, nicht verboten – sonst wechselten sich zwei angehakte
@@ -818,12 +832,17 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     noch nie“, „Wer bin ich?“, Pantomime), Fragen und Musikquelle der
     Hitparade, die Kartenzahl von Ring of Fire – jeweils ab dem nächsten
     Lied, der nächsten Runde.
-  - **Nicht im Vorspann, nicht, solange eine Uhr läuft, und nicht, wenn
-    das Spiel gleich selbst etwas aufmacht** (`isAvailable`). Über einer
-    laufenden Bombe läge das Blatt auf der Uhr, und die Runde liefe
-    ungesehen ab. Und zwei Blätter zugleich zeigt SwiftUI nicht: Öffnete
-    jemand das Zahnrad, während Ring of Fire zieht, fiele der Kartenscreen
-    danach stillschweigend weg.
+  - **Nicht im Vorspann und nicht, solange eine Uhr läuft**
+    (`isAvailable`). Über einer laufenden Bombe läge das Blatt auf der Uhr,
+    und die Runde liefe ungesehen ab.
+  - **Macht ein Spiel selbst etwas auf, wartet es aufs Zahnrad – nicht
+    umgekehrt.** Zwei Blätter zugleich zeigt SwiftUI nicht; der Kartenscreen
+    von Ring of Fire fiele unter einem offenen Zahnrad stillschweigend weg.
+    Zuerst verschwand deshalb das Zahnrad bei jedem Ziehen und Austeilen –
+    am Gerät hieß das: „Das Zahnrad kommt immer wieder“ (30. Oktober). Jetzt
+    bleibt es stehen, und der Kartenscreen wartet, bis das Blatt zu ist
+    (`presentAction`). Ein Knopf, der im Takt des Spiels kommt und geht,
+    ist schlimmer als einer, der kurz warten lässt.
   - **Ein Zug merkt sich, was für ihn gilt**, wo die Einstellung sonst
     mitten im Zug durchschlüge: Die Hitparade kopiert die Musikquelle beim
     Zugbeginn (`turnSource`) – sonst stünde nach einem Wechsel auf „Box“
@@ -1664,12 +1683,18 @@ oben; was schief aussieht, unten.
   ich?“ und Pantomime)? In einem Spiel hart einstellen: Kommt die nächste
   Strafe in der neuen Härte? In Ring of Fire: Kommt nach dem Zahnrad jeder
   Kartenscreen, und gilt eine neue Kartenzahl erst ab der nächsten Runde?
+  Seit dem 30. Oktober bleibt das Zahnrad dort stehen: Zahnrad öffnen,
+  während das Licht noch läuft – kommt die Karte nach dem Schließen?
   In der Hitparade: Gelten neue Fragen ab dem nächsten Lied, und zeigt ein
   Wechsel auf „Box“ mitten im Zug **nicht** sofort den Titel?
 - **Hitparade (29. Oktober, vorher Zeitstrahl)**: Das Wichtigste –
   stimmen die Jahreszahlen, und läuft das richtige Lied? Beim ersten
   Durchgang auf Lieder achten, bei denen die Runde widerspricht oder eine
-  falsche Fassung läuft (live, Remix, Cover), und sie mir nennen. Dann:
+  falsche Fassung läuft (live, Remix, Cover), und sie mir nennen. Seit dem
+  30. Oktober zusätzlich: **Kennt die Runde die Lieder?** Welche erkennt
+  niemand – die fliegen raus. Und passt ein Zug auf einen Screen, auch
+  beim Einsortieren mit acht, neun Karten und auf einem kleinen iPhone?
+  Dann:
   - Startet das Lied von allein, auch bei stummgeschaltetem iPhone, und
     hört die Playlist auf dem Handy dafür auf? Geht der Ton über den
     Box-Knopf auf AirPlay oder Bluetooth – und **zeigt die Box irgendwo den
