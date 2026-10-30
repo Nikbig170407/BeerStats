@@ -103,6 +103,10 @@ struct RingOfFireView: View {
 
     /// Der zweite Screen – die gezogene Karte in Gross.
     @State private var showsAction = false
+    /// Ist das Zahnrad offen? Dann wartet der Kartenscreen (`actionIsWaiting`),
+    /// bis es zu ist – zwei Blaetter zugleich zeigt SwiftUI nicht.
+    @State private var isAdjusting = false
+    @State private var actionIsWaiting = false
     /// Steht die Hausregel-Frage noch aus? Sie kommt erst NACH dem
     /// Aktionsscreen: Erst liest man die Karte zu Ende, dann tippt man.
     @State private var needsRulePrompt = false
@@ -170,13 +174,17 @@ struct RingOfFireView: View {
         }
         .navigationTitle("Ring of Fire")
         .navigationBarTitleDisplayMode(.inline)
-        // Nicht, waehrend gezogen oder ausgeteilt wird, und nicht, solange
-        // eine Karte oder die Hausregel offen ist: Der Kartenscreen kommt von
-        // selbst, und ueber einem offenen Blatt fiele er stillschweigend weg
+        // Das Zahnrad bleibt stehen, auch waehrend gezogen und ausgeteilt
+        // wird. Bis zum 30. Oktober verschwand es dabei, damit es dem
+        // Kartenscreen nicht in die Quere kommt – und tauchte so bei jedem
+        // Zug neu auf ("das Zahnrad kommt immer wieder"). Jetzt wartet
+        // stattdessen der Kartenscreen, bis das Blatt zu ist.
         .roundSettings(
             for: .ringOfFire,
-            isAvailable: hasStarted && !isBusy && !showsAction && !isAskingForRule,
-            note: "Die Kartenzahl gilt ab der nächsten Runde, die Härte ab der nächsten Karte."
+            isAvailable: hasStarted,
+            note: "Die Kartenzahl gilt ab der nächsten Runde, die Härte ab der nächsten Karte.",
+            onOpen: { isAdjusting = true },
+            onClose: settingsClosed
         ) {
             cardCountChoice
         }
@@ -245,6 +253,25 @@ struct RingOfFireView: View {
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    /// Der Kartenscreen – aber nicht ueber dem Zahnrad. Waehrend das Blatt
+    /// offen ist, faende er keinen Platz und fiele stillschweigend weg; die
+    /// Karte waere gezogen, ohne dass sie jemand gesehen hat.
+    private func presentAction() {
+        if isAdjusting {
+            actionIsWaiting = true
+        } else {
+            showsAction = true
+        }
+    }
+
+    /// Das Zahnrad ist zu: Kam inzwischen eine Karte, zeigt sie sich jetzt.
+    private func settingsClosed() {
+        isAdjusting = false
+        guard actionIsWaiting else { return }
+        actionIsWaiting = false
+        showsAction = true
     }
 
     // MARK: - Tisch
@@ -908,7 +935,7 @@ struct RingOfFireView: View {
             guard !Task.isCancelled else { return }
             lifting = nil
             isDrawing = false
-            showsAction = true
+            presentAction()
         }
     }
 
@@ -949,7 +976,7 @@ struct RingOfFireView: View {
             guard !Task.isCancelled else { return }
             lifting = nil
             isDrawing = false
-            showsAction = true
+            presentAction()
         }
     }
 
