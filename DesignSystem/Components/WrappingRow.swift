@@ -40,7 +40,7 @@ struct WrappingRow: Layout {
         for zeile in lines(for: subviews, width: bounds.width) {
             var x = bounds.minX + einzug(frei: bounds.width - zeile.width)
             for index in zeile.indices {
-                let groesse = subviews[index].sizeThatFits(.unspecified)
+                let groesse = size(of: subviews[index], width: bounds.width)
                 // Innerhalb der Zeile mittig in der Hoehe: Ein Chip ist
                 // niedriger als ein Knopf daneben
                 subviews[index].place(
@@ -51,6 +51,13 @@ struct WrappingRow: Layout {
             }
             y += zeile.height + lineSpacing
         }
+    }
+
+    /// Wie gross ein Element sein will – hoechstens so breit wie die Zeile.
+    /// Ein Chip mit drei Namen bricht dann in sich um, statt ueber den
+    /// Rand hinauszuragen.
+    private func size(of subview: LayoutSubview, width: CGFloat) -> CGSize {
+        subview.sizeThatFits(width.isFinite ? ProposedViewSize(width: width, height: nil) : .unspecified)
     }
 
     private func einzug(frei: CGFloat) -> CGFloat {
@@ -74,7 +81,7 @@ struct WrappingRow: Layout {
         var zeilen: [Line] = []
         var aktuell = Line()
         for index in subviews.indices {
-            let groesse = subviews[index].sizeThatFits(.unspecified)
+            let groesse = size(of: subviews[index], width: width)
             let breiter = aktuell.indices.isEmpty ? groesse.width : aktuell.width + spacing + groesse.width
             if breiter > width, !aktuell.indices.isEmpty {
                 zeilen.append(aktuell)

@@ -409,6 +409,90 @@ struct Turntable: View {
     }
 }
 
+// MARK: - Startknopf
+
+/// Der Startknopf des Plattenspielers – gedrueckt, solange das Lied laeuft.
+///
+/// Rueckmeldung vom 3. November: Das Lied startet von allein, der Knopf
+/// muss dann aber auch so aussehen, als waere er gedrueckt. Vorher war er in
+/// beiden Zustaenden derselbe volle Kreis, nur das Zeichen wechselte – aus
+/// anderthalb Metern sah "laeuft" aus wie "laeuft nicht".
+///
+/// Laeuft das Lied: voll, eingedrueckt, Pause-Zeichen und ein Ring, der
+/// nach aussen laeuft. Steht es: nur umrandet, mit Play-Zeichen.
+struct TurntableStartButton: View {
+
+    let isPlaying: Bool
+    var isLoading = false
+    var tint: Color = BeerStatsColor.accent
+    let action: () -> Void
+
+    static let diameter: CGFloat = 64
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                if isPlaying {
+                    // Eigene Ansicht: Sie entsteht, wenn das Lied losgeht,
+                    // und nimmt ihr Pulsieren mit, wenn es aufhoert
+                    StartButtonPulse(tint: tint)
+                }
+
+                Circle()
+                    .fill(isPlaying ? tint : tint.opacity(0.12))
+                Circle()
+                    .strokeBorder(tint, lineWidth: isPlaying ? 0 : 2.5)
+                // Eingedrueckt: innen ein dunkler Rand oben, wie bei einer
+                // Taste, die tiefer liegt als ihre Fassung
+                Circle()
+                    .strokeBorder(
+                        LinearGradient(colors: [Color.black.opacity(0.35), .clear], startPoint: .top, endPoint: .center),
+                        lineWidth: 4
+                    )
+                    .opacity(isPlaying ? 1 : 0)
+
+                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                    .font(.scaled(24, weight: .bold))
+                    .foregroundStyle(isPlaying ? BeerStatsColor.textOnAccent : tint)
+                    // Das Play-Dreieck steht optisch links, wenn es genau
+                    // mittig sitzt
+                    .offset(x: isPlaying ? 0 : 2)
+            }
+            .frame(width: Self.diameter, height: Self.diameter)
+            .scaleEffect(isPlaying ? 0.94 : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPlaying)
+            .contentShape(Circle())
+        }
+        .buttonStyle(PressableButtonStyle())
+        .disabled(isLoading)
+        .opacity(isLoading ? 0.5 : 1)
+        .accessibilityLabel(isPlaying ? "Pause" : "Abspielen")
+        .accessibilityAddTraits(isPlaying ? .isSelected : [])
+    }
+}
+
+/// Ein Ring, der vom Knopf nach aussen laeuft und verblasst – das Zeichen
+/// dafuer, dass gerade Musik kommt. Mit "Bewegung reduzieren" steht er still.
+private struct StartButtonPulse: View {
+
+    let tint: Color
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var out = false
+
+    var body: some View {
+        Circle()
+            .stroke(tint, lineWidth: 3)
+            .scaleEffect(reduceMotion ? 1.15 : (out ? 1.45 : 1))
+            .opacity(reduceMotion ? 0.5 : (out ? 0 : 0.8))
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeOut(duration: 1.3).repeatForever(autoreverses: false)) { out = true }
+            }
+            .accessibilityHidden(true)
+    }
+}
+
 // MARK: - Die Frage der Runde
 
 /// Die Frage der Runde als Aufkleber, wie ein Preisschild im Plattenladen.

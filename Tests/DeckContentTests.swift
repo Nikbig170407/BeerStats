@@ -85,7 +85,7 @@ final class DeckContentTests: XCTestCase {
         pruefe("Verbotene Wörter", ForbiddenWordDeck.all, mindestens: 70)
         pruefe("Der Spion", SpyDeck.all, mindestens: 110)
         pruefe("Kategorien", CategoryDeck.all, mindestens: 85)
-        pruefe("Schätzmeister", EstimationDeck.all.map(\.text), mindestens: 75)
+        pruefe("Schätzmeister", EstimationDeck.all.map(\.text), mindestens: 140)
         pruefe("Ich hab noch nie", NeverHaveIEverDeck.statements.map(\.text), mindestens: 480)
 
         pruefe("Regel des Abends", EveningRuleDeck.all, mindestens: 38)

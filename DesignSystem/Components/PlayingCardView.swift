@@ -20,8 +20,10 @@ struct PlayingCardView: View {
     var width: CGFloat = 120
 
     /// Karten sind hochkant und laenger als breit – das Verhaeltnis eines
-    /// echten Blattes.
-    private var height: CGFloat { width * 1.45 }
+    /// echten Blattes. Oeffentlich, weil Screens daraus rechnen, wie breit
+    /// eine Karte sein darf, damit sie in die Hoehe passt.
+    static let aspect: CGFloat = 1.45
+    private var height: CGFloat { width * Self.aspect }
 
     var body: some View {
         ZStack {

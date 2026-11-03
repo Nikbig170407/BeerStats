@@ -77,12 +77,14 @@ final class RingCardEntranceTests: XCTestCase {
         }
     }
 
-    /// Nach 0,6 Sekunden steht die Karte so, dass man sie lesen kann:
+    /// Nach 0,9 Sekunden steht die Karte so, dass man sie lesen kann:
     /// Vorderseite vorn, sichtbar, nah an ihrem Platz. Was danach kommt,
-    /// ist Nachschwingen – niemand wartet aufs Lesen.
-    func testTheCardIsReadableAfterSixTenthsOfASecond() {
+    /// ist Nachschwingen – niemand wartet aufs Lesen. (Bis zum 3. November
+    /// waren es 0,6 Sekunden; seitdem laeuft jeder Auftritt auf Wunsch
+    /// anderthalbmal so lang.)
+    func testTheCardIsReadableAfterNineTenthsOfASecond() {
         for auftritt in RingCardEntrance.allCases {
-            let pose = auftritt.pose(at: min(1, 0.6 / auftritt.duration))
+            let pose = auftritt.pose(at: min(1, 0.9 / auftritt.playbackDuration))
 
             XCTAssertFalse(pose.showsBack, "\(auftritt) zeigt noch den Ruecken")
             XCTAssertGreaterThan(pose.opacity, 0.9, "\(auftritt)")
@@ -97,10 +99,11 @@ final class RingCardEntranceTests: XCTestCase {
         }
     }
 
-    /// Kurz genug, dass niemand wartet; lang genug, dass man es sieht.
-    func testEveryEntranceTakesBetweenHalfASecondAndOne() {
+    /// Lang genug, dass man es sieht und es nach etwas aussieht; kurz
+    /// genug, dass es nicht nervt ("nicht zu lange", 3. November).
+    func testEveryEntranceTakesAboutASecond() {
         for auftritt in RingCardEntrance.allCases {
-            XCTAssertTrue((0.5...0.95).contains(auftritt.duration), "\(auftritt): \(auftritt.duration) s")
+            XCTAssertTrue((0.8...1.4).contains(auftritt.playbackDuration), "\(auftritt): \(auftritt.playbackDuration) s")
         }
     }
 

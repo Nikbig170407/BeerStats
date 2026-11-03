@@ -109,8 +109,29 @@ enum RingCardEntrance: CaseIterable {
         }
     }
 
-    /// Wie lange der Auftritt dauert, in Sekunden. Das Wesentliche ist nach
-    /// gut einer halben Sekunde vorbei; was danach kommt, ist Nachschwingen.
+    /// Wie viel langsamer der Auftritt am Tisch laeuft, als er gerechnet ist.
+    ///
+    /// Rueckmeldung vom 3. November: "Die einzelnen Animationen bei Karten
+    /// sollen noch groesser und laenger werden, allerdings nicht so lange,
+    /// dass sie nervig werden." Die Bewegungen selbst bleiben, wie sie sind
+    /// – sie werden gestreckt. So bleibt jede ihrer Eigenheiten (und jeder
+    /// Test darauf) erhalten, nur ausgespielter: gut eine Sekunde statt zwei
+    /// Drittel.
+    static let stretch = 1.5
+
+    /// Auf welche Kartenbreite die Wege (`CardPose.x`, `.y`) gerechnet sind.
+    /// Ist die Karte breiter, werden die Wege mit ihr laenger – sonst waere
+    /// ein groesserer Auftritt nur eine groessere Karte auf demselben kurzen
+    /// Weg.
+    static let referenceWidth: CGFloat = 150
+
+    /// So lange laeuft der Auftritt am Tisch.
+    var playbackDuration: Double { duration * Self.stretch }
+
+    /// Die Zeitbasis der Rechnung, in Sekunden. Gespielt wird sie um
+    /// `stretch` langsamer (`playbackDuration`); die Schwingungen in den
+    /// Posen rechnen weiter mit dieser Zahl, damit die Bewegung beim
+    /// Strecken dieselbe bleibt.
     var duration: Double {
         switch self {
         case .arrow, .slam: return 0.7
@@ -487,9 +508,13 @@ struct RingCardEntering: View, Animatable {
             .rotation3DEffect(.degrees(pose.flipX), axis: (x: 1, y: 0, z: 0), anchor: entrance.pivot, perspective: 0.5)
             .rotation3DEffect(.degrees(pose.flipY), axis: (x: 0, y: 1, z: 0), anchor: entrance.pivot, perspective: 0.5)
             .rotationEffect(.degrees(pose.rotation), anchor: entrance.pivot)
-            .offset(x: pose.x, y: pose.y)
+            .offset(x: pose.x * wayScale, y: pose.y * wayScale)
             .opacity(pose.opacity)
     }
+
+    /// Wie viel laenger die Wege sind, weil die Karte groesser ist als die,
+    /// fuer die sie gerechnet wurden.
+    private var wayScale: CGFloat { width / RingCardEntrance.referenceWidth }
 
     /// Vorder- und Rueckseite liegen beide da, nur eine ist zu sehen.
     /// Ein Wechsel ueber `if` baute die Karte mitten in der Drehung neu.

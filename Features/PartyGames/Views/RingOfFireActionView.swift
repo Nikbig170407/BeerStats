@@ -82,47 +82,49 @@ struct RingOfFireActionView: View {
             // ist danach wieder die Karte dran.
             RingCardFlourish(rank: card.rank, delay: Self.settle)
 
-            FillingScrollView {
-                VStack(spacing: 16) {
-                    if tore {
-                        tornBanner
-                    }
+            GeometryReader { geometry in
+                FillingScrollView {
+                    VStack(spacing: 16) {
+                        if tore {
+                            tornBanner
+                        }
 
-                    // Mit "Bewegung reduzieren" steht die Karte sofort
-                    // auf ihrem Platz – ein stilles Bild, nicht keins
-                    RingCardEntering(
-                        card: card,
-                        entrance: entrance,
-                        width: 150,
-                        progress: reduceMotion ? 1 : entranceProgress
-                    )
-                    .shadow(color: tint.opacity(0.4), radius: 24)
-                    .padding(.top, 12)
+                        // Mit "Bewegung reduzieren" steht die Karte sofort
+                        // auf ihrem Platz – ein stilles Bild, nicht keins
+                        RingCardEntering(
+                            card: card,
+                            entrance: entrance,
+                            width: cardWidth(forHeight: geometry.size.height),
+                            progress: reduceMotion ? 1 : entranceProgress
+                        )
+                        .shadow(color: tint.opacity(0.4), radius: 24)
+                        .padding(.top, 12)
 
-                    Text(rule.nickname)
-                        .font(.scaled(11, weight: .heavy, design: .rounded))
-                        .kerning(2)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
+                        Text(rule.nickname)
+                            .font(.scaled(11, weight: .heavy, design: .rounded))
+                            .kerning(2)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
 
-                    HStack(spacing: 10) {
-                        Text(rule.emoji).font(.system(size: 30))
-                        Text(rule.title)
-                            .font(.scaled(30, weight: .heavy, design: .rounded))
-                            .foregroundStyle(tint)
+                        HStack(spacing: 10) {
+                            Text(rule.emoji).font(.system(size: 30))
+                            Text(rule.title)
+                                .font(.scaled(30, weight: .heavy, design: .rounded))
+                                .foregroundStyle(tint)
+                                .multilineTextAlignment(.center)
+                        }
+
+                        Text(rule.text)
+                            .font(BeerStatsFont.body)
+                            .foregroundStyle(BeerStatsColor.textPrimary)
                             .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 4)
+
+                        terms
+                            .padding(.top, 4)
                     }
-
-                    Text(rule.text)
-                        .font(BeerStatsFont.body)
-                        .foregroundStyle(BeerStatsColor.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 4)
-
-                    terms
-                        .padding(.top, 4)
+                    .padding(24)
                 }
-                .padding(24)
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -146,7 +148,7 @@ struct RingOfFireActionView: View {
             guard !reduceMotion else { return }
             // Linear: Wie schnell die Karte wann ist, rechnet der Auftritt
             // selbst – eine zweite Kurve darueber verbiege seine Rechnung
-            withAnimation(.linear(duration: entrance.duration).delay(Self.settle)) {
+            withAnimation(.linear(duration: entrance.playbackDuration).delay(Self.settle)) {
                 entranceProgress = 1
             }
         }
@@ -159,6 +161,24 @@ struct RingOfFireActionView: View {
             SoundManager.play(.ringRank(card.rank))
         }
     }
+
+    /// Die Karte so gross, wie der Screen es hergibt (3. November: "noch
+    /// groesser"). Gerechnet aus der Hoehe: Was um die Karte herum steht,
+    /// braucht seinen Platz, der Rest gehoert ihr. Mit grosser Schrift wird
+    /// deshalb die Karte kleiner, nie der Text – aber nie kleiner als vorher.
+    private func cardWidth(forHeight hoehe: CGFloat) -> CGFloat {
+        let frei = hoehe - Self.textAllowance - (tore ? Self.tornAllowance : 0)
+        return min(Self.cardWidths.upperBound, max(Self.cardWidths.lowerBound, frei / PlayingCardView.aspect))
+    }
+
+    /// Von der Breite, die die Karte bis zum 3. November hatte, bis zu der,
+    /// ab der sie den Text unter sich aus dem Bild schoebe.
+    private static let cardWidths: ClosedRange<CGFloat> = 150...220
+    /// Was ueber und unter der Karte steht – Name, Titel, Regel, Dauer und
+    /// Strafe samt Abstaenden –, in normaler Schriftgroesse.
+    private static let textAllowance: CGFloat = 330
+    /// Dazu der Riss-Hinweis, wenn der Ring gerissen ist.
+    private static let tornAllowance: CGFloat = 170
 
     /// Der Riss. Steht ueber der Karte, weil er die groessere Nachricht ist.
     ///

@@ -87,10 +87,14 @@ struct HitparadeView: View {
     private static let minutesPerSong = 0.75
 
     /// Der Aufkleber im Zug – klein genug fuer eine Zeile mit dem Namen.
-    private static let stickerSize: CGFloat = 100
+    private static let stickerSize: CGFloat = 110
     /// So klein und so gross darf der Plattenspieler werden. Darunter waere
-    /// er nur noch ein Knopf, darueber schoebe er die Antwort aus dem Bild.
-    private static let deckRange: ClosedRange<CGFloat> = 130...240
+    /// er nur noch ein Knopf; nach oben begrenzt ihn ohnehin die Breite neben
+    /// den Knoepfen. Er nimmt sich, was frei ist (`layoutPriority`).
+    private static let deckRange: ClosedRange<CGFloat> = 120...320
+    /// Mindestabstand zwischen den Bloecken des Zugs – mehr bekommen sie,
+    /// wenn Platz ist, und dann gleichmaessig.
+    private static let gap: CGFloat = 10
     /// Ein Plus in der Reihe: Apples Mindestgroesse fuer einen Tipp.
     private static let gapTarget: CGFloat = 44
 
@@ -301,33 +305,53 @@ struct HitparadeView: View {
         ZStack {
             AmbientBackdrop(glow: tint)
 
-            // Alles auf einen Screen (Wunsch des Nutzers vom 30. Oktober:
-            // "sodass man nicht viel scrollen muss"). Vorher standen Name,
-            // grosser Aufkleber, grosser Plattenspieler, Antwort und die
-            // ganze Reihe untereinander, und "Aufdecken" lag unter dem Rand.
-            // Jetzt teilen sich Name und Frage eine Zeile, der Plattenspieler
-            // nimmt nur den Platz, der uebrig ist, und die Reihe bricht um.
-            // Scrollen geht weiterhin – mit sehr grosser Schrift muss es.
-            FillingScrollView(alignment: .top) {
-                VStack(spacing: 14) {
-                    scoreboard
-
-                    if let game {
-                        turnHeader(game)
-
-                        if usesBox {
-                            boxSleeve(game)
-                        } else {
-                            playerDeck
-                        }
-
-                        answerArea(game)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+            // Ein Screen, ohne Scrollen (3. November: "man soll nicht mehr
+            // scrollen koennen bei dem Screen mit dem Schallplattenspieler,
+            // und alles soll zentraler und mehr Platz belegen"). Der
+            // Plattenspieler nimmt sich zuerst, was frei ist (`layoutPriority`),
+            // der Rest verteilt sich gleichmaessig dazwischen – so steht alles
+            // mittig statt oben angeklebt.
+            //
+            // Gescrollt wird nur, wenn es selbst mit kleinstem Plattenspieler
+            // nicht passt – bei sehr grosser Schrift. Abgeschnittener Text
+            // waere schlimmer als ein Screen, der ausnahmsweise rollt.
+            ViewThatFits(in: .vertical) {
+                turnLayout
+                ScrollView { turnLayout }
+                    .verticalScrollOnly()
             }
         }
+    }
+
+    /// Kopf und Antwort behalten ihre volle Hoehe (`fixedSize`): Sonst
+    /// naehme der Plattenspieler mit seinem Vorrang auf einem kleinen iPhone
+    /// so viel, dass die Frage auf eine Zeile gekuerzt wuerde. Schrumpfen
+    /// soll er, nicht der Text.
+    private var turnLayout: some View {
+        VStack(spacing: 0) {
+            scoreboard
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let game {
+                Spacer(minLength: Self.gap)
+                turnHeader(game)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: Self.gap)
+                Group {
+                    if usesBox {
+                        boxSleeve(game)
+                    } else {
+                        playerDeck
+                    }
+                }
+                .layoutPriority(1)
+                Spacer(minLength: Self.gap)
+                answerArea(game)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
     }
 
     /// Wer wie viele Karten hat – wer dran ist, ist hervorgehoben.
@@ -363,18 +387,21 @@ struct HitparadeView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(name + " ist dran")
-                    .font(Font.world(world, 22, weight: .heavy))
+                    .font(Font.world(world, 24, weight: .heavy))
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
 
                 Text(game.question.prompt)
-                    .font(BeerStatsFont.caption)
+                    .font(BeerStatsFont.body)
                     .foregroundStyle(BeerStatsColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.8)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        // Als Ganzes mittig: Aufkleber und Text stehen zusammen in der Mitte
+        // statt links angeschlagen
+        .frame(maxWidth: .infinity)
     }
 
     /// Der Plattenspieler mit seinen Knoepfen daneben. Er waechst in den
@@ -432,25 +459,18 @@ struct HitparadeView: View {
     }
 
     private var playButton: some View {
-        let spielt = music.state == .playing
-        return Button {
+        TurntableStartButton(
+            isPlaying: music.state == .playing,
+            isLoading: music.state == .loading,
+            tint: tint
+        ) {
             switch music.state {
             case .playing: music.pause()
             case .idle, .failed: playCurrent()
             case .loading: break
             case .paused, .finished: music.resume()
             }
-        } label: {
-            Image(systemName: spielt ? "pause.fill" : "play.fill")
-                .font(.scaled(24, weight: .bold))
-                .foregroundStyle(BeerStatsColor.textOnAccent)
-                .frame(width: 60, height: 60)
-                .background(tint, in: Circle())
-                .contentShape(Circle())
         }
-        .buttonStyle(PressableButtonStyle())
-        .accessibilityLabel(spielt ? "Pause" : "Abspielen")
-        .disabled(music.state == .loading)
     }
 
     /// Ueber die Box: Der Nachbar sieht, was er anspielen soll – das Jahr
@@ -627,13 +647,12 @@ struct HitparadeView: View {
                 hint("Getippt: \(yearGuess)")
             }
 
-            Text(correct
-                 ? "Sitzt. Die Karte bleibt bei \(name)."
-                 : "Daneben. \(name) trinkt \(penalty.text).")
-                .font(BeerStatsFont.headline)
-                .foregroundStyle(correct ? BeerStatsColor.success : BeerStatsColor.error)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            // Gross verkuendet (3. November): Auf die Menge wartet der Tisch
+            if correct {
+                VerdictCallout(headline: "SITZT", who: name, verdict: "Karte behalten", tint: BeerStatsColor.success)
+            } else {
+                VerdictCallout(headline: "DANEBEN", who: name, verdict: penalty.text, tint: BeerStatsColor.error)
+            }
         } buttons: {
             PrimaryButton(title: "Weiter", systemImage: "arrow.right") { nextTurn() }
 
@@ -675,11 +694,13 @@ struct HitparadeView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("\(target) Karten in der Reihe. Alle anderen trinken \(penalty.text).")
+            Text("\(target) Karten in der Reihe.")
                 .font(BeerStatsFont.body)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+
+            VerdictCallout(headline: "ALLE ANDEREN", verdict: penalty.text, tint: BeerStatsColor.error)
         } buttons: {
             PrimaryButton(title: "Neue Runde", systemImage: "arrow.clockwise") { start() }
             QuietButton(title: "Einstellungen ändern") {
@@ -694,25 +715,32 @@ struct HitparadeView: View {
         @ViewBuilder content: () -> Content,
         @ViewBuilder buttons: () -> Buttons
     ) -> some View {
-        // Die beiden Closures werden HIER ausgewertet und nicht erst im
-        // GeometryReader: Der ist escaping, und ein nicht-escaping
-        // ViewBuilder darf dort nicht hinein (Lessons Learned Nr. 13).
+        // Die beiden Closures werden HIER ausgewertet: Die fertigen Ansichten
+        // stehen unten zweimal (mit und ohne Scrollen), und ein Aufruf je
+        // Fassung baute den Inhalt doppelt (Lessons Learned Nr. 13).
         let inhalt = content()
         let knoepfe = buttons()
 
         return ZStack {
             AmbientBackdrop(glow: tint)
 
-            GeometryReader { geometry in
+            // Wie der Zug: ohne Scrollen, solange es passt – erst sehr grosse
+            // Schrift bekommt den rollenden Fall
+            ViewThatFits(in: .vertical) {
+                VStack(spacing: 14) {
+                    Spacer(minLength: 0)
+                    inhalt
+                    Spacer(minLength: 0)
+                    knoepfe
+                }
+                .padding(24)
+
                 ScrollView {
                     VStack(spacing: 14) {
-                        Spacer(minLength: 0)
                         inhalt
-                        Spacer(minLength: 0)
                         knoepfe
                     }
                     .padding(24)
-                    .frame(minHeight: geometry.size.height)
                 }
                 .verticalScrollOnly()
             }

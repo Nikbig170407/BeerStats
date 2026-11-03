@@ -434,13 +434,26 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     erkennt, ist keine schwere Frage, sondern Würfeln. **„Jahr ± 1“ ist
     nicht vorab angehakt** (`HitQuestion.standard`): Auf ein Jahr genau
     trifft am Tisch kaum jemand.
-  - **Der Zug passt auf einen Screen** (30. Oktober: „alles auf einen
-    Screen, sodass man nicht viel scrollen muss“). Name und Frage teilen
-    sich eine Zeile neben einem kleinen Aufkleber, der Plattenspieler
-    nimmt nur den Platz, der übrig ist (`deckRange`), und die Reihe ist
-    eine umbrechende Zeile aus Jahres-Chips (`WrappingRow`) statt einer
-    Liste. Was neu dazukommt, muss sich dort einfügen, ohne „Aufdecken“
-    unter den Rand zu schieben.
+  - **Der Zug passt auf einen Screen und scrollt nicht** (30. Oktober,
+    am 3. November verschärft: „man soll nicht mehr scrollen können …,
+    alles soll zentraler und mehr Platz belegen“). Name und Frage teilen
+    sich eine Zeile neben einem kleinen Aufkleber, die Reihe ist eine
+    umbrechende Zeile aus Jahres-Chips (`WrappingRow`), und der
+    Plattenspieler nimmt sich den Platz, der übrig ist (`deckRange`,
+    `layoutPriority`) – siehe „Ein Spielscreen scrollt nicht“. Was neu
+    dazukommt, muss sich dort einfügen, ohne „Aufdecken“ unter den Rand zu
+    schieben.
+  - **Der Startknopf zeigt, was der Player tut** (`TurntableStartButton`,
+    3. November: „der Button muss als geklickt angezeigt werden“). Läuft
+    das Lied, ist er voll, eingedrückt und pulsiert; steht es, ist er nur
+    umrandet. Der Zustand folgt `AVPlayer.timeControlStatus` und nicht dem,
+    was zuletzt angeordnet wurde – sonst stand der Knopf nach dem
+    selbstständigen Start da wie nicht gedrückt.
+  - **Die Strafe wird groß verkündet** (`VerdictCallout`, 3. November).
+    Als Satz in Fließtextgröße las sie niemand, weil alle auf die
+    Jahreszahl schauten. Jetzt: Überschrift, Name, Menge in Titelgröße –
+    ohne Verb, weil „trinkt“ bei Liegestützen falsch wäre. Der Baustein ist
+    geteilt; ein anderes Spiel mit demselben Moment nimmt ihn.
   - **Gefragt wird, was angehakt ist, und reihum gelost**
     (`HitparadeGame`, reine Rechnung mit Tests). Die Frage von eben kommt
     gedämpft wieder, nicht verboten – sonst wechselten sich zwei angehakte
@@ -551,6 +564,23 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Abend-Rückblick und die eigenen Karten) – die gewinnen nur das
   Ausfüllen in der Breite. `verticalScrollOnly()` steckt im Baustein; an
   den umgestellten Aufrufstellen ist es deshalb weg.
+
+  **Ein Spielscreen scrollt nicht** (3. November, für die Hitparade und
+  Ring of Fire: „Man soll nicht scrollen können“). Das Handy liegt in der
+  Tischmitte; ein Screen, der rollt, zeigt dem halben Tisch die falsche
+  Hälfte. Das Rezept steht zweimal gleich da und gehört so in jeden
+  Spielscreen, der es braucht:
+  - Ein Element ist das **große Bild** (Plattenspieler, Ring) – es hat
+    Vorrang (`layoutPriority(1)`) und eine Unter- und Obergrenze, und es
+    nimmt sich, was übrig ist.
+  - Alles andere behält seine volle Höhe (`fixedSize(horizontal: false,
+    vertical: true)`). Ohne das kürzte der Vorrang des Bildes auf einem
+    kleinen iPhone die Texte auf eine Zeile. Schrumpfen soll das Bild,
+    nicht der Text.
+  - Außen herum `ViewThatFits(in: .vertical)` mit derselben Ansicht noch
+    einmal im `ScrollView`: Gescrollt wird nur, wenn es selbst mit
+    kleinstem Bild nicht passt – bei sehr großer Schrift. Abgeschnittener
+    Text wäre schlimmer als ein Screen, der ausnahmsweise rollt.
 
 - **Jedes Spiel hat seine eigene Welt** (`DesignSystem/Worlds/`).
   Entscheidung des Nutzers vom 28. Oktober: „Im Moment sieht jedes Spiel
@@ -706,8 +736,14 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   - **Ende ohne Ruck, Anfang verborgen.** Jeder Auftritt endet genau auf
     dem Platz und ist kurz davor schon fast dort. Am Anfang ist die Karte
     unsichtbar oder weit draußen, denn währenddessen fährt der Screen herein.
-  - **Lesbar nach gut einer halben Sekunde.** Was danach kommt, ist
-    Nachschwingen. Wer sich überschlägt, zeigt zwischendurch die
+  - **Lesbar nach knapp einer Sekunde.** Was danach kommt, ist
+    Nachschwingen. Bis zum 3. November waren es gut eine halbe Sekunde;
+    dann wünschte der Nutzer die Auftritte „noch größer und länger, aber
+    nicht so lange, dass sie nervig werden“. Die Bewegungen sind dafür
+    nicht neu gerechnet, sondern **gestreckt** (`RingCardEntrance.stretch`,
+    gut eine Sekunde je Auftritt) – so gelten alle Tests auf `pose(at:)`
+    weiter. Größer wird die Karte selbst (sie nimmt sich die Höhe, die der
+    Kartenscreen hergibt), und ihre Wege wachsen mit ihr (`referenceWidth`). Wer sich überschlägt, zeigt zwischendurch die
     **Rückseite** (`CardPose.showsBack`) – sonst stünde die Karte halb
     spiegelverkehrt da. Beide Seiten liegen immer da, nur eine ist zu
     sehen; ein `if` baute die Karte mitten in der Drehung neu.
@@ -1677,6 +1713,13 @@ oben; was schief aussieht, unten.
   anderthalb Metern lesbar, und ruckelt das Lauflicht nicht? Und das
   **Zahnrad** oben rechts: mitten in der Runde Tabulos dazunehmen, Fertig –
   kommt ab der nächsten Karte die neue Mischung, und keine Frage doppelt?
+- **Hitparade und Ring of Fire vom 3. November**: Scrollt irgendwo noch
+  etwas – im Zug der Hitparade, auf dem Tisch von Ring of Fire? Steht
+  alles mittig, und ist der Plattenspieler jetzt groß? Sieht der
+  Startknopf gedrückt aus, sobald das Lied von selbst läuft? Kommt die
+  Strafe groß genug an? Und in Ring of Fire: Sind die Auftritte jetzt
+  groß und lang genug, ohne zu nerven – und wird der Ring zu klein, wenn
+  die Merkliste voll ist?
 - **Das Zahnrad in jedem Spiel (29. Oktober)**: Ist es überall da, wo man
   es sucht – und nirgends, solange eine Uhr läuft (Bombe, Reaktionsduell,
   Kategorien, Countdown bei „Wer würde eher?“, die Runde bei „Wer bin

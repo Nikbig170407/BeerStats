@@ -280,21 +280,18 @@ struct RingOfFireView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.error)
 
-            FillingScrollView {
-                VStack(spacing: 18) {
-                    // Der Ring darf naeher an den Rand als der Rest: Die
-                    // Karten werden mit ihm groesser (27. Oktober, "Karten
-                    // groesser"). Die negative Polsterung gibt ihm 24 pt
-                    // mehr Breite, ohne die Zeilen darunter zu verschieben.
-                    ringOfCards
-                        .padding(.horizontal, -12)
-                    tearStatus
-                    emptyRingPanel
-                    TurnRow(turn: turn, tint: BeerStatsColor.error)
-                    drawButton
-                    roleBoard
-                }
-                .padding(20)
+            // Ohne Scrollen (3. November: "Man soll nicht scrollen koennen").
+            // Gescrollt hat bis dahin die Merkliste: Mit jeder Rolle und
+            // jeder Hausregel wurde sie laenger und schob den Ring nach oben
+            // aus dem Bild. Jetzt nimmt der Ring den Platz, der uebrig ist,
+            // und wird kleiner, wenn die Merkliste waechst – die Regel des
+            // Risses rechnet mit Winkeln, nicht mit Punkten, und bleibt davon
+            // unberuehrt. Gescrollt wird nur noch, wenn es selbst mit
+            // kleinstem Ring nicht passt (sehr grosse Schrift).
+            ViewThatFits(in: .vertical) {
+                tableLayout
+                ScrollView { tableLayout }
+                    .verticalScrollOnly()
             }
         }
         // Der Riss-Moment liegt ueber dem ganzen Screen: Er dunkelt alles
@@ -350,6 +347,37 @@ struct RingOfFireView: View {
             isAskingForRule = true
         }
     }
+
+    /// Alles unter dem Ring behaelt seine volle Hoehe (`fixedSize`); der
+    /// Ring hat Vorrang (`layoutPriority`) und nimmt den Rest. Schrumpfen
+    /// soll er, nicht der Text der Merkliste.
+    private var tableLayout: some View {
+        VStack(spacing: 14) {
+            // Der Ring darf naeher an den Rand als der Rest: Die Karten
+            // werden mit ihm groesser (27. Oktober, "Karten groesser"). Die
+            // negative Polsterung gibt ihm 24 pt mehr Breite, ohne die
+            // Zeilen darunter zu verschieben.
+            ringOfCards
+                .padding(.horizontal, -12)
+                .frame(minHeight: Self.ringMinimum)
+                .layoutPriority(1)
+            Group {
+                tearStatus
+                emptyRingPanel
+                TurnRow(turn: turn, tint: BeerStatsColor.error)
+                drawButton
+                roleBoard
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+    }
+
+    /// Kleiner wird der Ring nicht: Darunter liegen zweiundfuenfzig Karten
+    /// so dicht, dass man die duennen Stellen nicht mehr sieht – und die
+    /// zu sehen ist das halbe Spiel.
+    private static let ringMinimum: CGFloat = 220
 
     // MARK: - Der Ring
 
@@ -712,25 +740,34 @@ struct RingOfFireView: View {
     private var roleBoard: some View {
         if !roleHolders.isEmpty || !houseRules.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text("LÄUFT NOCH")
-                    .font(.scaled(11, weight: .heavy, design: .rounded))
-                    .kerning(1.8)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
+                // Zuruecksetzen in derselben Zeile wie die Ueberschrift:
+                // eine Zeile weniger, die dem Ring den Platz nimmt
+                HStack {
+                    Text("LÄUFT NOCH")
+                        .font(.scaled(11, weight: .heavy, design: .rounded))
+                        .kerning(1.8)
+                        .foregroundStyle(BeerStatsColor.textSecondary)
+                    Spacer(minLength: 8)
+                    QuietButton(title: "Alles zurücksetzen") { clearRoles() }
+                }
 
-                // Eine Zeile je Rolle, in der Reihenfolge der Aufzaehlung und
-                // nicht in der des Ziehens: Sonst springt die Liste bei jeder
-                // neuen Karte um. Untereinander statt nebeneinander, weil mit
-                // Namen ("Trink-Duo · Lena, Jan") keine drei Kapseln mehr in
-                // eine Zeile passen.
+                // In der Reihenfolge der Aufzaehlung und nicht in der des
+                // Ziehens: Sonst springt die Liste bei jeder neuen Karte um.
+                // Nebeneinander und umbrechend (`WrappingRow`) statt eine
+                // Zeile je Rolle – seit dem 3. November darf der Screen nicht
+                // mehr scrollen, und jede Zeile hier nimmt sie dem Ring. Ein
+                // Chip mit vielen Namen bricht in sich um.
                 //
                 // Die Hausregel-Rolle fehlt hier mit Absicht: Sie steht
                 // ausgeschrieben darunter, und eine Kapsel "Regeln · Lena"
                 // ueber dem Text der Regel waere dieselbe Auskunft zweimal.
-                ForEach(RingOfFireRole.allCases.filter { $0 != .houseRule }) { role in
-                    let halter = roleHolders.filter { $0.role == role }
-                    if !halter.isEmpty {
-                        roleChip(role, holders: halter.map(\.name))
-                            .transition(.move(edge: .top).combined(with: .opacity))
+                WrappingRow(spacing: 6, lineSpacing: 6, alignment: .leading) {
+                    ForEach(RingOfFireRole.allCases.filter { $0 != .houseRule }) { role in
+                        let halter = roleHolders.filter { $0.role == role }
+                        if !halter.isEmpty {
+                            roleChip(role, holders: halter.map(\.name))
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
                     }
                 }
 
@@ -738,8 +775,6 @@ struct RingOfFireView: View {
                     houseRuleRow(regel)
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
-
-                QuietButton(title: "Alles zurücksetzen") { clearRoles() }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)

@@ -69,13 +69,28 @@ final class SongPreviewPlayer: ObservableObject {
             Task { @MainActor in self?.tick(zeit) }
         }
 
-        // Ein Anruf oder ein anderer Ton haelt das Abspielen an – dann soll
-        // der Knopf nicht weiter "Pause" anbieten
+        // Der Knopf zeigt, was der Player TUT, nicht was zuletzt angeordnet
+        // wurde. Rueckmeldung vom 3. November: Das Lied lief von selbst los,
+        // der Knopf stand aber da wie nicht gedrueckt. Spielt der Player,
+        // steht der Zustand jetzt auf "spielt" – egal, wie es losging. Und
+        // haelt ein Anruf oder ein anderer Ton ihn an, bietet der Knopf
+        // nicht weiter "Pause" an.
         player.publisher(for: \.timeControlStatus)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
-                guard let self, status == .paused, self.state == .playing else { return }
-                self.state = .paused
+                guard let self else { return }
+                switch status {
+                case .playing:
+                    // Ohne Lied im Player ist das eine verspaetete Meldung
+                    // von vor dem Anhalten, kein Abspielen
+                    if self.state != .playing, self.player.currentItem != nil { self.state = .playing }
+                case .paused:
+                    if self.state == .playing { self.state = .paused }
+                default:
+                    // Wartet noch auf Daten: Das zeigt der Plattenspieler
+                    // als Laden an, der Knopf bleibt, wie er ist
+                    break
+                }
             }
             .store(in: &watchers)
 
