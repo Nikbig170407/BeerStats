@@ -158,7 +158,11 @@ final class EveningUndoTests: XCTestCase {
         EveningLog.record(partyGame: .ringOfFire)
 
         XCTAssertEqual(EveningLog.current?.startedAt, gestartet)
-        XCTAssertEqual(EveningLog.current?.participants.count, 2, "Die Teilnehmer wurden ersetzt")
+        // Seit dem 3. November zieht der Abend dem Tisch nach: Tim kommt
+        // dazu, Lena und Jan gelten als gegangen – ersetzt wird aber
+        // niemand, und ihre Bilanz bleibt.
+        let ids = EveningLog.current?.participants.map(\.id) ?? []
+        XCTAssertTrue(ids.contains("p1") && ids.contains("p2"), "Die Teilnehmer wurden ersetzt")
         XCTAssertGreaterThan(stand("p1").sips, 0, "Die Bilanz wurde zurueckgesetzt")
     }
 }

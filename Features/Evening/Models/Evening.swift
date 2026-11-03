@@ -37,6 +37,14 @@ struct EveningParticipant: Codable, Identifiable, Equatable {
     var emoji: String
     var sips: Int = 0
     var shots: Int = 0
+    /// Seit wann diese Person nicht mehr am Tisch ist – `nil`, solange sie
+    /// da ist. Wer geht, bleibt mit seiner Bilanz im Abend (er hat ja
+    /// getrunken), wird in den Spielen aber nicht mehr aufgerufen.
+    /// Optional, damit Abende von vorher sich weiter lesen lassen – dieselbe
+    /// Regel wie bei der Sicherungsdatei.
+    var leftAt: Date?
+
+    var isPresent: Bool { leftAt == nil }
 
     /// Grobes Mass, um den Abend zu sortieren. Ein Shot zaehlt wie fuenf
     /// Schluecke – dieselbe Umrechnung, die `DrinkAmount` benutzt, wenn ohne
@@ -128,6 +136,12 @@ struct Evening: Codable, Equatable {
     var lastBooking: EveningBooking?
 
     var isRunning: Bool { endedAt == nil }
+
+    /// Wer gerade am Tisch ist, in der Reihenfolge des Abends. Die Plaetze
+    /// der Partyspiele zaehlen NUR diese Leute – Name und Buchung aus
+    /// derselben Liste, sonst hiesse Platz 3 im Spiel jemand anderes als
+    /// Platz 3 in der Bilanz.
+    var present: [EveningParticipant] { participants.filter(\.isPresent) }
 
     var duration: TimeInterval {
         (endedAt ?? Date()).timeIntervalSince(startedAt)
@@ -394,6 +408,47 @@ enum EveningLog {
     /// nichts buchen (`change` findet niemanden) und waere eine Liste
     /// gespielter Spiele ohne Leute. Wer die Aufstellung nie angefasst hat,
     /// spielt wie bisher weiter, nur ohne Bilanz.
+    /// Haelt den laufenden Abend bei denen, die am Tisch sind.
+    ///
+    /// Entscheidung des Nutzers vom 3. November: Abend und Mitspieler sind
+    /// EINE Liste. Vorher waren es zwei – der Abend uebernahm beim Start,
+    /// wer am Tisch war, und blieb dann bei diesen Leuten, egal was unter
+    /// "Mitspieler" geschah; von Hand gestartet hatte er sogar eine eigene
+    /// Auswahl. Die Spiele sagten dann andere Namen als die, die angehakt
+    /// waren ("ich hab bei Mitspieler andere ausgewaehlt als beim Abend").
+    ///
+    /// - Wer neu am Tisch ist, kommt mit null hinten dazu.
+    /// - Wer abgewaehlt wird, bleibt mit seiner Bilanz, gilt aber als
+    ///   gegangen und wird nicht mehr aufgerufen. Kommt er wieder, steht er
+    ///   auf seinem alten Platz.
+    /// - Namen und Emoji folgen dem Profil – eine Umbenennung kommt an.
+    ///
+    /// Ein LEERER Tisch aendert nichts: Leer ist er auch, solange die
+    /// Profile noch laden oder ohne Konto – und ein Abend, in dem darum
+    /// alle als gegangen gelten, waere ein Abend ohne Leute.
+    static func followTable(_ seats: [TableSeat]) {
+        guard var abend = current, abend.isRunning, !seats.isEmpty else { return }
+        let vorher = abend
+
+        for index in abend.participants.indices {
+            let id = abend.participants[index].id
+            if let platz = seats.first(where: { $0.id == id }) {
+                abend.participants[index].leftAt = nil
+                abend.participants[index].name = platz.name
+                abend.participants[index].emoji = platz.emoji
+            } else if abend.participants[index].leftAt == nil {
+                abend.participants[index].leftAt = Date()
+            }
+        }
+        for platz in seats where !abend.participants.contains(where: { $0.id == platz.id }) {
+            abend.participants.append(EveningParticipant(id: platz.id, name: platz.name, emoji: platz.emoji))
+        }
+
+        // Nur schreiben, wenn sich etwas geaendert hat: Der Tisch wird bei
+        // jedem Hauptmenue neu gemeldet
+        if abend != vorher { current = abend }
+    }
+
     static func startIfNeeded() {
         guard current?.isRunning != true else { return }
 
@@ -423,8 +478,10 @@ enum EveningLog {
     static func recordWinner(positions: [Int], for game: PartyGame) {
         guard var abend = current, abend.isRunning, !positions.isEmpty else { return }
 
+        // Plaetze zaehlen nur, wer da ist – dieselbe Zaehlung wie beim Buchen
+        let anwesend = abend.present
         let ids = positions.compactMap { platz -> String? in
-            abend.participants.indices.contains(platz) ? abend.participants[platz].id : nil
+            anwesend.indices.contains(platz) ? anwesend[platz].id : nil
         }
         guard !ids.isEmpty else { return }
 

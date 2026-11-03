@@ -14,11 +14,13 @@
 //
 //  Entscheidend ist der Rueckfall, und seit Oktober 2026 ist er zweistufig:
 //
-//  1. Laeuft ein Abend, gelten SEINE Teilnehmer. Das ist keine Vorliebe,
-//     sondern Pflicht: Die Trinkbilanz ist auf die Positionen des Abends
-//     gebucht. Kaeme der Name von woanders, hiesse Position 3 im Spiel
-//     jemand anderes als Position 3 in der Bilanz – und die Bilanz ist
-//     falsch, ohne dass es jemandem auffiele.
+//  1. Laeuft ein Abend, gelten SEINE Teilnehmer – und zwar die, die noch
+//     da sind (`Evening.present`). Das ist keine Vorliebe, sondern Pflicht:
+//     Die Trinkbilanz ist auf die Positionen des Abends gebucht. Kaeme der
+//     Name von woanders, hiesse Position 3 im Spiel jemand anderes als
+//     Position 3 in der Bilanz – und die Bilanz ist falsch, ohne dass es
+//     jemandem auffiele. Seit dem 3. November folgt der Abend dem Tisch
+//     (`EveningLog.followTable`), beide Stufen nennen also dieselben Leute.
 //  2. Sonst gilt, wer am Tisch steht (`TableRoster`). Das ist der Fall fuer
 //     die schnelle Runde zwischendurch, fuer die niemand einen Abend
 //     anlegen will.
@@ -54,7 +56,7 @@ enum PlayerNames {
     /// Wie viele Leute feststehen – aus derselben Quelle wie die Namen.
     static var knownCount: Int {
         if let abend = EveningLog.current, abend.isRunning {
-            return abend.participants.count
+            return abend.present.count
         }
         return TableRoster.seats.count
     }
@@ -101,7 +103,7 @@ enum PlayerNames {
     static func suggestedCount(atLeast minimum: Int = 2) -> Int? {
         let anzahl: Int
         if let abend = EveningLog.current, abend.isRunning {
-            anzahl = abend.participants.count
+            anzahl = abend.present.count
         } else {
             anzahl = TableRoster.seats.count
         }
@@ -113,8 +115,9 @@ enum PlayerNames {
     /// beliebig.
     private static func participant(at index: Int) -> (name: String, emoji: String)? {
         if let abend = EveningLog.current, abend.isRunning {
-            guard abend.participants.indices.contains(index) else { return nil }
-            let teilnehmer = abend.participants[index]
+            let anwesend = abend.present
+            guard anwesend.indices.contains(index) else { return nil }
+            let teilnehmer = anwesend[index]
             return (teilnehmer.name, teilnehmer.emoji)
         }
 
@@ -133,12 +136,12 @@ extension EveningLog {
     /// Spiel ohnehin schon ausrechnet, wer trinken muss – keine Aufrufstelle
     /// muss den Zustand des Abends kennen.
     static func record(_ amount: DrinkAmount, forPlayer index: Int) {
-        guard let abend = current, abend.isRunning,
-              abend.participants.indices.contains(index)
-        else { return }
+        // Dieselbe Liste wie beim Namen: nur, wer da ist
+        guard let abend = current, abend.isRunning else { return }
+        let anwesend = abend.present
+        guard anwesend.indices.contains(index) else { return }
 
-        let id = abend.participants[index].id
-        book(amount, on: id)
+        book(amount, on: anwesend[index].id)
     }
 
     /// Dieselbe Menge fuer mehrere Positionen auf einmal – etwa "alle ausser

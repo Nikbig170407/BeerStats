@@ -137,11 +137,18 @@ extension TableRoster {
 
     /// Frischt den Schnappschuss auf. Aufzurufen, wo die Profile bekannt
     /// sind – also dort, wo die Aufstellung ohnehin berechnet wird.
+    ///
+    /// Hier zieht auch der laufende Abend mit (`EveningLog.followTable`):
+    /// Abend und Tisch sind seit dem 3. November eine Liste. Hier und nicht
+    /// an den Aufrufstellen, weil jede Aenderung am Tisch durch diese eine
+    /// Funktion geht – eine zweite Stelle, die das Mitziehen vergisst, kann
+    /// es so nicht geben.
     static func remember(_ players: [PlayerProfile]) {
         seats = players.compactMap { profile in
             guard let id = profile.id else { return nil }
             return TableSeat(id: id, name: profile.name, emoji: profile.emoji)
         }
+        EveningLog.followTable(seats)
     }
 }
 

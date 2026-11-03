@@ -165,4 +165,97 @@ final class PlayerNamesTests: XCTestCase {
 
         XCTAssertEqual(PlayerNames.name(for: 0), "🔥 Lena")
     }
+
+    // MARK: - Abend und Tisch sind eine Liste (3. November)
+
+    private func teilnehmer(_ id: String) -> EveningParticipant? {
+        EveningLog.current?.participants.first { $0.id == id }
+    }
+
+    /// Wer waehrend des Abends an den Tisch kommt, ist im Abend – mit null –
+    /// und wird in den Spielen aufgerufen.
+    func testSomeoneNewAtTheTableJoinsTheRunningEvening() {
+        EveningLog.start(with: [profil("Lena", "🔥", id: "p1"), profil("Jan", "🐢", id: "p2")])
+        defer { EveningLog.current = nil }
+
+        TableRoster.remember([
+            profil("Lena", "🔥", id: "p1"),
+            profil("Jan", "🐢", id: "p2"),
+            profil("Tim", "🐙", id: "p3")
+        ])
+
+        XCTAssertEqual(teilnehmer("p3")?.weight, 0)
+        XCTAssertEqual(PlayerNames.knownCount, 3)
+        XCTAssertEqual(PlayerNames.plainName(for: 2), "Tim")
+    }
+
+    /// Wer geht, behaelt seine Bilanz, wird aber nicht mehr aufgerufen – und
+    /// die Plaetze danach ruecken auf, fuer Name UND Buchung gleich.
+    func testSomeoneWhoLeavesKeepsTheTallyButIsNoLongerCalled() {
+        EveningLog.start(with: [
+            profil("Lena", "🔥", id: "p1"),
+            profil("Jan", "🐢", id: "p2"),
+            profil("Tim", "🐙", id: "p3")
+        ])
+        defer { EveningLog.current = nil }
+
+        EveningLog.record(.sips(3), forPlayer: 1)
+        let janVorher = teilnehmer("p2")?.weight ?? 0
+        XCTAssertGreaterThan(janVorher, 0)
+
+        TableRoster.remember([profil("Lena", "🔥", id: "p1"), profil("Tim", "🐙", id: "p3")])
+
+        XCTAssertEqual(teilnehmer("p2")?.weight, janVorher, "Die Bilanz bleibt")
+        XCTAssertEqual(teilnehmer("p2")?.isPresent, false)
+        XCTAssertEqual(PlayerNames.knownCount, 2)
+        XCTAssertEqual(PlayerNames.plainName(for: 1), "Tim")
+
+        // Platz 1 heisst jetzt Tim – und dorthin geht auch die Buchung
+        EveningLog.record(.sips(2), forPlayer: 1)
+        XCTAssertGreaterThan(teilnehmer("p3")?.weight ?? 0, 0)
+        XCTAssertEqual(teilnehmer("p2")?.weight, janVorher)
+    }
+
+    /// Wer zurueckkommt, steht wieder auf seinem alten Platz.
+    func testSomeoneWhoComesBackTakesTheOldSeat() {
+        EveningLog.start(with: [
+            profil("Lena", "🔥", id: "p1"),
+            profil("Jan", "🐢", id: "p2"),
+            profil("Tim", "🐙", id: "p3")
+        ])
+        defer { EveningLog.current = nil }
+
+        TableRoster.remember([profil("Lena", "🔥", id: "p1"), profil("Tim", "🐙", id: "p3")])
+        TableRoster.remember([
+            profil("Lena", "🔥", id: "p1"),
+            profil("Jan", "🐢", id: "p2"),
+            profil("Tim", "🐙", id: "p3")
+        ])
+
+        XCTAssertEqual(teilnehmer("p2")?.isPresent, true)
+        XCTAssertEqual(PlayerNames.plainName(for: 1), "Jan")
+        XCTAssertEqual(EveningLog.current?.participants.count, 3, "Kein zweiter Jan")
+    }
+
+    /// Ein leerer Tisch heisst "Profile laden noch" oder "ohne Konto" – der
+    /// Abend darf davon nicht leerlaufen.
+    func testAnEmptyTableLeavesTheEveningAlone() {
+        EveningLog.start(with: [profil("Lena", "🔥", id: "p1")])
+        defer { EveningLog.current = nil }
+
+        TableRoster.remember([])
+
+        XCTAssertEqual(teilnehmer("p1")?.isPresent, true)
+        XCTAssertEqual(PlayerNames.knownCount, 1)
+    }
+
+    /// Eine Umbenennung unter "Mitspieler" kommt im Abend an.
+    func testARenameReachesTheEvening() {
+        EveningLog.start(with: [profil("Lena", "🔥", id: "p1")])
+        defer { EveningLog.current = nil }
+
+        TableRoster.remember([profil("Helena", "🌸", id: "p1")])
+
+        XCTAssertEqual(PlayerNames.name(for: 0), "🌸 Helena")
+    }
 }

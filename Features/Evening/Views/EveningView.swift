@@ -23,7 +23,10 @@ struct EveningView: View {
 
     @State private var evening: Evening?
     @State private var summary: Evening?
-    @State private var chosen: Set<String> = []
+    /// Wer am Tisch ist – dieselbe Auswahl wie unter "Mitspieler"
+    /// (`TableRoster`). Eigener Zustand nur, weil SwiftUI Aenderungen in
+    /// UserDefaults nicht von selbst bemerkt.
+    @State private var atTable: Set<String> = []
     /// Der Abend als Bild – einmal gerendert, wenn der Rueckblick steht.
     @State private var eveningImageURL: URL?
     /// Der Eintrag, fuer den gerade ein Sieger eingetragen wird.
@@ -49,7 +52,10 @@ struct EveningView: View {
         }
         .navigationTitle("Abend")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { evening = EveningLog.current }
+        .onAppear {
+            evening = EveningLog.current
+            refreshTable()
+        }
         .sheet(item: $winnerEntry) { eintrag in
             WinnerPickerView(
                 entry: eintrag,
@@ -135,7 +141,7 @@ struct EveningView: View {
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Der Abend sammelt alles, was ihr spielt – Beerpong und Partyspiele – und führt nebenbei die Trinkbilanz.")
+            Text("Der Abend sammelt alles, was ihr spielt – Beerpong und Partyspiele – und führt nebenbei die Trinkbilanz. Die Auswahl ist dieselbe wie unter Mitspieler.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -148,10 +154,13 @@ struct EveningView: View {
             }
 
             VStack(spacing: 8) {
-                ForEach(profiles) { profile in
+                ForEach(profiles.filter(\.isActive)) { profile in
                     let id = profile.id ?? ""
                     Button {
-                        if chosen.contains(id) { chosen.remove(id) } else { chosen.insert(id) }
+                        // Derselbe Schalter wie unter "Mitspieler": Abend
+                        // und Tisch sind eine Liste (3. November)
+                        TableRoster.toggle(profile, in: profiles)
+                        refreshTable()
                         HapticManager.lightImpact()
                     } label: {
                         HStack(spacing: 12) {
@@ -160,9 +169,9 @@ struct EveningView: View {
                                 .font(BeerStatsFont.headline)
                                 .foregroundStyle(BeerStatsColor.textPrimary)
                             Spacer()
-                            Image(systemName: chosen.contains(id) ? "checkmark.circle.fill" : "circle")
+                            Image(systemName: atTable.contains(id) ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(
-                                    chosen.contains(id) ? BeerStatsColor.success : BeerStatsColor.textSecondary
+                                    atTable.contains(id) ? BeerStatsColor.success : BeerStatsColor.textSecondary
                                 )
                         }
                         .padding(.horizontal, 15)
@@ -175,13 +184,13 @@ struct EveningView: View {
             }
 
             PrimaryButton(title: "Abend starten", systemImage: "moon.stars.fill") {
-                EveningLog.start(with: profiles.filter { chosen.contains($0.id ?? "") })
+                EveningLog.start(with: TableRoster.players(from: profiles))
                 evening = EveningLog.current
                 HapticManager.success()
                 SoundManager.play(.victory)
             }
-            .disabled(chosen.isEmpty)
-            .opacity(chosen.isEmpty ? 0.5 : 1)
+            .disabled(atTable.isEmpty)
+            .opacity(atTable.isEmpty ? 0.5 : 1)
         }
     }
 
@@ -204,6 +213,12 @@ struct EveningView: View {
             // Ueber der Bilanz, nicht darunter: Wer hierherkommt, weil er
             // sich vertippt hat, soll nicht erst an acht Namen vorbei.
             LastBookingRow(evening: abend) { evening = EveningLog.current }
+
+            Text("Wer dazukommt oder geht, hakst du unter Mitspieler an oder ab – der Abend zieht mit.")
+                .font(BeerStatsFont.caption)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             VStack(alignment: .leading, spacing: 10) {
                 Text(PenaltyStyle.current.tallyTitle)
@@ -243,7 +258,7 @@ struct EveningView: View {
             QuietButton(title: "Abend verwerfen") {
                 EveningLog.discard()
                 evening = nil
-                chosen = []
+                refreshTable()
             }
         }
     }
@@ -290,11 +305,14 @@ struct EveningView: View {
                 Text(teilnehmer.name)
                     .font(BeerStatsFont.headline)
                     .foregroundStyle(BeerStatsColor.textPrimary)
-                Text(standText(teilnehmer))
+                Text(teilnehmer.isPresent ? standText(teilnehmer) : "\(standText(teilnehmer)) · ist gegangen")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .monospacedDigit()
             }
+            // Wer gegangen ist, steht gedaempft da: Seine Bilanz zaehlt,
+            // aufgerufen wird er nicht mehr
+            .opacity(teilnehmer.isPresent ? 1 : 0.55)
 
             Spacer(minLength: 4)
 
@@ -311,6 +329,16 @@ struct EveningView: View {
         .padding(.horizontal, 13)
         .padding(.vertical, 10)
         .glassPanel(cornerRadius: 15)
+    }
+
+    /// Liest die Auswahl am Tisch neu und meldet sie weiter – dieselben zwei
+    /// Schritte wie unter "Mitspieler", damit die Partyspiele die Namen
+    /// kennen und ein laufender Abend mitzieht.
+    private func refreshTable() {
+        let amTisch = TableRoster.players(from: profiles)
+        atTable = Set(amTisch.compactMap(\.id))
+        TableRoster.remember(amTisch)
+        evening = EveningLog.current
     }
 
     private func tallyButton(_ label: String, tint: Color, action: @escaping () -> Void) -> some View {
@@ -557,7 +585,7 @@ struct EveningView: View {
 
             PrimaryButton(title: "Fertig", systemImage: "checkmark") {
                 summary = nil
-                chosen = []
+                refreshTable()
                 // Sonst verschickt der naechste Abend das Bild von diesem.
                 eveningImageURL = nil
             }

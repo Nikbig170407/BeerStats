@@ -508,6 +508,28 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Nicht zu verwechseln mit `PlayerProfile.isActive`: Das heißt „gehört noch
   zur Truppe" und gilt für Monate, die Aufstellung heißt „ist heute da".
 
+- **Abend und Tisch sind EINE Liste** (Entscheidung des Nutzers vom
+  3. November, nach „ich hab bei Mitspieler andere ausgewählt als beim
+  Abend“). Vorher übernahm der Abend beim Start, wer am Tisch war, und
+  blieb dann bei diesen Leuten; von Hand gestartet hatte er sogar eine
+  eigene Auswahl. Die Spiele nannten deshalb andere Namen als die, die
+  angehakt waren. Jetzt gilt:
+  - **Jede Änderung am Tisch geht durch `TableRoster.remember`**, und dort
+    zieht der laufende Abend mit (`EveningLog.followTable`). Eine zweite
+    Stelle, die das Mitziehen vergisst, gibt es so nicht. Der Abend-Screen
+    hakt dieselben Leute an wie „Mitspieler“ und startet mit ihnen.
+  - **Wer dazukommt, kommt mit null hinten dazu. Wer geht, bleibt** – mit
+    seiner Bilanz, denn er hat getrunken – und gilt als gegangen
+    (`EveningParticipant.leftAt`). Kommt er wieder, steht er auf seinem
+    alten Platz. Umbenennungen kommen an.
+  - **Die Plätze der Partyspiele zählen nur, wer da ist**
+    (`Evening.present`) – beim Namen, beim Buchen über die Position und beim
+    Sieger. Alle drei aus derselben Liste, sonst hieße Platz 3 im Spiel
+    jemand anderes als Platz 3 in der Bilanz.
+  - **Ein leerer Tisch ändert den Abend nicht.** Leer ist er auch, solange
+    die Profile noch laden oder ohne Konto – ein Abend, in dem darum alle
+    als gegangen gälten, wäre ein Abend ohne Leute.
+
 - **Der Spielscreen besteht aus fünf Teilen, nicht aus einem** (18.
   Oktober). `LiveGameViewModel` hält nur noch den Zustand, den Undo-Verlauf
   und die Reihenfolge. Daneben liegen: `LiveGameNaming` (wie Leute und
@@ -1720,6 +1742,14 @@ oben; was schief aussieht, unten.
   Strafe groß genug an? Und in Ring of Fire: Sind die Auftritte jetzt
   groß und lang genug, ohne zu nerven – und wird der Ring zu klein, wenn
   die Merkliste voll ist?
+- **Abend und Tisch als eine Liste (3. November)**: Abend läuft, unter
+  Mitspieler jemanden dazunehmen und jemanden abwählen – sagen die Spiele
+  danach genau die Angehakten? Steht der Abgewählte in der Bilanz mit
+  „ist gegangen“ und behält, was er getrunken hat? Landet eine Strafe in
+  einem Partyspiel bei der Person, deren Name dort stand? Und: Ein Abend,
+  der VOR dem Update mit anderer Auswahl gestartet wurde, zieht beim
+  nächsten Hauptmenü auf den Tisch um – wer nicht angehakt ist, gilt dann
+  als gegangen.
 - **Das Zahnrad in jedem Spiel (29. Oktober)**: Ist es überall da, wo man
   es sucht – und nirgends, solange eine Uhr läuft (Bombe, Reaktionsduell,
   Kategorien, Countdown bei „Wer würde eher?“, die Runde bei „Wer bin
