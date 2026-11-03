@@ -72,10 +72,25 @@ struct CupFillLoadingView: View {
 /// wiederverwendet. Ein zweiter, leicht abweichender Becher-Umriss im
 /// Projekt wäre genau die Art Dopplung, die das Design-System vermeiden soll.
 struct CupShape: Shape {
+
+    /// Wie weit der Rand oben und unten eingerueckt ist, als Anteil der
+    /// Breite. Hier benannt und nicht nur in `path`, weil das Bierglas im
+    /// Logo seinen Schaum genau so breit zeichnen muss wie den Becher an der
+    /// Stelle (`width(_:atDepth:)`).
+    static let topInsetFraction: CGFloat = 0.08
+    static let bottomInsetFraction: CGFloat = 0.22
+
+    /// Wie breit der Becher in einer bestimmten Tiefe ist – 0 am Rand, 1 am
+    /// Boden. Gemessen von Strichmitte zu Strichmitte.
+    static func width(_ breite: CGFloat, atDepth tiefe: CGFloat) -> CGFloat {
+        let einzug = topInsetFraction + (bottomInsetFraction - topInsetFraction) * tiefe
+        return breite * (1 - 2 * einzug)
+    }
+
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        let topInset = rect.width * 0.08
-        let bottomInset = rect.width * 0.22
+        let topInset = rect.width * Self.topInsetFraction
+        let bottomInset = rect.width * Self.bottomInsetFraction
 
         path.move(to: CGPoint(x: rect.minX + topInset, y: rect.minY))
         path.addLine(to: CGPoint(x: rect.maxX - topInset, y: rect.minY))
