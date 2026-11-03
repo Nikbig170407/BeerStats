@@ -275,6 +275,8 @@ den nachgespielten Wurf-Log alter Partien.
   an ist (`LiveGameCommentator`).
 - **Tischmodus**: große Schrift und ein Bildschirm, der anbleibt, für das
   Handy in der Tischmitte.
+- **Der Bildschirm bleibt an**, auch ohne Tischmodus – bis eine Weile
+  niemand mehr tippt (`ScreenAwake`).
 - **Der Abend startet sich selbst**, sobald das erste Spiel aufgemacht
   wird – und jede gebuchte Menge lässt sich ganz zurücknehmen, samt
   Person.
@@ -765,7 +767,14 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     nicht neu gerechnet, sondern **gestreckt** (`RingCardEntrance.stretch`,
     gut eine Sekunde je Auftritt) – so gelten alle Tests auf `pose(at:)`
     weiter. Größer wird die Karte selbst (sie nimmt sich die Höhe, die der
-    Kartenscreen hergibt), und ihre Wege wachsen mit ihr (`referenceWidth`). Wer sich überschlägt, zeigt zwischendurch die
+    Kartenscreen hergibt), und ihre Wege wachsen mit ihr (`referenceWidth`).
+    **Die Szene dahinter wächst mit** (`RingScene.scale`, Wunsch vom selben
+    Tag: „die Szenen auch größer“): Abgestimmt sind alle dreizehn auf die
+    Bezugsbreite, und neben der größeren Karte sahen sie kleiner aus als
+    vorher. `EffectCanvas.scale` zeichnet dafür auf einer kleineren
+    Leinwand und zieht sie auf: Die Orte bleiben, Striche, Kreise und Wege
+    wachsen, die Deckkraft bleibt wie abgestimmt. Keine Szene muss davon
+    wissen. Wer sich überschlägt, zeigt zwischendurch die
     **Rückseite** (`CardPose.showsBack`) – sonst stünde die Karte halb
     spiegelverkehrt da. Beide Seiten liegen immer da, nur eine ist zu
     sehen; ein `if` baute die Karte mitten in der Drehung neu.
@@ -1078,9 +1087,28 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   wo die App zusammengesetzt wird. Große Schrift nur als **Untergrenze**
   (`.accessibility1...`): Eine feste Größe würde ausgerechnet denen die
   Schrift verkleinern, die sie größer gestellt haben. Möglich ist er
-  überhaupt nur, weil die Textstile über `Font.scaled` laufen. Der
-  Bildschirm bleibt dabei an und wird beim Verlassen der App wieder
-  freigegeben.
+  überhaupt nur, weil die Textstile über `Font.scaled` laufen.
+
+- **Ob der Bildschirm anbleibt, entscheidet nur `ScreenAwake`** (3. November:
+  „der geht zu schnell aus, wenn man nicht drauftippt“). Länger einstellen
+  lässt iOS die Sperre nicht, es gibt nur an oder aus – also rechnet die
+  App ihre eigene: an, bis eine Weile niemand getippt hat
+  (`untouchedLimit`), danach sperrt das iPhone wie sonst. App-weit und
+  nicht je Spiel, weil am Tisch auch der Abend oder das Beerpong-Menü
+  liegt. Der Tischmodus nimmt die Grenze weg – den schaltet jemand
+  ausdrücklich ein. Drei Dinge, die man beim Anfassen wissen muss:
+  - **Nirgends sonst `isIdleTimerDisabled` setzen.** Vorher taten es der
+    Tischmodus und die Beerpong-Partie, und die Partie schaltete die Sperre
+    beim Verlassen wieder ein – auch im Tischmodus.
+  - **Berührungen zählt ein Beobachter am Fenster** (`TouchWatcher`), nicht
+    jeder Screen: Nur dort kommen auch Blätter und Vollbilder an. Er
+    scheitert schon beim ersten Kontakt und steht damit keiner Geste im
+    Weg.
+  - **Die Grenze ist kein Geschmack, sondern der Akku.** Ein Handy, das so
+    lange niemand anfasst, liegt in der Tasche oder über Nacht auf dem
+    Tisch – mit einer Szene, die dreißigmal je Sekunde zeichnet.
+    `ScreenAwakeTests` hält fest, dass sie länger ist als jede Sperre am
+    iPhone und trotzdem endet.
 
 - **Partyspiele zahlen nicht auf die Beerpong-Statistiken ein.** Eine Runde
   Bombe hat keine Trefferquote. Wer dort eine Wertung will, braucht einen
@@ -1741,7 +1769,16 @@ oben; was schief aussieht, unten.
   Startknopf gedrückt aus, sobald das Lied von selbst läuft? Kommt die
   Strafe groß genug an? Und in Ring of Fire: Sind die Auftritte jetzt
   groß und lang genug, ohne zu nerven – und wird der Ring zu klein, wenn
-  die Merkliste voll ist?
+  die Merkliste voll ist? Seit demselben Tag wachsen auch die **Szenen**
+  hinter der Karte mit: Bleibt der Text darüber lesbar – am ehesten
+  gefährdet sind Pinselstrich (2), Lichtsäulen (7), Stempel (10) und der
+  Herzschlag-Rand (11)?
+- **Bildschirm bleibt an (3. November)**: Ein Spiel offen lassen und nicht
+  tippen – bleibt er an, und geht er nach der Grenze (`untouchedLimit`)
+  doch aus? Tippt man danach, bleibt er wieder an? Im Tischmodus darf er
+  gar nicht ausgehen, auch nicht nach einer Beerpong-Partie. Und vor allem:
+  Reagieren alle Knöpfe, Wischgesten und das Zahnrad wie vorher? Am Fenster
+  hängt jetzt ein Beobachter für Berührungen.
 - **Abend und Tisch als eine Liste (3. November)**: Abend läuft, unter
   Mitspieler jemanden dazunehmen und jemanden abwählen – sagen die Spiele
   danach genau die Angehakten? Steht der Abgewählte in der Bilanz mit

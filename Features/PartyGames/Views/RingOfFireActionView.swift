@@ -73,57 +73,66 @@ struct RingOfFireActionView: View {
         ZStack {
             AmbientBackdrop(glow: tint)
 
-            // Hinter allem und ueber dem Hintergrund: die Bewegung, die zu
-            // dieser Karte gehoert. Sie liegt NICHT ueber der Karte – was
-            // zu tun ist, darf nichts verdecken.
-            //
-            // Auch nach einem Riss: Das Feuer hat seit dem 28. Oktober seinen
-            // eigenen Moment auf dem Ring, bevor dieser Screen kommt. Hier
-            // ist danach wieder die Karte dran.
-            RingCardFlourish(rank: card.rank, delay: Self.settle)
-
             GeometryReader { geometry in
-                FillingScrollView {
-                    VStack(spacing: 16) {
-                        if tore {
-                            tornBanner
-                        }
+                let breite = cardWidth(forHeight: geometry.size.height)
 
-                        // Mit "Bewegung reduzieren" steht die Karte sofort
-                        // auf ihrem Platz – ein stilles Bild, nicht keins
-                        RingCardEntering(
-                            card: card,
-                            entrance: entrance,
-                            width: cardWidth(forHeight: geometry.size.height),
-                            progress: reduceMotion ? 1 : entranceProgress
-                        )
-                        .shadow(color: tint.opacity(0.4), radius: 24)
-                        .padding(.top, 12)
+                ZStack {
+                    // Hinter allem und ueber dem Hintergrund: die Bewegung, die
+                    // zu dieser Karte gehoert. Sie liegt NICHT ueber der Karte –
+                    // was zu tun ist, darf nichts verdecken. Und sie waechst mit
+                    // der Karte – deshalb im GeometryReader und nicht daneben.
+                    //
+                    // Auch nach einem Riss: Das Feuer hat seit dem 28. Oktober
+                    // seinen eigenen Moment auf dem Ring, bevor dieser Screen
+                    // kommt. Hier ist danach wieder die Karte dran.
+                    RingCardFlourish(
+                        rank: card.rank,
+                        delay: Self.settle,
+                        scale: RingScene.scale(forCardWidth: breite)
+                    )
 
-                        Text(rule.nickname)
-                            .font(.scaled(11, weight: .heavy, design: .rounded))
-                            .kerning(2)
-                            .foregroundStyle(BeerStatsColor.textSecondary)
+                    FillingScrollView {
+                        VStack(spacing: 16) {
+                            if tore {
+                                tornBanner
+                            }
 
-                        HStack(spacing: 10) {
-                            Text(rule.emoji).font(.system(size: 30))
-                            Text(rule.title)
-                                .font(.scaled(30, weight: .heavy, design: .rounded))
-                                .foregroundStyle(tint)
+                            // Mit "Bewegung reduzieren" steht die Karte sofort
+                            // auf ihrem Platz – ein stilles Bild, nicht keins
+                            RingCardEntering(
+                                card: card,
+                                entrance: entrance,
+                                width: breite,
+                                progress: reduceMotion ? 1 : entranceProgress
+                            )
+                            .shadow(color: tint.opacity(0.4), radius: 24)
+                            .padding(.top, 12)
+
+                            Text(rule.nickname)
+                                .font(.scaled(11, weight: .heavy, design: .rounded))
+                                .kerning(2)
+                                .foregroundStyle(BeerStatsColor.textSecondary)
+
+                            HStack(spacing: 10) {
+                                Text(rule.emoji).font(.system(size: 30))
+                                Text(rule.title)
+                                    .font(.scaled(30, weight: .heavy, design: .rounded))
+                                    .foregroundStyle(tint)
+                                    .multilineTextAlignment(.center)
+                            }
+
+                            Text(rule.text)
+                                .font(BeerStatsFont.body)
+                                .foregroundStyle(BeerStatsColor.textPrimary)
                                 .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.horizontal, 4)
+
+                            terms
+                                .padding(.top, 4)
                         }
-
-                        Text(rule.text)
-                            .font(BeerStatsFont.body)
-                            .foregroundStyle(BeerStatsColor.textPrimary)
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.horizontal, 4)
-
-                        terms
-                            .padding(.top, 4)
+                        .padding(24)
                     }
-                    .padding(24)
                 }
             }
         }

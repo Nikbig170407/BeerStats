@@ -55,6 +55,12 @@ struct EffectCanvas: View {
     /// Angabe so oft wie der Bildschirm – fuer Szenen, die lange stehen
     /// bleiben, reichen dreissig Bilder je Sekunde.
     var minimumInterval: Double?
+    /// Wie gross die Dinge der Szene gezeichnet werden. Die ORTE bleiben, wo
+    /// sie sind – jede Szene rechnet in Bruchteilen von Breite und Hoehe –,
+    /// nur Striche, Kreise, Scheine und Wege wachsen. Dafuer zeichnet die
+    /// Szene auf einer kleineren Leinwand, die auf die volle Groesse gezogen
+    /// wird; keine Szene muss davon wissen.
+    var scale: Double = 1
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var start = Date()
@@ -63,16 +69,16 @@ struct EffectCanvas: View {
     var body: some View {
         Group {
             if reduceMotion {
-                Canvas { context, size in draw(&context, size, stillAt) }
+                Canvas { context, size in paint(&context, size, stillAt) }
             } else if over, let lasts {
-                Canvas { context, size in draw(&context, size, lasts) }
+                Canvas { context, size in paint(&context, size, lasts) }
             } else {
                 // Voll ausgeschrieben: Bis zum 29. Oktober hiess ein eigener
                 // Screen `TimelineView` und verdeckte den von SwiftUI
                 // (Lessons Learned Nr. 15).
                 SwiftUI.TimelineView(.animation(minimumInterval: minimumInterval)) { timeline in
                     Canvas { context, size in
-                        draw(&context, size, max(0, timeline.date.timeIntervalSince(start) - delay))
+                        paint(&context, size, max(0, timeline.date.timeIntervalSince(start) - delay))
                     }
                 }
             }
@@ -87,6 +93,17 @@ struct EffectCanvas: View {
             guard !Task.isCancelled else { return }
             over = true
         }
+    }
+
+    /// Zeichnet die Szene in ihrer Groesse – siehe `scale`.
+    private func paint(_ context: inout GraphicsContext, _ size: CGSize, _ t: Double) {
+        guard scale != 1 else {
+            draw(&context, size, t)
+            return
+        }
+        let k = CGFloat(scale)
+        context.scaleBy(x: k, y: k)
+        draw(&context, CGSize(width: size.width / k, height: size.height / k), t)
     }
 }
 

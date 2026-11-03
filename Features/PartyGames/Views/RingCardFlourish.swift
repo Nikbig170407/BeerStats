@@ -37,6 +37,14 @@
 //  liegt am Rand oder unten (Bier, Glut, Rand im Herzschlag); was durch die
 //  Mitte geht, bleibt blass (Lichtsaeulen, Scheinwerfer).
 //
+//  Und die Szene waechst mit der Karte (3. November: "mach die Szenen auch
+//  groesser"). Abgestimmt sind alle dreizehn auf eine Karte von 150
+//  Punkten; seit die Karte sich die Hoehe des Screens nimmt, ist sie auf
+//  einem iPhone 13 fast anderthalbmal so breit – und dieselbe Szene sah
+//  dahinter kleiner aus als vorher. Jetzt werden Striche, Kreise und Wege
+//  im selben Verhaeltnis groesser (`RingScene.scale`). Die Deckkraft
+//  bleibt, wie sie abgestimmt ist.
+//
 
 import SwiftUI
 
@@ -46,9 +54,11 @@ struct RingCardFlourish: View {
     /// So lange wartet die Szene, bevor sie loslaeuft – der Kartenscreen
     /// faehrt erst herein.
     var delay: Double = 0
+    /// Wie gross sie gezeichnet wird – `RingScene.scale(forCardWidth:)`.
+    var scale: Double = 1
 
     var body: some View {
-        EffectCanvas(draw: RingScene(rank: rank).drawing, delay: delay)
+        EffectCanvas(draw: RingScene(rank: rank).drawing, delay: delay, scale: scale)
             // Die ganze Szene haengt an der Karte: Ein neuer Rang baut sie
             // neu auf, statt die alte Bewegung weiterlaufen zu lassen.
             // Steht HIER und nicht an der Aufrufstelle – die eine Stelle,
@@ -108,6 +118,15 @@ enum RingScene: CaseIterable {
         case .category: return "Kärtchen fliegen aus der Mitte nach allen Seiten und drehen sich."
         case .ace: return "Glut steigt auf wie aus einem Lagerfeuer."
         }
+    }
+
+    /// Wie gross die Szene hinter einer Karte dieser Breite gezeichnet
+    /// wird: so viel groesser, wie die Karte breiter ist als die, auf die
+    /// alle Szenen abgestimmt sind. Dieselbe Bezugsbreite wie bei den Wegen
+    /// des Auftritts – Karte, Auftritt und Szene wachsen zusammen. Kleiner
+    /// als abgestimmt wird sie nie.
+    static func scale(forCardWidth width: CGFloat) -> Double {
+        max(1, Double(width / RingCardEntrance.referenceWidth))
     }
 
     /// Die Zeichnung der Szene. Alle dreizehn haben dieselbe Form –

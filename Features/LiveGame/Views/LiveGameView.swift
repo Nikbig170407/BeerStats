@@ -120,16 +120,11 @@ struct LiveGameView: View {
                 .zIndex(3)
             }
         }
-        // Während einer Partie liegt das Handy oft minutenlang unberührt auf
-        // dem Tisch – ohne das müsste man vor jedem Wurf erst entsperren.
-        .onAppear {
-            UIApplication.shared.isIdleTimerDisabled = true
-            viewModel.startLiveActivity()
-        }
-        .onDisappear {
-            UIApplication.shared.isIdleTimerDisabled = false
-            viewModel.stopLiveActivity()
-        }
+        // Wach bleibt der Bildschirm app-weit (`ScreenAwake`). Hier stand
+        // bis zum 3. November ein eigener Schalter – und der schaltete die
+        // Sperre beim Verlassen der Partie wieder ein, auch im Tischmodus.
+        .onAppear { viewModel.startLiveActivity() }
+        .onDisappear { viewModel.stopLiveActivity() }
         .sheet(isPresented: $viewModel.isShowingReRackSheet) {
             ReRackSheet(
                 formations: viewModel.availableFormations,

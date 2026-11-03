@@ -20,9 +20,12 @@
 //     ueber `Font.scaled` laufen und damit der Systemeinstellung folgen –
 //     haetten sie feste Groessen, waere der Tischmodus hundert
 //     Einzelaenderungen.
-//  2. **Der Bildschirm bleibt an.** Ein Handy, das mitten in der Runde
-//     Ring of Fire zusperrt, ist der haeufigste Griff zum Geraet, den es
-//     gar nicht braeuchte.
+//  2. **Der Bildschirm bleibt an – ganz.** Ein Handy, das mitten in der
+//     Runde Ring of Fire zusperrt, ist der haeufigste Griff zum Geraet, den
+//     es gar nicht braeuchte. Seit dem 3. November bleibt er auch ohne
+//     Tischmodus an, aber nur bis zehn Minuten ohne Beruehrung; der
+//     Tischmodus nimmt diese Grenze weg. Geschaltet wird das an EINER
+//     Stelle (`ScreenAwake`), nicht hier.
 //
 //  Was der Modus NICHT tut: die Ansichten umbauen. Querformat erlaubt die
 //  App ohnehin (es gibt keine Orientierungs-Sperre), aber die Layouts sind
@@ -61,15 +64,8 @@ struct TableModeModifier: ViewModifier {
             }
         }
         // Der Bildschirm gehoert zum Modus, nicht zum Screen: Er muss auch
-        // dann anbleiben, wenn gerade niemand tippt.
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = isOn }
-        .onChange(of: isOn) { neu in
-            UIApplication.shared.isIdleTimerDisabled = neu
-        }
-        // Beim Verlassen der App zuruecknehmen: Sonst bliebe das Display
-        // einer fremden App wach, weil hier einmal ein Schalter umgelegt
-        // wurde.
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        // dann anbleiben, wenn lange niemand tippt.
+        .keepsScreenAwake(alwaysOn: isOn)
     }
 }
 

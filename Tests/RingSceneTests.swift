@@ -51,4 +51,15 @@ final class RingSceneTests: XCTestCase {
         XCTAssertFalse(RingScene.allCases.map(\.motion).contains(RingFinaleArt.motion))
         XCTAssertFalse(RingFinaleArt.motion.unicodeScalars.contains { $0.properties.isEmojiPresentation })
     }
+
+    /// Die Szene waechst mit der Karte (3. November): Auf die Bezugsbreite
+    /// abgestimmt, wird sie mit einer breiteren Karte im selben Verhaeltnis
+    /// groesser – und mit einer schmaleren nie kleiner als abgestimmt.
+    func testTheSceneGrowsWithTheCard() {
+        let bezug = RingCardEntrance.referenceWidth
+
+        XCTAssertEqual(RingScene.scale(forCardWidth: bezug), 1, accuracy: 0.0001)
+        XCTAssertEqual(RingScene.scale(forCardWidth: bezug * 1.4), 1.4, accuracy: 0.0001)
+        XCTAssertEqual(RingScene.scale(forCardWidth: bezug * 0.8), 1, accuracy: 0.0001)
+    }
 }
