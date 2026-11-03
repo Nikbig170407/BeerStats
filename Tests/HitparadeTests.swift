@@ -231,4 +231,15 @@ final class HitparadeTests: XCTestCase {
         let nummern = SongDeck.all.map(\.appleId)
         XCTAssertEqual(Set(nummern).count, nummern.count, "Eine Apple-Nummer steht doppelt im Stapel")
     }
+
+    /// Beim Aufdecken steht gross, was man wissen musste (3. November) –
+    /// beim Titel der Titel, beim Interpreten der Interpret, sonst das Jahr.
+    /// Beim Einsortieren entscheidet das Jahr, ob die Karte passt.
+    func testTheRevealShowsWhatWasAsked() {
+        XCTAssertEqual(HitQuestion.title.revealEmphasis, .title)
+        XCTAssertEqual(HitQuestion.artist.revealEmphasis, .artist)
+        XCTAssertEqual(HitQuestion.yearWithinThree.revealEmphasis, .year)
+        XCTAssertEqual(HitQuestion.yearWithinOne.revealEmphasis, .year)
+        XCTAssertEqual(HitQuestion.placement.revealEmphasis, .year)
+    }
 }

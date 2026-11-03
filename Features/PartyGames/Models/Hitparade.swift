@@ -69,6 +69,24 @@ enum HitQuestion: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Was beim Aufdecken gross steht: genau das, was man wissen musste
+    /// (Wunsch des Nutzers vom 3. November). Bis dahin stand dort immer das
+    /// Jahr, auch wenn nach dem Titel gefragt war – und der Tisch suchte die
+    /// Antwort, ueber die er gerade entscheiden sollte, klein auf der Huelle.
+    enum RevealEmphasis: Equatable {
+        case title, artist, year
+    }
+
+    /// Beim Einsortieren entscheidet das Jahr, ob die Karte passt – deshalb
+    /// steht dort das Jahr gross, wie bei den beiden Jahresfragen.
+    var revealEmphasis: RevealEmphasis {
+        switch self {
+        case .title: return .title
+        case .artist: return .artist
+        case .placement, .yearWithinThree, .yearWithinOne: return .year
+        }
+    }
+
     /// Wie viele Jahre daneben noch zaehlen – nur bei den Jahresfragen.
     var tolerance: Int? {
         switch self {

@@ -97,6 +97,17 @@ struct HitparadeView: View {
     private static let gap: CGFloat = 10
     /// Ein Plus in der Reihe: Apples Mindestgroesse fuer einen Tipp.
     private static let gapTarget: CGFloat = 44
+    /// So klein und so gross darf die Huelle beim Aufdecken werden. Oben
+    /// steht die Groesse von vor dem 3. November; nachgeben darf sie, wenn
+    /// ein langer Titel gross darunter steht.
+    private static let revealRange: ClosedRange<CGFloat> = 130...190
+    /// Das Gefragte beim Aufdecken: ein Jahr, oder ein Titel oder Interpret,
+    /// der laenger ist und deshalb etwas kleiner anfaengt.
+    private static let bigYearSize: CGFloat = 48
+    private static let bigNameSize: CGFloat = 34
+    /// Das Jahr, wenn es nicht gefragt war – klein, aber in der Farbe seines
+    /// Jahrzehnts wie auf der Huelle.
+    private static let smallYearSize: CGFloat = 18
 
     /// Wo das Zaehlwerk steht, bevor jemand dreht: die Mitte des Stapels.
     /// Ein Anfang am Rand waere ein Hinweis, wo die Antwort liegt.
@@ -581,18 +592,55 @@ struct HitparadeView: View {
     // MARK: - Aufdecken
 
     /// Die Platte rutscht aus der Huelle, jetzt mit Cover und der Farbe ihres
-    /// Jahrzehnts – und darunter das Jahr in gross.
+    /// Jahrzehnts – und darunter gross, was man wissen musste.
+    ///
+    /// Bis zum 3. November stand dort immer das Jahr, auch wenn nach dem
+    /// Titel gefragt war. Der Tisch, der gerade "Hatte Lena den Titel?"
+    /// entscheiden sollte, suchte den Titel klein auf der Huelle. Jetzt
+    /// steht das Gefragte gross (`HitQuestion.revealEmphasis`), der Rest
+    /// bleibt klein sichtbar: Titel und Interpret auf der Huelle, das Jahr
+    /// darunter.
+    ///
+    /// Die Huelle gibt dafuer nach, nicht der Text: Sie hat Vorrang und eine
+    /// Unter- und Obergrenze (`revealRange`), der Text behaelt seine volle
+    /// Hoehe – das Rezept "Ein Spielscreen scrollt nicht".
     @ViewBuilder
     private var revealedRecord: some View {
         if let card = game?.current {
             RecordReveal(title: card.title, artist: card.artist, year: card.year, artwork: usesBox ? nil : music.artworkURL)
-                .frame(height: 190)
+                .frame(minHeight: Self.revealRange.lowerBound, maxHeight: Self.revealRange.upperBound)
+                .layoutPriority(1)
 
-            Text(String(card.year))
-                .font(Font.world(world, 48, weight: .heavy))
-                .foregroundStyle(RecordShelf.color(forYear: card.year))
-                .monospacedDigit()
+            revealHeadline(card, emphasis: game?.question.revealEmphasis ?? .year)
+                .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    @ViewBuilder
+    private func revealHeadline(_ card: SongCard, emphasis: HitQuestion.RevealEmphasis) -> some View {
+        switch emphasis {
+        case .year:
+            yearLine(card.year, size: Self.bigYearSize)
+        case .title, .artist:
+            VStack(spacing: 2) {
+                Text(emphasis == .title ? card.title : card.artist)
+                    .font(Font.world(world, Self.bigNameSize, weight: .heavy))
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    // Zwei Zeilen, dann wird er kleiner – abgeschnitten
+                    // wird die Antwort nie
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.5)
+                yearLine(card.year, size: Self.smallYearSize)
+            }
+        }
+    }
+
+    private func yearLine(_ year: Int, size: CGFloat) -> some View {
+        Text(String(year))
+            .font(Font.world(world, size, weight: .heavy))
+            .foregroundStyle(RecordShelf.color(forYear: year))
+            .monospacedDigit()
     }
 
     /// Titel oder Interpret: Die App kann nicht hoeren, was gesagt wurde –
