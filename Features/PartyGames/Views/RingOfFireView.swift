@@ -1142,19 +1142,29 @@ struct RingOfFireView: View {
         clearRoles()
         hasStarted = true
         HapticManager.success()
-        SoundManager.play(.ringShuffle)
 
         // Die Karten liegen erst als Stapel in der Mitte und werden dann
         // ausgeteilt – wie am Tisch. Mit "Bewegung reduzieren" liegen sie
-        // gleich im Kreis.
+        // gleich im Kreis, und der Klang kommt sofort.
         dealTask?.cancel()
         dealt = reduceMotion
         isDealing = !reduceMotion
-        guard !reduceMotion else { return }
+        guard !reduceMotion else {
+            SoundManager.play(.ringShuffle)
+            return
+        }
         dealTask = Task { @MainActor in
             // Erst den Wechsel vom Vorspann zum Tisch abwarten
             try? await Task.sleep(nanoseconds: UInt64(RingMotion.beforeFirstDeal * 1_000_000_000))
             guard !Task.isCancelled else { return }
+            // Der Klang mit den Karten, nicht mit dem Knopf (3. November:
+            // "startet ein bisschen zu frueh"). Beim Druck auf "Los" lag
+            // noch der Stapel still da, und das Flattern war halb vorbei,
+            // bevor die erste Karte flog. Jetzt laeuft es neben den
+            // fliegenden Karten her, und das Klopfen am Ende faellt kurz
+            // vor die letzte, die landet. Nicht in `dealOut()`: Nach einem
+            // Riss klingt er schon beim Einsammeln, dort waere er doppelt.
+            SoundManager.play(.ringShuffle)
             await dealOut()
         }
     }
