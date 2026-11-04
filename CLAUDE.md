@@ -839,6 +839,24 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   höher als alles darunter) – dasselbe Prinzip wie beim Ring, wo die
   Kartenbreite aus dem Layout folgt.
 
+- **Das Pferderennen ist ein Raster** (`HorseRaceView`, 4. November: „man
+  soll besser sehen, welche obere Karte zu welcher unteren gehört“). Die
+  Spalten sind die Felder der Bahn; die Seitenkarte k steht über Spalte k
+  und dreht sich um, wenn das **letzte** Pferd dort ankommt. Start und Ziel
+  haben keine Karte, und die Zahl der Seitenkarten ist deshalb aus der
+  Ziellinie abgeleitet (`HorseRaceTrack`) und nicht daneben getippt. Zwei
+  Dinge, die man beim Anfassen wissen muss:
+  - **Die Spaltenbreite wird aus der Screenbreite gerechnet**, nicht vom
+    Layout verteilt. Verteilt es sie, stehen Karten und Felder schon bei
+    einem Pixel Unterschied versetzt, und genau das Raster ist der Zweck.
+    Die Maße (Ränder, Farbzeichen) stehen als Konstanten da, aus denen
+    `columnWidth(in:)` rechnet – wer einen Rand ändert, ändert ihn dort.
+  - **Daraus sind auch alle Höhen berechenbar**, und `ViewThatFits` weiß
+    vorher, ob es ohne Scrollen passt (Rezept „Ein Spielscreen scrollt
+    nicht“). Das Raster hat Vorrang und wächst; die Bahnen haben Ober- und
+    Untergrenze (`RaceLane.minimumHeight`/`maximumHeight`), weil das Ass an
+    der Feldbreite hängt und mehr Höhe es nicht größer macht.
+
 - **Die Palette ist zweigeteilt** (`DesignSystem/Colors.swift`): Akzente
   und Hintergründe kommen aus `AppPalette` und sind wählbar, Schrift,
   Statusfarben und Becher aus dem Asset-Katalog und gelten immer. Alle
@@ -1860,6 +1878,13 @@ oben; was schief aussieht, unten.
   nur zwei oder drei Fragen übrig bleiben. Und: Landet die Strafe beim
   Richtigen, wenn ein Abend läuft?
 ### Partyspiele: Inhalt, Mengen, Gefühl
+- **Pferderennen als Raster (4. November)**: Stehen die Seitenkarten genau
+  über den Feldern, und erkennt man, welche Karte zu welcher Spalte gehört?
+  Ist der helle Streifen über der nächsten Spalte hilfreich oder unruhig?
+  Füllt das Raster den Screen, ohne dass unten oder oben viel leer bleibt –
+  auch auf einem kleinen iPhone? Beim Setzen mit vielen Leuten darf der
+  Screen rollen, im Rennen nicht. Und die Länge: Sind sechs Felder und fünf
+  Seitenkarten kurz genug, ohne dass die Seitenstrecke nie greift?
 - **Ich hab noch nie mit neuen Kategorien (28. Oktober)**: Ist „Tabulos“
   hart genug – oder schon zu viel für eure Runde? Fühlen sich die Themen
   wirklich anders an als die Stufen, und trägt jedes allein eine Runde?

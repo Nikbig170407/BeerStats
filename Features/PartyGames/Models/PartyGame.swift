@@ -198,7 +198,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
     var subtitle: String {
         switch self {
         case .ringOfFire: return "Karten geschuppt im Kreis – die ersten drei Risse kosten einen Shot"
-        case .horseRace: return "Vier Asse, sechs Seitenkarten – setz auf eine Farbe"
+        case .horseRace: return "Vier Asse, \(HorseRaceTrack.sideCount) Seitenkarten – setz auf eine Farbe"
         case .busRide: return "Vier Fragen, dann die Busfahrt – wer am meisten daneben lag, fährt"
         case .truthOrDare:
             let karten = TruthOrDareDeck.count(.truth) + TruthOrDareDeck.count(.dare)
@@ -248,7 +248,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .ringOfFire:
             return "Die Karten liegen verdeckt und geschuppt im Kreis – jede ein Stück unter der nächsten. Wer dran ist, tippt „Karte ziehen“; die App lost aus, welche es wird, und sagt, was zu tun ist. Und wie am echten Tisch gilt: Reißt dein Zug den Ring, trinkst du einen Shot – danach wird eingesammelt und neu gelegt. Unter den Karten liegt ein Glutfaden: Kleine Lücken hält er, wird aber dünner und flackert, je weiter sie sind. Wird eine Lücke so breit, dass er reißt, ist der Ring gerissen. Drei Shots hat eine Runde; ab dem dritten bleibt der Ring liegen, wie er liegt, und Lücken sind egal. Dicht liegende Karten sind sicher, dünne Stellen nicht – man kann es sehen. Manche Karten gelten nur im Moment, andere bis zum Spielende; das steht auf jeder Karte."
         case .horseRace:
-            return "Vier Asse laufen um die Wette. Jeder setzt vorher auf eine Farbe – tippt euch in der Liste auf euer Pferd, dann weiß die App später, wer trinkt. Aufgedeckte Karten schieben das passende Pferd vor; die Seitenkarten schicken es zurück, sobald alle daran vorbei sind."
+            return "Vier Asse laufen um die Wette. Jeder setzt vorher auf eine Farbe – tippt euch in der Liste auf euer Pferd, dann weiß die App später, wer trinkt. Aufgedeckte Karten schieben das passende Pferd vor. Die Seitenkarten liegen über den Feldern der Bahn: Sobald das letzte Pferd an einer Spalte ankommt, dreht sich die Karte darüber um und schickt ihr Pferd zurück."
         case .busRide:
             return "Zwei Hälften. Erst die Fragerunde: Rot oder Schwarz, höher oder tiefer, dazwischen oder draußen, welche Farbe. Jede richtige Antwort bringt dich eine Stufe weiter, jede falsche kostet – und zurück auf Anfang. Wer alle vier schafft, ist raus. Reihum, bis alle durch sind. Dann die Busfahrt: Wer am meisten daneben lag, fährt Bus und deckt fünf Karten auf. Jede Zahl ist gut, jede Bildkarte schickt ihn zurück an den Anfang – und je weiter er gekommen war, desto teurer."
         case .truthOrDare:

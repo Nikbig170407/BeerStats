@@ -9,11 +9,17 @@
 //  er waechst. Man sieht die ganze Zeit, wie weit sein Pferd ist und wie
 //  weit die anderen sind, und genau daraus entsteht die Spannung.
 //
-//  Die Seitenstrecke ist das, was das Spiel ausmacht: Sechs verdeckte Karten
+//  Die Seitenstrecke ist das, was das Spiel ausmacht: verdeckte Karten
 //  neben der Bahn. Sobald ALLE Pferde an einer davon vorbei sind, wird sie
 //  aufgedeckt, das Pferd dieser Farbe muss zurueck, und wer darauf gesetzt
 //  hat, trinkt. Je weiter hinten, desto teurer. Dadurch ist eine Fuehrung nie
 //  sicher, und niemand steigt gedanklich aus.
+//
+//  Bahn und Seitenstrecke sind EIN Raster (4. November: "man soll besser
+//  sehen, welche obere Karte zu welcher unteren gehoert"). Die Spalten sind
+//  die Felder der Bahn; die Seitenkarte k steht ueber Spalte k und wird
+//  aufgedeckt, wenn das letzte Pferd dort ankommt. Start und Ziel haben
+//  keine Karte – am Start ist noch niemand vorbei, im Ziel ist das Rennen aus.
 //
 //  Ohne Namen: Die App sagt "wer auf Pik gesetzt hat, trinkt". Wer das war,
 //  weiss die Runde selbst – das braucht keine Eingabe.
@@ -29,10 +35,18 @@ struct HorseRaceView: View {
         case finished(winner: Int)
     }
 
-    /// Felder bis zum Ziel. Sieben ist die uebliche Laenge: kurz genug fuer
-    /// mehrere Rennen am Abend, lang genug, dass die Seitenstrecke greift.
-    private static let finishLine = 7
-    private static let sideCount = 6
+    private static let finishLine = HorseRaceTrack.finishLine
+    private static let sideCount = HorseRaceTrack.sideCount
+
+    // Masse des Rasters. Die Spaltenbreite wird aus diesen Zahlen gerechnet
+    // (`columnWidth(in:)`), damit die Seitenkarten genau ueber den Feldern
+    // der Bahn stehen – mit freier Breite liefen beide auseinander.
+    private static let screenPadding: CGFloat = 18
+    private static let panelPadding: CGFloat = 12
+    private static let laneInset: CGFloat = 3
+    private static let labelWidth: CGFloat = 22
+    private static let labelGap: CGFloat = 6
+    private static let cardGap: CGFloat = 4
 
     @State private var deck: [PlayingCard] = []
     @State private var side: [PlayingCard] = []
@@ -66,16 +80,21 @@ struct HorseRaceView: View {
         ZStack {
             AmbientBackdrop(glow: BeerStatsColor.success)
 
-            FillingScrollView {
-                VStack(spacing: 16) {
-                    sideTrack
-                    track
-                    betsBoard
-                    statusPanel
-                    bettingPanel
-                    controls
+            // Die Breite des Screens bestimmt die Spalten des Rasters, deshalb
+            // steht sie hier fest und nicht erst tief im Baum. Dann sind auch
+            // alle Hoehen berechenbar, und `ViewThatFits` weiss vorher, ob es
+            // passt.
+            GeometryReader { geometry in
+                let breite = columnWidth(in: geometry.size.width)
+                // Ein Spielscreen scrollt nicht – gescrollt wird nur, wenn es
+                // selbst mit kleinster Bahn nicht passt (viele Leute beim
+                // Setzen, sehr grosse Schrift).
+                ViewThatFits(in: .vertical) {
+                    raceLayout(columnWidth: breite)
+                    ScrollView { raceLayout(columnWidth: breite) }
+                        .verticalScrollOnly()
                 }
-                .padding(18)
+                .frame(width: geometry.size.width, height: geometry.size.height)
             }
         }
         .navigationTitle("Pferderennen")
@@ -84,53 +103,146 @@ struct HorseRaceView: View {
         .onAppear { if deck.isEmpty { newRace() } }
     }
 
+    /// Das Raster hat Vorrang und nimmt, was uebrig ist; alles andere
+    /// behaelt seine volle Hoehe. Schrumpfen soll die Bahn, nicht der Text.
+    private func raceLayout(columnWidth: CGFloat) -> some View {
+        VStack(spacing: 14) {
+            raceGrid(columnWidth: columnWidth)
+                .layoutPriority(1)
+            Group {
+                betsBoard
+                statusPanel
+                bettingPanel
+                controls
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(Self.screenPadding)
+    }
+
+    /// Breite einer Spalte: Start, die Felder und das Ziel teilen sich, was
+    /// neben dem Farbzeichen links uebrig bleibt.
+    private func columnWidth(in screenWidth: CGFloat) -> CGFloat {
+        let frei = screenWidth
+            - 2 * Self.screenPadding
+            - 2 * Self.panelPadding
+            - 2 * Self.laneInset
+            - Self.labelWidth
+            - Self.labelGap
+        return max(20, frei / CGFloat(Self.finishLine + 1))
+    }
+
+    // MARK: - Raster
+
+    /// Oben die Seitenkarten, darunter die Bahnen – Spalte fuer Spalte
+    /// untereinander.
+    private func raceGrid(columnWidth: CGFloat) -> some View {
+        VStack(spacing: 6) {
+            sideRow(columnWidth: columnWidth)
+
+            VStack(spacing: 6) {
+                ForEach(suits.indices, id: \.self) { index in
+                    lane(index)
+                }
+            }
+            // Die Spalte, an der die naechste Seitenkarte haengt
+            .overlay { nextColumnMarker(columnWidth: columnWidth) }
+        }
+        .padding(Self.panelPadding)
+        .glassPanel(cornerRadius: 18)
+        // Im Ziel: Blitz, Schwarzweiss, Stillstand
+        .modifier(PhotoFinish(isFinished: isFinished))
+    }
+
+    /// Welche Spalte als naechste eine Seitenkarte aufdeckt – `nil`, wenn
+    /// nichts mehr zu erwarten ist.
+    private var nextColumn: Int? {
+        guard phase == .racing, revealedSides < Self.sideCount else { return nil }
+        return revealedSides + 1
+    }
+
+    /// Ein heller Streifen ueber der Spalte der naechsten Seitenkarte: Sobald
+    /// das letzte Pferd dort ankommt, dreht sich die Karte darueber um.
+    private func nextColumnMarker(columnWidth: CGFloat) -> some View {
+        HStack(spacing: 0) {
+            ForEach(0...Self.finishLine, id: \.self) { column in
+                Rectangle()
+                    .fill(column == nextColumn ? Color.white.opacity(0.14) : Color.clear)
+                    .frame(width: columnWidth)
+            }
+        }
+        .padding(.leading, Self.laneInset + Self.labelWidth + Self.labelGap)
+        .padding(.vertical, Self.laneInset)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .animation(AppAnimation.standard, value: nextColumn)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
     // MARK: - Seitenstrecke
 
-    private var sideTrack: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("SEITENSTRECKE")
-                .font(Font.world(world, 12, weight: .heavy))
-                .kerning(1.6)
-                .foregroundStyle(BeerStatsColor.textSecondary)
+    /// Die Seitenkarten in den Spalten der Bahn. Links bleibt Platz fuer die
+    /// Farbzeichen, wie in den Bahnen darunter.
+    private func sideRow(columnWidth: CGFloat) -> some View {
+        HStack(spacing: Self.labelGap) {
+            Color.clear.frame(width: Self.labelWidth, height: 1)
 
-            HStack(spacing: 5) {
-                ForEach(0..<Self.sideCount, id: \.self) { index in
-                    sideCard(index)
+            HStack(spacing: 0) {
+                ForEach(0...Self.finishLine, id: \.self) { column in
+                    sideCell(column, width: columnWidth)
                 }
             }
         }
+        .padding(.horizontal, Self.laneInset)
     }
 
-    private func sideCard(_ index: Int) -> some View {
+    @ViewBuilder
+    private func sideCell(_ column: Int, width: CGFloat) -> some View {
+        if column == 0 || column == Self.finishLine {
+            // Start und Ziel haben keine Karte – das Schild fuellt die Ecke,
+            // statt dass dort ein Loch im Raster bleibt
+            Text(column == 0 ? "START" : "ZIEL")
+                .font(Font.world(world, 10, weight: .heavy))
+                .kerning(1)
+                .foregroundStyle(BeerStatsColor.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(width: width, height: sideCellHeight(width: width))
+        } else {
+            sideCard(column - 1, width: width)
+        }
+    }
+
+    private func sideCellHeight(width: CGFloat) -> CGFloat {
+        (width - Self.cardGap) * PlayingCardView.aspect + 16
+    }
+
+    private func sideCard(_ index: Int, width: CGFloat) -> some View {
         let isOpen = index < revealedSides
         let card = side.indices.contains(index) ? side[index] : nil
+        let isNext = index == revealedSides && nextColumn != nil
+        let kartenbreite = width - Self.cardGap
 
-        // Echte Karten neben der Bahn, verdeckt, bis alle Pferde vorbei
+        // Echte Karten ueber der Bahn, verdeckt, bis alle Pferde vorbei
         // sind – dann dreht sich die Karte um.
         return VStack(spacing: 3) {
-            PlayingCardView(card: isOpen ? card : nil, width: 44)
+            PlayingCardView(card: isOpen ? card : nil, width: kartenbreite)
                 .modifier(FlipOnReveal(value: isOpen ? card : nil))
+                .overlay {
+                    // Die Karte, auf die das Raster gerade wartet
+                    RoundedRectangle(cornerRadius: kartenbreite * 0.1, style: .continuous)
+                        .strokeBorder(Color.white.opacity(isNext ? 0.9 : 0), lineWidth: 2)
+                }
 
             Text("\(index + 1)")
                 .font(Font.world(world, 11, weight: .bold))
                 .foregroundStyle(BeerStatsColor.textSecondary)
         }
-        .frame(maxWidth: .infinity)
+        .frame(width: width, height: sideCellHeight(width: width))
+        .animation(AppAnimation.standard, value: isNext)
     }
 
     // MARK: - Bahn
-
-    private var track: some View {
-        VStack(spacing: 6) {
-            ForEach(suits.indices, id: \.self) { index in
-                lane(index)
-            }
-        }
-        .padding(12)
-        .glassPanel(cornerRadius: 18)
-        // Im Ziel: Blitz, Schwarzweiss, Stillstand
-        .modifier(PhotoFinish(isFinished: isFinished))
-    }
 
     private func lane(_ index: Int) -> some View {
         let suit = suits[index]
@@ -409,7 +521,7 @@ struct HorseRaceView: View {
 
     private func drawCard() {
         if deck.isEmpty {
-            // Sollte bei 42 Karten und sieben Feldern nie passieren – aber ein
+            // Sollte mit dem Stapel und sechs Feldern nie passieren – aber ein
             // leerer Stapel mitten im Rennen waere ein Spielabbruch.
             deck = PlayingCardDeck.shuffled().filter { $0.rank != 14 }
         }

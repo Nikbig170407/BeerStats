@@ -33,7 +33,13 @@ struct RaceLane: View {
     let position: Int
     let finish: Int
 
-    static let height: CGFloat = 46
+    /// Die Bahn waechst mit dem Platz, den das Raster hergibt – zwischen
+    /// diesen Grenzen. Darunter wird das Ass zu klein, um die Farbe zu
+    /// erkennen; darueber hilft mehr Hoehe nicht mehr, weil das Ass an der
+    /// Feldbreite haengt.
+    static let minimumHeight: CGFloat = 44
+    static let idealHeight: CGFloat = 54
+    static let maximumHeight: CGFloat = 88
     /// So lange dauert ein Zug – danach ist die Zeitleiste wieder weg.
     private static let moveDuration: Double = 0.55
 
@@ -53,7 +59,7 @@ struct RaceLane: View {
                 Canvas { context, size in draw(&context, size, from: position, u: 1) }
             }
         }
-        .frame(height: Self.height)
+        .frame(minHeight: Self.minimumHeight, idealHeight: Self.idealHeight, maxHeight: Self.maximumHeight)
         .onChange(of: position) { [position] neu in
             guard neu != position else { return }
             move = (position, Date())
@@ -123,7 +129,7 @@ struct RaceLane: View {
             }
         }
 
-        let kw = min(feld * 0.72, h * 0.6), kh = kw * 1.4
+        let kw = min(feld * 0.8, h * 0.62), kh = kw * 1.4
         let mitte: SceneArt.Point = (x, h / 2 - sprung)
         SceneArt.glow(&g, x + 2, h / 2 + 4, kw * 0.9, .black, 0.4)
         let karte = CGRect(x: mitte.x - kw / 2, y: mitte.y - kh / 2, width: kw, height: kh)
