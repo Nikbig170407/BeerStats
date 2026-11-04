@@ -689,7 +689,8 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Bewegung mit einem anderen teilt. Fällt einem für eine neue Szene kein
   eigener Satz ein, ist es keine neue Szene.
 
-  Eine Szene ist eine Zeichenfunktion in `SceneArt`, gezeigt von
+  Eine Szene ist eine Zeichenfunktion – die von Ring of Fire in
+  `RingSceneArt`, alle anderen in `SceneArt` –, gezeigt von
   `EffectCanvas` (Leinwand plus Zeitleiste) – alle sind derselbe Typ, ein
   `AnyView` braucht es dafür nicht mehr. Teilchen, Druckwelle, Strahlen und
   Einschlag sind **entfernt** und nicht bloß unbenutzt: Ein Baustein, der
@@ -704,12 +705,15 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   wenn eine Runde Ring of Fire durch ist (ein Flammenkranz, `RingFinale` –
   bewusst kein zweites Feuerwerk, das gehört dem Beerpong-Sieg).
 
-  **Dieselbe Kostenart sieht überall gleich aus.** Ein Shot glüht wie das
-  Ass, Schlücke steigen als Bier wie bei der Drei, wer nichts trinkt, atmet
-  in Grün auf. Im Trink-Roulette hängt die Szene deshalb an der
-  **Kostenart** und nicht am Text – so bekommt auch ein selbst gebautes Rad
-  sie. Diese Sprache lernt man einmal, nicht je Spiel; das ist die eine
-  Stelle, an der zwei Momente bewusst gleich aussehen.
+  **Dieselbe Kostenart sieht überall gleich aus.** Ein Shot glüht als
+  aufsteigende Glut, Schlücke steigen als Bier, wer nichts trinkt, atmet
+  in Grün auf (`SceneArt.embersRising`, `beerRising`). Im Trink-Roulette
+  hängt die Szene deshalb an der **Kostenart** und nicht am Text – so
+  bekommt auch ein selbst gebautes Rad sie. Diese Sprache lernt man einmal,
+  nicht je Spiel; das ist die eine Stelle, an der zwei Momente bewusst
+  gleich aussehen. Ass und Drei in Ring of Fire sprechen dieselbe Sprache,
+  aber lauter: Dort landet eine Karte, und der Schlag gehört ihr. Im Rad
+  landet nichts, also bleibt es bei der ruhigen Fassung.
 
   Die Regeln, jede mit Grund:
   - **Zierde, kein Inhalt.** Alles liegt hinter dem Text, nimmt keine
@@ -734,14 +738,47 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     Wert statt ein Ja/Nein, sonst blitzt er genau einmal pro Screen
     (Lessons Learned Nr. 11).
 
+  **Jede Ring-Szene hat drei Akte und einen Schlag** (Vorschlag 2,
+  4. November, vom Nutzer in der Vorschau abgenommen: „die Animationen
+  sind gut“). Die Szene baut sich auf, während die Karte unterwegs ist,
+  reagiert in dem Augenblick, in dem sie **landet**, und läuft danach
+  jede Runde etwas anders nach. Wann das ist, sagt der Auftritt der Karte
+  (`RingCardEntrance.landing`, `hitTime`) – ein Test hält fest, dass sie
+  sich davor deutlich mehr bewegt als danach. Am Schlag hängt alles
+  andere, und alles an einer Stelle je Rang (`RingScene`):
+  - **Die Szene weiß, wo Karte und Text liegen** (`RingStage`). Der
+    Kartenscreen misst beides über Anker (`RingCardAnchorKey`) und reicht
+    es durch; im Textband bleibt jede Szene blass (`faint`). Vorher stand
+    die Karte als geschätzter Anteil der Höhe in den Szenen, und auf jedem
+    anderen Gerät lag der Schlag daneben.
+  - **Licht, Zoom, Beben**: Die Karte bekommt Schatten nach ihrer Höhe,
+    Randlicht und Glanz in der Farbe der Szene (`RingScene.light`), die
+    schnellen ziehen Geisterbilder (`leavesGhosts`). Nur die großen Ränge
+    zoomen und beben (`zoomsOnHit`, `quake`) – bebte jeder, bebte keiner.
+  - **Klang und Hand auf dem Schlag** (`hitSounds`, `hitTaps`): der
+    Rangklang genau einmal, Schichten der Szene darum herum, nichts vor
+    der Szene, der stärkste Stoß auf der Landung. Mehrere Stöße spielt
+    `HapticManager.play` als Core-Haptics-Muster.
+  - **Gezeichnet wird über `SceneBrush`.** Gleiche Farbe, Deckkraft und
+    Strichstärke landen in einem Pfad – hundert Funken sind ein Aufruf,
+    und erst damit kostet ein Bild nicht mehr als die alten Szenen. Wer
+    direkt auf die Leinwand zeichnet, umgeht das. Schein und Verlauf
+    leeren den Stapel vorher, die Reihenfolge bleibt also, wie sie
+    dasteht.
+
   **Der Riss hat seinen eigenen Moment** (`RingEmbers.swift`, Wunsch des
   Nutzers vom 28. Oktober: „erst eine einzelne Animation, die klar macht,
   dass der Kreis gerissen ist – man soll nachvollziehen können, wo“).
   Vorher schob sich der Kartenscreen sofort über den Ring, und eine
   Feuerwand schlug an seinem Rand herein – mächtig, aber die Stelle sah
   niemand. Jetzt gehören dem Ring 1,6 Sekunden: Der Glutfaden reißt an der
-  Lücke, eine Stichflamme schlägt heraus, die Nachbarkarten zucken weg,
-  alles wird dunkel bis auf die Stelle, und „RISS“ steht über der Lücke.
+  Lücke, eine Stichflamme schlägt heraus, alles wird dunkel bis auf die
+  Stelle. Seit Vorschlag 2 bebt dazu der ganze Ring, die Nachbarkarten
+  fliegen hoch und fallen angesengt zurück, Rauch steigt, Funken regnen,
+  ein Brandfleck bleibt, und „RISS“ knallt wie ein Stempel neben die
+  Lücke. Beben und Wurf rechnen mit derselben Zeit wie das Feuer darüber
+  (`RingTearArt.quake`, `throwHeight`, ein `tearClock` für alle) – zwei
+  Uhren liefen auseinander, und die Karte flöge neben der Flamme.
   Erst danach kommt die Karte. Der Moment liegt über dem **ganzen** Screen,
   nicht nur über dem Ring; der Ring meldet seine Lage als Anker nach oben
   (`RingTearSpotKey`), weil er in einem ScrollView liegt und seine Punkte
@@ -788,6 +825,9 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   und was in dieser Bewegung beginnt, sieht niemand – ausgerechnet der
   Anfang, an dem man den Rang erkennt. Der Text steht trotzdem sofort da.
   `EffectCanvas` kann dafür seit diesem Tag später loslaufen (`delay`).
+  Der Rangklang kommt seit Vorschlag 2 nicht mehr, wenn der Screen steht,
+  sondern auf dem Schlag – er gehört zu dem Augenblick, in dem die Karte
+  landet.
   Am selben Tag sind Jungs und Mädels kein Spiegelpaar mehr: Blitze und
   Glitzer statt derselben Bläschen von links und von rechts.
 
@@ -1247,7 +1287,26 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     Karte hebt sich als eigene Ansicht heraus, ohne Einblenden
     (`.transition(.identity)`): Die Animation der Restzahl gilt für den
     ganzen Ring und blendete sie sonst gleichzeitig ein und aus. Der
-    Kartenscreen kommt erst danach. Dazu fünf Regeln:
+    Kartenscreen kommt erst danach. Seit Vorschlag 2 (4. November) wirbeln
+    die Karten in Bögen mit Drall auf ihre Plätze und setzen mit einem
+    Funken auf, das Licht zieht einen Funkenschweif, beim Halt geht ein
+    Ruck durch den Ring, und die gezogene Karte steigt in einer
+    Lichtsäule auf (`RingTable.swift`). Dazu diese Regeln:
+    - **Die Lichtsäule ist für jede Karte gleich warm.** Die Farbe der
+      Szene käme erst mit dem Kartenscreen; vorher verriete sie den Rang.
+    - **Wann das Licht wo steht, ist ein Wert** (`RingSpotlightPlan`, mit
+      Tests). Licht und Funken lesen denselben Plan, und die Schleife
+      wartet auf den geplanten Zeitpunkt statt eine Dauer lang – jedes
+      Einschlafen kommt etwas zu spät zurück, und über dreißig Schritte
+      liefe das Licht den Funken davon. Dasselbe beim Austeilen
+      (`RingMotion.dealDelay`): Karten und Funken landen nach einer Rechnung.
+    - **Eine Kurve über einem animierten Wert gehört in einen Effekt mit
+      eigenem Fortschritt** (`RingDealFlight`, `RingLiftFlight`,
+      `RingHaltNod`). `offset` und `scaleEffect` animiert SwiftUI nur
+      gerade vom Anfangs- zum Endwert; ein Bogen, ein Drall oder ein
+      `sin` dazwischen käme nie an – beim Schweben, das mit null anfängt
+      und mit null endet, bewegte sich gar nichts. Die Animation ist dann
+      linear, die Kurve steht im Effekt.
     - **Die Rolle kommt erst nach dem Kartenscreen in die Merkliste**
       (`pendingRole`). Während die Karte sich heraushebt, steht die Liste
       sichtbar darunter – „Daumenmeister“ verriete die Karte, bevor man
@@ -1257,13 +1316,16 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
       Phase dreißig aufgeblähte Karten im Ring.
     - **Der Kranz brennt erst, wenn die letzte Karte gelesen ist**
       (`showsFinale`). Er beginnt mit einem Lauf einmal herum, und der lief
-      sonst unter dem Kartenscreen ab. Er bleibt in seiner Fläche – darüber
+      sonst unter dem Kartenscreen ab. Beim Schließen schießt er oben als
+      Säule hoch, mit eigenem Klang (`ringBlaze`), danach regnet Glut und
+      die Luft flimmert. Er bleibt in seiner Fläche – darüber
       liegt nur ein schmaler Rand, und abgeschnittenes Feuer sieht aus wie
       ein Bild, das nicht passt – und zeichnet höchstens dreißigmal je
       Sekunde (`EffectCanvas.minimumInterval`), weil „Ring durch“ oft
       minutenlang dasteht.
     - **Mit „Bewegung reduzieren“** liegen die Karten gleich im Kreis, es
-      hebt sich nichts heraus, und der Kranz steht als stilles Bild da.
+      hebt sich nichts heraus, kein Schweif, kein Ruck, und der Kranz
+      steht als stilles Bild da.
     - **Gezogen wird erst, wenn alles liegt** (`isBusy`): Ein Zug während
       des Austeilens ginge an eine Karte, die noch fliegt.
   - **Das Rad tickt von der ersten Sekunde.** Die Auslosung tickte nur im
@@ -1280,7 +1342,8 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     Klänge herkommen dürfen und was für alle gilt, steht unter „Ein Klang
     heißt überall dasselbe“. Der Rangklang kommt mit der Karte auf den
     Kartenscreen, nicht beim Ziehen – er gehört zu dem Moment, in dem man
-    sie sieht.
+    sie sieht. Seit Vorschlag 2 liegen um ihn herum die Schichten der
+    Szene (Donner, Chor, Herzschlag …), ebenfalls gerechnet.
 
 - **Ein Klang heißt überall dasselbe** (`GameSound`, 4. November, auf
   Wunsch des Nutzers: „mehr Sounds“). Bis dahin liehen sich die
@@ -1591,61 +1654,45 @@ oben; was schief aussieht, unten.
   standardmäßig an, geprüft hat es nie jemand. Gespielt wird im Keller.
 ### Was zuletzt gebaut wurde und nie lief
 
-- **Ring of Fire bewegt sich, und derselbe Rang kommt seltener**
-  (28. Oktober, auf Wunsch – Austeilen und Herausheben in der Vorschau
-  „Riss im Ring“ gezeichnet, der Kranz im Browser, auf dem Gerät nichts
-  davon). Zu prüfen:
-  - **Kommt derselbe Rang noch direkt hintereinander?** Gerechnet
-    praktisch nie, mit einer Karte dazwischen etwa halb so oft wie vorher.
-    Fühlt sich das Ziehen trotzdem noch nach Zufall an?
-  - **Austeilen**: Beim Start und nach jedem Riss liegt erst ein Stapel in
-    der Mitte, dann wird im Uhrzeigersinn ausgeteilt. Dauert es zu lange,
-    bis man ziehen kann? Sieht man nach einem Riss erst die Lücke, dann
-    das Einsammeln?
-  - **Herausheben**: Sieht man, woher die Karte kommt, bevor der
-    Kartenscreen sie zeigt – oder wirkt die Pause wie ein Hänger?
-  - **Schweif**: Zieht das Licht beim Losen einen Schweif, ohne dass der
-    Ring in der schnellen Phase nur noch rot ist?
-  - **Merkliste**: Taucht „Daumenmeister“ erst nach „Verstanden“ auf und
-    rutscht dann hinein – nicht schon, während die Karte herausgehoben
-    wird?
-  - **Ring durch**: Läuft das Feuer einmal herum und schließt sich oben?
-    Ruckelt der Kranz auf dem iPhone 13, und stört er die Zahl in der
-    Mitte?
-  - Mit „Bewegung reduzieren“: Karten gleich im Kreis, kein Herausheben,
-    der Kranz als stilles Bild.
+- **Ring of Fire nach Vorschlag 2** (4. November, in der Vorschau „Ring
+  of Fire – Auftritte“ abgenommen, auf dem Gerät nie gelaufen). Szenen,
+  Karte, Klang, Tisch, Riss und Kranz sind neu. Zu prüfen, in dieser
+  Reihenfolge:
+  - **Sitzt der Schlag?** Szene, Licht, Klang und Rütteln müssen in dem
+    Augenblick zusammenkommen, in dem die Karte landet – nicht davor,
+    nicht danach. Wo es auseinanderläuft, sag welcher Rang.
+  - **Erkennt man den Rang** an Auftritt und Szene, bevor man liest? Wenn
+    sich zwei ähneln oder einer albern wirkt – sag welche.
+  - **Bleibt der Text lesbar**, auch mit großer Schrift und im Tischmodus?
+    Die Szenen messen jetzt, wo der Text steht, und bleiben dort blass –
+    stimmt das auch auf diesem Gerät? Und passt der große Kartenname
+    („Four – Waterfall“) ohne Umbruch mitten im Wort?
+  - **Zoom und Beben** gibt es nur bei den großen Rängen (Drei, Fünf,
+    Sieben, Zehn, Dame, Ass). Zu viel, zu wenig?
+  - **Klang und Hand**: Kommen die neuen Schichten (Donner, Chor,
+    Herzschlag …) auf dem Schlag, und ist nichts so laut, dass es
+    erschreckt? Rüttelt das Handy im Takt der Szene?
+  - **Tisch**: Wirbeln die Karten beim Austeilen sichtbar im Bogen, ohne
+    dass es länger dauert? Zieht das Licht einen Funkenschweif, ohne dass
+    der Ring in der schnellen Phase nur noch Funken ist? Sieht man den Ruck
+    beim Halt und die Lichtsäule, bevor der Kartenscreen kommt?
+  - **Riss**: Sieht man weiter, wo es gerissen ist – jetzt mit Beben,
+    hochgeschleuderten Nachbarkarten, Rauch und Stempel? Zu viel auf
+    einmal?
+  - **Kranz**: Schießt beim Schließen oben eine Säule hoch, ohne die Zahl
+    in der Mitte zu stören?
+  - **Ruckelt etwas auf dem iPhone 13?** Am meisten zu tun haben
+    Wasserfall, Himmel, Ass, der Riss und der Kranz.
+  - Mit „Bewegung reduzieren“: Die Karte steht sofort, jede Szene als
+    stilles Bild, die Karten gleich im Kreis, kein Schweif, kein Ruck, der
+    Kranz still.
+  - Weiter offen von vorher: Kommt derselbe Rang noch direkt
+    hintereinander? Taucht „Daumenmeister“ erst nach „Verstanden“ in der
+    Merkliste auf? Reißt es selten genug, und versteht man den Glutfaden?
+    Landet der Riss-Shot bei der Person, die gezogen hat, liegt der Ring
+    nach dem „Verstanden" sichtbar **neu**, und ist nach dem dritten Riss
+    die Glut aus?
 
-- **Jede Karte kommt anders** (28. Oktober, auf Wunsch – die Auftritte
-  im Browser gezeichnet, auf dem Gerät nie gelaufen). Zu prüfen:
-  - **Erkennt man den Rang am Auftritt**, bevor man liest? Wenn zwei sich
-    ähneln oder einer albern wirkt – sag welche.
-  - **Wirkt die kurze Pause nach dem Hereinfahren wie Absicht** oder wie
-    ein Hänger? Der Screen kommt, dann erst die Karte und ihr Klang.
-  - **Beim Wasserfall**: Läuft die Karte sauber hinter der Welle ins Bild,
-    und hat sie danach ihren Schatten wie alle anderen?
-  - Ruckelt etwas auf dem iPhone 13, am ehesten beim König (Münze) und
-    beim Buben (Überschlag)? Zeigen beide zwischendurch die Rückseite?
-  - Mit „Bewegung reduzieren“ muss die Karte sofort stehen.
-  - Und die neuen Szenen hinter der 5 und der 6: Blitze an den Rändern,
-    Glitzer von oben – stört eines davon den Text?
-
-- **Der Riss als eigener Moment, seltener, mit Glutfaden** (28. Oktober,
-  auf Wunsch – in der Vorschau „Riss im Ring“ abgestimmt, auf dem Gerät nie
-  gelaufen). Zu prüfen:
-  - **Sieht man, wo es gerissen ist?** Der Faden reißt, die Flamme
-    schlägt aus der Lücke, „RISS“ steht darüber – und erst nach gut
-    anderthalb Sekunden kommt die Karte. Zu lang, zu kurz?
-  - **Reißt es jetzt selten genug?** Gerechnet: bei 20 Karten in etwa
-    jeder zehnten Runde schon in den ersten drei Zügen statt in vier von
-    zehn. Kommt die Regel in einer kurzen Runde trotzdem noch vor?
-  - **Versteht man den Faden?** Eine kleine Lücke, über der der Faden
-    glüht, darf nicht wie ein Riss aussehen – und ein dünner, flackernder
-    Faden soll nach „gleich reißt es“ aussehen.
-  - Ruckelt der Moment auf dem iPhone 13? Mit „Bewegung reduzieren“ muss
-    ein stilles Bild mit Markierung dastehen, nicht nichts.
-  - Weiter offen von vorher: Landet der Shot bei der Person, die gezogen
-    hat, liegt der Ring nach dem „Verstanden" sichtbar **neu**, und ist
-    nach dem dritten Riss die Glut aus?
 - **Ring of Fire bucht mit (25. Oktober)**: Einen Abend starten, Ring of
   Fire spielen, bis ein Ass und eine Drei gezogen sind – stehen beide
   danach in der Trinkbilanz der richtigen Person? Und steht dort **nichts**
@@ -1697,21 +1744,14 @@ oben; was schief aussieht, unten.
   - Mit „Hintergrund: Schlicht“ muss jede Welt fast einfarbig sein, mit
     „Bewegung reduzieren“ still – und trotzdem vollständig: Jede Karte
     muss aufgedeckt dastehen, kein Text darf fehlen.
-- **Jede Szene bewegt sich anders** (27. Oktober, auf Wunsch): Alle Szenen
-  sind neu gezeichnet – dreizehn hinter den Ring-Karten, dazu Feuerwerk im
+- **Jede Szene bewegt sich anders** (27. Oktober, auf Wunsch): Feuerwerk im
   Sieger-Screen, Rauch und Splitter in der Bombe, die Schallplatte beim
   Sieg in der Hitparade, der Goldglanz am Pokal des Abends und die drei
-  Kostenarten im Trink-Roulette. Abgestimmt wurde im Browser, auf einem
-  Gerät lief nichts davon. Zu prüfen, in dieser Reihenfolge:
-  - **Unterscheidet man sie?** Einmal durch Ring of Fire, bis jeder Rang
-    dran war: Erkennt man die Karte an der Bewegung, bevor man den Text
-    liest? Wenn sich zwei ähneln – sag welche.
+  Kostenarten im Trink-Roulette. Die Szenen von Ring of Fire stehen oben
+  unter Vorschlag 2. Abgestimmt wurde im Browser, auf einem Gerät lief
+  nichts davon. Zu prüfen:
   - **Bleibt der Text lesbar**, auch mit großer Schrift und im Tischmodus?
-    Am ehesten im Weg sind die Szenen, die durch die Mitte gehen:
-    Wasserfall, Himmel, Dame und Kategorie. Stört eine, wird dort
-    gedämpft, nicht überall.
-  - **Ruckelt es auf dem iPhone 13?** Jedes Bild wird neu gezeichnet; am
-    meisten zu tun haben das Feuerwerk und die Glut beim Ass.
+  - **Ruckelt es auf dem iPhone 13?** Am meisten zu tun hat das Feuerwerk.
   - **Mit „Bewegung reduzieren“** muss jede Szene ein stilles Bild zeigen –
     nicht nichts.
 - **Ohne Konto (26. Oktober)**: Abmelden, dann „Ohne Konto loslegen" –
@@ -1816,10 +1856,7 @@ oben; was schief aussieht, unten.
   Startknopf gedrückt aus, sobald das Lied von selbst läuft? Kommt die
   Strafe groß genug an? Und in Ring of Fire: Sind die Auftritte jetzt
   groß und lang genug, ohne zu nerven – und wird der Ring zu klein, wenn
-  die Merkliste voll ist? Seit demselben Tag wachsen auch die **Szenen**
-  hinter der Karte mit: Bleibt der Text darüber lesbar – am ehesten
-  gefährdet sind Pinselstrich (2), Lichtsäulen (7), Stempel (10) und der
-  Herzschlag-Rand (11)?
+  die Merkliste voll ist? Die Szenen dahinter stehen unter Vorschlag 2.
 - **Die neuen Klänge (4. November)**: Ausgesucht nach Messung, gehört hat
   sie noch niemand. Einmal quer durch: Würfeln in Schocken und Mäxchen,
   Karten in Bussfahrer und Pferderennen, Chips beim Wetten und im
