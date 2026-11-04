@@ -90,6 +90,11 @@ enum GameSound: String, CaseIterable {
     case ringRank2, ringRank3, ringRank4, ringRank5, ringRank6, ringRank7, ringRank8
     case ringRank9, ringRank10, ringRank11, ringRank12, ringRank13, ringRank14
     case ringTear, ringHolds, ringShuffle, ringOut
+    // Die Schichten zum Schlag (Vorschlag 2, 4. November): Wenn die Karte
+    // landet, kommt zum Rangklang, was zur Szene gehoert – Donner zum Blitz,
+    // ein Schalter zum Scheinwerfer. Wann welche, steht in `RingScene.cues`.
+    case ringSplat, ringGush, ringStream, ringThunder, ringShimmer, ringChoir
+    case ringBeat, ringWhoosh, ringHeartbeat, ringSpotlight, ringFlutter
 
     /// Der Klang eines Rangs in Ring of Fire. Alles außerhalb von 2 bis 13
     /// ist das Ass – dieselbe Zuordnung wie bei den Regeln.
@@ -184,6 +189,12 @@ enum GameSound: String, CaseIterable {
         case .ringStop, .ringDraw, .ringRank2, .ringRank3, .ringRank4, .ringRank5,
              .ringRank6, .ringRank7, .ringRank8, .ringRank9, .ringRank10, .ringRank11,
              .ringRank12, .ringRank13, .ringRank14, .ringTear, .ringHolds, .ringShuffle, .ringOut:
+            return 0
+        // Die Schichten gehoeren zu einer Szene und klingen jedes Mal gleich –
+        // bis auf die Stroeme, die fuenfmal hintereinander aufschlagen
+        case .ringStream: return 0.08
+        case .ringSplat, .ringGush, .ringThunder, .ringShimmer, .ringChoir,
+             .ringBeat, .ringWhoosh, .ringHeartbeat, .ringSpotlight, .ringFlutter:
             return 0
         }
     }

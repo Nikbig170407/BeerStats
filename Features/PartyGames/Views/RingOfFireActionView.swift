@@ -190,12 +190,42 @@ struct RingOfFireActionView: View {
             }
         }
         // Jeder Rang klingt anders – man hoert, welche Karte kam, bevor man
-        // sie liest. Mit dem Auftritt, nicht mit dem Hereinfahren; und
-        // bricht ab, wenn der Screen vorher wieder zu ist.
-        .task {
+        // sie liest. Seit dem 4. November auf dem Schlag, mit den Schichten
+        // der Szene und dem Ruetteln dazu (`RingScene.hitSounds`, `hitTaps`).
+        // Bricht ab, wenn der Screen vorher wieder zu ist.
+        .task { await playHit() }
+    }
+
+    /// Klang und Ruetteln im Takt des Schlags. Mit "Bewegung reduzieren"
+    /// steht die Karte gleich da – dann nur der Rangklang, wenn der Screen
+    /// steht, ohne Takt, den man nicht sieht.
+    private func playHit() async {
+        if reduceMotion {
             try? await Task.sleep(nanoseconds: UInt64(Self.settle * 1_000_000_000))
             guard !Task.isCancelled else { return }
             SoundManager.play(.ringRank(card.rank))
+            return
+        }
+        let schlag = Self.settle + entrance.hitTime
+        let taps = scene.hitTaps
+        let ersterStoss = taps.map(\.time).min() ?? 0
+        var termine: [(zeit: Double, tun: () -> Void)] = []
+        for klang in scene.hitSounds {
+            let sound = klang.sound
+            termine.append((schlag + klang.at, { SoundManager.play(sound) }))
+        }
+        // Das Ruetteln laeuft als ein Muster ab dem ersten Stoss
+        let muster = taps.map { HapticManager.Tap(time: $0.time - ersterStoss, intensity: $0.intensity, sharpness: $0.sharpness) }
+        termine.append((schlag + ersterStoss, { HapticManager.play(muster) }))
+        termine.sort { $0.zeit < $1.zeit }
+        var jetzt = 0.0
+        for termin in termine {
+            if termin.zeit > jetzt {
+                try? await Task.sleep(nanoseconds: UInt64((termin.zeit - jetzt) * 1_000_000_000))
+                jetzt = termin.zeit
+            }
+            guard !Task.isCancelled else { return }
+            termin.tun()
         }
     }
 

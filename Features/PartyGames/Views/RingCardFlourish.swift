@@ -186,6 +186,56 @@ enum RingScene: CaseIterable {
         }
     }
 
+    /// Was beim Schlag klingt, in Sekunden um ihn herum: der Rangklang und
+    /// die Schichten, die zur Szene gehoeren. Manches kommt vorher – der
+    /// Luftzug vor dem Stempel, die Scheinwerfer der Dame, die Spruenge der
+    /// Neun –, damit der Schlag selbst auf die Landung faellt. Beim Stempel
+    /// liegt der laute zweite Hammerschlag 0,2 Sekunden im Rangklang; der
+    /// beginnt deshalb so viel frueher.
+    var hitSounds: [(at: Double, sound: GameSound)] {
+        let rang = GameSound.ringRank(rank)
+        switch self {
+        case .pointAt: return [(0, rang), (0.02, .ringSplat)]
+        case .drinkSelf: return [(-0.3, .ringGush), (0, rang)]
+        case .waterfall:
+            return [(-0.3, rang), (-0.28, .ringStream), (-0.14, .ringStream), (0, .ringStream), (0.14, .ringStream), (0.28, .ringStream)]
+        case .guys: return [(0, rang), (0.05, .ringThunder)]
+        case .chicks: return [(0, rang), (0, .ringShimmer)]
+        case .heaven: return [(-0.45, .ringChoir), (0, rang)]
+        case .mates: return [(0, rang)]
+        case .rhyme: return [(-0.68, .ringBeat), (-0.34, .ringBeat), (0, rang)]
+        case .rule: return [(-0.3, .ringWhoosh), (-0.2, rang)]
+        case .thumbMaster: return [(0, rang), (0, .ringHeartbeat)]
+        case .queen: return [(-0.84, .ringSpotlight), (-0.66, .ringSpotlight), (0, rang)]
+        case .category: return [(-0.1, .ringFlutter), (0, rang)]
+        case .ace: return [(0, rang)]
+        }
+    }
+
+    /// Was beim Schlag ruettelt, in Sekunden um ihn herum – im Takt dessen,
+    /// was die Szene tut: fuenf Stroeme, drei Spruenge, zwei Herzschlaege.
+    /// Der staerkste Stoss liegt immer auf dem Schlag.
+    var hitTaps: [HapticManager.Tap] {
+        func tap(_ t: Double, _ staerke: Double, _ haerte: Double) -> HapticManager.Tap {
+            HapticManager.Tap(time: t, intensity: staerke, sharpness: haerte)
+        }
+        switch self {
+        case .pointAt: return [tap(0, 0.8, 0.5)]
+        case .drinkSelf: return [tap(0, 0.9, 0.4), tap(0.31, 0.5, 0.4), tap(0.51, 0.35, 0.4)]
+        case .waterfall: return [tap(-0.28, 0.4, 0.3), tap(-0.14, 0.5, 0.3), tap(0, 0.9, 0.3), tap(0.14, 0.5, 0.3), tap(0.28, 0.4, 0.3)]
+        case .guys: return [tap(0, 1, 0.9), tap(0.06, 0.7, 0.6)]
+        case .chicks: return [tap(0, 0.6, 1), tap(0.12, 0.4, 1), tap(0.24, 0.3, 1)]
+        case .heaven: return [tap(0, 0.7, 0.3)]
+        case .mates: return [tap(0, 0.8, 1), tap(0.11, 0.6, 1)]
+        case .rhyme: return [tap(-0.68, 0.5, 0.2), tap(-0.34, 0.6, 0.2), tap(0, 0.9, 0.3)]
+        case .rule: return [tap(0, 1, 0.4)]
+        case .thumbMaster: return [tap(0, 0.8, 0.2), tap(0.22, 0.55, 0.2)]
+        case .queen: return [tap(-0.84, 0.5, 0.7), tap(-0.66, 0.5, 0.7), tap(0, 0.7, 0.5)]
+        case .category: return [tap(0, 0.4, 0.8), tap(0.05, 0.4, 0.8), tap(0.1, 0.4, 0.8), tap(0.15, 0.4, 0.8)]
+        case .ace: return [tap(0, 1, 0.6), tap(0.08, 0.8, 0.5)]
+        }
+    }
+
     /// Der Schlag: wann die Karte landet, in Sekunden ab dem Start der
     /// Szene. Szene und Auftritt beginnen gemeinsam (`settle`), also ist
     /// es dieselbe Zeit wie im Auftritt.

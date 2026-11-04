@@ -39,6 +39,17 @@ oder aus einem CC0-Paket (`scripts/import_sounds.py`). Das Repository ist
 | `ringShuffle.wav` | gerechnet: Neu legen – Ein Stapel wird gemischt: schnelles Flattern, zum Schluss klopft er auf den Tisch. | keine (selbst gerechnet) |
 | `ringHolds.wav` | gerechnet: Hält knapp – Die Glut knistert leise und hält – ein Durchatmen. | keine (selbst gerechnet) |
 | `ringOut.wav` | gerechnet: Regel durch – Wasser auf Glut: ein langes Zischen, das leiser wird. | keine (selbst gerechnet) |
+| `ringSplat.wav` | gerechnet: Platsch · Farbe – Nasse Farbe klatscht auf: ein kurzes, feuchtes Platschen. | keine (selbst gerechnet) |
+| `ringGush.wav` | gerechnet: Schwall · Bier – Ein Schwall Bier schießt gurgelnd nach oben. | keine (selbst gerechnet) |
+| `ringStream.wav` | gerechnet: Aufprall · Strom – Ein Strom prallt unten auf und spritzt. | keine (selbst gerechnet) |
+| `ringThunder.wav` | gerechnet: Donner – Donner kracht und grollt lange aus. | keine (selbst gerechnet) |
+| `ringShimmer.wav` | gerechnet: Glitzer – Feine Glöckchen rieseln durcheinander herab. | keine (selbst gerechnet) |
+| `ringChoir.wav` | gerechnet: Chor – Ein heller Akkord schwillt an wie ein Chor. | keine (selbst gerechnet) |
+| `ringBeat.wav` | gerechnet: Bass – Ein dumpfer Bassschlag wie aus einer Box. | keine (selbst gerechnet) |
+| `ringWhoosh.wav` | gerechnet: Luftzug – Luft zischt vorbei, bevor etwas aufschlägt. | keine (selbst gerechnet) |
+| `ringHeartbeat.wav` | gerechnet: Herzschlag – Ein Herz schlägt zweimal dumpf. | keine (selbst gerechnet) |
+| `ringSpotlight.wav` | gerechnet: Scheinwerfer – Ein schwerer Schalter klackt, und ein Scheinwerfer brummt an. | keine (selbst gerechnet) |
+| `ringFlutter.wav` | gerechnet: Flattern – Kärtchen flattern wie ein aufgescheuchter Schwarm. | keine (selbst gerechnet) |
 | `penalty.wav` | gerechnet: Strafe – Eine tiefe Pauke schlägt, dann rutscht ein Ton nach unten. | keine (selbst gerechnet) |
 | `timeUp.wav` | gerechnet: Zeit um – Ein tiefer Gong schwingt lange aus. | keine (selbst gerechnet) |
 | `reveal.wav` | gerechnet: Aufdecken – Papier raschelt, und ein Blatt wird umgeschlagen. | keine (selbst gerechnet) |

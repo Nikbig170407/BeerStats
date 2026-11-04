@@ -110,4 +110,20 @@ final class RingSceneTests: XCTestCase {
             XCTAssertLessThanOrEqual(szene.quake, 8, "\(szene) bebt so stark, dass der Text verschwimmt")
         }
     }
+
+    /// Klang und Ruetteln gehoeren zum Schlag: Der Rangklang kommt genau
+    /// einmal, nichts beginnt vor der Szene oder lange nach ihr, und der
+    /// staerkste Stoss liegt auf der Landung.
+    func testSoundAndTapsBelongToTheHit() {
+        for szene in RingScene.allCases {
+            let rang = GameSound.ringRank(szene.rank)
+            XCTAssertEqual(szene.hitSounds.filter { $0.sound == rang }.count, 1, "\(szene)")
+            for zeit in szene.hitSounds.map(\.at) + szene.hitTaps.map(\.time) {
+                XCTAssertGreaterThanOrEqual(zeit, -szene.hitTime, "\(szene): beginnt vor der Szene")
+                XCTAssertLessThanOrEqual(zeit, 1, "\(szene): kommt lange nach dem Schlag")
+            }
+            let staerkster = szene.hitTaps.max { $0.intensity < $1.intensity }
+            XCTAssertEqual(staerkster?.time, 0, "\(szene): Der staerkste Stoss liegt nicht auf dem Schlag")
+        }
+    }
 }

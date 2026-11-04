@@ -571,6 +571,139 @@ def aus(rng):
     return ausblenden(out, 0.15)
 
 
+# ---------------------------------------------------------------- Der Schlag
+# Seit dem 4. November (Vorschlag 2): Wenn die Karte landet, kommen Szene,
+# Licht, Klang und Ruetteln in einem Augenblick zusammen. Der Rangklang
+# allein traegt das nicht – dazu kommen Schichten, die zur Szene gehoeren:
+# Donner zum Blitz, Gischt zum Wasserfall, ein Schalter zum Scheinwerfer.
+# Wann welche Schicht kommt, steht in `RingScene.cues`; hier nur, wie sie
+# klingt. Leiser als der Rangklang, der die Karte nennt.
+
+@klang("ringSplat", "Platsch · Farbe", "Nasse Farbe klatscht auf: ein kurzes, feuchtes Platschen.", 0.09)
+def platsch(rng):
+    sek = 0.3
+    klatsch = bandpass(rauschen(sek, rng), lambda t: 2200 * math.exp(-t / 0.05) + 600, 1.1)
+    klatsch = mal(klatsch, huellkurve(n_von(sek), 0.002, 0.05))
+    bauch = mal(sinus(lambda t: 140 - 60 * t, sek), huellkurve(n_von(sek), 0.002, 0.04))
+    out = [a + 0.5 * b for a, b in zip(klatsch, bauch)]
+    for _ in range(5):
+        ab = rng.uniform(0.04, 0.2)
+        f0 = rng.uniform(1800, 3200)
+        tropfen = mal(sinus(lambda t, f=f0: f * (1 + 1.5 * t / 0.02), 0.02), huellkurve(n_von(0.02), 0.001, 0.006))
+        legen(out, tropfen, ab, rng.uniform(0.08, 0.18))
+    return ausblenden(out, 0.03)
+
+
+@klang("ringGush", "Schwall · Bier", "Ein Schwall Bier schießt gurgelnd nach oben.", 0.1)
+def schwall(rng):
+    sek = 0.45
+    stroemen = bandpass(rauschen(sek, rng), lambda t: 500 + 1400 * min(1, t / 0.3), 0.9)
+    kurve = [min(1, t / 0.2) * math.exp(-max(0, t - 0.3) / 0.06) for t in (i / RATE for i in range(n_von(sek)))]
+    out = mal(stroemen, kurve)
+    for _ in range(10):
+        ab = rng.uniform(0.05, 0.32)
+        f0 = rng.uniform(300, 650)
+        blase = mal(sinus(lambda t, f=f0: f * (1 + 2.0 * t / 0.05), 0.05), huellkurve(n_von(0.05), 0.004, 0.015))
+        legen(out, blase, ab, rng.uniform(0.15, 0.35))
+    return ausblenden(hall(out, 0.1, 0.55, 0.2), 0.05)
+
+
+@klang("ringStream", "Aufprall · Strom", "Ein Strom prallt unten auf und spritzt.", 0.07)
+def aufprall(rng):
+    sek = 0.28
+    prall = mal(tiefpass(rauschen(sek, rng), 1800), huellkurve(n_von(sek), 0.003, 0.05))
+    gischt = mal(hochpass(rauschen(sek, rng), 3500), huellkurve(n_von(sek), 0.01, 0.08))
+    out = [a + 0.35 * b for a, b in zip(prall, gischt)]
+    return ausblenden(out, 0.04)
+
+
+@klang("ringThunder", "Donner", "Donner kracht und grollt lange aus.", 0.12)
+def donner(rng):
+    sek = 1.6
+    krach = mal(tiefpass(rauschen(0.2, rng), 2500), huellkurve(n_von(0.2), 0.002, 0.05))
+    grollen = tiefpass2(rauschen(sek, rng), lambda t: 180 + 120 * math.exp(-t / 0.3))
+    welle = [(0.6 + 0.4 * math.sin(TAU * 2.3 * t + 1.5 * math.sin(TAU * 0.7 * t))) * min(1, t / 0.08) * math.exp(-t / 0.6)
+             for t in (i / RATE for i in range(len(grollen)))]
+    out = mal(grollen, welle)
+    out = normiert(out, 1.0)
+    legen(out, krach, 0.0, 0.8)
+    return ausblenden(hall(out, 0.2, 0.75, 0.5), 0.2)
+
+
+@klang("ringShimmer", "Glitzer", "Feine Glöckchen rieseln durcheinander herab.", 0.07)
+def glitzer(rng):
+    out = []
+    t = 0.0
+    for k in range(18):
+        f = rng.choice((2637.0, 3136.0, 3520.0, 3951.0, 4699.0)) * rng.uniform(0.995, 1.005)
+        legen(out, fm_glocke(f, 0.3, 2.0, 0.6, 0.07), t, rng.uniform(0.3, 0.7) * math.exp(-t / 0.5))
+        t += rng.uniform(0.015, 0.05)
+    return ausblenden(hall(out, 0.3, 0.78, 0.5), 0.12)
+
+
+@klang("ringChoir", "Chor", "Ein heller Akkord schwillt an wie ein Chor.", 0.09)
+def chor(rng):
+    sek = 1.1
+    out = [0.0] * n_von(sek)
+    for f in (523.3, 659.3, 784.0, 1046.5):
+        for verstimmt in (-0.004, 0.004):
+            stimme = saege(f, sek, 6, verstimmt)
+            out = [a + b for a, b in zip(out, stimme)]
+    out = tiefpass2(out, lambda t: 900 + 1400 * min(1, t / 0.45))
+    kurve = [min(1, t / 0.45) ** 1.5 * math.exp(-max(0, t - 0.5) / 0.25) for t in (i / RATE for i in range(len(out)))]
+    return ausblenden(hall(mal(out, kurve), 0.35, 0.8, 0.6), 0.15)
+
+
+@klang("ringBeat", "Bass", "Ein dumpfer Bassschlag wie aus einer Box.", 0.1)
+def bass(rng):
+    sek = 0.3
+    ton = mal(sinus(lambda t: 55 + 70 * math.exp(-t / 0.03), sek), huellkurve(n_von(sek), 0.002, 0.09))
+    klick = bandpass(impuls(0.02, rng, 0.0008), 1800, 1.5)
+    legen(ton, klick, 0.0, 0.25)
+    return ausblenden(ton, 0.04)
+
+
+@klang("ringWhoosh", "Luftzug", "Luft zischt vorbei, bevor etwas aufschlägt.", 0.08)
+def luftzug(rng):
+    sek = 0.32
+    zug = bandpass(rauschen(sek, rng), lambda t: 600 + 2600 * (t / sek) ** 2, 1.3)
+    kurve = [(t / sek) ** 2 * (1 if t < sek * 0.92 else (sek - t) / (sek * 0.08)) for t in (i / RATE for i in range(n_von(sek)))]
+    return ausblenden(mal(zug, kurve), 0.02)
+
+
+@klang("ringHeartbeat", "Herzschlag", "Ein Herz schlägt zweimal dumpf.", 0.1)
+def herz(rng):
+    def schlag(f):
+        return mal(sinus(lambda t: f - 25 * t, 0.16), huellkurve(n_von(0.16), 0.004, 0.035))
+    out = []
+    legen(out, tiefpass(schlag(70), 400), 0.0, 1.0)
+    legen(out, tiefpass(schlag(58), 400), 0.22, 0.7)
+    return ausblenden(out, 0.04)
+
+
+@klang("ringSpotlight", "Scheinwerfer", "Ein schwerer Schalter klackt, und ein Scheinwerfer brummt an.", 0.09)
+def scheinwerfer(rng):
+    klack = resonator(impuls(0.08, rng, 0.0008), 1500, 0.01)
+    klack = [0.8 * v for v in klack]
+    sek = 0.35
+    brumm = [a + 0.5 * b for a, b in zip(sinus(100, sek), sinus(200.3, sek))]
+    brumm = mal(tiefpass(brumm, 700), [min(1, t / 0.05) * math.exp(-max(0, t - 0.08) / 0.12) for t in (i / RATE for i in range(n_von(sek)))])
+    out = list(klack)
+    legen(out, brumm, 0.01, 0.6)
+    return ausblenden(out, 0.05)
+
+
+@klang("ringFlutter", "Flattern", "Kärtchen flattern wie ein aufgescheuchter Schwarm.", 0.08)
+def flattern(rng):
+    out = []
+    t = 0.0
+    for k in range(40):
+        blatt = bandpass(impuls(0.02, rng, 0.002), rng.uniform(1500, 3800), 1.0)
+        legen(out, blatt, t, rng.uniform(0.4, 1.0) * min(1, (k + 1) / 6) * math.exp(-t / 0.5))
+        t += rng.uniform(0.008, 0.028)
+    return ausblenden(hall(out, 0.15, 0.6, 0.3), 0.08)
+
+
 # ---------------------------------------------------------------- Partyspiele
 # Seit dem 4. November. Vorher liehen sich die Partyspiele die Klaenge von
 # Beerpong: Jede Strafe war die Bombenexplosion, jedes Ende der Zeit auch,
