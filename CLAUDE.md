@@ -1611,6 +1611,19 @@ Regel gilt für Abschnitt 9.
   Signatur-Element von Login über Icon bis Spielscreen).
 - Bessere technische Lösungen kurz erklären und umsetzen; eigenständige
   Architekturentscheidungen sind erwünscht.
+- **Eine Änderung hat ein überprüfbares Ziel.** Bei einem Fehler zuerst
+  zeigen, dass er sich reproduzieren lässt (ein Test), dann beheben. Fertig
+  ist es mit dem grünen Lauf, nicht mit `check.py`, das ist kein Compiler.
+- **Jede geänderte Zeile lässt sich auf den Auftrag zurückführen.**
+  Auffälliges daneben wird gemeldet, nicht mitgenommen; eigene Reste
+  (ungenutzte Imports, Funktionen) werden entfernt. Der Schnitt dazu steht
+  schon oben: Dormantes (`Features/Friends/`) bleibt, Datenmodell-Streichungen
+  entscheidet der Nutzer.
+- **Nichts auf Vorrat**: keine Einstellung und keine Abstraktion für einen
+  Fall, den es nicht gibt (Lessons Learned Nr. 8). Wiederverwendbare
+  Bausteine bleiben davon unberührt, wo derselbe Fall schon zweimal da ist.
+- **Annahmen nennen.** Nachgefragt wird nur, wenn die Antwort das Ergebnis
+  ändert; sonst wird die Annahme gesagt und umgesetzt.
 - Der Nutzer schreibt keinen Code. Claude committet und pusht direkt.
 - Getestet wird auf einem echten iPhone über die Cloud-Build-Kette – kein
   Simulator.
