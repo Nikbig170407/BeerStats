@@ -170,17 +170,19 @@ struct DrinkRouletteView: View {
     /// bekommt auch ein selbst gebautes Rad die passende Bewegung.
     ///
     /// Und dieselbe Kostenart sieht in der ganzen App gleich aus: Ein Shot
-    /// glueht wie das Ass in Ring of Fire, Schluecke steigen als Bier wie
-    /// bei "Ich", wer nichts trinkt, atmet auf. So lernt man die Sprache
-    /// einmal und nicht je Spiel.
+    /// glueht, Schluecke steigen als Bier, wer nichts trinkt, atmet auf.
+    /// So lernt man die Sprache einmal und nicht je Spiel. Ring of Fire
+    /// spricht sie seit dem 4. November lauter – mit Feuer beim Ass und
+    /// einem Schwall bei der Drei, um die landende Karte herum gebaut; hier
+    /// landet keine Karte, deshalb die ruhigen Fassungen.
     private func resultScene(for wedge: RouletteWedge) -> AnyView {
         switch wedge.cost {
         case .nothing:
             return AnyView(EffectCanvas(draw: SceneArt.relief).id(wedge.id))
         case .shot:
-            return AnyView(EffectCanvas(draw: SceneArt.ace).id(wedge.id))
+            return AnyView(EffectCanvas(draw: SceneArt.embersRising).id(wedge.id))
         default:
-            return AnyView(EffectCanvas(draw: SceneArt.drinkSelf).id(wedge.id))
+            return AnyView(EffectCanvas(draw: SceneArt.beerRising).id(wedge.id))
         }
     }
 

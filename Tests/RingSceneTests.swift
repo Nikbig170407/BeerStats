@@ -62,4 +62,39 @@ final class RingSceneTests: XCTestCase {
         XCTAssertEqual(RingScene.scale(forCardWidth: bezug * 1.4), 1.4, accuracy: 0.0001)
         XCTAssertEqual(RingScene.scale(forCardWidth: bezug * 0.8), 1, accuracy: 0.0001)
     }
+
+    /// Die Szene kennt die Lage von Karte und Text in IHREN Punkten: Der
+    /// Kartenscreen misst in Punkten der Ansicht, die Szene zeichnet auf
+    /// einer um `scale` kleineren Leinwand. Im Textband bleibt sie blass –
+    /// mit weichen Kanten, darueber und darunter voll.
+    func testTheStageKnowsWhereCardAndTextAre() {
+        let gemessen = RingCardLayout(
+            card: CGRect(x: 85, y: 40, width: 220, height: 319),
+            text: CGRect(x: 30, y: 375, width: 330, height: 170)
+        )
+        let k = 220 / Double(RingCardEntrance.referenceWidth)
+        let buehne = RingStage(size: CGSize(width: 390 / k, height: 671 / k), hit: 0.5, layout: gemessen, scale: k)
+
+        XCTAssertEqual(Double(buehne.card.width), 150, accuracy: 0.01)
+        XCTAssertEqual(buehne.cardMidY, (40 + 319 / 2) / k, accuracy: 0.01)
+        let mitteText = (buehne.textTop + buehne.textBottom) / 2
+        XCTAssertEqual(buehne.faint(mitteText, rest: 0.2), 0.2, accuracy: 0.0001)
+        XCTAssertEqual(buehne.faint(buehne.textTop - 40), 1, accuracy: 0.0001)
+        XCTAssertEqual(buehne.faint(buehne.textBottom + 40), 1, accuracy: 0.0001)
+
+        // Noch nicht gemessen: Karte und Text liegen wie auf einem iPhone 13
+        let geschaetzt = RingStage(size: CGSize(width: 266, height: 457), hit: 0.5, layout: RingCardLayout(), scale: 1)
+        XCTAssertLessThan(Double(geschaetzt.card.maxY), geschaetzt.textTop)
+        XCTAssertLessThan(geschaetzt.textBottom, 457)
+    }
+
+    /// Jede Szene hat ihren Schlag dort, wo ihre Karte landet – Szene und
+    /// Auftritt gehoeren zum selben Rang.
+    func testEverySceneHitsWhenItsCardLands() {
+        for szene in RingScene.allCases {
+            XCTAssertEqual(RingScene(rank: szene.rank), szene)
+            XCTAssertEqual(szene.hitTime, RingCardEntrance(rank: szene.rank).hitTime, accuracy: 0.0001)
+            XCTAssertLessThan(szene.hitTime, EffectCanvas(draw: { _, _, _ in }).stillAt, "\(szene): Das stille Bild laege vor dem Schlag")
+        }
+    }
 }

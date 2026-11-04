@@ -76,66 +76,77 @@ struct RingOfFireActionView: View {
             GeometryReader { geometry in
                 let breite = cardWidth(forHeight: geometry.size.height)
 
-                ZStack {
-                    // Hinter allem und ueber dem Hintergrund: die Bewegung, die
-                    // zu dieser Karte gehoert. Sie liegt NICHT ueber der Karte –
-                    // was zu tun ist, darf nichts verdecken. Und sie waechst mit
-                    // der Karte – deshalb im GeometryReader und nicht daneben.
-                    //
-                    // Auch nach einem Riss: Das Feuer hat seit dem 28. Oktober
-                    // seinen eigenen Moment auf dem Ring, bevor dieser Screen
-                    // kommt. Hier ist danach wieder die Karte dran.
-                    RingCardFlourish(
-                        rank: card.rank,
-                        delay: Self.settle,
-                        scale: RingScene.scale(forCardWidth: breite)
-                    )
-
-                    FillingScrollView {
-                        VStack(spacing: 16) {
-                            if tore {
-                                tornBanner
-                            }
-
-                            // Mit "Bewegung reduzieren" steht die Karte sofort
-                            // auf ihrem Platz – ein stilles Bild, nicht keins
-                            RingCardEntering(
-                                card: card,
-                                entrance: entrance,
-                                width: breite,
-                                progress: reduceMotion ? 1 : entranceProgress
-                            )
-                            .shadow(color: tint.opacity(0.4), radius: 24)
-                            .padding(.top, 12)
-
-                            // Klein die deutsche Anweisung, gross der Name, unter
-                            // dem die Karte am Tisch bekannt ist
-                            Text(rule.title)
-                                .textCase(.uppercase)
-                                .font(.scaled(11, weight: .heavy, design: .rounded))
-                                .kerning(2)
-                                .foregroundStyle(BeerStatsColor.textSecondary)
-
-                            HStack(spacing: 10) {
-                                Text(rule.emoji).font(.system(size: 30))
-                                Text(rule.nickname)
-                                    .font(.scaled(30, weight: .heavy, design: .rounded))
-                                    .foregroundStyle(tint)
-                                    .multilineTextAlignment(.center)
-                                    .keepsWordsWhole(rule.nickname)
-                            }
-
-                            Text(rule.text)
-                                .font(BeerStatsFont.body)
-                                .foregroundStyle(BeerStatsColor.textPrimary)
-                                .multilineTextAlignment(.center)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.horizontal, 4)
-
-                            terms
-                                .padding(.top, 4)
+                FillingScrollView {
+                    VStack(spacing: 16) {
+                        if tore {
+                            tornBanner
                         }
-                        .padding(24)
+
+                        // Mit "Bewegung reduzieren" steht die Karte sofort
+                        // auf ihrem Platz – ein stilles Bild, nicht keins
+                        RingCardEntering(
+                            card: card,
+                            entrance: entrance,
+                            width: breite,
+                            progress: reduceMotion ? 1 : entranceProgress
+                        )
+                        .anchorPreference(key: RingCardAnchorKey.self, value: .bounds) { RingCardAnchors(card: $0) }
+                        .shadow(color: tint.opacity(0.4), radius: 24)
+                        .padding(.top, 12)
+
+                        // Klein die deutsche Anweisung, gross der Name, unter
+                        // dem die Karte am Tisch bekannt ist
+                        Text(rule.title)
+                            .textCase(.uppercase)
+                            .font(.scaled(11, weight: .heavy, design: .rounded))
+                            .kerning(2)
+                            .foregroundStyle(BeerStatsColor.textSecondary)
+                            .anchorPreference(key: RingCardAnchorKey.self, value: .bounds) { RingCardAnchors(text: [$0]) }
+
+                        HStack(spacing: 10) {
+                            Text(rule.emoji).font(.system(size: 30))
+                            Text(rule.nickname)
+                                .font(.scaled(30, weight: .heavy, design: .rounded))
+                                .foregroundStyle(tint)
+                                .multilineTextAlignment(.center)
+                                .keepsWordsWhole(rule.nickname)
+                        }
+                        .anchorPreference(key: RingCardAnchorKey.self, value: .bounds) { RingCardAnchors(text: [$0]) }
+
+                        Text(rule.text)
+                            .font(BeerStatsFont.body)
+                            .foregroundStyle(BeerStatsColor.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 4)
+                            .anchorPreference(key: RingCardAnchorKey.self, value: .bounds) { RingCardAnchors(text: [$0]) }
+
+                        terms
+                            .padding(.top, 4)
+                            .anchorPreference(key: RingCardAnchorKey.self, value: .bounds) { RingCardAnchors(text: [$0]) }
+                    }
+                    .padding(24)
+                }
+                // Hinter allem und ueber dem Hintergrund: die Bewegung, die
+                // zu dieser Karte gehoert. Sie liegt NICHT ueber der Karte –
+                // was zu tun ist, darf nichts verdecken. Und sie waechst mit
+                // der Karte – deshalb im GeometryReader und nicht daneben.
+                //
+                // Sie bekommt gemessen, wo Karte und Text liegen: Der Stempel
+                // liegt um die Karte, die Lichter der Acht klirren unter dem
+                // Text, und wo Text steht, bleibt sie blass (`RingStage`).
+                //
+                // Auch nach einem Riss: Das Feuer hat seit dem 28. Oktober
+                // seinen eigenen Moment auf dem Ring, bevor dieser Screen
+                // kommt. Hier ist danach wieder die Karte dran.
+                .backgroundPreferenceValue(RingCardAnchorKey.self) { anker in
+                    GeometryReader { flaeche in
+                        RingCardFlourish(
+                            rank: card.rank,
+                            delay: Self.settle,
+                            scale: RingScene.scale(forCardWidth: breite),
+                            layout: anker.layout(in: flaeche)
+                        )
                     }
                 }
             }
@@ -249,5 +260,33 @@ struct RingOfFireActionView: View {
                 )
             }
         }
+    }
+}
+
+// MARK: - Wo Karte und Text liegen
+
+/// Karte und Textzeilen melden ihre Lage als Anker nach oben; aufgeloest
+/// werden sie dort, wo die Szene liegt – im Hintergrund des Screens.
+struct RingCardAnchors {
+    var card: Anchor<CGRect>?
+    var text: [Anchor<CGRect>] = []
+
+    /// Die Lage in Punkten der Flaeche, auf der die Szene liegt. Die
+    /// Textzeilen werden zu einem Band zusammengefasst.
+    func layout(in proxy: GeometryProxy) -> RingCardLayout {
+        let zeilen = text.map { proxy[$0] }
+        var band = zeilen.first
+        for zeile in zeilen.dropFirst() { band = band?.union(zeile) }
+        return RingCardLayout(card: card.map { proxy[$0] }, text: band)
+    }
+}
+
+struct RingCardAnchorKey: PreferenceKey {
+    static let defaultValue = RingCardAnchors()
+
+    static func reduce(value: inout RingCardAnchors, nextValue: () -> RingCardAnchors) {
+        let neu = nextValue()
+        value.card = value.card ?? neu.card
+        value.text += neu.text
     }
 }

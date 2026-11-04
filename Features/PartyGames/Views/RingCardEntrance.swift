@@ -128,6 +128,31 @@ enum RingCardEntrance: CaseIterable {
     /// So lange laeuft der Auftritt am Tisch.
     var playbackDuration: Double { duration * Self.stretch }
 
+    /// Wann die Karte ankommt, als Anteil ihres Auftritts. Dort liegt der
+    /// Schlag (Vorschlag 2, 4. November): Die Szene reagiert, das Licht
+    /// wechselt, Klang und Ruetteln kommen – alles in diesem Augenblick.
+    /// Abgelesen aus `pose(at:)`: Davor ist die Karte unterwegs, danach
+    /// schwingt sie nur noch nach (`RingCardEntranceTests`). Beim Aufstehen
+    /// und bei der Muenze ist es das Ende der Drehung, beim Hochschnellen der
+    /// hoechste Punkt.
+    var landing: Double {
+        switch self {
+        case .slam: return 0.36
+        case .arrow: return 0.38
+        case .drop, .rise, .stamp: return 0.42
+        case .pair: return 0.6
+        case .pour, .pump: return 0.62
+        case .twirl, .flick: return 0.66
+        case .hop: return 0.75
+        case .standUp: return 0.78
+        case .coin: return 0.8
+        }
+    }
+
+    /// Der Schlag in Sekunden, gezaehlt ab dem Beginn des Auftritts – so,
+    /// wie er am Tisch laeuft.
+    var hitTime: Double { landing * playbackDuration }
+
     /// Die Zeitbasis der Rechnung, in Sekunden. Gespielt wird sie um
     /// `stretch` langsamer (`playbackDuration`); die Schwingungen in den
     /// Posen rechnen weiter mit dieser Zahl, damit die Bewegung beim

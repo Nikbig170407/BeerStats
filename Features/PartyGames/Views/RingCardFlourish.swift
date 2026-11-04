@@ -17,7 +17,8 @@
 //  Emojis." Ein anderes Zeichen auf derselben Bahn ist keine andere Szene.
 //
 //  Seitdem hat jeder Rang eine eigene, gezeichnete BEWEGUNG
-//  (`DrawnScenes.swift`). Die Pruefung ist ein Satz je Rang, der ohne Emoji
+//  (`RingSceneArt.swift`, seit dem 4. November in drei Akten: Aufbau,
+//  Schlag beim Landen der Karte, Nachhall). Die Pruefung ist ein Satz je Rang, der ohne Emoji
 //  auskommt – und kein Satz darf zweimal vorkommen. Die Saetze stehen in
 //  `RingScene.motion` und nicht in diesem Kommentar: Dort haelt ein Test
 //  fest, dass kein Rang seine Bewegung mit einem anderen teilt
@@ -56,9 +57,18 @@ struct RingCardFlourish: View {
     var delay: Double = 0
     /// Wie gross sie gezeichnet wird – `RingScene.scale(forCardWidth:)`.
     var scale: Double = 1
+    /// Wo Karte und Text liegen, in Punkten dieser Ansicht. Die Szene zielt
+    /// auf die Karte und bleibt blass, wo Text steht (`RingStage`).
+    var layout = RingCardLayout()
 
     var body: some View {
-        EffectCanvas(draw: RingScene(rank: rank).drawing, delay: delay, scale: scale)
+        let szene = RingScene(rank: rank)
+        let lage = layout, k = scale
+        EffectCanvas(
+            draw: { g, size, t in szene.draw(&g, size, t, layout: lage, scale: k) },
+            delay: delay,
+            scale: scale
+        )
             // Die ganze Szene haengt an der Karte: Ein neuer Rang baut sie
             // neu auf, statt die alte Bewegung weiterlaufen zu lassen.
             // Steht HIER und nicht an der Aufrufstelle – die eine Stelle,
@@ -101,24 +111,49 @@ enum RingScene: CaseIterable {
 
     /// Die Bewegung in einem Satz – ohne Emoji, und keiner kommt zweimal
     /// vor. Faellt einem fuer eine neue Szene kein eigener Satz ein, ist es
-    /// keine neue Szene.
+    /// keine neue Szene. Seit dem 4. November in drei Akten erzaehlt:
+    /// Aufbau, Schlag beim Landen der Karte, Nachhall.
     var motion: String {
         switch self {
-        case .pointAt: return "Ein Pinselstrich schießt quer über den Screen und endet als Pfeil."
-        case .drinkSelf: return "Bier steigt von unten, schwappt und trägt eine Schaumkrone."
-        case .waterfall: return "Wellige Ströme fallen von oben und spritzen unten auf."
-        case .guys: return "Blitze zucken im Zickzack an den Seiten herab."
-        case .chicks: return "Glitzer rieselt von oben und funkelt auf."
-        case .heaven: return "Lichtsäulen fallen von oben und wiegen sich langsam."
-        case .mates: return "Zwei Lichter kreisen umeinander, durch ein Band verbunden."
-        case .rhyme: return "Schallwellen laufen im Takt von unten herauf."
-        case .rule: return "Ein Stempel knallt auf und hinterlässt seinen Abdruck."
-        case .thumbMaster: return "Der Bildschirmrand leuchtet im Herzschlag."
-        case .queen: return "Zwei Scheinwerfer schwenken herein und treffen sich auf der Karte."
-        case .category: return "Kärtchen fliegen aus der Mitte nach allen Seiten und drehen sich."
-        case .ace: return "Glut steigt auf wie aus einem Lagerfeuer."
+        case .pointAt: return "Ein breiter Pinsel holt am Rand aus, zieht mit nassen Borsten einen Pfeil zur Karte, Farbe spritzt und läuft herab, und im Nachhall malt er abwechselnd von beiden Seiten."
+        case .drinkSelf: return "Bier schießt in einem Schwall hoch und kräuselt sich beim Aufprall der Karte, hinten steigen feine Perlen, vorne platzen große Blasen."
+        case .waterfall: return "Ströme stürzen nacheinander von links nach rechts herab, prallen in einer Gischtwolke auf, und hinten hängt Sprühnebel in der Luft."
+        case .guys: return "Gewitterwolken türmen sich oben auf und leuchten von innen, beim Schlag fahren zwei Blitze an beiden Rändern bis zum Boden, und Regen peitscht schräg herab."
+        case .chicks: return "Glitzer ergießt sich in einem Schwall über die Karte, große Lichtkugeln schweben dahinter, und vorne funkeln langsam drehende Sterne."
+        case .heaven: return "Die Wolken reißen von der Mitte her auf und leuchten an den Kanten, Lichtsäulen fallen nacheinander, Staub glitzert im Licht, und beim Schlag öffnet sich oben ein heller Schein."
+        case .mates: return "Zwei Lichter jagen sich von unten heran, stoßen unter dem Text klirrend an und umrunden dann Karte und Text in einer Schleife, auf der sie sich oben und unten wieder treffen."
+        case .rhyme: return "Ein Equalizer mit glänzenden Kappen pumpt am unteren Rand, hinten pulsieren Lautsprecherringe, und mit jedem Schlag läuft eine Schallwelle nach oben."
+        case .rule: return "Ein riesiger Stempel senkt sich mit wachsendem Schatten, knallt auf, dass der Screen bebt, Tinte spritzt in Fäden, und der nasse Abdruck zieht langsam ins Papier."
+        case .thumbMaster: return "Der Rand schlägt im Herzrhythmus, mit jedem Schlag läuft ein Puls aus den Ecken nach innen, und unten zieht eine Herzkurve mit."
+        case .queen: return "Vor dunklem Vorhang flammen zwei Scheinwerfer nacheinander auf, schwenken auf die Karte, Staub tanzt im Licht, und beim Schlag glüht unten die Rampe auf."
+        case .category: return "Kärtchen wirbeln in einer Spirale aus der Mitte, in drei Schichten von fern und unscharf bis nah und groß, ziehen Schlieren und kehren in jeder Welle anders herum."
+        case .ace: return "Flammen in zwei Reihen schlagen am unteren Rand hoch, beim Aufprall schießt eine Stichflamme empor, Glut stiebt mit Schweif, und die Luft darüber flimmert."
         }
     }
+
+    /// Der Rang dieser Szene – die Umkehrung von `init(rank:)`.
+    var rank: Int {
+        switch self {
+        case .pointAt: return 2
+        case .drinkSelf: return 3
+        case .waterfall: return 4
+        case .guys: return 5
+        case .chicks: return 6
+        case .heaven: return 7
+        case .mates: return 8
+        case .rhyme: return 9
+        case .rule: return 10
+        case .thumbMaster: return 11
+        case .queen: return 12
+        case .category: return 13
+        case .ace: return 14
+        }
+    }
+
+    /// Der Schlag: wann die Karte landet, in Sekunden ab dem Start der
+    /// Szene. Szene und Auftritt beginnen gemeinsam (`settle`), also ist
+    /// es dieselbe Zeit wie im Auftritt.
+    var hitTime: Double { RingCardEntrance(rank: rank).hitTime }
 
     /// Wie gross die Szene hinter einer Karte dieser Breite gezeichnet
     /// wird: so viel groesser, wie die Karte breiter ist als die, auf die
@@ -129,26 +164,27 @@ enum RingScene: CaseIterable {
         max(1, Double(width / RingCardEntrance.referenceWidth))
     }
 
-    /// Die Zeichnung der Szene. Alle dreizehn haben dieselbe Form –
-    /// Leinwand, Groesse, Zeit –, und `EffectCanvas` zeigt sie. Die
-    /// `AnyView` von frueher ist damit ueberfluessig: Sie war noetig, weil
-    /// dreizehn verschiedene Schichtungen dreizehn verschiedene Typen
-    /// ergaben, an denen der Compiler Minuten rechnete.
-    var drawing: (inout GraphicsContext, CGSize, Double) -> Void {
+    /// Zeichnet die Szene. `size` ist die Leinwand in Punkten der Szene
+    /// (`EffectCanvas.scale` hat schon verkleinert), `layout` die gemessene
+    /// Lage von Karte und Text in Punkten der Ansicht.
+    func draw(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double, layout: RingCardLayout, scale: Double) {
+        let stage = RingStage(size: size, hit: hitTime, layout: layout, scale: scale)
+        var pinsel = SceneBrush(g)
         switch self {
-        case .pointAt: return SceneArt.pointAt
-        case .drinkSelf: return SceneArt.drinkSelf
-        case .waterfall: return SceneArt.waterfall
-        case .guys: return SceneArt.lightning
-        case .chicks: return SceneArt.glitter
-        case .heaven: return SceneArt.heaven
-        case .mates: return SceneArt.drinkingMates
-        case .rhyme: return SceneArt.rhyme
-        case .rule: return SceneArt.rule
-        case .thumbMaster: return SceneArt.thumbMaster
-        case .queen: return SceneArt.queen
-        case .category: return SceneArt.category
-        case .ace: return SceneArt.ace
+        case .pointAt: RingSceneArt.pointAt(&pinsel, stage, t)
+        case .drinkSelf: RingSceneArt.drinkSelf(&pinsel, stage, t)
+        case .waterfall: RingSceneArt.waterfall(&pinsel, stage, t)
+        case .guys: RingSceneArt.lightning(&pinsel, stage, t)
+        case .chicks: RingSceneArt.glitter(&pinsel, stage, t)
+        case .heaven: RingSceneArt.heaven(&pinsel, stage, t)
+        case .mates: RingSceneArt.drinkingMates(&pinsel, stage, t)
+        case .rhyme: RingSceneArt.rhyme(&pinsel, stage, t)
+        case .rule: RingSceneArt.rule(&pinsel, stage, t)
+        case .thumbMaster: RingSceneArt.thumbMaster(&pinsel, stage, t)
+        case .queen: RingSceneArt.queen(&pinsel, stage, t)
+        case .category: RingSceneArt.category(&pinsel, stage, t)
+        case .ace: RingSceneArt.ace(&pinsel, stage, t)
         }
+        pinsel.flush()
     }
 }

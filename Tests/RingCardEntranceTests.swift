@@ -107,6 +107,32 @@ final class RingCardEntranceTests: XCTestCase {
         }
     }
 
+    /// Der Schlag liegt dort, wo die Karte ankommt: Davor bewegt sie sich
+    /// deutlich mehr als danach (die Muenze, die am langsamsten auslaeuft,
+    /// gut doppelt so viel), und in dem Augenblick steht
+    /// sie lesbar auf (oder knapp an) ihrem Platz. Laege er zu frueh,
+    /// knallte es, waehrend die Karte noch fliegt; zu spaet, und der Knall
+    /// kaeme nach der Bewegung, zu der er gehoert.
+    func testTheHitIsWhereTheCardArrives() {
+        for auftritt in RingCardEntrance.allCases {
+            let l = auftritt.landing
+            XCTAssertTrue((0.3...0.85).contains(l), "\(auftritt): \(l)")
+
+            let davor = bewegung(auftritt, von: l - 0.3, bis: l)
+            let danach = bewegung(auftritt, von: l + 0.1, bis: min(1, l + 0.3))
+            XCTAssertGreaterThan(davor, 1.5 * danach, "\(auftritt) bewegt sich nach dem Schlag noch zu viel")
+
+            let pose = auftritt.pose(at: l)
+            XCTAssertFalse(pose.showsBack, "\(auftritt)")
+            XCTAssertGreaterThan(pose.opacity, 0.9, "\(auftritt)")
+            XCTAssertLessThan(abs(pose.x), 52, "\(auftritt)")
+            XCTAssertLessThan(abs(pose.y), 52, "\(auftritt)")
+            XCTAssertLessThan(abs(pose.rotation), 15, "\(auftritt)")
+
+            XCTAssertEqual(auftritt.hitTime, l * auftritt.playbackDuration, accuracy: 0.0001)
+        }
+    }
+
     /// Nur das Trink-Duo kommt zu zweit. Die beiden kommen von
     /// verschiedenen Seiten, und am Ende ist die zweite in der ersten
     /// aufgegangen.
@@ -156,6 +182,26 @@ final class RingCardEntranceTests: XCTestCase {
     }
 
     // MARK: - Hilfe
+
+    /// Wie viel sich die Karte in einem Abschnitt bewegt, im Mittel je
+    /// Hundertstel – Punkte, Grad und Groesse auf eine gemeinsame Skala.
+    private func bewegung(_ auftritt: RingCardEntrance, von: Double, bis: Double) -> Double {
+        var summe = 0.0, schritte = 0
+        var p = max(0, von)
+        while p < bis {
+            let a = auftritt.pose(at: p), b = auftritt.pose(at: p + 0.01)
+            let teile: [Double] = [
+                abs(a.x - b.x), abs(a.y - b.y),
+                100 * abs(a.scaleX - b.scaleX), 100 * abs(a.scaleY - b.scaleY),
+                abs(a.rotation - b.rotation), abs(a.flipX - b.flipX) / 3, abs(a.flipY - b.flipY) / 3,
+                100 * abs(a.opacity - b.opacity), 100 * abs(a.reveal - b.reveal)
+            ]
+            summe += teile.reduce(0, +)
+            schritte += 1
+            p += 0.01
+        }
+        return schritte > 0 ? summe / Double(schritte) : 0
+    }
 
     /// Wie weit zwei Posen auseinanderliegen: der groesste Unterschied,
     /// jeweils auf eine Groesse gebracht, bei der 1 deutlich sichtbar ist –

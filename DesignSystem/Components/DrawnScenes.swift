@@ -16,7 +16,8 @@
 //  Scheinwerfer schwenken, ein Stempel knallt auf. Die Pruefung: Jede
 //  Szene laesst sich in einem Satz beschreiben, ohne ein Emoji zu nennen,
 //  und kein Satz kommt zweimal vor. Die Tabelle steht in
-//  `RingCardFlourish`.
+//  `RingCardFlourish`, die Szenen von Ring of Fire selbst seit dem
+//  4. November in `RingSceneArt`.
 //
 //  Gezeichnet wird mit fuenf Werkzeugen (Kreis, Schein, Flaeche,
 //  Flaeche mit Verlauf, Linie) – mehr braucht keine Szene, und je weniger
@@ -190,39 +191,19 @@ enum SceneArt {
     }
 }
 
-// MARK: - Die Szenen von Ring of Fire
+// MARK: - Die Kostenarten im Trink-Roulette
 
 extension SceneArt {
 
-    /// 2 – Du: Ein Pinselstrich schiesst quer ueber den Screen und endet als
-    /// Pfeil. Abwechselnd von links und von rechts.
-    static func pointAt(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        // Einmal je Bild lesen, nicht je Strich: Die Akzentfarbe kommt aus
-        // den Einstellungen.
-        let akzent = BeerStatsColor.accent
-        for k in 0..<2 {
-            let lauf = (t + Double(k) * 1.2) / 2.4
-            let zyklus = Int(lauf.rounded(.down)), z = fract(lauf) * 2.4
-            let vonLinks = zyklus % 2 == 0, y0 = h * (0.28 + 0.44 * unit(zyklus, 3))
-            let fort = easeOut(z / 0.45), weg = 1 - clamp((z - 0.9) / 0.8)
-            guard weg > 0 else { continue }
-            let punkte: [Point] = (0...30).map { i in
-                let p = Double(i) / 30 * fort, x = -40 + (w + 80) * p
-                return (vonLinks ? x : w - x, y0 - sin(p * .pi) * 60)
-            }
-            stroke(&g, punkte, akzent, 0.18 * weg, 44)
-            stroke(&g, punkte, akzent, 0.35 * weg, 24)
-            stroke(&g, punkte, foam, 0.5 * weg, 6)
-            let spitze = punkte[punkte.count - 1], davor = punkte[punkte.count - 2]
-            let winkel = atan2(spitze.y - davor.y, spitze.x - davor.x)
-            func seite(_ d: Double, _ a: Double) -> Point { (spitze.x + cos(winkel + a) * d, spitze.y + sin(winkel + a) * d) }
-            fill(&g, [seite(44, 0), seite(48, 2.5), seite(14, .pi), seite(48, -2.5)], akzent, 0.7 * weg)
-        }
-    }
+    // Bis zum 4. November waren das die Szenen der Drei und des Asses in
+    // Ring of Fire. Dort sind seitdem neue, aufwendigere Szenen dran
+    // (`RingSceneArt`), die um eine landende Karte herum gebaut sind – mit
+    // einem Schlag, wenn sie ankommt. Im Trink-Roulette landet keine Karte;
+    // hier bleiben die ruhigen Fassungen. Die Sprache bleibt dieselbe:
+    // Schluecke steigen als Bier, ein Shot glueht.
 
-    /// 3 – Ich: Bier steigt von unten, schwappt und traegt eine Schaumkrone.
-    static func drinkSelf(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
+    /// Schluecke: Bier steigt von unten, schwappt und traegt eine Schaumkrone.
+    static func beerRising(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
         let w = Double(size.width), h = Double(size.height)
         let pegel = h - h * 0.3 * easeOut(t / 1.4)
         func oben(_ x: Double) -> Double { pegel + 7 * sin(x * 0.035 + t * 2.6) + 4 * sin(x * 0.09 - t * 3.7) }
@@ -241,260 +222,8 @@ extension SceneArt {
         }
     }
 
-    /// 4 – Wasserfall: Wellige Stroeme fallen von oben und spritzen unten auf.
-    static func waterfall(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        let da = easeOut(t / 0.6), boden = h - 26
-        for i in 0..<5 {
-            let di = Double(i)
-            let x = w * (0.1 + 0.2 * di) + noise(i, 1) * 14, b = 9 + 7 * unit(i, 2)
-            let ende = min(boden, h * 1.1 * easeOut(t / (0.5 + 0.2 * unit(i, 3))))
-            func welle(_ y: Double) -> Double { 2.5 * sin(y * 0.05 - t * 9 + di) }
-            var links: [Point] = [], rechts: [Point] = []
-            for k in 0...24 {
-                let y = -10 + (ende + 10) * Double(k) / 24, schmal = 1 - 0.35 * Double(k) / 24
-                links.append((x - b / 2 * schmal + welle(y), y))
-                rechts.append((x + b / 2 * schmal + welle(y), y))
-            }
-            fill(&g, links + rechts.reversed(), from: (x, 0), to: (x, ende), [(0, beer, 0.2), (1, beer, 0.5)])
-            for k in 0..<5 {
-                let y = fract(t * 1.8 + Double(k) / 5 + unit(i, 4)) * ende
-                stroke(&g, [(x + welle(y), y), (x + welle(y + 22), y + 22)], foam, 0.45, 2.5)
-            }
-            guard ende >= boden else { continue }
-            for k in 0..<7 {
-                let z = fract(t * 2.2 + Double(k) / 7 + unit(i, 5))
-                let seite: Double = k % 2 == 1 ? 1 : -1
-                let weite = seite * (16 + 22 * unit(k + i, 6))
-                let sprung = 280 * z * (1 - z) * (0.6 + 0.4 * unit(k, 7))
-                circle(&g, x + weite * z, boden - sprung, 2 + 1.5 * unit(k, 8), foam, 0.55 * (1 - z))
-            }
-        }
-        fill(&g, [(0, boden), (w, boden), (w, h + 5), (0, h + 5)], from: (0, boden), to: (0, h),
-             [(0, beer, 0.4 * da), (1, beerDeep, 0.45 * da)])
-    }
-
-    /// 5 – Jungs: Blitze zucken im Zickzack an den Seiten herab.
-    ///
-    /// Bis zum 28. Oktober waren Jungs und Maedels ein Spiegelpaar –
-    /// Blaeschen aus der linken und aus der rechten Ecke. Gemeint war "die
-    /// beiden gehoeren zusammen"; am Tisch hiess es "die sehen gleich aus".
-    /// Jetzt hat jede der beiden ihre eigene Bewegung.
-    ///
-    /// Die Blitze bleiben an den Raendern, weil in der Mitte der Text steht,
-    /// und sie flackern, ohne ganz auszugehen: ein Zucken, kein Blinken.
-    static func lightning(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        let takt = 1.4, leben = 0.36
-        for k in 0..<2 {
-            let lauf = (t + Double(k) * takt / 2) / takt
-            let zyklus = Int(lauf.rounded(.down)), z = fract(lauf) * takt
-            let n = zyklus * 2 + k, links = n % 2 == 0
-            let streifen: Double = links ? 0.05 : 0.77
-            let x0 = w * (streifen + 0.18 * unit(n, 1))
-            // Die Kante glueht nach, auch wenn der Blitz schon weg ist
-            glow(&g, x0, 0, 170, bolt, 0.28 * exp(-z * 3))
-            guard z <= leben else { continue }
-
-            // Alle 0,09 Sekunden ein neuer Weg – das ist das Zucken
-            let schlag = Int(z / 0.09)
-            let aus = clamp((z - leben * 0.55) / (leben * 0.45))
-            let flackern = 0.75 + 0.25 * sin(z * 90)
-            let hell = flackern * (1 - aus * aus * (3 - 2 * aus))
-            let laenge = h * (0.34 + 0.22 * unit(n, 2))
-            let zug: Double = links ? 3 : -3
-            var punkte: [Point] = [(x0, -10)]
-            var x = x0
-            for i in 1...9 {
-                x += noise(n * 31 + i + schlag * 7, 3) * 24 + zug
-                punkte.append((x, -10 + laenge * Double(i) / 9))
-            }
-            stroke(&g, punkte, bolt, 0.2 * hell, 18)
-            stroke(&g, punkte, bolt, 0.55 * hell, 6)
-            stroke(&g, punkte, boltCore, 0.95 * hell, 2.2)
-
-            // Ein Ast zweigt nach aussen ab
-            let ab = 3 + Int(unit(n, 4) * 4)
-            let seite: Double = links ? 1 : -1
-            var ast: [Point] = [punkte[ab]]
-            var ax = punkte[ab].x
-            for i in 1...3 {
-                ax += seite * (9 + 9 * unit(n + i + schlag, 5))
-                ast.append((ax, punkte[ab].y + laenge * 0.075 * Double(i)))
-            }
-            stroke(&g, ast, bolt, 0.4 * hell, 4)
-            stroke(&g, ast, boltCore, 0.8 * hell, 1.4)
-        }
-    }
-
-    /// 6 – Maedels: Glitzer rieselt von oben und funkelt auf. In der Mitte
-    /// blasser, dort steht der Text.
-    static func glitter(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        for i in 0..<36 {
-            let di = Double(i)
-            let z = fract(t * (0.06 + 0.07 * unit(i, 1)) + unit(i, 2))
-            let x = w * unit(i, 3) + 16 * sin(t * (0.8 + unit(i, 4)) + di)
-            let y = -20 + (h + 40) * z
-            // Jedes Korn blitzt in seinem eigenen Takt kurz auf
-            let funkeln = pow(max(0, sin(t * (2.2 + 2 * unit(i, 5)) + di * 1.7)), 6)
-            let rand = min(1, abs(x / w - 0.5) * 2.6)
-            let hell = 0.4 + 0.6 * funkeln, aussen = 0.35 + 0.65 * rand
-            let a = hell * aussen * min(1, z * 8) * min(1, (1 - z) * 6)
-            let r = 4 + 3 * unit(i, 6) + 10 * funkeln
-            if funkeln > 0.2 { glow(&g, x, y, r * 3.2, pink, 0.45 * funkeln * a) }
-            sparkle(&g, x, y, r, t * 0.6 + di, pink, a)
-            circle(&g, x, y, 1.2 + funkeln * 1.8, glitterCore, a)
-        }
-    }
-
-    /// Ein Stern mit vier Zacken.
-    private static func sparkle(_ g: inout GraphicsContext, _ x: Double, _ y: Double, _ r: Double, _ turn: Double, _ color: Color, _ alpha: Double) {
-        let zacken: [Point] = (0..<8).map { k in
-            let winkel = turn + Double(k) * .pi / 4
-            let weite = k % 2 == 0 ? r : r * 0.28
-            return (x + cos(winkel) * weite, y + sin(winkel) * weite)
-        }
-        fill(&g, zacken, color, alpha)
-    }
-
-    /// 7 – Himmel: Lichtsaeulen fallen von oben und wiegen sich langsam.
-    static func heaven(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        let da = easeOut(t / 0.8)
-        for i in 0..<5 {
-            let di = Double(i)
-            let x = w * (0.12 + 0.19 * di), neigung = 0.1 * sin(t * 0.6 + di * 1.7)
-            let oben = 8 + 10 * unit(i, 1), unten = 60 + 50 * unit(i, 2), ux = x + sin(neigung) * h
-            fill(&g, [(x - oben, -10), (x + oben, -10), (ux + unten, h), (ux - unten, h)], from: (x, 0), to: (x, h),
-                 [(0, light, (0.22 + 0.1 * sin(t * 1.3 + di)) * da), (0.75, light, 0.06 * da), (1, light, 0)])
-        }
-        for i in 0..<20 {
-            let z = fract(t * 0.08 + unit(i, 3))
-            circle(&g, w * unit(i, 4) + 20 * sin(t + Double(i)), h * (0.1 + 0.8 * z), 1.5 + unit(i, 5) * 1.5, light, 0.5 * da * sin(z * .pi))
-        }
-    }
-
-    /// 8 – Trink-Duo: Zwei Lichter kreisen umeinander, durch ein Band verbunden.
-    static func drinkingMates(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        let da = easeOut(t / 0.7), cx = w / 2, cy = h * 0.42, r = 120 * da, a = t * 1.9
-        let eins: Point = (cx + cos(a) * r, cy + sin(a) * r * 0.55)
-        let zwei: Point = (cx - cos(a) * r, cy - sin(a) * r * 0.55)
-        let band: [Point] = (0...20).map { i in
-            let s = Double(i) / 20
-            return (eins.x + (zwei.x - eins.x) * s, eins.y + (zwei.y - eins.y) * s + sin(s * .pi) * 18 * sin(t * 3))
-        }
-        stroke(&g, band, BeerStatsColor.success, 0.22 * da, 14)
-        stroke(&g, band, foam, 0.3 * da, 3)
-        for (p, farbe) in [(eins, BeerStatsColor.success), (zwei, BeerStatsColor.accent)] {
-            glow(&g, p.x, p.y, 90, farbe, 0.35 * da)
-            circle(&g, p.x, p.y, 16, farbe, 0.6 * da)
-            circle(&g, p.x, p.y, 7, foam, 0.7 * da)
-        }
-    }
-
-    /// 9 – Reim: Schallwellen laufen im Takt von unten herauf.
-    static func rhyme(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        for k in 0..<6 {
-            let z = fract(t / 2.4 + Double(k) / 6), r = 40 + h * 0.95 * z
-            stroke(&g, arc(w / 2, h + 40, r, .pi * 1.08, .pi * 1.92), violet, 0.45 * (1 - z) * min(1, z * 8), 7 * (1 - z * 0.6))
-        }
-        glow(&g, w / 2, h + 20, 160, violet, 0.3 + 0.1 * sin(t * 2 * .pi / 0.6))
-    }
-
-    /// 10 – Regel: Ein Stempel knallt auf und hinterlaesst seinen Abdruck,
-    /// ringsum spritzt Tinte.
-    static func rule(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        guard t >= 0.15 else { return }
-        let cx = w / 2, cy = h * 0.4
-        let s = t < 0.33 ? 2.2 - 1.2 * easeIn((t - 0.15) / 0.18) : 1
-        let a = min(1, (t - 0.15) / 0.1), r = 118 * s, dreh = 0.15 + t * 0.05
-        let farbe = BeerStatsColor.warning
-        stroke(&g, arc(cx, cy, r, 0, 2 * .pi, 60), farbe, 0.5 * a, 9)
-        stroke(&g, arc(cx, cy, r * 0.82, 0, 2 * .pi, 60), farbe, 0.4 * a, 3)
-        for i in 0..<24 {
-            let wi = dreh + Double(i) / 24 * 2 * .pi
-            let dx = cos(wi) * r, dy = sin(wi) * r
-            stroke(&g, [(cx + dx * 0.87, cy + dy * 0.87), (cx + dx * 0.95, cy + dy * 0.95)], farbe, 0.45 * a, 4)
-        }
-        guard t > 0.33 else { return }
-        let z = clamp((t - 0.33) / 0.5)
-        stroke(&g, arc(cx, cy, 118 + 120 * easeOut(z), 0, 2 * .pi, 60), farbe, 0.3 * (1 - z), 3)
-        for i in 0..<9 {
-            let wi = unit(i, 1) * 2 * .pi, d = 130 + 60 * unit(i, 2) * easeOut(z * 2)
-            circle(&g, cx + cos(wi) * d, cy + sin(wi) * d, 4 + 7 * unit(i, 3), farbe, 0.4)
-        }
-    }
-
-    /// 11 – Daumenmeister: Der Bildschirmrand leuchtet im Herzschlag.
-    static func thumbMaster(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        // Zwei Schlaege kurz hintereinander, der zweite leiser – ein Herz,
-        // kein Blinker
-        let z = fract(t / 1.1)
-        let erster = (z - 0.1) / 0.05, zweiter = (z - 0.3) / 0.06
-        let puls = max(exp(-erster * erster), 0.7 * exp(-zweiter * zweiter))
-        let a = 0.15 + 0.45 * puls, d = 70 + 40 * puls
-        let farbe = BeerStatsColor.success
-        let verlauf: [(Double, Color, Double)] = [(0, farbe, a), (1, farbe, 0)]
-        fill(&g, [(0, 0), (w, 0), (w, d), (0, d)], from: (0, 0), to: (0, d), verlauf)
-        fill(&g, [(0, h - d), (w, h - d), (w, h), (0, h)], from: (0, h), to: (0, h - d), verlauf)
-        fill(&g, [(0, 0), (d, 0), (d, h), (0, h)], from: (0, 0), to: (d, 0), verlauf)
-        fill(&g, [(w - d, 0), (w, 0), (w, h), (w - d, h)], from: (w, 0), to: (w - d, 0), verlauf)
-    }
-
-    /// 12 – Dame: Zwei Scheinwerfer schwenken aus den oberen Ecken herein und
-    /// treffen sich auf der Karte.
-    static func queen(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        let ziel: Point = (w / 2, h * 0.38), da = easeOut(t / 0.4)
-        for vonRechts in [false, true] {
-            // Beide Kegel zeigen zuerst an ihrem Rand entlang nach unten und
-            // schwenken gegenlaeufig zur Mitte; danach wiegen sie sich
-            // leicht versetzt
-            let seite: Double = vonRechts ? -1 : 1, versatz: Double = vonRechts ? 1 : 0
-            let ox = vonRechts ? w + 30 : -30, oy = -40.0
-            let schwenk = (1 - easeOut(t / 1.3)) * 0.6 * seite + 0.05 * sin(t * 1.1 + versatz)
-            let winkel = atan2(ziel.y - oy, ziel.x - ox) + schwenk, l = h * 1.1, b = 0.16
-            let ende: Point = (ox + cos(winkel) * l, oy + sin(winkel) * l)
-            let kanteA: Point = (ox + cos(winkel - b) * l, oy + sin(winkel - b) * l)
-            let kanteB: Point = (ox + cos(winkel + b) * l, oy + sin(winkel + b) * l)
-            fill(&g, [(ox, oy), kanteA, kanteB], from: (ox, oy), to: ende,
-                 [(0, light, 0.3 * da), (0.5, light, 0.12 * da), (1, light, 0)])
-        }
-        glow(&g, ziel.x, ziel.y + 10, 160, BeerStatsColor.warning, 0.25 * easeOut((t - 0.9) / 0.6))
-    }
-
-    /// 13 – Kategorie: Kaertchen fliegen aus der Mitte nach allen Seiten und
-    /// drehen sich dabei.
-    static func category(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let w = Double(size.width), h = Double(size.height)
-        let akzent = BeerStatsColor.accent
-        for welle in 0..<2 {
-            let z = fract((t + Double(welle) * 1.3) / 2.6) * 2.6
-            for i in 0..<12 {
-                let wi = (Double(i) + 0.5 * Double(welle)) / 12 * 2 * .pi + noise(i, 1) * 0.2
-                let d = (230 + 60 * unit(i, 2)) * easeOut(z / 1.2)
-                let x = w / 2 + cos(wi) * d, y = h * 0.42 + sin(wi) * d + 40 * z * z
-                let dreh = wi + z * (2 + 2 * unit(i, 3))
-                let a = 0.55 * min(1, z * 6) * (1 - clamp((z - 1.6) / 1))
-                guard a > 0 else { continue }
-                let c = cos(dreh), s = sin(dreh)
-                func ecke(_ dx: Double, _ dy: Double) -> Point {
-                    (x + c * dx - s * dy, y + s * dx + c * dy)
-                }
-                let rahmen = [ecke(-13, -18), ecke(13, -18), ecke(13, 18), ecke(-13, 18)]
-                fill(&g, rahmen, card, a * 0.7)
-                stroke(&g, rahmen + [rahmen[0]], akzent, a, 2)
-            }
-        }
-    }
-
-    /// Ass: Glut steigt wie aus einem Lagerfeuer, unten atmet der Schein.
-    static func ace(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
+    /// Shot: Glut steigt wie aus einem Lagerfeuer, unten atmet der Schein.
+    static func embersRising(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double) {
         let w = Double(size.width), h = Double(size.height)
         glow(&g, w / 2, h + 60, w * 0.9, BeerStatsColor.error, 0.35 + 0.08 * sin(t * 7) + 0.05 * sin(t * 11))
         for i in 0..<34 {
