@@ -122,7 +122,7 @@ struct TwoTruthsView: View {
         Button {
             withAnimation(AppAnimation.standard) { outcome = value }
             HapticManager.success()
-            SoundManager.play(value == .nobody ? .victory : .bombe)
+            SoundManager.play(value == .nobody ? .roundWon : .penalty)
         } label: {
             VStack(spacing: 3) {
                 Text(title)

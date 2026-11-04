@@ -319,7 +319,7 @@ struct SchockenView: View {
         }
         throwsUsed += 1
         HapticManager.mediumImpact()
-        SoundManager.play(.cupHit)
+        SoundManager.play(.diceRoll)
 
         // Die Wertung kommt, wenn die Wuerfel liegen – nicht vorher
         guard !reduceMotion else { return }
@@ -345,7 +345,7 @@ struct SchockenView: View {
         }
 
         if player + 1 >= playerCount {
-            SoundManager.play(.bombe)
+            SoundManager.play(.penalty)
             // Das Spiel rechnet ohnehin aus, wer verloren hat – die Bilanz
             // erfaehrt es jetzt auch. Ohne laufenden Abend passiert nichts.
             if let verlierer = worstPlayer() {

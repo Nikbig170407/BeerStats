@@ -275,6 +275,6 @@ struct CountTo21View: View {
         rules[number] = text
         editingNumber = nil
         HapticManager.success()
-        SoundManager.play(.reRack)
+        SoundManager.play(.correct)
     }
 }

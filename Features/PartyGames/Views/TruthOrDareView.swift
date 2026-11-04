@@ -130,7 +130,7 @@ struct TruthOrDareView: View {
         VStack(spacing: 10) {
             PrimaryButton(title: "Gemacht", systemImage: "checkmark") {
                 HapticManager.success()
-                SoundManager.play(.ballsBack)
+                SoundManager.play(.correct)
                 withAnimation(AppAnimation.standard) {
                     current = nil
                     turn += 1
@@ -201,7 +201,7 @@ struct TruthOrDareView: View {
     private func refuse() {
         refusalTask?.cancel()
         HapticManager.error()
-        SoundManager.play(.bombe)
+        SoundManager.play(.penalty)
         withAnimation(AppAnimation.standard) { isRefusing = true }
 
         refusalTask = Task { @MainActor in

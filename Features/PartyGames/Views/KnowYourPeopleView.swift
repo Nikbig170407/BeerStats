@@ -118,10 +118,10 @@ struct KnowYourPeopleView: View {
             answeredId = id
             if isCorrect {
                 HapticManager.success()
-                SoundManager.play(.victory)
+                SoundManager.play(.correct)
             } else {
                 HapticManager.error()
-                SoundManager.play(.bombe)
+                SoundManager.play(.penalty)
                 // Gebucht wird ueber die Profil-ID, nicht ueber die
                 // Position: Dieses Spiel kennt seine Leute als Profile, und
                 // die Reihenfolge der Aufstellung muss nicht die des Abends

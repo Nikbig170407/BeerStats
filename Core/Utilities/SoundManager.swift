@@ -4,16 +4,25 @@
 //
 //  Klänge für die Ereignisse im Spiel.
 //
-//  Alle Dateien liegen unter `Resources/Sounds`. Die Signale stammen von
-//  Mixkit (freie Lizenz, private wie kommerzielle Nutzung, keine
-//  Namensnennung nötig); der Airball ist ein eigener Ausschnitt, die Bombe
-//  ist weiterhin selbst erzeugt, weil dort nichts Passendes zu finden war.
+//  Alle Dateien liegen unter `Resources/Sounds`, und woher jede kommt,
+//  steht in `HERKUNFT.md` daneben. Die Beerpong-Signale stammen von Mixkit;
+//  der Airball ist ein eigener Ausschnitt, die Bombe selbst erzeugt.
 //
-//  Ring of Fire hat seit dem 28. Oktober eigene Klänge, und die sind
-//  gerechnet: `scripts/make_ring_sounds.py` erzeugt sie aus Schwingungen und
-//  Rauschen. Neue Klänge kommen dorthin und nicht als Datei aus dem Netz –
-//  das Repository ist öffentlich, und ein gerechneter Klang hat keine
-//  Lizenz, die man im Blick behalten müsste.
+//  Neue Klänge kommen nur aus zwei Quellen, beide ohne Lizenz, die man im
+//  Blick behalten müsste – das Repository ist öffentlich:
+//  - gerechnet (`scripts/make_sounds.py`): Ring of Fire seit dem
+//    28. Oktober, dazu Strafe, Gong, Papier, Klebeband und Plattennadel;
+//  - aus einem CC0-Paket (`scripts/import_sounds.py`): Karten, Würfel,
+//    Chips, Richtig, Falsch, Ticken und der kleine Sieg, seit dem
+//    4. November (Wunsch des Nutzers: "mehr Sounds").
+//
+//  **Ein Klang heißt überall dasselbe.** Bis zum 4. November liehen sich
+//  die Partyspiele die Klänge von Beerpong: Jede Strafe war die
+//  Bombenexplosion, das Ende der Zeit auch, und Schocken würfelte mit dem
+//  Geräusch eines Balls im Becher. Ein Klang, der in fünf Spielen fünf
+//  Dinge heißt, sagt nichts mehr. Jetzt hat jeder Moment seinen Klang, und
+//  derselbe Moment klingt in jedem Spiel gleich – wie die Kostenarten bei
+//  den Szenen.
 //
 //  Zum Austauschen reicht die Datei: Der Name entspricht dem Fall im Enum,
 //  gesucht wird in der Reihenfolge wav, mp3, m4a, caf. Eine alte .wav neben
@@ -41,9 +50,37 @@ enum GameSound: String, CaseIterable {
     case reRack
     case victory
     case tap
-    /// Kartenumschlag – die Kartenspiele klangen vorher wie ein Ball im
-    /// Becher, weil sie sich `cupHit` geliehen haben.
+    /// Eine Karte wird gezogen oder gelegt – in vier Fassungen, reihum.
     case cardFlip
+
+    // Partyspiele, seit dem 4. November. Jeder Fall ist ein MOMENT, kein
+    // Spiel: Er klingt in jedem Spiel gleich, in dem er vorkommt.
+    /// Würfeln (Schocken, Mäxchen).
+    case diceRoll
+    /// Ein Einsatz liegt: Wetten beim Pferderennen, ein Rad im Roulette,
+    /// ein Kreuz im Trinkbingo.
+    case chips
+    /// Eine Antwort war richtig, eine Karte geschafft.
+    case correct
+    /// Eine Antwort war falsch – das kostet vielleicht etwas, ist aber noch
+    /// nicht die Strafe selbst.
+    case wrong
+    /// Die letzten Sekunden einer Uhr.
+    case countdownTick
+    /// Eine Runde ist gewonnen. Die große Fanfare (`victory`) bleibt für
+    /// den Sieg im ganzen Spiel.
+    case roundWon
+    /// Jemand muss trinken (oder was die Strafe gerade ist). Die Explosion
+    /// gehört nur noch der Bombe.
+    case penalty
+    /// Die Zeit ist um.
+    case timeUp
+    /// Etwas Verdecktes wird aufgedeckt: eine Akte, eine Auflösung.
+    case reveal
+    /// Das Klebeband kommt vom Zettel (Verbotene Wörter).
+    case tapeRip
+    /// Die Nadel setzt auf, bevor das Lied in der Hitparade kommt.
+    case needleDrop
 
     // Ring of Fire. Vorher teilten sich dort neun von dreizehn Rängen den
     // leisen Kartenklang, und die übrigen liehen sich Beerpong-Klänge – am
@@ -63,6 +100,31 @@ enum GameSound: String, CaseIterable {
     /// Unterstützte Endungen, in dieser Reihenfolge gesucht.
     static let supportedExtensions = ["wav", "mp3", "m4a", "caf"]
 
+    /// Wie viele Fassungen dieser Klang hat. Was am Abend dutzendfach
+    /// kommt – Karten, Würfel, Chips –, klingt sonst nach dem Schnipsel und
+    /// nicht nach dem Tisch. Die Tonhöhe allein (`pitchVariation`) reicht
+    /// dafür nicht: Dieselbe Karte, etwas höher, ist immer noch dieselbe.
+    var variants: Int {
+        switch self {
+        case .cardFlip: return 4
+        case .diceRoll, .chips: return 3
+        default: return 1
+        }
+    }
+
+    /// Die Datei für einen Durchlauf – reihum durch die Fassungen. Die erste
+    /// heißt wie der Fall, die weiteren tragen eine Nummer (`cardFlip2`);
+    /// so schreibt sie `scripts/import_sounds.py`.
+    func fileName(forRepetition durchlauf: Int) -> String {
+        let fassung = durchlauf % variants
+        return fassung == 0 ? rawValue : "\(rawValue)\(fassung + 1)"
+    }
+
+    /// Alle Dateien dieses Klangs.
+    var fileNames: [String] {
+        (0..<variants).map { fileName(forRepetition: $0) }
+    }
+
     /// Nach dieser Zeit wird ausgeblendet. `nil` heißt: ganz abspielen.
     ///
     /// Die eingekauften Klänge sind länger, als das Spiel sie braucht: Der
@@ -78,6 +140,11 @@ enum GameSound: String, CaseIterable {
         case .airball: return 3.0
         case .victory: return 5.0
         case .cupHit, .bombe, .reRack, .tap: return nil
+        // Beim Einbau geschnitten oder gerechnet – schon so kurz, wie sie
+        // sein sollen
+        case .diceRoll, .chips, .correct, .wrong, .countdownTick, .roundWon,
+             .penalty, .timeUp, .reveal, .tapeRip, .needleDrop:
+            return nil
         // Gerechnet und schon so kurz, wie sie sein sollen
         case .ringTick, .ringStop, .ringDraw, .ringRank2, .ringRank3, .ringRank4, .ringRank5,
              .ringRank6, .ringRank7, .ringRank8, .ringRank9, .ringRank10, .ringRank11,
@@ -106,6 +173,13 @@ enum GameSound: String, CaseIterable {
         // Die Ratsche hoert man zwanzigmal je Zug – genau das, was variieren soll
         case .ringTick: return 0.06
         case .airball, .bombe, .ballsBack, .onFire, .reRack, .victory: return 0
+        // Was dutzendfach kommt, wechselt zusaetzlich zu den Fassungen leicht
+        // die Tonhoehe – die Uhr nicht: Ein Ticken, das schwankt, klingt kaputt
+        case .diceRoll, .chips: return 0.06
+        // Bedeutungen, keine Geraeusche: "richtig" soll jedes Mal gleich klingen
+        case .correct, .wrong, .countdownTick, .roundWon, .penalty, .timeUp,
+             .reveal, .tapeRip, .needleDrop:
+            return 0
         // Die Raenge sind Signaturklaenge: Jede Karte soll klingen wie sie selbst
         case .ringStop, .ringDraw, .ringRank2, .ringRank3, .ringRank4, .ringRank5,
              .ringRank6, .ringRank7, .ringRank8, .ringRank9, .ringRank10, .ringRank11,
@@ -128,7 +202,8 @@ enum GameSound: String, CaseIterable {
 enum SoundManager {
 
     private static let preferenceKey = "beerstats.soundEnabled"
-    private static var players: [GameSound: AVAudioPlayer] = [:]
+    /// Je Datei ein Spieler – ein Klang mit Fassungen hat mehrere.
+    private static var players: [String: AVAudioPlayer] = [:]
     private static var pendingStops: [GameSound: DispatchWorkItem] = [:]
     private static var didConfigureSession = false
 
@@ -144,7 +219,8 @@ enum SoundManager {
         guard isEnabled else { return }
         configureSessionIfNeeded()
 
-        guard let player = player(for: sound) else { return }
+        let durchlauf = nextRepetition(of: sound)
+        guard let player = player(named: sound.fileName(forRepetition: durchlauf)) else { return }
 
         // Ein noch laufender Ausblend-Auftrag würde sonst den neuen
         // Durchlauf mitten im Ton abwürgen.
@@ -152,7 +228,7 @@ enum SoundManager {
         pendingStops[sound] = nil
 
         player.volume = sound.volume
-        player.rate = rate(for: sound)
+        player.rate = rate(for: sound, repetition: durchlauf)
         player.currentTime = 0
         player.play()
 
@@ -189,21 +265,28 @@ enum SoundManager {
         }
     }
 
-    /// Wie oft dieser Klang schon lief – fuer die Variation.
+    /// Wie oft dieser Klang schon lief – fuer Fassung und Variation.
     private static var repetitions: [GameSound: Int] = [:]
+
+    private static func nextRepetition(of sound: GameSound) -> Int {
+        let durchlauf = repetitions[sound] ?? 0
+        repetitions[sound] = durchlauf + 1
+        return durchlauf
+    }
 
     /// Die Abspielrate dieses Durchlaufs.
     ///
     /// Gerechnet und nicht gewuerfelt: Zufall trifft irgendwann zweimal
     /// hintereinander denselben Wert, und genau das hoert man – zwei
     /// identische Treffer nacheinander fallen mehr auf als zwanzig
-    /// verschiedene. Die Stufen laufen deshalb reihum.
-    private static func rate(for sound: GameSound) -> Float {
+    /// verschiedene. Die Stufen laufen deshalb reihum, und weil es fuenf
+    /// Stufen sind und hoechstens vier Fassungen, trifft dieselbe Fassung
+    /// erst nach vielen Durchlaeufen wieder auf dieselbe Stufe.
+    private static func rate(for sound: GameSound, repetition durchlauf: Int) -> Float {
         let spanne = sound.pitchVariation
         guard spanne > 0 else { return 1 }
 
-        let schritt = (repetitions[sound] ?? 0) % 5
-        repetitions[sound] = (repetitions[sound] ?? 0) + 1
+        let schritt = durchlauf % 5
 
         // Fuenf Stufen um 1 herum: -2, -1, 0, +1, +2 mal ein Fuenftel der
         // Spanne. Hoerbar, aber nicht als Tonart.
@@ -211,11 +294,11 @@ enum SoundManager {
         return 1 + versatz
     }
 
-    private static func player(for sound: GameSound) -> AVAudioPlayer? {
-        if let existing = players[sound] { return existing }
+    private static func player(named name: String) -> AVAudioPlayer? {
+        if let existing = players[name] { return existing }
 
         for fileExtension in GameSound.supportedExtensions {
-            guard let url = Bundle.main.url(forResource: sound.rawValue, withExtension: fileExtension) else {
+            guard let url = Bundle.main.url(forResource: name, withExtension: fileExtension) else {
                 continue
             }
             do {
@@ -223,10 +306,10 @@ enum SoundManager {
                 // Ohne das ignoriert der Player jede Rate ausser 1.
                 player.enableRate = true
                 player.prepareToPlay()
-                players[sound] = player
+                players[name] = player
                 return player
             } catch {
-                AppLogger.app.error("Klang \(sound.rawValue) nicht ladbar: \(error.localizedDescription)")
+                AppLogger.app.error("Klang \(name) nicht ladbar: \(error.localizedDescription)")
             }
         }
         // Fehlt die Datei, bleibt es einfach still – lieber kein Ton als ein

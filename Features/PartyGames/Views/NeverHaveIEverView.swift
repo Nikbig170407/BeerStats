@@ -320,7 +320,7 @@ struct NeverHaveIEverView: View {
     private func startPenaltyFlash() {
         flashTask?.cancel()
         HapticManager.error()
-        SoundManager.play(.bombe)
+        SoundManager.play(.penalty)
 
         // Der Ausgangswert wird ohne Animation gesetzt, sonst faengt das
         // Aufziehen beim zweiten Mal schon in der Endlage an.

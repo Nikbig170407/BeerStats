@@ -297,7 +297,7 @@ struct MaexchenView: View {
         rolls += 1
         withAnimation(AppAnimation.standard) { phase = .rolled(player: player) }
         HapticManager.mediumImpact()
-        SoundManager.play(.cupHit)
+        SoundManager.play(.diceRoll)
     }
 
     private func makeClaim(_ value: Int, by player: Int) {
@@ -330,6 +330,6 @@ struct MaexchenView: View {
 
         withAnimation(AppAnimation.standard) { phase = .revealed(doubter: doubter, liar: liar) }
         HapticManager.error()
-        SoundManager.play(.bombe)
+        SoundManager.play(.penalty)
     }
 }

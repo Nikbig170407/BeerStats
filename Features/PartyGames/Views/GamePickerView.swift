@@ -290,7 +290,7 @@ struct GamePickerView: View {
 
             withAnimation(AppAnimation.standard) { phase = .drawn }
             HapticManager.success()
-            SoundManager.play(.victory)
+            SoundManager.play(.roundWon)
         }
     }
 }

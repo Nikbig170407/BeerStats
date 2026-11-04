@@ -203,7 +203,7 @@ struct BombPassView: View {
                 elapsed += interval
                 if !reduceMotion { pulse.toggle() }
                 HapticManager.lightImpact()
-                SoundManager.play(.tap)
+                SoundManager.play(.countdownTick)
             }
 
             guard !Task.isCancelled else { return }

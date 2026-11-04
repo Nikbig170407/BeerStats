@@ -192,7 +192,7 @@ struct CategoriesView: View {
                 if whole != lastWholeSecond, whole <= 3, whole > 0 {
                     lastWholeSecond = whole
                     HapticManager.lightImpact()
-                    SoundManager.play(.tap)
+                    SoundManager.play(.countdownTick)
                 }
             }
 
@@ -210,7 +210,7 @@ struct CategoriesView: View {
         // Jede Runde ein Stück knapper, bis zur Untergrenze.
         turnLimit = max(Self.minimumLimit, turnLimit - Self.step)
         HapticManager.lightImpact()
-        SoundManager.play(.cupHit)
+        SoundManager.play(.correct)
         startTurn()
     }
 
@@ -218,7 +218,7 @@ struct CategoriesView: View {
         tickTask?.cancel()
         withAnimation(AppAnimation.standard) { phase = .lost }
         HapticManager.error()
-        SoundManager.play(.bombe)
+        SoundManager.play(.timeUp)
     }
 
     private func newCategory() {

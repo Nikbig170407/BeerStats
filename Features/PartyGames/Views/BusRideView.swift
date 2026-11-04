@@ -381,10 +381,10 @@ struct BusRideView: View {
 
         if correct {
             HapticManager.success()
-            SoundManager.play(filled == Self.questions.count ? .victory : .ballsBack)
+            SoundManager.play(filled == Self.questions.count ? .roundWon : .correct)
         } else {
             HapticManager.error()
-            SoundManager.play(.miss)
+            SoundManager.play(.wrong)
         }
     }
 
@@ -448,7 +448,7 @@ struct BusRideView: View {
             phase = .rideReady
         }
         HapticManager.lightImpact()
-        SoundManager.play(.reRack)
+        SoundManager.play(.ringShuffle)
     }
 
     /// Deckt die naechste Karte auf.
@@ -472,7 +472,7 @@ struct BusRideView: View {
 
         if istBild {
             HapticManager.error()
-            SoundManager.play(.bombe)
+            SoundManager.play(.penalty)
         } else if platz == Self.rideLength {
             HapticManager.success()
             SoundManager.play(.victory)

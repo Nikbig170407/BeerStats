@@ -1,17 +1,24 @@
-"""Erzeugt die Klaenge fuer Ring of Fire – gerechnet, nicht heruntergeladen.
+"""Erzeugt die gerechneten Klaenge der App – Ring of Fire und Partyspiele.
 
-    python scripts/make_ring_sounds.py            # schreibt nach Resources/Sounds
-    python scripts/make_ring_sounds.py ZIELORDNER # woanders hin, zum Anhoeren
+    python scripts/make_sounds.py            # schreibt nach Resources/Sounds
+    python scripts/make_sounds.py ZIELORDNER # woanders hin, zum Anhoeren
 
-Warum gerechnet: Das Repository ist oeffentlich, und fremde Klaenge bringen
-eine Lizenz mit, die man im Blick behalten muesste. Gerechnete Klaenge haben
-keine. Jeder Klang hier ist eine Funktion aus Schwingungen, Rauschen und
-Filtern – nur die Standardbibliothek, kein Paket, kein Download.
+Bis zum 4. November hiess das Skript make_ring_sounds.py und rechnete nur
+Ring of Fire. Seitdem kommen auch Klaenge fuer die Partyspiele von hier –
+die, fuer die es in den CC0-Paketen nichts Passendes gab (Gong, Strafe,
+Papier, Klebeband, Plattennadel). Was aus einem Paket kommt, holt
+`import_sounds.py`.
+
+Warum gerechnet: Ein gerechneter Klang hat keine Lizenz, die man im Blick
+behalten muesste. Jeder Klang hier ist eine Funktion aus Schwingungen,
+Rauschen und Filtern – nur die Standardbibliothek, kein Paket, kein
+Download.
 
 Satz-Regel wie bei den Szenen: Jeder Klang laesst sich in einem Satz
-beschreiben, und kein Satz kommt zweimal vor. Der Satz steht am Klang, und
-das Skript bricht ab, wenn zwei sich einen teilen. Wer einen Klang aendern
-will, aendert hier die Funktion – nie die WAV-Datei von Hand, sonst
+beschreiben, und kein Satz kommt zweimal vor – auch nicht zwischen diesem
+Skript und `import_sounds.py`. Der Satz steht am Klang, und das Skript
+bricht ab, wenn zwei sich einen teilen. Wer einen Klang aendern will,
+aendert hier die Funktion – nie die WAV-Datei von Hand, sonst
 ueberschreibt der naechste Lauf die Aenderung stillschweigend.
 
 Gerechnet wird mit festem Startwert je Klang: Jeder Lauf schreibt dieselben
@@ -564,6 +571,98 @@ def aus(rng):
     return ausblenden(out, 0.15)
 
 
+# ---------------------------------------------------------------- Partyspiele
+# Seit dem 4. November. Vorher liehen sich die Partyspiele die Klaenge von
+# Beerpong: Jede Strafe war die Bombenexplosion, jedes Ende der Zeit auch,
+# und "aufdecken" klang wie "Balls Back". Ein Klang, der in fuenf Spielen
+# fuenf Dinge heisst, sagt nichts mehr.
+
+@klang("penalty", "Strafe", "Eine tiefe Pauke schlägt, dann rutscht ein Ton nach unten.", 0.13)
+def strafe(rng):
+    sek = 0.9
+    out = leer(sek)
+    # Jeder Teil blendet selbst aus: Endet er hart, knackt es mitten im Klang
+    pauke = ausblenden(resonator(impuls(0.6, rng, 0.004), 72, 0.22), 0.2)
+    legen(out, tiefpass(pauke, 900), 0.0, 1.0)
+    # Der Ton faellt eine Quinte – deutlich "schade", aber kein Alarm
+    ton = [0.0] * n_von(0.7)
+    phase = 0.0
+    for i in range(len(ton)):
+        t = i / RATE
+        f = 330 * (2 ** (-0.58 * min(1, t / 0.55)))
+        phase += TAU * f / RATE
+        ton[i] = (math.sin(phase) + 0.35 * math.sin(2 * phase) + 0.15 * math.sin(3 * phase))
+    ton = ausblenden(mal(tiefpass(ton, 1800), huellkurve(len(ton), 0.02, 0.28, 0.12)), 0.2)
+    legen(out, ton, 0.08, 0.55)
+    return ausblenden(hall(out, 0.12, 0.6, 0.3), 0.06)
+
+
+@klang("timeUp", "Zeit um", "Ein tiefer Gong schwingt lange aus.", 0.12)
+def gong(rng):
+    sek = 2.4
+    # Unharmonische Teiltoene – das macht den Gong zum Gong und nicht zur
+    # Glocke, die beim Ass schon schlaegt
+    out = additiv(98, sek, [(1, 1.0, 1.4), (1.47, 0.55, 1.0), (2.09, 0.45, 0.7),
+                            (2.56, 0.3, 0.5), (3.18, 0.2, 0.35), (4.1, 0.12, 0.25)])
+    schlag = bandpass(impuls(0.08, rng, 0.006), 600, 0.8)
+    legen(out, schlag, 0.0, 0.6)
+    # Ein langsames Schweben im Grundton, wie bei einem echten Gong
+    out = mal(out, [1 + 0.12 * math.sin(TAU * 3.2 * i / RATE) for i in range(len(out))])
+    anstieg = n_von(0.004)
+    for i in range(anstieg):
+        out[i] *= i / anstieg
+    # Der Gong klingt selbst aus, bevor der Hall uebernimmt – sonst endet er
+    # mit einer Kante, die man als Knacks hoert
+    out = ausblenden(out, 0.9)
+    return ausblenden(hall(out, 0.18, 0.7, 0.5), 0.3)
+
+
+@klang("reveal", "Aufdecken", "Papier raschelt, und ein Blatt wird umgeschlagen.", 0.09)
+def papier(rng):
+    out = []
+    t = 0.0
+    # Erst ein paar trockene Knitterer, dann das Umschlagen als Luftzug
+    for k in range(7):
+        knick = bandpass(impuls(0.03, rng, 0.004), rng.uniform(2500, 5500), 1.4)
+        legen(out, knick, t, rng.uniform(0.4, 1.0))
+        t += rng.uniform(0.018, 0.04)
+    zug = bandpass(rauschen(0.28, rng), lambda x: 1200 + 3800 * min(1, x / 0.28), 1.1)
+    zug = mal(zug, huellkurve(len(zug), 0.09, 0.07, 0.04))
+    legen(out, zug, t, 0.9)
+    legen(out, bandpass(impuls(0.04, rng, 0.003), 1800, 1.2), t + 0.25, 0.7)
+    return ausblenden(out, 0.03)
+
+
+@klang("tapeRip", "Klebeband", "Klebeband reißt in einem Zug vom Zettel.", 0.1)
+def klebeband(rng):
+    sek = 0.55
+    out = leer(sek)
+    t = 0.0
+    # Viele kleine Abrisse, erst schneller, dann wieder langsamer – das
+    # Knattern des Bands, das sich loest
+    while t < sek - 0.02:
+        dichte = 60 + 420 * math.sin(math.pi * t / sek)
+        knack = hochpass(impuls(0.01, rng, 0.0006), 1800)
+        legen(out, knack, t, rng.uniform(0.4, 1.0) * math.sin(math.pi * t / sek) ** 0.5)
+        t += rng.expovariate(dichte)
+    zisch = mal(hochpass(rauschen(sek, rng), 3000), [0.25 * math.sin(math.pi * i / n_von(sek)) for i in range(n_von(sek))])
+    legen(out, zisch, 0.0, 1.0)
+    return ausblenden(out, 0.03)
+
+
+@klang("needleDrop", "Nadel", "Die Nadel setzt auf, und die Platte knistert an.", 0.06)
+def nadel(rng):
+    sek = 1.1
+    out = leer(sek)
+    aufsetzen = tiefpass(resonator(impuls(0.3, rng, 0.003), 95, 0.06), 700)
+    legen(out, aufsetzen, 0.0, 1.0)
+    legen(out, knistern(sek - 0.05, rng, 45, 0.9, 3500, 1.0), 0.05, 0.6)
+    rauschteppich = mal(tiefpass2(rauschen(sek, rng), 2500),
+                        [0.08 * min(1, i / n_von(0.1)) for i in range(n_von(sek))])
+    legen(out, rauschteppich, 0.0, 1.0)
+    return ausblenden(out, 0.25)
+
+
 # ---------------------------------------------------------------- Schreiben
 
 def schreiben(pfad, x):
@@ -574,13 +673,24 @@ def schreiben(pfad, x):
         w.writeframes(b"".join(struct.pack("<h", int(max(-1, min(1, v)) * 32767)) for v in x))
 
 
+def pruefe_saetze():
+    """Kein Satz zweimal – ueber beide Skripte, gerechnet und importiert."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from import_sounds import IMPORTE
+    saetze = [satz for _, _, satz, _, _ in KLAENGE] + [eintrag["satz"] for eintrag in IMPORTE]
+    doppelt = sorted({s for s in saetze if saetze.count(s) > 1})
+    if doppelt:
+        raise SystemExit("Zwei Klaenge teilen sich einen Satz – dann sind es nicht zwei Klaenge: " + "; ".join(doppelt))
+    namen = [datei for datei, _, _, _, _ in KLAENGE] + [eintrag["name"] for eintrag in IMPORTE]
+    if len(set(namen)) != len(namen):
+        raise SystemExit("Ein Klangname kommt in beiden Skripten vor")
+
+
 def main():
     standard = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Resources", "Sounds")
     ziel = sys.argv[1] if len(sys.argv) > 1 else standard
     os.makedirs(ziel, exist_ok=True)
-    saetze = [satz for _, _, satz, _, _ in KLAENGE]
-    if len(set(saetze)) != len(saetze):
-        raise SystemExit("Zwei Klaenge teilen sich einen Satz – dann sind es nicht zwei Klaenge")
+    pruefe_saetze()
     for datei, name, satz, fn, laut in KLAENGE:
         rng = random.Random(datei)
         x = angleichen(gleichanteil_weg(fn(rng)), laut)

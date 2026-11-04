@@ -354,7 +354,7 @@ struct TournamentView: View {
         strikes[loser] += 1
         EveningLog.record(penalty(for: round), forPlayer: loser)
         HapticManager.error()
-        SoundManager.play(.bombe)
+        SoundManager.play(.penalty)
         advance(after: round)
     }
 

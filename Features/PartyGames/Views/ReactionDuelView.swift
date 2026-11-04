@@ -211,6 +211,6 @@ struct ReactionDuelView: View {
         scores[winner] += 1
         withAnimation(AppAnimation.standard) { phase = .done(winner: winner, tooEarly: tooEarly) }
         HapticManager.error()
-        SoundManager.play(tooEarly ? .miss : .victory)
+        SoundManager.play(tooEarly ? .penalty : .roundWon)
     }
 }

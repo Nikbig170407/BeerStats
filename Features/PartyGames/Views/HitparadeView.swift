@@ -829,6 +829,11 @@ struct HitparadeView: View {
         if usesBox {
             music.stop()
         } else {
+            // Die Nadel setzt auf, waehrend die Hoerprobe noch laedt – die
+            // Pause davor klingt so nach Plattenspieler und nicht nach Netz.
+            // Leise, und nur hier: Ueber die Box legt der Nachbar die Platte
+            // auf, nicht die App.
+            SoundManager.play(.needleDrop)
             playCurrent()
         }
     }
@@ -846,12 +851,12 @@ struct HitparadeView: View {
 
         if richtig {
             HapticManager.success()
-            SoundManager.play(.cupHit)
+            SoundManager.play(.correct)
         } else {
             EveningLog.record(penalty, forPlayer: partie.player)
             bookedPenalty = true
             HapticManager.error()
-            SoundManager.play(.miss)
+            SoundManager.play(.wrong)
         }
         withAnimation(AppAnimation.standard) { phase = .result(correct: richtig) }
     }

@@ -70,9 +70,20 @@ struct HandoffPanel<Secret: View>: View {
                     // Aufdecken ist der Moment, in dem man das Handy schon in
                     // der Hand hat und hinsehen soll.
                     HapticManager.mediumImpact()
-                    SoundManager.play(.tap)
+                    SoundManager.play(revealSound)
                 }
             }
+        }
+    }
+
+    /// Wie das Aufdecken klingt – das Kleid bringt seinen Klang mit (seit dem
+    /// 4. November): Die Akte raschelt, das Klebeband reisst ab, alles andere
+    /// klickt wie ein Knopf.
+    private var revealSound: GameSound {
+        switch world {
+        case .secretFile: return .reveal
+        case .gafferTape: return .tapeRip
+        default: return .tap
         }
     }
 

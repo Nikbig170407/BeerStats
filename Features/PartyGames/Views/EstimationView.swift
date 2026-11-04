@@ -141,7 +141,7 @@ struct EstimationView: View {
     private func reveal() {
         withAnimation(AppAnimation.standard) { isRevealed = true }
         HapticManager.success()
-        SoundManager.play(.ballsBack)
+        SoundManager.play(.reveal)
     }
 
     private func advance() {

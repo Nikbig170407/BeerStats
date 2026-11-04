@@ -238,7 +238,7 @@ struct DrinkBingoView: View {
         } else {
             marked.insert(index)
             HapticManager.mediumImpact()
-            SoundManager.play(.cupHit)
+            SoundManager.play(.chips)
         }
 
         // Erst nach dem Setzen zählen, und nur melden, wenn WIRKLICH eine

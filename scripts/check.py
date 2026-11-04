@@ -246,6 +246,28 @@ def main():
         elif ".roundSettings(" not in datei[1]:
             funde.append(f"{datei[0]}  {screen} hat kein Zahnrad - `.roundSettings(for:)` anhaengen")
 
+    # Klaenge: Jede Datei hat eine Herkunft, und jeder Fall von `GameSound`
+    # hat seine Datei. Das Repository ist oeffentlich - eine Datei, von der
+    # niemand mehr weiss, woher sie kommt, ist eine Lizenzfrage, die keiner
+    # beantworten kann. Und ein Fall ohne Datei bleibt am Tisch einfach still,
+    # ohne dass es irgendwo auffaellt (`SoundManager` schweigt dann absichtlich).
+    klangordner = ROOT / "Resources" / "Sounds"
+    herkunft_pfad = klangordner / "HERKUNFT.md"
+    herkunft = herkunft_pfad.read_text(encoding="utf-8") if herkunft_pfad.exists() else ""
+    if not herkunft:
+        funde.append("Resources/Sounds/HERKUNFT.md fehlt - scripts/import_sounds.py schreibt sie")
+    endungen = (".wav", ".mp3", ".m4a", ".caf")
+    vorhanden = {p.stem for p in klangordner.glob("*") if p.suffix in endungen}
+    for datei in sorted(klangordner.glob("*")):
+        if datei.suffix in endungen and f"`{datei.name}`" not in herkunft:
+            funde.append(f"Resources/Sounds/{datei.name}  steht nicht in HERKUNFT.md - woher kommt sie?")
+    klangcode = next((code for rel, code in dateien if rel.name == "SoundManager.swift"), "")
+    enum_teil = klangcode.split("enum GameSound", 1)[-1].split("static func", 1)[0]
+    for fall in re.findall(r"^\s*case ([^:\n]+)$", enum_teil, re.MULTILINE):
+        for name in (n.strip() for n in fall.split(",")):
+            if re.fullmatch(r"\w+", name) and name not in vorhanden:
+                funde.append(f"GameSound.{name}  hat keine Datei in Resources/Sounds - der Klang bliebe still")
+
     # Dateien, die in keinem Quellordner liegen, werden nie uebersetzt - der
     # Build bleibt gruen und die Aenderung wirkt trotzdem nicht.
     bekannt = {p.resolve() for p in swift_files()}

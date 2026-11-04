@@ -314,10 +314,10 @@ struct HerdView: View {
 
         if allein.isEmpty {
             HapticManager.success()
-            SoundManager.play(.victory)
+            SoundManager.play(.roundWon)
         } else {
             HapticManager.error()
-            SoundManager.play(kuh.isEmpty ? .miss : .bombe)
+            SoundManager.play(.penalty)
         }
     }
 }

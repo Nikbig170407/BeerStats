@@ -200,7 +200,7 @@ struct MostLikelyView: View {
             for value in stride(from: 3, through: 1, by: -1) {
                 withAnimation(AppAnimation.standard) { phase = .counting(value) }
                 HapticManager.lightImpact()
-                SoundManager.play(.tap)
+                SoundManager.play(.countdownTick)
                 try? await Task.sleep(nanoseconds: 800_000_000)
                 guard !Task.isCancelled else { return }
             }

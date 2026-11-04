@@ -315,7 +315,8 @@ den nachgespielten Wurf-Log alter Partien.
 - Live-Tracking mit vollständigem Regelwerk, Undo, Re-Rack, Abbruch
 - Statistiken auf Profile, umschaltbar zwischen Gesamt und letztem Monat
 - Rangliste, Direktvergleich, Spielverlauf, Becher-Heatmap, MVP der Partie
-- Sounds (Mixkit, Ring of Fire selbst gerechnet), Sprachansage, App-Icon
+- Sounds (Beerpong von Mixkit, Ring of Fire und einiges mehr selbst
+  gerechnet, Partyspiele aus CC0-Paketen von Kenney), Sprachansage, App-Icon
 - Entwicklereinstellungen, passwortgeschützt (im Quelltext steht nur der
   SHA-256; das Passwort selbst kennt der Nutzer)
 - **Datensicherung**: „Daten sichern" im Beerpong-Menü schreibt Profile,
@@ -1268,18 +1269,61 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     jedem vierten Schritt – auf jedem wäre es bei 12 Millisekunden ein
     Rauschen.
   - **Jeder Rang klingt anders, und die Klänge sind gerechnet**
-    (`scripts/make_ring_sounds.py`, Entscheidung des Nutzers vom
+    (`scripts/make_sounds.py`, Entscheidung des Nutzers vom
     28. Oktober). Vorher teilten sich neun Ränge den leisen Kartenklang,
     der Rest lieh sich Beerpong. Das Skript erzeugt Ratsche, Halt, Ziehen,
     dreizehn Ränge, Riss, „hält knapp“, Mischen und „Regel durch“ aus
-    Schwingungen und Rauschen, nur mit der Standardbibliothek. Drei
-    Regeln: Neue Klänge kommen **ins Skript**, nie als Datei aus dem Netz
-    (das Repo ist öffentlich, ein gerechneter Klang hat keine Lizenz).
-    Die WAV-Dateien werden **nie von Hand** geändert, der nächste Lauf
-    überschreibt sie. Und die Satz-Regel gilt auch hier: Jeder Klang hat
-    seinen Satz im Skript, und es bricht ab, wenn zwei sich einen teilen.
-    Der Rangklang kommt mit der Karte auf den Kartenscreen, nicht beim
-    Ziehen – er gehört zu dem Moment, in dem man sie sieht.
+    Schwingungen und Rauschen, nur mit der Standardbibliothek. Wo neue
+    Klänge herkommen dürfen und was für alle gilt, steht unter „Ein Klang
+    heißt überall dasselbe“. Der Rangklang kommt mit der Karte auf den
+    Kartenscreen, nicht beim Ziehen – er gehört zu dem Moment, in dem man
+    sie sieht.
+
+- **Ein Klang heißt überall dasselbe** (`GameSound`, 4. November, auf
+  Wunsch des Nutzers: „mehr Sounds“). Bis dahin liehen sich die
+  Partyspiele die neun Klänge von Beerpong: Jede Strafe war die
+  Bombenexplosion, das Ende der Zeit auch, Schocken würfelte mit dem
+  Geräusch eines Balls im Becher, und die Sieg-Fanfare kam auch, wenn der
+  Würfel nur ein Spiel vorschlug. Ein Klang, der in fünf Spielen fünf
+  Dinge heißt, sagt nichts mehr. Jetzt ist jeder Fall ein **Moment**, kein
+  Spiel: `penalty`, `timeUp`, `correct`, `wrong`, `countdownTick`,
+  `roundWon`, `reveal` und so weiter – und derselbe Moment klingt in jedem
+  Spiel gleich, wie die Kostenarten bei den Szenen. Wer in einem Spiel
+  einen Klang braucht, sucht den Moment, nicht ein Geräusch, das ungefähr
+  passt. Die Fanfare (`victory`) gehört dem Sieg im ganzen Spiel, die
+  Explosion (`bombe`) nur noch der Bombe. Die Regeln:
+  - **Zwei Quellen, beide ohne Lizenz zum Mitschleppen** – das Repo ist
+    öffentlich. Gerechnet (`scripts/make_sounds.py`) oder aus einem
+    **CC0-Paket** (`scripts/import_sounds.py`, Entscheidung des Nutzers vom
+    3. November). Nichts anderes, auch nicht „frei“ wie Mixkit: Dessen
+    Lizenz verbietet, die Dateien als solche weiterzugeben, und mehr als
+    die Beerpong-Klänge von früher kommt von dort nicht dazu.
+  - **Herkunft steht in `Resources/Sounds/HERKUNFT.md`**, geschrieben vom
+    Import-Skript. `check.py` meldet jede Klangdatei, die dort fehlt, und
+    jeden Fall von `GameSound` ohne Datei – ein Klang ohne Datei bleibt am
+    Tisch still, ohne dass es auffällt. `SoundCatalogTests` prüft dasselbe
+    im fertigen App-Bundle, samt Fassungen.
+  - **Die Pakete liegen nicht im Repo**, nur was die App braucht:
+    umgewandelt (Ogg spielt iOS nicht ab; geschrieben wird WAV, kein AAC –
+    der Coder hängt vorne Stille an, und ein Klick käme spürbar zu spät),
+    an den Rändern geschnitten und mit derselben Rechnung angeglichen wie
+    die gerechneten Klänge. Herunterladen kann die Sitzung sie nicht selbst
+    (kenney.nl gibt den Link erst nach einem Klick); der Nutzer legt die
+    Zip-Dateien in seine Dropbox, und die Sitzung holt sie von dort.
+  - **Was dutzendfach kommt, hat Fassungen** (`GameSound.variants`):
+    Karten, Würfel, Chips. Die erste Datei heißt wie der Fall, die weiteren
+    tragen eine Nummer (`cardFlip2`), gespielt wird reihum. Eine leicht
+    andere Tonhöhe allein macht aus derselben Karte keine andere.
+  - **Satz-Regel über beide Skripte**: Jeder Klang hat seinen Satz, keiner
+    kommt doppelt vor – `make_sounds.py` bricht sonst ab. Die WAV-Dateien
+    werden **nie von Hand** geändert; der nächste Lauf überschreibt sie.
+  - **Ausgewählt ist nach Messung, nicht nach Gehör** – in der Sitzung
+    hört niemand. Gemessen wurden Länge, Lautheit und ob ein Ton steigt
+    oder fällt („richtig“ und der kleine Sieg steigen). Was am Gerät
+    falsch klingt, wird im Import-Skript getauscht, nicht im Ordner.
+  - **Ein geteilter Baustein bringt den Klang seines Kleids mit**: Das
+    Aufdecken in `HandoffPanel` raschelt beim Spion wie eine Akte und
+    reißt bei Verbotene Wörter wie Klebeband.
 
 - **Die Härte gehört zum Spiel, nicht zum Gerät.** Sie stand bis Oktober
   2026 einmal über den Partyspielen und galt für alle. Am Tisch ist sie
@@ -1773,6 +1817,16 @@ oben; was schief aussieht, unten.
   hinter der Karte mit: Bleibt der Text darüber lesbar – am ehesten
   gefährdet sind Pinselstrich (2), Lichtsäulen (7), Stempel (10) und der
   Herzschlag-Rand (11)?
+- **Die neuen Klänge (4. November)**: Ausgesucht nach Messung, gehört hat
+  sie noch niemand. Einmal quer durch: Würfeln in Schocken und Mäxchen,
+  Karten in Bussfahrer und Pferderennen, Chips beim Wetten und im
+  Trinkbingo, richtig und falsch in Wer bin ich?, Pantomime und Hitparade,
+  das Ticken bei der Bombe und bei „Wer würde eher?“, der Gong, wenn die
+  Zeit um ist, und die neue Strafe statt der Explosion. Klingt etwas
+  billig, zu leise, zu laut oder nervt nach zehn Runden – sag welches.
+  Dazu: Raschelt die Akte beim Spion, reißt das Klebeband bei Verbotene
+  Wörter, und setzt in der Hitparade die Nadel auf, ohne dem Lied in die
+  Quere zu kommen?
 - **Bildschirm bleibt an (3. November)**: Ein Spiel offen lassen und nicht
   tippen – bleibt er an, und geht er nach der Grenze (`untouchedLimit`)
   doch aus? Tippt man danach, bleibt er wieder an? Im Tischmodus darf er

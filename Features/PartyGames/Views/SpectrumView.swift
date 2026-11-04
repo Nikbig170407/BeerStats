@@ -236,7 +236,7 @@ struct SpectrumView: View {
 
         if isBullseye {
             HapticManager.success()
-            SoundManager.play(.victory)
+            SoundManager.play(.roundWon)
         } else if isNear {
             HapticManager.lightImpact()
             SoundManager.play(.tap)
@@ -247,7 +247,7 @@ struct SpectrumView: View {
                 EveningLog.record(penalty, forPlayer: platz)
             }
             HapticManager.error()
-            SoundManager.play(.miss)
+            SoundManager.play(.penalty)
         }
     }
 

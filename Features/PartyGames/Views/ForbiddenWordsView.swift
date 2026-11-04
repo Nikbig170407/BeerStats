@@ -136,7 +136,7 @@ struct ForbiddenWordsView: View {
             PrimaryButton(title: "Am Ende auflösen", systemImage: "eye.fill") {
                 withAnimation(AppAnimation.standard) { phase = .revealed }
                 HapticManager.success()
-                SoundManager.play(.victory)
+                SoundManager.play(.reveal)
             }
 
             QuietButton(title: "Neu verteilen") { startDealing() }

@@ -287,7 +287,7 @@ struct DrinkRouletteView: View {
         isSpinning = false
         hasStarted = true
         HapticManager.success()
-        SoundManager.play(.reRack)
+        SoundManager.play(.chips)
     }
 
     private func spin() {
@@ -327,7 +327,7 @@ struct DrinkRouletteView: View {
                 isSpinning = false
             }
             HapticManager.error()
-            SoundManager.play(.bombe)
+            SoundManager.play(.penalty)
         }
     }
 }

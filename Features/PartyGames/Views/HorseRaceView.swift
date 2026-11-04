@@ -381,7 +381,7 @@ struct HorseRaceView: View {
             PrimaryButton(title: "Rennen starten", systemImage: "flag.checkered") {
                 withAnimation(AppAnimation.standard) { phase = .racing }
                 HapticManager.success()
-                SoundManager.play(.ballsBack)
+                SoundManager.play(.chips)
             }
         case .racing:
             PrimaryButton(title: "Karte aufdecken", systemImage: "hand.tap.fill") { drawCard() }
@@ -460,7 +460,7 @@ struct HorseRaceView: View {
                 "Seitenstrecke \(revealedSides): \(card.suit.name) muss zurück. \($0) \(verb("trinkt", "trinken", on: lane)) \(strafe)."
             } ?? "Seitenstrecke \(revealedSides): \(card.suit.name) muss zurück. Wer darauf gesetzt hat, trinkt \(strafe)."
             HapticManager.error()
-            SoundManager.play(.bombe)
+            SoundManager.play(.penalty)
         }
     }
 }

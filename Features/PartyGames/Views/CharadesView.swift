@@ -312,11 +312,11 @@ struct CharadesView: View {
         if hit {
             hits += 1
             HapticManager.success()
-            SoundManager.play(.cupHit)
+            SoundManager.play(.correct)
         } else {
             misses += 1
             HapticManager.error()
-            SoundManager.play(.miss)
+            SoundManager.play(.wrong)
         }
 
         cuts += 1
@@ -335,6 +335,6 @@ struct CharadesView: View {
         tickTask?.cancel()
         withAnimation(AppAnimation.standard) { phase = .finished }
         HapticManager.error()
-        SoundManager.play(.bombe)
+        SoundManager.play(.timeUp)
     }
 }
