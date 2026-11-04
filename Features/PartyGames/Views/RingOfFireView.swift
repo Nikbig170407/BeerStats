@@ -78,8 +78,10 @@ struct RingOfFireView: View {
     /// Hat der ZULETZT gezogene Zug gerissen? Steht getrennt, weil der
     /// Aktionsscreen laenger offen ist als der Moment dauert.
     @State private var currentTore = false
-    /// Die beiden Nachbarinnen zucken beim Riss weg – von 1 federnd auf 0.
-    @State private var tearJolt = 0.0
+    /// Sekunden seit Beginn des Risses. Daran haengt, wie der Ring bebt und
+    /// wie hoch die beiden Nachbarinnen fliegen (`RingTearArt.quake`,
+    /// `throwHeight`) – mit derselben Zeit wie das Feuer darueber.
+    @State private var tearClock = 0.0
     @State private var tearTask: Task<Void, Never>?
     /// Eine Stelle, die gerade knapp gehalten hat: Dort leuchtet der Faden
     /// kurz auf.
@@ -128,6 +130,12 @@ struct RingOfFireView: View {
     /// Die Karte, die gerade aus dem Ring gehoben wird, und wie weit.
     @State private var lifting: RingLift?
     @State private var liftProgress = 0.0
+    /// Was die Leinwand ueber dem Ring gerade begleitet – Austeilen oder
+    /// Losen (`RingTableEffects`).
+    @State private var tableBeat: RingTableBeat?
+    /// Sekunden seit dem Halt des Lichts – daran haengt der Ruck durch den
+    /// Ring. Steht in Ruhe am Ende, dann ruckt nichts.
+    @State private var haltClock = RingMotion.nod
     /// Der Kartenscreen kommt erst, wenn die Karte aus dem Ring ist.
     @State private var actionTask: Task<Void, Never>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -448,21 +456,35 @@ struct RingOfFireView: View {
                         width: cardWidth,
                         height: cardHeight,
                         isLit: spotlight == position,
-                        isEmpty: ring[position] == nil
+                        isEmpty: ring[position] == nil,
+                        singed: tearSide(for: position) != 0
                     )
-                        // Als Stapel in der Mitte kleiner und leicht verdreht
-                        .scaleEffect(dealt ? 1 : RingMotion.pileScale)
-                        // Erst nach aussen schieben, dann um die Mitte
-                        // drehen: `offset` verschiebt nur die Darstellung,
-                        // nicht den Rahmen – der Drehpunkt bleibt also die
-                        // Mitte des Rings.
-                        .offset(y: dealt ? -radius : 0)
-                        .rotationEffect(.degrees(angle(for: position) + jolt(for: position) - (dealt ? 0 : RingMotion.pileTwist)))
+                        // Die Nachbarinnen der Luecke fliegen beim Riss hoch
+                        // und fallen zurueck
+                        .modifier(RingTearThrow(time: tearClock, side: tearSide(for: position), height: cardHeight * 0.64))
+                        // Im Stapel in der Mitte klein und verdreht, auf dem
+                        // Weg an den Platz ein Bogen mit Drall – die Kurve
+                        // rechnet der Effekt, die Animation liefert nur den
+                        // Fortschritt
+                        .modifier(RingDealFlight(
+                            progress: dealt ? 1 : 0,
+                            angle: angle(for: position),
+                            radius: radius,
+                            pileShift: CGFloat(position % 5)
+                        ))
                         .animation(dealAnimation(at: position), value: dealt)
                         // Muss sein, seit die Karten sich ueberlappen: Der
                         // Lichtpunkt laege sonst unter der naechsten Karte,
                         // weil ein ZStack in Reihenfolge zeichnet.
                         .zIndex(spotlight == position ? 1 : 0)
+                }
+
+                // Funken, Schweif, Ruck und Lichtsaeule: ueber den Karten,
+                // unter der gehobenen
+                if let beat = tableBeat {
+                    RingTableEffects(beat: beat, radius: radius, cardHeight: cardHeight)
+                        .id(beat.id)
+                        .zIndex(1.5)
                 }
 
                 // Die gezogene Karte hebt sich aus dem Ring und verschwindet
@@ -479,10 +501,21 @@ struct RingOfFireView: View {
                         // Moment, und deren Animation gilt fuer den ganzen Ring.
                         .transition(.identity)
                         .onAppear {
-                            withAnimation(.easeInOut(duration: RingMotion.lift)) { liftProgress = 1 }
+                            // Linear: Die Kurve steht in `liftPose`
+                            withAnimation(.linear(duration: RingMotion.lift)) { liftProgress = 1 }
                         }
                 }
             }
+            // Beim Riss bebt der ganze Ring und rueckt an die Luecke heran –
+            // dieselbe Rechnung wie das Feuer darueber
+            .modifier(RingTearQuake(
+                time: tearClock,
+                isActive: tearMoment != nil,
+                radius: Double(radius),
+                gapAngle: tearMoment.map { $0.link.start + $0.link.free / 2 } ?? 0
+            ))
+            // Beim Halt des Lichts geht ein Ruck durch den Ring
+            .modifier(RingHaltNod(time: haltClock))
             .frame(width: geometry.size.width, height: geometry.size.height)
             // Der Riss meldet sich nach oben: Sein Moment liegt ueber dem
             // ganzen Screen und muss wissen, wo der Ring steht.
@@ -561,12 +594,12 @@ struct RingOfFireView: View {
         return "Die \(raenge.count) höchsten Ränge – ab \(name) aufwärts, von jedem alle vier Karten. Die kleinen Karten sagen nur Mengen an; was den Tisch beschäftigt, steht oben."
     }
 
-    /// Wie weit eine Nachbarin beim Riss wegzuckt, in Grad – die linke
-    /// gegen, die rechte mit dem Uhrzeigersinn.
-    private func jolt(for position: Int) -> Double {
+    /// Welche Nachbarin der Luecke eine Karte gerade ist: -1 die linke, 1
+    /// die rechte, 0 keine. Nur waehrend eines Risses.
+    private func tearSide(for position: Int) -> Double {
         guard let link = tearMoment?.link else { return 0 }
-        if position == link.from { return -4 * tearJolt }
-        if position == link.to { return 4 * tearJolt }
+        if position == link.from { return -1 }
+        if position == link.to { return 1 }
         return 0
     }
 
@@ -602,7 +635,8 @@ struct RingOfFireView: View {
         width: CGFloat,
         height: CGFloat,
         isLit: Bool,
-        isEmpty: Bool
+        isEmpty: Bool,
+        singed: Bool = false
     ) -> some View {
         let form = RoundedRectangle(cornerRadius: max(2, width * 0.18), style: .continuous)
         let licht = LinearGradient(
@@ -638,6 +672,13 @@ struct RingOfFireView: View {
                     .opacity(isLit ? 1 : 0)
                     .animation(afterglow(isLit), value: isLit)
             )
+            // Angesengt: Die Nachbarinnen einer Luecke tragen waehrend des
+            // Risses einen dunklen Rand vom Feuer
+            .overlay(
+                form
+                    .fill(Color(red: 0.35, green: 0.12, blue: 0.04))
+                    .opacity(singed ? 0.5 : 0)
+            )
             .overlay(
                 form
                     .strokeBorder(
@@ -660,14 +701,11 @@ struct RingOfFireView: View {
     }
 
     /// Die gezogene Karte auf dem Weg aus dem Ring: Sie hebt sich von ihrem
-    /// Platz, wird kleiner und verschwindet zur Mitte.
+    /// Platz, schwebt kurz, dreht sich in die Lage des Stapels und
+    /// verschwindet zur Mitte (`RingLiftFlight`).
     private func liftedCard(_ lift: RingLift, radius: CGFloat, width: CGFloat, height: CGFloat) -> some View {
-        let weg = CGFloat(liftProgress)
-        return ringCard(width: width, height: height, isLit: true, isEmpty: false)
-            .scaleEffect(1 - RingMotion.liftShrink * weg)
-            .offset(y: -radius * (1 - RingMotion.liftInward * weg))
-            .rotationEffect(.degrees(lift.angle))
-            .opacity(1 - liftProgress)
+        ringCard(width: width, height: height, isLit: true, isEmpty: false)
+            .modifier(RingLiftFlight(progress: liftProgress, angle: lift.angle, radius: radius, cardHeight: height))
     }
 
     /// Der Faden kommt, wenn die Karten ausgeteilt sind, und geht mit dem
@@ -726,12 +764,14 @@ struct RingOfFireView: View {
     private var isBusy: Bool { isDrawing || isDealing }
 
     /// Austeilen: Karte fuer Karte im Uhrzeigersinn, aus dem Stapel in der
-    /// Mitte nach aussen. Einsammeln: alle zugleich, nach innen.
+    /// Mitte nach aussen. Einsammeln: alle zugleich, nach innen – denselben
+    /// Bogen zurueck. Linear, weil die Kurve in `RingTableArt.dealPose`
+    /// steht; eine zweite darueber verboege sie.
     private func dealAnimation(at position: Int) -> Animation? {
         guard !reduceMotion else { return nil }
-        guard dealt else { return .easeIn(duration: RingMotion.gather) }
-        let reihe = Double(position) / Double(max(1, ring.count))
-        return .easeOut(duration: RingMotion.dealDuration).delay(reihe * RingMotion.dealSpread)
+        guard dealt else { return .linear(duration: RingMotion.gather) }
+        return .linear(duration: RingMotion.dealDuration)
+            .delay(RingMotion.dealDelay(at: position, of: ring.count))
     }
 
     // MARK: - Merkliste
@@ -995,12 +1035,15 @@ struct RingOfFireView: View {
         HapticManager.heavyImpact()
         SoundManager.play(.ringTear)
 
-        // Die Nachbarinnen zucken weg und federn zurueck. Erst setzen, dann
-        // im naechsten Durchgang animieren – im selben gesetzt, saehe
-        // SwiftUI nur den Endwert (Lessons Learned Nr. 17).
-        tearJolt = 1
-        DispatchQueue.main.async {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.3)) { tearJolt = 0 }
+        // Der Ring bebt, die Nachbarinnen fliegen hoch und fallen zurueck.
+        // Erst auf null setzen, dann im naechsten Durchgang laufen lassen –
+        // im selben Durchgang saehe SwiftUI nur den Endwert (Lessons Learned
+        // Nr. 17).
+        tearClock = 0
+        if !reduceMotion {
+            DispatchQueue.main.async {
+                withAnimation(.linear(duration: RingTearArt.duration)) { tearClock = RingTearArt.duration }
+            }
         }
 
         tearTask = Task { @MainActor in
@@ -1090,6 +1133,7 @@ struct RingOfFireView: View {
         try? await Task.sleep(nanoseconds: UInt64(RingMotion.pause * 1_000_000_000))
         guard !Task.isCancelled else { return }
         dealt = true
+        tableBeat = RingTableBeat(kind: .deal(angles: ring.indices.map { angle(for: $0) }), start: Date())
         try? await Task.sleep(nanoseconds: UInt64((RingMotion.dealSpread + RingMotion.dealDuration) * 1_000_000_000))
         guard !Task.isCancelled else { return }
         isDealing = false
@@ -1179,6 +1223,7 @@ struct RingOfFireView: View {
         lifting = nil
         isDrawing = false
         spotlight = nil
+        tableBeat = nil
         tearMoment = nil
         held = nil
         needsRelayout = false
@@ -1193,17 +1238,33 @@ struct RingOfFireView: View {
 
         let liegende = ring.indices.filter { ring[$0] != nil }
         guard let ziel = RingDraw.pick(ring: ring, recentRanks: recentRanks) else { return }
+        let plan = RingSpotlightPlan(target: ziel, over: liegende)
 
         isDrawing = true
         // Sofort beim Druck, nicht erst beim ersten Tick: Der Knopf muss
         // antworten, bevor das Licht ueberhaupt losgelaufen ist.
         HapticManager.mediumImpact()
         SoundManager.play(.ringTick)
+
+        // Licht und Funken zaehlen ab demselben Augenblick
+        let beginn = Date()
+        if let plan, !reduceMotion {
+            // Die Winkel laufen mit jeder Runde um 360 weiter: Der Schweif
+            // reicht sonst an der Naht von 350 Grad zurueck auf 5
+            let winkel = plan.stops.indices.map { schritt in
+                angle(for: plan.stops[schritt]) + 360 * Double(schritt / max(1, liegende.count))
+            }
+            tableBeat = RingTableBeat(kind: .draw(plan: plan, stepAngles: winkel), start: beginn)
+        }
+
         drawTask?.cancel()
         drawTask = Task { @MainActor in
-            await runSpotlight(to: ziel, over: liegende)
+            if let plan {
+                await runSpotlight(plan, from: beginn)
+            }
             guard !Task.isCancelled else { return }
             spotlight = nil
+            nod()
             // `isDrawing` nimmt erst `draw(at:)` zurueck: Reisst der Ring,
             // laeuft noch sein Moment, und so lange darf niemand ziehen.
             draw(at: ziel)
@@ -1211,36 +1272,17 @@ struct RingOfFireView: View {
     }
 
     /// Der Lichtpunkt laeuft im Uhrzeigersinn ueber die liegenden Karten und
-    /// wird zum Schluss langsamer, bis er auf der gezogenen stehen bleibt.
-    ///
-    /// Die Schrittzahl ist so gewaehlt, dass der letzte Schritt genau auf der
-    /// Zielkarte landet – das Licht haelt also dort an, wo die Karte
-    /// tatsaechlich herkommt. Es sieht nicht nur nach Auslosung aus, es ist
-    /// die Auslosung.
-    private func runSpotlight(to target: Int, over positions: [Int]) async {
-        guard let zielIndex = positions.firstIndex(of: target) else {
-            spotlight = target
-            return
-        }
-
-        // Eine volle Runde plus der Weg zum Ziel. Bei wenigen Karten waere das
-        // ein Zucken statt einer Drehung – deshalb so lange weitere Runden
-        // dazu, bis es nach etwas aussieht. Vielfache der Rundenlaenge
-        // erhalten dabei, dass der letzte Schritt auf dem Ziel landet.
-        var schritte = positions.count + zielIndex
-        while schritte < 16 { schritte += positions.count }
-
-        for schritt in 0...schritte {
+    /// wird zum Schluss langsamer, bis er auf der gezogenen stehen bleibt –
+    /// genau nach Plan (`RingSpotlightPlan`), denn die Funken darueber
+    /// lesen denselben.
+    private func runSpotlight(_ plan: RingSpotlightPlan, from beginn: Date) async {
+        for schritt in plan.stops.indices {
+            await waitUntil(plan.times[schritt], since: beginn)
             guard !Task.isCancelled else { return }
 
-            spotlight = positions[schritt % positions.count]
+            spotlight = plan.stops[schritt]
 
-            // Die letzten Schritte bremsen spuerbar ab – das ist der ganze
-            // Trick am Gluecksrad. Davor laeuft es gleichmaessig schnell.
-            let restlich = schritte - schritt
-            let dauer: Double
-            if restlich > 14 {
-                dauer = 0.012
+            if plan.isFast(schritt) {
                 // Auch die schnelle Phase tickt – nur jeden vierten
                 // Schritt. Auf jedem waere es bei 12 Millisekunden ein
                 // Rauschen, auf keinem war das Rad die erste Sekunde lang
@@ -1248,19 +1290,36 @@ struct RingOfFireView: View {
                 // Genau das ist am 25. Oktober am Tisch aufgefallen.
                 if schritt % 4 == 0 { SoundManager.play(.ringTick) }
             } else {
-                dauer = 0.05 + 0.25 * (Double(14 - restlich) / 14)
                 HapticManager.lightImpact()
                 // Das Ticken des Auslaufens, jetzt auf jedem Schritt: Hier
                 // sind die Abstaende lang genug, dass man einzelne Schlaege
                 // hoert statt eines Rauschens.
                 SoundManager.play(.ringTick)
             }
-
-            try? await Task.sleep(nanoseconds: UInt64(dauer * 1_000_000_000))
         }
+        await waitUntil(plan.halt, since: beginn)
         // Das Licht steht: ein satter Schlag statt eines weiteren Ticks
         guard !Task.isCancelled else { return }
         SoundManager.play(.ringStop)
+    }
+
+    /// Wartet bis zu einem Zeitpunkt des Plans. Auf den Zeitpunkt, nicht
+    /// eine Dauer lang: Jedes Einschlafen kommt etwas zu spaet zurueck, und
+    /// ueber dreissig Schritte liefe das Licht den Funken davon.
+    private func waitUntil(_ zeit: Double, since beginn: Date) async {
+        let rest = zeit - Date().timeIntervalSince(beginn)
+        guard rest > 0 else { return }
+        try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000))
+    }
+
+    /// Ein Ruck durch den Ring, wenn das Licht steht. Erst auf null, dann im
+    /// naechsten Durchgang laufen lassen (Lessons Learned Nr. 17).
+    private func nod() {
+        guard !reduceMotion else { return }
+        haltClock = 0
+        DispatchQueue.main.async {
+            withAnimation(.linear(duration: RingMotion.nod)) { haltClock = RingMotion.nod }
+        }
     }
 
     private func clearRoles() {
@@ -1308,37 +1367,63 @@ private struct RingLift {
     let angle: Double
 }
 
-/// Wie sich der Ring bewegt. Einsammeln und Herausheben sind zuerst in der
-/// Vorschau "Riss im Ring" gezeichnet worden, mit denselben Zahlen.
-private enum RingMotion {
-    /// So lange faehrt der Kartenscreen nach unten weg, bevor nach einem
-    /// Riss eingesammelt wird.
-    static let coverAway = 0.3
-    /// Einsammeln zur Mitte, alle zugleich.
-    static let gather = 0.28
-    /// So lange fliegt eine einzelne Karte beim Austeilen.
-    static let dealDuration = 0.34
-    /// Ueber so viel Zeit verteilt sich das Austeilen um den Ring – die
-    /// letzte Karte startet so viel spaeter als die erste.
-    static let dealSpread = 0.55
-    /// Vor dem ersten Austeilen: der Wechsel vom Vorspann zum Tisch.
-    static let beforeFirstDeal = 0.25
-    /// Eine kurze Pause zwischen Setzen und Animieren.
-    static let pause = 0.05
-    /// Der Stapel in der Mitte: kleiner als die Karten im Ring und etwas
-    /// gegen den Uhrzeigersinn verdreht, damit er nach Stapel aussieht.
-    static let pileScale: CGFloat = 0.6
-    static let pileTwist = 40.0
-    /// Die gezogene Karte hebt sich heraus: so lange, so weit nach innen,
-    /// und so viel kleiner wird sie dabei – am Ende so gross wie eine
-    /// Karte im Stapel.
-    static let lift = 0.38
-    static let liftInward: CGFloat = 0.75
-    static let liftShrink: CGFloat = 0.62
-    /// Der Kartenscreen kommt, wenn die Karte aus dem Ring ist.
-    static let actionDelay = 0.42
-    /// So lange glimmt das Lauflicht auf einer Karte nach. In der schnellen
-    /// Phase wird daraus ein langer Schweif, im Auslaufen einer ueber wenige
-    /// Karten.
-    static let afterglow = 0.35
+// MARK: - Der Riss im Ring
+
+/// Eine Nachbarin der Luecke fliegt beim Riss hoch, dreht sich und faellt
+/// zurueck. Vor dem Schieben in den Ring angewandt: "hoch" heisst dort nach
+/// aussen.
+private struct RingTearThrow: GeometryEffect {
+
+    var time: Double
+    let side: Double
+    let height: CGFloat
+
+    var animatableData: Double {
+        get { time }
+        set { time = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        guard side != 0 else { return ProjectionTransform() }
+        let wurf = RingTearArt.throwHeight(time - 0.06)
+        guard wurf > 0 else { return ProjectionTransform() }
+        let cx = size.width / 2, cy = size.height / 2
+        let k = CGFloat(1 + 0.22 * wurf)
+        let drehung = CGFloat(side * 34 * wurf * .pi / 180)
+        let t = CGAffineTransform(translationX: cx, y: cy - height * CGFloat(wurf))
+            .rotated(by: drehung)
+            .scaledBy(x: k, y: k)
+            .translatedBy(x: -cx, y: -cy)
+        return ProjectionTransform(t)
+    }
+}
+
+/// Der ganze Ring bebt beim Riss und rueckt an die Luecke heran – mit
+/// derselben Rechnung wie das Feuer darueber (`RingTearArt.quake`).
+private struct RingTearQuake: GeometryEffect {
+
+    var time: Double
+    let isActive: Bool
+    let radius: Double
+    /// Die Mitte der Luecke, in Grad von oben im Uhrzeigersinn.
+    let gapAngle: Double
+
+    var animatableData: Double {
+        get { time }
+        set { time = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        guard isActive else { return ProjectionTransform() }
+        let q = RingTearArt.quake(time)
+        let cx = Double(size.width) / 2, cy = Double(size.height) / 2
+        let p = RingTearArt.point(cx, cy, radius, gapAngle)
+        let t = CGAffineTransform(translationX: p.x, y: p.y)
+            .scaledBy(x: q.zoom, y: q.zoom)
+            .translatedBy(x: -p.x + q.dx, y: -p.y + q.dy)
+            .translatedBy(x: cx, y: cy)
+            .rotated(by: q.turn * .pi / 180)
+            .translatedBy(x: -cx, y: -cy)
+        return ProjectionTransform(t)
+    }
 }

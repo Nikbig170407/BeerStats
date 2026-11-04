@@ -95,6 +95,8 @@ enum GameSound: String, CaseIterable {
     // ein Schalter zum Scheinwerfer. Wann welche, steht in `RingScene.cues`.
     case ringSplat, ringGush, ringStream, ringThunder, ringShimmer, ringChoir
     case ringBeat, ringWhoosh, ringHeartbeat, ringSpotlight, ringFlutter
+    /// Ring durch: Wo sich der Kranz schliesst, faucht eine Saeule hoch.
+    case ringBlaze
 
     /// Der Klang eines Rangs in Ring of Fire. Alles außerhalb von 2 bis 13
     /// ist das Ass – dieselbe Zuordnung wie bei den Regeln.
@@ -194,7 +196,7 @@ enum GameSound: String, CaseIterable {
         // bis auf die Stroeme, die fuenfmal hintereinander aufschlagen
         case .ringStream: return 0.08
         case .ringSplat, .ringGush, .ringThunder, .ringShimmer, .ringChoir,
-             .ringBeat, .ringWhoosh, .ringHeartbeat, .ringSpotlight, .ringFlutter:
+             .ringBeat, .ringWhoosh, .ringHeartbeat, .ringSpotlight, .ringFlutter, .ringBlaze:
             return 0
         }
     }

@@ -704,6 +704,18 @@ def flattern(rng):
     return ausblenden(hall(out, 0.15, 0.6, 0.3), 0.08)
 
 
+@klang("ringBlaze", "Feuersäule", "Eine Feuersäule faucht hoch und prasselt aus.", 0.12)
+def feuersaeule(rng):
+    sek = 1.3
+    fauch = bandpass(rauschen(sek, rng), lambda t: 600 + 2600 * math.exp(-t / 0.25), 0.8)
+    kurve = [min(1, t / 0.08) * math.exp(-max(0, t - 0.15) / 0.35) for t in (i / RATE for i in range(n_von(sek)))]
+    out = mal(fauch, kurve)
+    grund = mal(tiefpass(rauschen(sek, rng), 220), [min(1, t / 0.05) * math.exp(-t / 0.4) for t in (i / RATE for i in range(n_von(sek)))])
+    out = [a + 0.8 * b for a, b in zip(out, grund)]
+    legen(out, knistern(1.1, rng, 70, 0.45), 0.1, 0.35)
+    return ausblenden(hall(out, 0.2, 0.7, 0.4), 0.15)
+
+
 # ---------------------------------------------------------------- Partyspiele
 # Seit dem 4. November. Vorher liehen sich die Partyspiele die Klaenge von
 # Beerpong: Jede Strafe war die Bombenexplosion, jedes Ende der Zeit auch,

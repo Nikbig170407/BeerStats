@@ -26,6 +26,8 @@ struct RingFinale: View {
     /// Auf diesem Radius lagen die Kartenmitten – dort brennt der Kranz.
     let radius: CGFloat
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         EffectCanvas(
             draw: { g, size, t in RingFinaleArt.draw(&g, size, t, radius: Double(radius)) },
@@ -33,6 +35,19 @@ struct RingFinale: View {
             delay: RingFinaleArt.delay,
             minimumInterval: RingFinaleArt.frameInterval
         )
+        // Wo das Feuer sich schliesst, faucht die Saeule hoch – man hoert und
+        // spuert es. Mit "Bewegung reduzieren" steht der Kranz still da, ohne
+        // einen Knall zu einem Moment, den man nicht sieht.
+        .task {
+            guard !reduceMotion else { return }
+            try? await Task.sleep(nanoseconds: UInt64((RingFinaleArt.delay + RingFinaleArt.closing) * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            SoundManager.play(.ringBlaze)
+            HapticManager.play([
+                HapticManager.Tap(time: 0, intensity: 1, sharpness: 0.5),
+                HapticManager.Tap(time: 0.12, intensity: 0.6, sharpness: 0.3)
+            ])
+        }
     }
 }
 
@@ -41,7 +56,7 @@ enum RingFinaleArt {
 
     /// Die Szene in einem Satz (Satz-Regel). `RingSceneTests` haelt fest,
     /// dass kein Rang ihn mit ihr teilt.
-    static let motion = "Ein Feuer läuft einmal um den leeren Ring, schließt sich oben und lodert als Kranz weiter."
+    static let motion = "Ein Feuer jagt mit heller Spitze um den Ring, schießt beim Schließen oben als Säule hoch, Glut regnet langsam herab, die Luft darüber flimmert, und danach brennt der Kranz ruhig weiter."
 
     /// So lange laeuft das Feuer einmal herum.
     static let closing = 1.3
@@ -85,14 +100,110 @@ enum RingFinaleArt {
         let nach = t - closing
         let auf = nach >= 0 ? 1 - SceneArt.clamp(nach / flaring) : 0
 
+        // Hinten: die Glut im leeren Ring atmet, ein zweiter, langsamer
+        // Kranz loht dahinter, und die Luft darueber flimmert
+        SceneArt.glow(&g, cx, cy, r * 0.95, SceneArt.ember,
+                      (0.12 + 0.06 * sin(t * 2.2)) * SceneArt.clamp(t / closing) + 0.25 * auf)
+        backWreath(&g, cx, cy, r, lang: lang, platz: platz, t: t, auf: auf)
+        shimmer(&g, cx, cy, r, platz: platz, t: t)
+
         band(&g, cx, cy, r, bis: front, auf: auf)
         flames(&g, cx, cy, r, lang: lang, t: t, auf: auf)
         if nach >= 0 {
+            column(&g, cx, cy, r, platz: platz, nach: nach, t: t)
             seam(&g, cx, cy, r, nach: nach)
+            emberRain(&g, cx, cy, r, platz: platz, w: w, nach: nach)
         } else {
-            head(&g, RingTearArt.point(cx, cy, r, front))
+            head(&g, cx, cy, r, front: front, t: t)
         }
         sparks(&g, cx, cy, r, lang: lang, platz: platz, t: t)
+    }
+
+    /// Ein zweiter, langsamer Kranz hinter dem ersten – breiter, dunkler,
+    /// er gibt dem Feuer Tiefe.
+    private static func backWreath(_ g: inout GraphicsContext, _ cx: Double, _ cy: Double, _ r: Double,
+                                   lang: Double, platz: Double, t: Double, auf: Double) {
+        var feuer = g
+        feuer.blendMode = .plusLighter
+        for k in 0..<22 {
+            let kk = Double(k)
+            let grad = kk * 360 / 22 + 8
+            let alter = t - reaches(grad)
+            guard alter > 0 else { continue }
+            let wachsen = SceneArt.easeOut(alter / 0.6)
+            let flackern = 0.7 + 0.3 * sin(t * (3 + SceneArt.unit(k, 30)) + kk)
+            let laenge = min(platz - 4, lang * 1.7 * wachsen * flackern * (1 + 0.4 * auf))
+            let richtung = (grad - 90) * .pi / 180 + 0.2 * sin(t * 1.5 + kk)
+            RingTearArt.tongue(&feuer, RingTearArt.point(cx, cy, r + 6, grad), richtung, laenge, 14,
+                               0.35 * wachsen, t * 0.5, k + 50)
+        }
+    }
+
+    /// Die Luft ueber dem Kranz flimmert: feine Wellenlinien, die aufsteigen.
+    private static func shimmer(_ g: inout GraphicsContext, _ cx: Double, _ cy: Double, _ r: Double,
+                                platz: Double, t: Double) {
+        let da = SceneArt.clamp((t - 0.8) / 1.2)
+        guard da > 0 else { return }
+        let oben = cy - r
+        let weg = r * 0.5 + platz - 6
+        for k in 0..<5 {
+            let dk = Double(k)
+            let z = SceneArt.fract(t * 0.3 + dk / 5)
+            let y = oben + r * 0.5 - weg * z
+            var linie: [SceneArt.Point] = []
+            var x = cx - r * 1.2
+            while x <= cx + r * 1.2 {
+                linie.append((x, y + 4 * sin(x * 0.06 + t * 5 + dk)))
+                x += 12
+            }
+            SceneArt.stroke(&g, linie, SceneArt.emberCore, 0.08 * sin(z * .pi) * da, 2)
+        }
+    }
+
+    /// Wo das Feuer sich oben schliesst, schiesst es als Saeule hoch – so
+    /// hoch, wie die Flaeche reicht, und dort schon verglueht.
+    private static func column(_ g: inout GraphicsContext, _ cx: Double, _ cy: Double, _ r: Double,
+                               platz: Double, nach: Double, t: Double) {
+        guard nach < 1.2 else { return }
+        let kraft = SceneArt.easeOut(nach / 0.12) * (1 - SceneArt.easeIn(SceneArt.clamp((nach - 0.25) / 0.95)))
+        guard kraft > 0 else { return }
+        let oben = RingTearArt.point(cx, cy, r, 0)
+        let hoch = (platz - 4) * kraft
+        var feuer = g
+        feuer.blendMode = .plusLighter
+        let saeule: [SceneArt.Point] = [(oben.x - 26, oben.y), (oben.x + 26, oben.y), (oben.x + 40, oben.y - hoch), (oben.x - 40, oben.y - hoch)]
+        SceneArt.fill(&feuer, saeule, from: (0, oben.y), to: (0, oben.y - hoch), [
+            (0, SceneArt.rgb(255, 236, 190), 0.55 * kraft),
+            (0.5, SceneArt.rgb(255, 140, 50), 0.25 * kraft),
+            (1, SceneArt.rgb(200, 50, 20), 0)
+        ])
+        for k in 0..<9 {
+            let dk = Double(k)
+            let richtung = -Double.pi / 2 + (dk - 4) * 0.09 + 0.05 * sin(t * 9 + dk)
+            let laenge = (platz - 4) * (0.82 + 0.18 * SceneArt.unit(k, 421)) * kraft * (k == 4 ? 1 : 0.92)
+            RingTearArt.tongue(&feuer, oben, richtung, laenge, 13, 0.95, t, k + 70)
+        }
+    }
+
+    /// Glut regnet langsam herab – von dort, wohin die Saeule sie geworfen hat.
+    private static func emberRain(_ g: inout GraphicsContext, _ cx: Double, _ cy: Double, _ r: Double,
+                                  platz: Double, w: Double, nach: Double) {
+        guard nach >= 0.2 else { return }
+        var b = SceneBrush(g)
+        let farben: [Color] = [SceneArt.rgb(255, 240, 180), SceneArt.rgb(255, 150, 50), SceneArt.rgb(220, 70, 30)]
+        let deckkraft: [Double] = [1, 0.85, 0.6]
+        let oben = cy - r
+        for i in 0..<46 {
+            let alter = nach - 0.2 - 1.8 * SceneArt.unit(i, 430)
+            guard alter >= 0, alter <= 2.4 else { continue }
+            let x = cx + (SceneArt.unit(i, 431) - 0.5) * min(w - 20, r * 2.6) + 14 * sin(alter * 2.2 + Double(i))
+            let y = oben - (platz - 6) * SceneArt.unit(i, 432) + (60 + 50 * SceneArt.unit(i, 433)) * alter
+            guard y < cy + r + platz - 6 else { continue }
+            let rest = 1 - alter / 2.4
+            let stufe = rest > 0.66 ? 0 : (rest > 0.33 ? 1 : 2)
+            b.circle(x, y, 1.2 + 1.6 * SceneArt.unit(i, 434), farben[stufe], deckkraft[stufe])
+        }
+        b.flush()
     }
 
     /// Die Glut auf dem Ring, so weit das Feuer schon gelaufen ist.
@@ -140,11 +251,23 @@ enum RingFinaleArt {
         }
     }
 
-    /// Die Spitze des Feuers, solange es noch laeuft.
-    private static func head(_ g: inout GraphicsContext, _ p: SceneArt.Point) {
-        SceneArt.glow(&g, p.x, p.y, 34, SceneArt.rgb(255, 160, 60), 0.85)
-        SceneArt.glow(&g, p.x, p.y, 12, RingTearArt.core, 0.9)
-        SceneArt.circle(&g, p.x, p.y, 3.5, RingTearArt.core, 1)
+    /// Die Spitze des Feuers, solange es noch laeuft: ein heller Kopf, der
+    /// nach hinten zuengelt.
+    private static func head(_ g: inout GraphicsContext, _ cx: Double, _ cy: Double, _ r: Double,
+                             front: Double, t: Double) {
+        let p = RingTearArt.point(cx, cy, r, front)
+        if front > 2 {
+            var feuer = g
+            feuer.blendMode = .plusLighter
+            let rueckwaerts = (front - 90) * .pi / 180 - .pi / 2
+            for k in 0..<4 {
+                RingTearArt.tongue(&feuer, p, rueckwaerts + (Double(k) - 1.5) * 0.35 - 0.6,
+                                   36 + 14 * SceneArt.unit(k, 420), 9, 0.9, t, k + 90)
+            }
+        }
+        SceneArt.glow(&g, p.x, p.y, 40, SceneArt.rgb(255, 160, 60), 0.9)
+        SceneArt.glow(&g, p.x, p.y, 14, RingTearArt.core, 0.95)
+        SceneArt.circle(&g, p.x, p.y, 4, RingTearArt.core, 1)
     }
 
     /// Der Kranz schliesst sich oben: Aufleuchten an der Naht und ein

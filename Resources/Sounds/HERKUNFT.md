@@ -50,6 +50,7 @@ oder aus einem CC0-Paket (`scripts/import_sounds.py`). Das Repository ist
 | `ringHeartbeat.wav` | gerechnet: Herzschlag – Ein Herz schlägt zweimal dumpf. | keine (selbst gerechnet) |
 | `ringSpotlight.wav` | gerechnet: Scheinwerfer – Ein schwerer Schalter klackt, und ein Scheinwerfer brummt an. | keine (selbst gerechnet) |
 | `ringFlutter.wav` | gerechnet: Flattern – Kärtchen flattern wie ein aufgescheuchter Schwarm. | keine (selbst gerechnet) |
+| `ringBlaze.wav` | gerechnet: Feuersäule – Eine Feuersäule faucht hoch und prasselt aus. | keine (selbst gerechnet) |
 | `penalty.wav` | gerechnet: Strafe – Eine tiefe Pauke schlägt, dann rutscht ein Ton nach unten. | keine (selbst gerechnet) |
 | `timeUp.wav` | gerechnet: Zeit um – Ein tiefer Gong schwingt lange aus. | keine (selbst gerechnet) |
 | `reveal.wav` | gerechnet: Aufdecken – Papier raschelt, und ein Blatt wird umgeschlagen. | keine (selbst gerechnet) |

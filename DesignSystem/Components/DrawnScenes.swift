@@ -136,6 +136,11 @@ enum SceneArt {
     static func easeOut(_ x: Double) -> Double { 1 - pow(1 - clamp(x), 3) }
     static func easeIn(_ x: Double) -> Double { pow(clamp(x), 2) }
     static func fract(_ x: Double) -> Double { x - x.rounded(.down) }
+    /// Weich hinein und weich hinaus, von 0 bis 1.
+    static func smooth(_ x: Double) -> Double {
+        let c = clamp(x)
+        return c * c * (3 - 2 * c)
+    }
 
     private static func cg(_ p: Point) -> CGPoint { CGPoint(x: p.x, y: p.y) }
 

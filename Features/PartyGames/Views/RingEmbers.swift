@@ -245,8 +245,13 @@ enum RingTearArt {
     // MARK: Der Riss
 
     /// Der ganze Moment, in dieser Reihenfolge: dunkel bis auf die Stelle,
-    /// der Faden reisst, Blitz, Stichflamme, Funken, Rauch – und zuletzt
-    /// die Markierung, damit kein Feuer ueber der Schrift liegt.
+    /// ein Brandfleck, der Faden reisst, ein heisser Ring, Blitz, Rauchsaeule,
+    /// Stichflamme, Funkenregen – und zuletzt der Stempel, damit kein Feuer
+    /// ueber der Schrift liegt.
+    ///
+    /// Seit dem 4. November (Vorschlag 2) bebt dabei der ganze Ring, und der
+    /// Blick rueckt an die Luecke heran. Die Karten darunter beben mit
+    /// derselben Rechnung (`quake`), sonst brennte das Feuer neben der Stelle.
     static func moment(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double,
                        ring: CGRect, radius r: Double, cardHeight: Double, link: RingLayout.Link) {
         let cx = Double(ring.midX), cy = Double(ring.midY)
@@ -255,12 +260,56 @@ enum RingTearArt {
         let aussen = (mitte - 90) * .pi / 180
 
         dim(&g, size, p, t)
-        snap(&g, cx, cy, r, link, t)
-        flash(&g, p, t)
-        flames(&g, p, aussen, t)
-        sparks(&g, p, aussen, t)
-        smoke(&g, p, aussen, t)
-        marker(&g, size, cx, cy, r + cardHeight / 2 + 10, link, t)
+        var b = g
+        let q = quake(t)
+        b.translateBy(x: p.x, y: p.y)
+        b.scaleBy(x: q.zoom, y: q.zoom)
+        b.translateBy(x: -p.x + q.dx, y: -p.y + q.dy)
+        b.translateBy(x: cx, y: cy)
+        b.rotate(by: .degrees(q.turn))
+        b.translateBy(x: -cx, y: -cy)
+
+        burnMark(&b, p, aussen, t, cardHeight: cardHeight)
+        snap(&b, cx, cy, r, link, t)
+        heatRing(&b, p, t, cardHeight: cardHeight)
+        flash(&b, p, t)
+        smokeColumn(&b, p, t)
+        flames(&b, p, aussen, t)
+        sparkRain(&b, p, aussen, t)
+        stamp(&b, cx, cy, r, cardHeight, link, t)
+    }
+
+    /// Wie der Ring beim Riss bebt und an die Luecke heranrueckt: Versatz,
+    /// Drehung um die Mitte in Grad, Vergroesserung um die Luecke. Ein
+    /// zweiter, kleiner Stoss, wenn der Stempel aufschlaegt.
+    static func quake(_ t: Double) -> (dx: Double, dy: Double, turn: Double, zoom: Double) {
+        let ran = SceneArt.smooth(phase(t, 0.05, 0.4)) * (1 - SceneArt.smooth(phase(t, 1.5, 2.3)))
+        guard t > 0.07 else { return (0, 0, 0, 1 + 0.06 * ran) }
+        let s = t - 0.07, a = 10 * exp(-s * 7)
+        var dx = a * sin(s * 120), dy = a * 0.6 * cos(s * 95)
+        let turn = 1.8 * exp(-s * 5) * sin(s * 34)
+        let st = t - 0.36
+        if st > 0 {
+            let b = 3.5 * exp(-st * 16)
+            dx += b * sin(st * 150)
+            dy += b * cos(st * 120)
+        }
+        return (dx, dy, turn, 1 + 0.06 * ran)
+    }
+
+    /// Wie hoch eine Nachbarin der Luecke geschleudert ist, von 0 bis 1:
+    /// hoch und zurueck, dann ein kleiner Nachhuepfer.
+    static func throwHeight(_ s: Double) -> Double {
+        if s < 0 { return 0 }
+        if s < 0.5 {
+            let u = s / 0.5
+            return 4 * u * (1 - u)
+        }
+        if s < 0.72 {
+            let v = (s - 0.5) / 0.22
+            return 0.8 * v * (1 - v)
+        }
+        return 0
     }
 
     private static func phase(_ t: Double, _ a: Double, _ b: Double) -> Double {
@@ -302,33 +351,35 @@ enum RingTearArt {
     }
 
     private static func flash(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ t: Double) {
-        let a = 0.9 * (1 - SceneArt.easeOut(phase(t, 0.07, 0.5))) * phase(t, 0.05, 0.08)
-        SceneArt.glow(&g, p.x, p.y, 110, SceneArt.rgb(255, 236, 190), a)
+        let a = (1 - SceneArt.easeOut(phase(t, 0.07, 0.6))) * phase(t, 0.05, 0.08)
+        SceneArt.glow(&g, p.x, p.y, 170, SceneArt.rgb(255, 236, 190), a)
     }
 
     /// Die Stichflamme: Zungen nach aussen, zwei lecken am Ring entlang,
     /// dazu ein heller Kern.
     private static func flames(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ aussen: Double, _ t: Double) {
-        let kraft = phase(t, 0.06, 0.14) * (1 - SceneArt.easeIn(phase(t, 0.6, 1.35)))
+        let groesse = 1.2
+        let kraft = phase(t, 0.06, 0.14) * (1 - SceneArt.easeIn(phase(t, 0.6 * groesse, 1.35 * groesse)))
         guard kraft > 0 else { return }
-        SceneArt.glow(&g, p.x + cos(aussen) * 46, p.y + sin(aussen) * 46, 150, SceneArt.rgb(255, 112, 28), 0.5 * kraft)
+        SceneArt.glow(&g, p.x + cos(aussen) * 46, p.y + sin(aussen) * 46, 150 * groesse, SceneArt.rgb(255, 112, 28), 0.5 * kraft)
 
         var feuer = g
         feuer.blendMode = .plusLighter
-        for k in 0..<11 {
+        let viele = 17
+        for k in 0..<viele {
             // Die letzten beiden lecken am Ring entlang, die anderen nach aussen
-            let seitlich = k >= 9
+            let seitlich = k >= viele - 2
             let kk = Double(k)
-            let faecher: Double = seitlich ? (k == 9 ? -1.3 : 1.3) : (kk - 4) * 0.12 + 0.08 * sin(t * (6 + kk) + kk)
-            let basis: Double = seitlich ? 38 : 74 + 86 * SceneArt.unit(k, 3)
+            let faecher: Double = seitlich ? (k == viele - 2 ? -1.3 : 1.3) : (kk - Double(viele - 2) / 2) * 0.11 + 0.08 * sin(t * (6 + kk) + kk)
+            let basis: Double = (seitlich ? 38 : 74 + 86 * SceneArt.unit(k, 3)) * groesse
             let flackern = 0.78 + 0.22 * sin(t * (13 + 2.3 * kk) + kk * 1.7)
             let dicke: Double = seitlich ? 9 : 12 + 7 * SceneArt.unit(k, 4)
             tongue(&feuer, p, aussen + faecher, basis * kraft * flackern, dicke * min(1, kraft * 1.4),
                    min(1, kraft * 1.2), t, k)
         }
-        for k in 0..<5 {
-            let richtung = aussen + Double(k - 2) * 0.1 + 0.06 * sin(t * Double(11 + k) + Double(2 * k))
-            tongue(&feuer, p, richtung, (40 + 30 * SceneArt.unit(k, 9)) * kraft, 7 * min(1, kraft * 1.4),
+        for k in 0..<7 {
+            let richtung = aussen + Double(k - 3) * 0.1 + 0.06 * sin(t * Double(11 + k) + Double(2 * k))
+            tongue(&feuer, p, richtung, (40 + 30 * SceneArt.unit(k, 9)) * kraft * groesse, 7 * min(1, kraft * 1.4),
                    0.9 * min(1, kraft * 1.3), t, k + 20)
         }
     }
@@ -362,65 +413,126 @@ enum RingTearArt {
         g.fill(zunge, with: .linearGradient(verlauf, startPoint: CGPoint(x: p.x, y: p.y), endPoint: spitze))
     }
 
-    private static func sparks(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ aussen: Double, _ t: Double) {
-        for i in 0..<42 {
-            let alter = t - (0.06 + 0.22 * SceneArt.unit(i, 5))
-            guard alter >= 0, alter <= 0.85 else { continue }
-            let winkel = aussen + (SceneArt.unit(i, 6) * 2 - 1) * 1.15
-            let tempo = 150 + 190 * SceneArt.unit(i, 7)
+    /// Funken schiessen hoch und regnen ueber den Tisch – je Farbstufe ein
+    /// Aufruf, wie in den Szenen (`SceneBrush`).
+    private static func sparkRain(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ aussen: Double, _ t: Double) {
+        var b = SceneBrush(g)
+        let basis = atan2(sin(aussen) * 0.4 - 1, cos(aussen) * 0.6)
+        let farben: [Color] = [SceneArt.rgb(255, 240, 180), SceneArt.rgb(255, 150, 50), SceneArt.rgb(220, 70, 30)]
+        let deckkraft: [Double] = [1, 0.85, 0.6]
+        for i in 0..<64 {
+            let alter = t - (0.06 + 0.2 * SceneArt.unit(i, 310))
+            guard alter >= 0, alter <= 1.9 else { continue }
+            let winkel = basis + (SceneArt.unit(i, 311) - 0.5) * 1.7
+            let tempo = 240 + 280 * SceneArt.unit(i, 312)
             let x = p.x + cos(winkel) * tempo * alter
-            let y = p.y + sin(winkel) * tempo * alter + 280 * alter * alter
-            let rest = 1 - alter / 0.85
-            SceneArt.circle(&g, x, y, 1.1 + 1.4 * rest, rest > 0.5 ? SceneArt.rgb(255, 236, 160) : SceneArt.rgb(255, 110, 40), rest)
+            let y = p.y + sin(winkel) * tempo * alter + 310 * alter * alter
+            let vx = cos(winkel) * tempo, vy = sin(winkel) * tempo + 620 * alter
+            let rest = 1 - alter / 1.9
+            let stufe = rest > 0.66 ? 0 : (rest > 0.33 ? 1 : 2)
+            b.stroke([(x, y), (x - vx * 0.03, y - vy * 0.03)], farben[stufe], deckkraft[stufe] * 0.6, stufe == 0 ? 2.2 : 1.6)
+            b.circle(x, y, 1 + 1.6 * rest, farben[stufe], deckkraft[stufe])
+        }
+        b.flush()
+    }
+
+    /// Eine Rauchsaeule steigt aus der Luecke, unten noch vom Feuer erhellt.
+    private static func smokeColumn(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ t: Double) {
+        for i in 0..<14 {
+            let alter = t - (0.18 + 0.09 * Double(i))
+            guard alter >= 0, alter <= 2.4 else { continue }
+            let x = p.x + 10 * SceneArt.noise(i, 301) + 18 * sin(alter * 1.8 + Double(i)) * min(1, alter) + 26 * alter * SceneArt.noise(i, 302)
+            let y = p.y - 14 - (150 * alter + 20 * alter * alter)
+            let hitze = SceneArt.clamp(1 - alter / 0.7)
+            let farbe = hitze > 0.5 ? SceneArt.rgb(230, 140, 80) : SceneArt.rgb(130, 120, 114)
+            let a = 0.37 * min(1, alter * 5) * (1 - alter / 2.4)
+            SceneArt.glow(&g, x, y, 16 + 32 * alter, farbe, a)
         }
     }
 
-    private static func smoke(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ aussen: Double, _ t: Double) {
-        for i in 0..<6 {
-            let alter = t - (0.3 + 0.13 * Double(i))
-            guard alter >= 0, alter <= 1.3 else { continue }
-            let x = p.x + cos(aussen) * 16 + SceneArt.noise(i, 8) * 12 + sin(alter * 3 + Double(i)) * 6
-            let y = p.y + sin(aussen) * 16 - 40 * alter
-            SceneArt.glow(&g, x, y, 10 + 28 * alter, SceneArt.rgb(96, 86, 80), 0.22 * (1 - alter / 1.3))
+    /// Ein Brandfleck auf dem Tisch, dessen glimmender Rand langsam abkuehlt.
+    private static func burnMark(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ aussen: Double, _ t: Double, cardHeight: Double) {
+        let wachs = SceneArt.easeOut(phase(t, 0.25, 0.9))
+        guard wachs > 0 else { return }
+        let k = cardHeight / 72
+        let c: SceneArt.Point = (p.x + cos(aussen) * 8 * k, p.y + sin(aussen) * 8 * k)
+        SceneArt.glow(&g, c.x, c.y, 74 * k * wachs, SceneArt.rgb(14, 6, 3), 0.85 * wachs)
+        let kuehl = SceneArt.clamp((t - 0.5) / 2.2)
+        var rand: [SceneArt.Point] = []
+        for n in 0...28 {
+            let a = Double(n) / 28 * 2 * .pi
+            let rr = (34 + 6 * SceneArt.noise(n % 28, 320)) * k * wachs
+            rand.append((c.x + cos(a) * rr * 1.25, c.y + sin(a) * rr))
         }
+        let glut = kuehl < 0.5 ? SceneArt.rgb(255, 140, 50) : SceneArt.rgb(150, 60, 24)
+        SceneArt.stroke(&g, rand, glut, (0.6 - 0.32 * kuehl) * wachs, 3)
+        SceneArt.glow(&g, c.x, c.y, 40 * k * wachs, SceneArt.rgb(255, 110, 40), 0.18 * (1 - kuehl) * wachs)
     }
 
-    /// Eine Klammer ueber der Luecke, so breit wie sie, und "RISS".
-    private static func marker(_ g: inout GraphicsContext, _ size: CGSize, _ cx: Double, _ cy: Double,
-                               _ aussenR: Double, _ link: RingLayout.Link, _ t: Double) {
-        let auf = backOut(phase(t, 0.22, 0.42))
-        guard auf > 0 else { return }
-        var schicht = g
-        schicht.opacity = min(1, auf)
-        glowingStroke(&schicht, ringArc(cx, cy, aussenR, link.start, link.end, 16), mark, 1, 3, schein: 6)
-        for kante in [link.start, link.end] {
-            let innen = point(cx, cy, aussenR - 7, kante)
-            let aussen = point(cx, cy, aussenR + 1, kante)
-            SceneArt.stroke(&schicht, [innen, aussen], mark, 1, 3)
-        }
+    /// Ein heisser Ring, der sich beim Reissen um die Luecke weitet.
+    private static func heatRing(_ g: inout GraphicsContext, _ p: SceneArt.Point, _ t: Double, cardHeight: Double) {
+        let k = phase(t, 0.06, 0.6)
+        guard k > 0, k < 1 else { return }
+        let r = (14 + 90 * SceneArt.easeOut(k)) * cardHeight / 72
+        SceneArt.stroke(&g, SceneArt.arc(p.x, p.y, r, 0, 2 * .pi, 40), SceneArt.rgb(255, 190, 90), 0.6 * (1 - k), 5 * (1 - k) + 1)
+    }
 
-        // Neben der Klammer, aber nie ueber den Rand hinaus
+    /// Die Klammer am Ring markiert die Luecke, und "RISS" knallt wie ein
+    /// Stempel daneben – innen im Ring, wo kein Feuer hinschlaegt. Aussen
+    /// stand das Wort genau in der Stichflamme.
+    private static func stamp(_ g: inout GraphicsContext, _ cx: Double, _ cy: Double, _ r: Double,
+                              _ cardHeight: Double, _ link: RingLayout.Link, _ t: Double) {
+        let fall = phase(t, 0.22, 0.36)
+        guard fall > 0 else { return }
+        let aufschlag = SceneArt.clamp((t - 0.36) / 0.05)
+        if aufschlag > 0 {
+            var klammer = g
+            klammer.opacity = aufschlag
+            let aussenR = r + cardHeight / 2 + 10
+            glowingStroke(&klammer, ringArc(cx, cy, aussenR, link.start, link.end, 16), mark, 1, 3, schein: 6)
+            for kante in [link.start, link.end] {
+                SceneArt.stroke(&klammer, [point(cx, cy, aussenR - 7, kante), point(cx, cy, aussenR + 1, kante)], mark, 1, 3)
+            }
+        }
         let mitte = link.start + link.free / 2
-        let ort = point(cx, cy, aussenR + 24, mitte)
-        let x = min(max(ort.x, 44), Double(size.width) - 44)
-        let y = min(max(ort.y, 60), Double(size.height) - 60)
-        var schrift = schicht
-        schrift.translateBy(x: x, y: y)
-        schrift.scaleBy(x: auf, y: auf)
-        let wort = Text("RISS").font(.scaled(22, weight: .heavy, design: .rounded, maximumScale: 1.3)).foregroundColor(mark)
-        schrift.drawLayer { layer in
-            layer.addFilter(.blur(radius: 8))
-            layer.draw(wort, at: .zero, anchor: .center)
-        }
-        schrift.draw(wort, at: .zero, anchor: .center)
-    }
+        let innen = r - cardHeight / 2 - cardHeight * 0.36 + cardHeight * 0.25 * abs(sin(mitte * .pi / 180))
+        let ort = point(cx, cy, innen, mitte)
+        let gross = 2.8 - 1.8 * SceneArt.easeIn(fall)
 
-    /// Schiesst ueber das Ziel hinaus und federt zurueck – fuer das
-    /// Aufspringen der Schrift.
-    private static func backOut(_ x: Double) -> Double {
-        let u = SceneArt.clamp(x)
-        guard u > 0 else { return 0 }
-        let s = 1.6
-        return 1 + (s + 1) * pow(u - 1, 3) + s * pow(u - 1, 2)
+        var stempel = g
+        stempel.translateBy(x: ort.x, y: ort.y)
+        stempel.rotate(by: .degrees(-7))
+        var kopf = stempel
+        kopf.scaleBy(x: gross * 0.82, y: gross * 0.82)
+        kopf.opacity = min(1, fall * 2.5) * (aufschlag > 0 ? 1 : 0.55)
+        let wort = Text("RISS")
+            .font(.scaled(22, weight: .black, design: .rounded, maximumScale: 1.3))
+            .kerning(3)
+            .foregroundColor(mark)
+        let geloest = kopf.resolve(wort)
+        let masse = geloest.measure(in: CGSize(width: 400, height: 200))
+        let rahmen = CGRect(x: -masse.width / 2 - 16, y: -masse.height / 2 - 8, width: masse.width + 32, height: masse.height + 16)
+        kopf.drawLayer { schein in
+            schein.addFilter(.blur(radius: aufschlag > 0 ? 7 : 15))
+            schein.stroke(Path(roundedRect: rahmen, cornerRadius: 6), with: .color(mark), lineWidth: 3.2)
+            schein.draw(geloest, at: .zero, anchor: .center)
+        }
+        kopf.stroke(Path(roundedRect: rahmen, cornerRadius: 6), with: .color(mark), lineWidth: 3.2)
+        kopf.stroke(Path(roundedRect: rahmen.insetBy(dx: 6, dy: 6), cornerRadius: 4), with: .color(mark), lineWidth: 1.2)
+        kopf.draw(geloest, at: .zero, anchor: .center)
+
+        // Der Aufschlag: eine Druckwelle um den Stempel und ein paar Kruemel
+        let s = t - 0.36
+        guard s >= 0, s < 0.5 else { return }
+        let k = s / 0.5, w = 1 + 0.7 * SceneArt.easeOut(k)
+        let welle = CGRect(x: rahmen.minX * w, y: rahmen.minY * w, width: rahmen.width * w, height: rahmen.height * w)
+        var druck = stempel
+        druck.scaleBy(x: 0.82, y: 0.82)
+        druck.stroke(Path(roundedRect: welle, cornerRadius: 6 * w), with: .color(mark.opacity(0.6 * (1 - k))), lineWidth: 2.5 * (1 - k) + 0.5)
+        for i in 0..<10 {
+            let wi = SceneArt.unit(i, 330) * 2 * .pi
+            let d = Double(rahmen.width) / 2 + 50 * SceneArt.easeOut(k) * SceneArt.unit(i, 331)
+            SceneArt.circle(&druck, cos(wi) * d * 1.1, sin(wi) * d * 0.5, 1.6 * (1 - k), mark, 0.8)
+        }
     }
 }
