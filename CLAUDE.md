@@ -1116,6 +1116,30 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Aufstellung und die Teilnehmerliste des Abends müssen nicht dieselbe
   Reihenfolge haben.
 
+- **Schätzmeister: Reinrufen oder Aufschreiben** (4. November, Wunsch des
+  Nutzers). Im Vorspann gewählt; Reinrufen ist die Vorgabe und läuft wie
+  vorher. Beim Aufschreiben geht das Handy reihum wie beim Spion
+  (`HandoffPanel`), jeder tippt geheim auf einem eigenen Ziffernblock und
+  gibt ab – danach ist die Zahl weg. Aufgedeckt wird von ganz daneben bis
+  am nächsten dran, und weil die App den Verlierer kennt, bucht sie die
+  Strafe selbst; das Verteilen nicht, das weiß nur die Runde. Die Rechnung
+  steht in `EstimationRound` (mit Tests). Drei Dinge, die man beim
+  Anfassen wissen muss:
+  - **Gerechnet wird in Zehnteln als ganze Zahl.** In Double lägen 7,2 und
+    7,4 bei 7,3 nicht gleich weit daneben – ein Schluck für einen
+    Rundungsfehler. Gleich weit heißt: beide trinken; liegen alle gleich,
+    trinkt keiner.
+  - **Das Komma hängt an der Einheit, nicht an der Antwort**
+    (`EstimationDeck.decimalUnits`). Bei allem, was man zählt („Wie viele
+    Sitze hat der Bundestag?“), wäre es ein unfairer Vorteil; und gäbe es
+    das Komma genau dann, wenn die Antwort eins hat, verriete der
+    Ziffernblock die Antwort halb. Eine neue Frage mit Nachkommastelle
+    braucht eine Einheit aus der Liste – ein Test verlangt das.
+  - **Wer zuerst tippt, wandert mit jeder Frage weiter**
+    (`EstimationRound.order`), und eine Frage merkt sich ihre Art
+    (`questionMode`): Das Zahnrad stellt erst ab der nächsten um, wenn
+    schon jemand geschätzt hat.
+
 - **Die Räder des Trink-Roulettes stehen im Katalog `RouletteWheel`**
   (25. Oktober), nicht in der Ansicht – dieselbe Entscheidung wie bei
   `PartyGame`. Ein fünftes Rad ist ein neuer Fall und sonst nichts. Zwei
@@ -1913,6 +1937,13 @@ oben; was schief aussieht, unten.
   nur zwei oder drei Fragen übrig bleiben. Und: Landet die Strafe beim
   Richtigen, wenn ein Abend läuft?
 ### Partyspiele: Inhalt, Mengen, Gefühl
+- **Schätzmeister mit Aufschreiben (4. November)**: nie auf einem Gerät
+  gelaufen. Passt der Ziffernblock samt Frage auf einen Screen, auch auf
+  einem kleinen iPhone? Ist die Zahl nach „Abgeben“ wirklich weg? Fehlt das
+  Komma bei Zählfragen und ist es bei Metern und Millionen da? Ist das
+  Aufdecken Zeile um Zeile spannend oder zu langsam (erst nach gut einer
+  Sekunde, dann alle 0,7)? Und landet die Strafe beim Richtigen, wenn ein
+  Abend läuft – bei Gleichstand bei beiden?
 - **Pferderennen als Raster (4. November)**: Stehen die Seitenkarten genau
   über den Feldern, und erkennt man, welche Karte zu welcher Spalte gehört?
   Ist der helle Streifen über der nächsten Spalte hilfreich oder unruhig?

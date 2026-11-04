@@ -270,7 +270,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .countTo21:
             return "Reihum zählen, jeder sagt eine bis drei Zahlen. Wer 21 sagt, trinkt und darf eine Regel erfinden – zum Beispiel, dass die 7 ab jetzt „Prost“ heißt. Danach geht es von vorn los, mit allen Regeln."
         case .estimation:
-            return "Eine Frage mit einer Zahl als Antwort. Jeder schätzt, die App deckt auf. Wer am weitesten daneben liegt, trinkt – wer genau trifft, verteilt."
+            return "Eine Frage mit einer Zahl als Antwort. Jeder schätzt – laut reingerufen oder geheim ins Handy getippt, das wählt ihr vorher. Die App deckt auf. Wer am weitesten daneben liegt, trinkt – wer am nächsten dran ist, verteilt."
         case .categories:
             return "Eine Kategorie, dann reihum ein Begriff daraus. Wer patzt, sich wiederholt oder zu lange braucht, trinkt. Die Bedenkzeit wird jede Runde kürzer."
         case .mostLikely:
@@ -561,10 +561,11 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // Stufen, Kategorie. Die Haerte steht in demselben Vorspann.
         // Trink-Roulette steht seit dem 25. Oktober hier: Es fragt jetzt
         // nach dem Rad und hat damit einen Vorspann, in dem die Haerte mit
-        // Platz hat.
+        // Platz hat. Der Schaetzmeister seit dem 4. November: Er fragt, ob
+        // reingerufen oder aufgeschrieben wird.
         case .ringOfFire, .neverHaveIEver, .schocken, .maexchen, .spy,
              .headsUp, .forbiddenWords, .eveningRule, .charades, .timeline,
-             .herd, .drinkRoulette:
+             .herd, .drinkRoulette, .estimation:
             return .inSetup
 
         // Alle anderen fangen sofort an. Pferderennen und Wahrheit oder
@@ -572,7 +573,7 @@ enum PartyGame: String, CaseIterable, Identifiable {
         // kommt, ist schon das Spiel (die Bahn, die Wahl) und kein
         // Einstellungs-Screen – und beide sprechen ihre Mengen bereits dort
         // aus, die Haerte muss also vorher stehen.
-        case .busRide, .twoTruths, .countTo21, .estimation, .categories,
+        case .busRide, .twoTruths, .countTo21, .categories,
              .drinkBingo, .knowYourPeople, .horseRace,
              .truthOrDare, .mostLikely, .bombPass, .reactionDuel, .spectrum:
             return .ownScreen

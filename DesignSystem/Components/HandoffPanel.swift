@@ -6,7 +6,8 @@
 //
 //  Zwei Spiele brauchen denselben Ablauf, weil beide ein Geheimnis pro
 //  Person verteilen – der Spion seine Rolle, Verbotene Woerter das Wort.
-//  Beide standen fast gleich da, und "fast" ist hier das Problem: Die
+//  Der Schaetzmeister sammelt damit umgekehrt eins ein: die Zahl, die jeder
+//  geheim eintippt. Die ersten beiden standen fast gleich da, und "fast" ist hier das Problem: Die
 //  Kartenmasse war identisch, nur eine der beiden Deckseiten war zentriert.
 //
 //  Wichtig ist die Zwischenstufe. Ohne die verdeckte Seite laege das
@@ -25,6 +26,9 @@ struct HandoffPanel<Secret: View>: View {
     private let isRevealed: Bool
     private let tint: Color
     private let continueTitle: String
+    /// Ob weitergegeben werden darf. Beim Schaetzmeister erst, wenn eine
+    /// Zahl dasteht – sonst ginge eine leere Schaetzung durch.
+    private let canContinue: Bool
     private let onReveal: () -> Void
     private let onContinue: () -> Void
     private let secret: Secret
@@ -36,6 +40,7 @@ struct HandoffPanel<Secret: View>: View {
         isRevealed: Bool,
         tint: Color,
         continueTitle: String,
+        canContinue: Bool = true,
         onReveal: @escaping () -> Void,
         onContinue: @escaping () -> Void,
         @ViewBuilder secret: () -> Secret
@@ -44,6 +49,7 @@ struct HandoffPanel<Secret: View>: View {
         self.isRevealed = isRevealed
         self.tint = tint
         self.continueTitle = continueTitle
+        self.canContinue = canContinue
         self.onReveal = onReveal
         self.onContinue = onContinue
         self.secret = secret()
@@ -63,6 +69,8 @@ struct HandoffPanel<Secret: View>: View {
 
             if isRevealed {
                 PrimaryButton(title: continueTitle, systemImage: "arrow.right", action: onContinue)
+                    .opacity(canContinue ? 1 : 0.4)
+                    .disabled(!canContinue)
             } else {
                 PrimaryButton(title: "Aufdecken", systemImage: "eye.fill") {
                     onReveal()

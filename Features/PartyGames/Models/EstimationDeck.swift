@@ -34,11 +34,33 @@ struct EstimationQuestion: Identifiable, Equatable {
     var answerText: String {
         unit.isEmpty ? numberText : "\(numberText) \(unit)"
     }
+
+    /// Ob beim Aufschreiben ein Komma getippt werden darf.
+    ///
+    /// Haengt an der EINHEIT, nicht an der Antwort: Gaebe es das Komma genau
+    /// dann, wenn die Antwort eins hat, verriete schon der Ziffernblock,
+    /// dass sie keine ganze Zahl ist. Und bei allem, was man zaehlt (Sitze,
+    /// Knochen, Laender), waere es ein unfairer Vorteil – wer 630,5 sagt,
+    /// schneidet zwischen zwei anderen hindurch.
+    var allowsDecimals: Bool {
+        EstimationDeck.decimalUnits.contains(unit)
+    }
 }
 
 enum EstimationDeck {
 
     static func shuffled() -> [EstimationQuestion] { all.shuffled() }
+
+    /// Masse, die man am Tisch auch mit Komma sagt. Alles andere wird
+    /// gezaehlt und hat keins. Jede Antwort mit Nachkommastelle muss eine
+    /// dieser Einheiten tragen – sonst liesse sie sich nicht genau treffen
+    /// (`EstimationRoundTests`).
+    static let decimalUnits: Set<String> = [
+        "Meter", "Kilometer", "Zentimeter",
+        "Gramm", "Kilogramm", "Liter",
+        "Millionen", "Millionen km", "Tausend", "Tausend km", "Tausend km²",
+        "Promille", "Grad", "Tage"
+    ]
 
     static var count: Int { all.count }
 
