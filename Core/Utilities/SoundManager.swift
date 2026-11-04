@@ -155,7 +155,9 @@ enum GameSound: String, CaseIterable {
         // Gerechnet und schon so kurz, wie sie sein sollen
         case .ringTick, .ringStop, .ringDraw, .ringRank2, .ringRank3, .ringRank4, .ringRank5,
              .ringRank6, .ringRank7, .ringRank8, .ringRank9, .ringRank10, .ringRank11,
-             .ringRank12, .ringRank13, .ringRank14, .ringTear, .ringHolds, .ringShuffle, .ringOut:
+             .ringRank12, .ringRank13, .ringRank14, .ringTear, .ringHolds, .ringShuffle, .ringOut,
+             .ringSplat, .ringGush, .ringStream, .ringThunder, .ringShimmer, .ringChoir,
+             .ringBeat, .ringWhoosh, .ringHeartbeat, .ringSpotlight, .ringFlutter, .ringBlaze:
             return nil
         }
     }
