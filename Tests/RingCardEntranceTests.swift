@@ -133,6 +133,17 @@ final class RingCardEntranceTests: XCTestCase {
         }
     }
 
+    /// Der Schatten waechst mit der Hoehe der Karte: Auf ihrem Platz liegt
+    /// sie flach, als Stempel aus der Naehe schwebt sie hoch darueber.
+    func testTheShadowKnowsHowHighTheCardIs() {
+        XCTAssertEqual(RingCardEntering.height(of: .rest), 0)
+        let stempel = RingCardEntrance.stamp.pose(at: 0.1)
+        XCTAssertGreaterThan(RingCardEntering.height(of: stempel), 0.9)
+        for auftritt in RingCardEntrance.allCases {
+            XCTAssertLessThanOrEqual(RingCardEntering.height(of: auftritt.pose(at: 1)), 0, "\(auftritt)")
+        }
+    }
+
     /// Nur das Trink-Duo kommt zu zweit. Die beiden kommen von
     /// verschiedenen Seiten, und am Ende ist die zweite in der ersten
     /// aufgegangen.

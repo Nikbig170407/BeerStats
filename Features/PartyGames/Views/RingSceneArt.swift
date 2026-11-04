@@ -1230,3 +1230,40 @@ enum RingSceneArt {
         }
     }
 }
+
+// MARK: - Das Licht beim Schlag
+
+extension RingSceneArt {
+
+    /// Unter der Szene: Das Licht oben wandert beim Schlag in die Farbe der
+    /// Szene. Vorher traegt der Screen die Farbe der Karte (Rolle rot,
+    /// sonst bernstein), danach die des Moments.
+    static func hitLightUnder(_ b: inout SceneBrush, _ s: RingStage, _ t: Double, _ light: Color) {
+        let ds = t - s.hit
+        let wechsel = smooth((ds + 0.05) / 0.45)
+        b.glow(s.w / 2, s.h * 0.25, s.w * 0.9, light, 0.16 * wechsel + 0.06 * bell(ds, 0.3))
+    }
+
+    /// Ueber der Szene, unter Karte und Text: ein Schein hinter der Karte,
+    /// der beim Schlag aufflammt, und eine Vignette. Sie zieht sich im
+    /// Aufbau zu, reisst beim Schlag auf und atmet danach leise.
+    static func hitLightOver(_ b: inout SceneBrush, _ s: RingStage, _ t: Double, _ light: Color) {
+        let ds = t - s.hit
+        let wechsel = smooth((ds + 0.05) / 0.45)
+        b.glow(s.cardMidX, s.cardMidY, s.w * 0.62, light, 0.07 * wechsel + 0.18 * bell(ds, 0.2))
+        let dunkel: Double
+        if ds < 0 {
+            dunkel = 0.3 + 0.25 * easeIn(t / max(0.01, s.hit))
+        } else {
+            dunkel = 0.36 - 0.24 * exp(-ds * 3) + 0.04 * sin(t * 2.2)
+        }
+        b.flush()
+        let verlauf = Gradient(stops: [
+            .init(color: Color.black.opacity(0), location: 0),
+            .init(color: Color.black.opacity(0), location: 0.55),
+            .init(color: Color.black.opacity(dunkel), location: 1)
+        ])
+        let flaeche = Path(CGRect(x: -10, y: -10, width: s.w + 20, height: s.h + 20))
+        b.g.fill(flaeche, with: .radialGradient(verlauf, center: CGPoint(x: s.cardMidX, y: s.cardMidY), startRadius: 0, endRadius: s.w * 1.8))
+    }
+}

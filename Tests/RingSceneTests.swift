@@ -97,4 +97,17 @@ final class RingSceneTests: XCTestCase {
             XCTAssertLessThan(szene.hitTime, EffectCanvas(draw: { _, _, _ in }).stillAt, "\(szene): Das stille Bild laege vor dem Schlag")
         }
     }
+
+    /// Gebebt wird nur, wo etwas einschlaegt – Blitz, Stempel, Shot. Ein
+    /// Screen, der bei jeder Karte wackelt, wackelt bald fuer niemanden
+    /// mehr. Und was bebt, rueckt auch heran: Ein Beben ohne Gewicht wirkt
+    /// wie ein Fehler.
+    func testOnlyTheBigHitsShakeTheScreen() {
+        let beben = RingScene.allCases.filter { $0.quake > 0 }
+        XCTAssertEqual(Set(beben), [.guys, .rule, .ace])
+        for szene in beben {
+            XCTAssertTrue(szene.zoomsOnHit, "\(szene)")
+            XCTAssertLessThanOrEqual(szene.quake, 8, "\(szene) bebt so stark, dass der Text verschwimmt")
+        }
+    }
 }

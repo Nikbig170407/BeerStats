@@ -153,6 +153,30 @@ enum RingCardEntrance: CaseIterable {
     /// wie er am Tisch laeuft.
     var hitTime: Double { landing * playbackDuration }
 
+    /// Wer schnell kommt, zieht Geisterbilder hinter sich her: der Pfeil,
+    /// der Stempel, die Muenze und das Ass. Bei den anderen waeren sie nur
+    /// Unschaerfe auf einer Karte, die ohnehin langsam ist.
+    var leavesGhosts: Bool {
+        switch self {
+        case .arrow, .stamp, .coin, .slam: return true
+        default: return false
+        }
+    }
+
+    /// Um welche Achse die Karte im Flug leicht gekippt liegt und beim
+    /// Landen flach wird – x um die senkrechte, y um die waagrechte Achse.
+    /// Wer sich ohnehin dreht oder aufrichtet, kippt nicht zusaetzlich.
+    var tilt: (x: Double, y: Double) {
+        switch self {
+        case .arrow, .twirl, .pair: return (0, 1)
+        case .drop, .pour, .pump, .stamp: return (1, 0)
+        case .rise: return (-1, 0)
+        case .hop: return (0, -1)
+        case .slam: return (1, 1)
+        case .flick, .standUp, .coin: return (0, 0)
+        }
+    }
+
     /// Die Zeitbasis der Rechnung, in Sekunden. Gespielt wird sie um
     /// `stretch` langsamer (`playbackDuration`); die Schwingungen in den
     /// Posen rechnen weiter mit dieser Zahl, damit die Bewegung beim
@@ -500,41 +524,169 @@ enum RingCardEntrance: CaseIterable {
 
 /// Die gezogene Karte im Auftritt. Sie rechnet nichts, sie zeigt die Pose,
 /// die `RingCardEntrance` fuer den Fortschritt liefert – SwiftUI rechnet
-/// die Zwischenwerte des Fortschritts.
+/// die Zwischenwerte der Zeit.
+///
+/// Seit dem 4. November (Vorschlag 2) traegt die Karte, was zum Schlag
+/// gehoert: einen Schlagschatten, der mit ihrer Hoehe waechst, ein Randlicht
+/// in der Farbe der Szene, einen Glanz, der beim Landen ueber sie wischt,
+/// einen leichten Kipp im Flug – und wer schnell kommt, Geisterbilder.
 struct RingCardEntering: View, Animatable {
 
     let card: PlayingCard
     let entrance: RingCardEntrance
     let width: CGFloat
-    /// 0 bis 1.
-    var progress: Double
+    /// Das Licht der Szene (`RingScene.light`).
+    var light: Color = BeerStatsColor.accent
+    /// Sekunden seit Beginn des Auftritts. Laeuft ueber das Ende hinaus
+    /// weiter (`afterglow`), damit Glanz und Licht nach dem Schlag auslaufen.
+    var time: Double
 
     var animatableData: Double {
-        get { progress }
-        set { progress = newValue }
+        get { time }
+        set { time = newValue }
     }
+
+    /// So lange laeuft die Zeit nach dem Auftritt weiter.
+    static let afterglow = 1.0
+
+    private var progress: Double { min(1, max(0, time / entrance.playbackDuration)) }
+    private var sinceHit: Double { time - entrance.hitTime }
+    private var corner: CGFloat { width * 0.1 }
 
     var body: some View {
         ZStack {
+            // Geisterbilder: nur in der schnellen Bewegung vor der Landung
+            if entrance.leavesGhosts, progress < entrance.landing + 0.06 {
+                let weg = 1 - Self.seg(progress, entrance.landing - 0.02, entrance.landing + 0.06)
+                ForEach([3, 2, 1], id: \.self) { k in
+                    let frueher = progress - Double(k) * 0.04
+                    if frueher > 0 {
+                        ghost(entrance.pose(at: frueher), opacity: Self.ghostOpacity[k] * weg)
+                    }
+                }
+            }
             // Hinter der Karte: die zweite des Trink-Duos. Fuer jeden
             // anderen Rang gibt es sie nicht, und das aendert sich waehrend
             // des Auftritts nicht – der Aufbau bleibt derselbe.
-            if let ghost = entrance.ghostPose(at: progress) {
-                posed(ghost)
+            if let zweite = entrance.ghostPose(at: progress) {
+                posed(zweite, glows: false)
             }
-            posed(entrance.pose(at: progress))
+            posed(entrance.pose(at: progress), glows: true)
         }
     }
 
-    private func posed(_ pose: CardPose) -> some View {
-        sides(showingBack: pose.showsBack)
+    private static let ghostOpacity: [Double] = [0, 0.32, 0.18, 0.09]
+
+    /// Eine Karte in ihrer Pose, mit Schatten; die Hauptkarte zusaetzlich
+    /// mit Schein, Randlicht und Glanz.
+    private func posed(_ pose: CardPose, glows: Bool) -> some View {
+        let hoehe = Self.height(of: pose)
+        let schein = glows ? glowAmount : 0
+        return sides(showingBack: pose.showsBack)
+            .shadow(color: light.opacity(glows ? 0.4 + 0.5 * schein : 0), radius: 24 + 40 * schein)
+            // Der Schlagschatten liegt auf dem Tisch: je hoeher die Karte,
+            // desto weiter weg und weicher
+            .background {
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .fill(Color.black.opacity(0.46 * (1 - 0.45 * hoehe)))
+                    .offset(x: 3 + 10 * hoehe, y: 12 + 40 * hoehe)
+                    .blur(radius: 11 + 17 * hoehe)
+            }
+            .overlay {
+                if glows {
+                    rimLight
+                    sheen
+                }
+            }
             .modifier(RingCardCurtainEffect(isOn: entrance == .pour, reveal: pose.reveal))
+            .rotation3DEffect(.degrees(glows ? tiltAngle : 0), axis: tiltAxis, perspective: 0.5)
             .scaleEffect(x: pose.scaleX, y: pose.scaleY, anchor: entrance.pivot)
             .rotation3DEffect(.degrees(pose.flipX), axis: (x: 1, y: 0, z: 0), anchor: entrance.pivot, perspective: 0.5)
             .rotation3DEffect(.degrees(pose.flipY), axis: (x: 0, y: 1, z: 0), anchor: entrance.pivot, perspective: 0.5)
             .rotationEffect(.degrees(pose.rotation), anchor: entrance.pivot)
             .offset(x: pose.x * wayScale, y: pose.y * wayScale)
             .opacity(pose.opacity)
+    }
+
+    /// Ein Geisterbild: dieselbe Karte, durchscheinend und in der Farbe der
+    /// Szene getoent.
+    private func ghost(_ pose: CardPose, opacity: Double) -> some View {
+        sides(showingBack: pose.showsBack)
+            .overlay {
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .fill(light.opacity(0.45))
+            }
+            .scaleEffect(x: pose.scaleX, y: pose.scaleY, anchor: entrance.pivot)
+            .rotation3DEffect(.degrees(pose.flipX), axis: (x: 1, y: 0, z: 0), anchor: entrance.pivot, perspective: 0.5)
+            .rotation3DEffect(.degrees(pose.flipY), axis: (x: 0, y: 1, z: 0), anchor: entrance.pivot, perspective: 0.5)
+            .rotationEffect(.degrees(pose.rotation), anchor: entrance.pivot)
+            .offset(x: pose.x * wayScale, y: pose.y * wayScale)
+            .opacity(pose.opacity * opacity)
+    }
+
+    /// Wie hoch die Karte ueber dem Tisch ist, von 0 (liegt) bis 1: aus
+    /// ihrer Groesse und wie weit sie ueber ihrem Platz steht.
+    static func height(of pose: CardPose) -> Double {
+        let gross = SceneArt.clamp(max(pose.scaleX, pose.scaleY) - 1) * 1.6
+        let oben = SceneArt.clamp(-pose.y / 260) * 0.8
+        return SceneArt.clamp(gross + oben)
+    }
+
+    /// Der Schein um die Karte: beim Schlag hell, danach ein Rest.
+    private var glowAmount: Double {
+        0.9 * Self.bell(sinceHit, 0.22) + 0.3 * SceneArt.clamp(sinceHit / 0.4)
+    }
+
+    /// Die Achse des Kipps. Nie die Nullachse – um die liesse sich nichts
+    /// drehen, auch nicht um null Grad.
+    private var tiltAxis: (x: CGFloat, y: CGFloat, z: CGFloat) {
+        let k = entrance.tilt
+        guard k.x != 0 || k.y != 0 else { return (0, 1, 0) }
+        return (CGFloat(k.y), CGFloat(k.x), 0)
+    }
+
+    /// Im Flug leicht gekippt, beim Landen flach – mit kurzem Nachwippen.
+    private var tiltAngle: Double {
+        guard entrance.tilt.x != 0 || entrance.tilt.y != 0 else { return 0 }
+        if sinceHit < 0 { return 9 * SceneArt.clamp(progress / 0.12) }
+        return 9 * exp(-sinceHit * 7) * cos(sinceHit * 17)
+    }
+
+    /// Das Randlicht in der Farbe der Szene: oben links hell, unten rechts
+    /// verloschen. Vor dem Schlag schwach, beim Schlag voll, danach in der
+    /// Mitte.
+    private var rimLight: some View {
+        let basis = sinceHit < 0 ? 0.18 : 0.5 + 0.5 * exp(-sinceHit * 4)
+        let a = min(1, max(0, basis + 0.05 * sin(time * 2.4)))
+        let verlauf = Gradient(stops: [
+            .init(color: light.opacity(a), location: 0),
+            .init(color: light.opacity(a * 0.4), location: 0.45),
+            .init(color: light.opacity(a * 0.08), location: 1)
+        ])
+        return RoundedRectangle(cornerRadius: corner * 0.85, style: .continuous)
+            .inset(by: 1.5)
+            .stroke(LinearGradient(gradient: verlauf, startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 3.5)
+            .shadow(color: light.opacity(a * 0.9), radius: 7)
+    }
+
+    /// Der Glanz: ein Lichtband wischt beim Schlag einmal schraeg ueber die
+    /// Karte. Auf der hellen Karte sieht man vor allem seine farbigen
+    /// Raender, auf den Zeichen den weissen Kern.
+    @ViewBuilder
+    private var sheen: some View {
+        if sinceHit >= 0, sinceHit < 0.45 {
+            let mitte = -0.25 + 1.5 * (sinceHit / 0.45)
+            let punkte: [(Double, Color)] = [
+                (mitte - 0.2, light.opacity(0)), (mitte - 0.08, light.opacity(0.32)),
+                (mitte - 0.015, Color.white.opacity(0.95)), (mitte + 0.015, Color.white.opacity(0.95)),
+                (mitte + 0.08, light.opacity(0.32)), (mitte + 0.2, light.opacity(0))
+            ]
+            Rectangle()
+                .fill(LinearGradient(gradient: Gradient(stops: punkte.map { Gradient.Stop(color: $0.1, location: CGFloat(min(1, max(0, $0.0)))) }),
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
+                .allowsHitTesting(false)
+        }
     }
 
     /// Wie viel laenger die Wege sind, weil die Karte groesser ist als die,
@@ -550,6 +702,15 @@ struct RingCardEntering: View, Animatable {
             PlayingCardView(card: card, width: width)
                 .opacity(showingBack ? 0 : 1)
         }
+    }
+
+    private static func seg(_ p: Double, _ a: Double, _ b: Double) -> Double {
+        SceneArt.clamp((p - a) / (b - a))
+    }
+
+    private static func bell(_ s: Double, _ breite: Double) -> Double {
+        let q = s / breite
+        return exp(-q * q)
     }
 }
 

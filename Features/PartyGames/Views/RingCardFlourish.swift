@@ -150,6 +150,42 @@ enum RingScene: CaseIterable {
         }
     }
 
+    /// Das Licht der Szene: In diese Farbe wandert beim Schlag das Licht
+    /// hinter der Karte, und in ihr leuchten Rand und Schein der Karte.
+    var light: Color {
+        switch self {
+        case .pointAt, .category: return BeerStatsColor.accent
+        case .drinkSelf, .waterfall: return SceneArt.beer
+        case .guys: return SceneArt.bolt
+        case .chicks: return SceneArt.pink
+        case .heaven, .queen: return SceneArt.light
+        case .mates, .thumbMaster: return BeerStatsColor.success
+        case .rhyme: return SceneArt.violet
+        case .rule: return BeerStatsColor.warning
+        case .ace: return SceneArt.ember
+        }
+    }
+
+    /// Die grossen Momente: Dort rueckt der Screen beim Schlag kurz heran.
+    var zoomsOnHit: Bool {
+        switch self {
+        case .drinkSelf, .guys, .heaven, .rule, .queen, .ace: return true
+        default: return false
+        }
+    }
+
+    /// Wie stark der Screen beim Schlag bebt, in Punkten. Nur dort, wo
+    /// etwas einschlaegt – Blitz, Stempel, Shot –, sonst nutzt sich das
+    /// Beben ab.
+    var quake: Double {
+        switch self {
+        case .guys: return 4.5
+        case .rule: return 7
+        case .ace: return 8
+        default: return 0
+        }
+    }
+
     /// Der Schlag: wann die Karte landet, in Sekunden ab dem Start der
     /// Szene. Szene und Auftritt beginnen gemeinsam (`settle`), also ist
     /// es dieselbe Zeit wie im Auftritt.
@@ -170,6 +206,7 @@ enum RingScene: CaseIterable {
     func draw(_ g: inout GraphicsContext, _ size: CGSize, _ t: Double, layout: RingCardLayout, scale: Double) {
         let stage = RingStage(size: size, hit: hitTime, layout: layout, scale: scale)
         var pinsel = SceneBrush(g)
+        RingSceneArt.hitLightUnder(&pinsel, stage, t, light)
         switch self {
         case .pointAt: RingSceneArt.pointAt(&pinsel, stage, t)
         case .drinkSelf: RingSceneArt.drinkSelf(&pinsel, stage, t)
@@ -185,6 +222,7 @@ enum RingScene: CaseIterable {
         case .category: RingSceneArt.category(&pinsel, stage, t)
         case .ace: RingSceneArt.ace(&pinsel, stage, t)
         }
+        RingSceneArt.hitLightOver(&pinsel, stage, t, light)
         pinsel.flush()
     }
 }

@@ -58,10 +58,15 @@ struct RingOfFireActionView: View {
     static let settle = 0.3
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Wie weit der Auftritt der Karte ist, von 0 bis 1.
-    @State private var entranceProgress = 0.0
+    /// Sekunden seit Beginn des Auftritts. Laeuft ueber das Ende hinaus,
+    /// damit Glanz, Licht und Beben nach dem Schlag auslaufen.
+    @State private var cardTime = 0.0
 
     private var entrance: RingCardEntrance { RingCardEntrance(rank: card.rank) }
+    private var scene: RingScene { RingScene(rank: card.rank) }
+
+    /// So weit laeuft die Zeit; mit "Bewegung reduzieren" steht sie gleich dort.
+    private var endTime: Double { entrance.playbackDuration + RingCardEntering.afterglow }
 
     /// Rollen-Karten faerben rot, der Rest bernstein – dieselbe Zuordnung
     /// wie vorher im Panel.
@@ -88,10 +93,10 @@ struct RingOfFireActionView: View {
                             card: card,
                             entrance: entrance,
                             width: breite,
-                            progress: reduceMotion ? 1 : entranceProgress
+                            light: scene.light,
+                            time: reduceMotion ? endTime : cardTime
                         )
                         .anchorPreference(key: RingCardAnchorKey.self, value: .bounds) { RingCardAnchors(card: $0) }
-                        .shadow(color: tint.opacity(0.4), radius: 24)
                         .padding(.top, 12)
 
                         // Klein die deutsche Anweisung, gross der Name, unter
@@ -149,6 +154,14 @@ struct RingOfFireActionView: View {
                         )
                     }
                 }
+                // Beim Schlag rueckt der Screen kurz heran und bebt – Szene,
+                // Karte und Text zusammen. Der Knopf darunter steht still.
+                .modifier(RingHitShake(
+                    time: reduceMotion ? endTime : cardTime,
+                    hit: entrance.hitTime,
+                    zooms: scene.zoomsOnHit,
+                    quake: scene.quake
+                ))
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -172,8 +185,8 @@ struct RingOfFireActionView: View {
             guard !reduceMotion else { return }
             // Linear: Wie schnell die Karte wann ist, rechnet der Auftritt
             // selbst – eine zweite Kurve darueber verbiege seine Rechnung
-            withAnimation(.linear(duration: entrance.playbackDuration).delay(Self.settle)) {
-                entranceProgress = 1
+            withAnimation(.linear(duration: endTime).delay(Self.settle)) {
+                cardTime = endTime
             }
         }
         // Jeder Rang klingt anders – man hoert, welche Karte kam, bevor man
@@ -288,5 +301,49 @@ struct RingCardAnchorKey: PreferenceKey {
         let neu = nextValue()
         value.card = value.card ?? neu.card
         value.text += neu.text
+    }
+}
+
+// MARK: - Der Schlag auf dem ganzen Screen
+
+/// Beim Schlag rueckt der Screen kurz heran (die grossen Momente) und bebt
+/// (Blitz, Stempel, Shot). Davor holt er kaum merklich Anlauf. Eine reine
+/// Verschiebung beim Zeichnen: Das Layout bleibt, wo es ist.
+private struct RingHitShake: GeometryEffect {
+
+    var time: Double
+    let hit: Double
+    let zooms: Bool
+    let quake: Double
+
+    var animatableData: Double {
+        get { time }
+        set { time = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let s = time - hit
+        var zoom = 1.0
+        if zooms {
+            if s < 0 {
+                let q = (s + 0.09) / 0.08
+                zoom = 1 - 0.012 * exp(-q * q)
+            } else {
+                zoom = 1 + 0.035 * exp(-s * 6.5) * SceneArt.clamp(s / 0.035)
+            }
+        }
+        var dx = 0.0, dy = 0.0
+        if quake > 0, s > 0, s < 0.5 {
+            let a = quake * exp(-s * 11)
+            dx = a * sin(s * 2 * .pi * 21)
+            dy = a * 0.7 * cos(s * 2 * .pi * 15)
+        }
+        // Herangerueckt wird auf die Karte zu – sie steht im oberen Drittel
+        let ax = size.width * 0.5, ay = size.height * 0.33
+        let k = CGFloat(zoom)
+        let verschiebung = CGAffineTransform(translationX: ax + CGFloat(dx), y: ay + CGFloat(dy))
+            .scaledBy(x: k, y: k)
+            .translatedBy(x: -ax, y: -ay)
+        return ProjectionTransform(verschiebung)
     }
 }
