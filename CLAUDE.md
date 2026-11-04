@@ -1465,7 +1465,12 @@ Regel gilt für Abschnitt 9.
    eindeutig – **beide** Jobs enden nach wenigen Sekunden mit **null**
    aufgezeichneten Schritten. Ein Compiler-Fehler sieht nie so aus. Bevor
    der Swift-Code durchsucht wird, gehört deshalb der Blick auf die
-   Schritte; `scripts/watch_build.py` schreibt genau das hin.
+   Schritte; `scripts/watch_build.py` schreibt genau das hin – samt dem
+   Grund, den GitHub in die Anmerkungen des Jobs schreibt. Der ist nicht
+   immer die Abrechnung: Am 4. November standen die Jobs nach einer
+   Störung je eine Viertelstunde in der Warteschlange und wurden dann
+   abgebrochen, weil kein macOS-Runner frei war („not acquired by Runner
+   of type hosted“). Dann hilft nur Warten und neu anstoßen.
 8. **Eine Einstellung, die niemand einstellen kann, wird auch nicht
    ausgewertet.** `GameFormat` trug sieben Schalter, von denen nur die
    Becherzahl an der Oberfläche ankam. Beim Sichtbarmachen stellte sich

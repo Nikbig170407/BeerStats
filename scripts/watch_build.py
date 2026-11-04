@@ -167,6 +167,27 @@ INTERESSANT = ("error:", "Fatal error", "** TEST FAILED **", "** BUILD FAILED **
 RAUSCHEN = ("CA Event", "Failed to send")
 
 
+def print_annotations(job_id):
+    """Was GitHub selbst zu einem Job sagt, der nie gestartet ist.
+
+    Ohne das blieb nur Raten: Am 4. November standen vier Laeufe
+    hintereinander mit "Abrechnung?" da, und der Grund war ein anderer –
+    nach einer Stoerung gab es keine freien macOS-Runner ("The job was not
+    acquired by Runner of type hosted even after multiple attempts"). Die
+    Anmerkungen sind ohne Anmeldung lesbar, das Repo ist oeffentlich.
+    """
+    notes = api_with_retry(f"check-runs/{job_id}/annotations")
+    if not notes:
+        print("  (GitHub nennt keinen Grund)")
+        return
+    seen = set()
+    for note in notes:
+        text = note.get("message", "").strip()
+        if text and text not in seen:
+            seen.add(text)
+            print(f"  GitHub: {text}")
+
+
 def print_error_lines(run_id):
     """Holt die echten Fehlerzeilen aus dem Protokoll.
 
@@ -246,8 +267,10 @@ def main():
         steps = job.get("steps", [])
         if not steps:
             # Genau dieses Bild bedeutet: Der Job wurde nie gestartet. Siehe
-            # Lessons Learned Nr. 7 in CLAUDE.md.
-            print("  KEINE SCHRITTE - Job wurde nie gestartet (Abrechnung? Kontingent?)")
+            # Lessons Learned Nr. 7 in CLAUDE.md. Den Grund nennt GitHub in
+            # den Anmerkungen des Jobs – Abrechnung, oder kein freier Runner.
+            print("  KEINE SCHRITTE - Job wurde nie gestartet")
+            print_annotations(job["id"])
         for step in steps:
             mark = "ok " if step["conclusion"] == "success" else ">> "
             print(f"  {mark}{str(step['conclusion']):<12} {step['name']}")
