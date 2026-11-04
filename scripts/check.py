@@ -181,6 +181,104 @@ def strip_code(text):
     return "".join(out), offene
 
 
+def block_end(code, auf):
+    """Die schliessende Klammer zu der geschweiften Klammer an `auf`."""
+    tiefe = 0
+    for i in range(auf, len(code)):
+        if code[i] == "{":
+            tiefe += 1
+        elif code[i] == "}":
+            tiefe -= 1
+            if tiefe == 0:
+                return i
+    return len(code)
+
+
+def top_level(code, start, ende):
+    """Der Text zwischen `start` und `ende` ohne alles, was tiefer liegt."""
+    out, tiefe = [], 0
+    for ch in code[start:ende]:
+        if ch == "{":
+            tiefe += 1
+        elif ch == "}":
+            tiefe -= 1
+        elif tiefe == 0:
+            out.append(ch)
+    return "".join(out)
+
+
+def enum_switch_findings(dateien):
+    """Ein `switch self` ohne `default`, dem ein Fall seiner Aufzaehlung fehlt.
+
+    Genau daran ist am 4. November ein Lauf gescheitert: Neue Klaenge waren
+    als Faelle angelegt und in einem `switch` eingeordnet, im zweiten nicht
+    - "switch must be exhaustive", zehn Minuten spaeter. Gesucht wird in der
+    Aufzaehlung selbst und in ihren Erweiterungen, auch in anderen Dateien.
+    """
+    funde = []
+    deklariert = {}
+    for rel, code in dateien:
+        for treffer in re.finditer(r"\benum\s+(\w+)[^{;]*\{", code):
+            auf = treffer.end() - 1
+            deklariert.setdefault(treffer.group(1), []).append((rel, code, auf, block_end(code, auf)))
+
+    for name, orte in deklariert.items():
+        # Zwei Aufzaehlungen gleichen Namens (verschachtelt in
+        # verschiedenen Typen): Welche eine Erweiterung meint, ist ohne
+        # Compiler nicht zu sagen - dann nur die Koerper selbst
+        erweiterungen = []
+        if len(orte) == 1:
+            for rel, code in dateien:
+                for treffer in re.finditer(r"\bextension\s+" + name + r"\b[^{]*\{", code):
+                    auf = treffer.end() - 1
+                    erweiterungen.append((rel, code, auf, block_end(code, auf)))
+
+        for rel, code, auf, zu in orte:
+            bereiche = [(rel, code, auf, zu)] + erweiterungen
+            faelle = []
+            for zeile in top_level(code, auf + 1, zu).splitlines():
+                fall = re.match(r"\s*(?:indirect\s+)?case\s+(.+)$", zeile)
+                if not fall:
+                    continue
+                tiefe, teil, teile = 0, "", []
+                for ch in fall.group(1):
+                    if ch in "([":
+                        tiefe += 1
+                    elif ch in ")]":
+                        tiefe -= 1
+                    if ch == "," and tiefe == 0:
+                        teile.append(teil)
+                        teil = ""
+                    else:
+                        teil += ch
+                teile.append(teil)
+                faelle += [m.group(1) for m in (re.match(r"\s*(\w+)", t) for t in teile) if m]
+            if not faelle:
+                continue
+
+            for brel, bcode, bauf, bzu in bereiche:
+                # Verschachtelte Typen haben ihr eigenes `self`
+                innen = [(m.end() - 1, block_end(bcode, m.end() - 1))
+                         for m in re.finditer(r"\b(?:struct|class|enum|actor)\s+\w+[^{;]*\{", bcode[bauf + 1:bzu])]
+                innen = [(a + bauf + 1, b + bauf + 1) for a, b in innen]
+                for treffer in re.finditer(r"\bswitch\s+self\s*\{", bcode[bauf:bzu]):
+                    s_auf = bauf + treffer.end() - 1
+                    if any(a < s_auf < b for a, b in innen):
+                        continue
+                    s_zu = block_end(bcode, s_auf)
+                    rumpf = bcode[s_auf:s_zu]
+                    if re.search(r"\bdefault\s*:", rumpf):
+                        continue
+                    fehlen = [f for f in faelle if not re.search(r"\.\s*" + f + r"\b", rumpf)]
+                    if fehlen and len(fehlen) < len(faelle):
+                        zeile = bcode[:s_auf].count("\n") + 1
+                        funde.append(
+                            f"{brel}:{zeile}  switch ueber {name} ohne default - es fehlt: "
+                            + ", ".join("." + f for f in fehlen)
+                        )
+    return funde
+
+
 def main():
     funde = []
     dateien = []
@@ -267,6 +365,8 @@ def main():
         for name in (n.strip() for n in fall.split(",")):
             if re.fullmatch(r"\w+", name) and name not in vorhanden:
                 funde.append(f"GameSound.{name}  hat keine Datei in Resources/Sounds - der Klang bliebe still")
+
+    funde += enum_switch_findings(dateien)
 
     # Dateien, die in keinem Quellordner liegen, werden nie uebersetzt - der
     # Build bleibt gruen und die Aenderung wirkt trotzdem nicht.
