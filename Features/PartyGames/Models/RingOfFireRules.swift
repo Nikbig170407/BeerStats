@@ -51,9 +51,12 @@ enum RingOfFireRole: String, Identifiable, CaseIterable {
 }
 
 struct RingOfFireRule: Equatable {
-    /// Deutscher Name, gross auf der Karte.
+    /// Deutscher Name – steht klein ueber dem Kartennamen und sagt, worum
+    /// es geht. In der Merkliste steht er allein.
     let title: String
-    /// Der gelaeufige Name aus dem Spiel – steht klein darueber.
+    /// Der gelaeufige Name aus dem Spiel ("Nine – Rhyme") – gross auf dem
+    /// Kartenscreen. Am Tisch heisst die Karte so; die deutsche Anweisung
+    /// liest man klein darueber (Wunsch des Nutzers vom 4. November).
     let nickname: String
     /// Was zu tun ist. Nur die Handlung – wie lange und was Versagen kostet,
     /// stehen darunter in eigenen Zeilen.
@@ -99,7 +102,7 @@ enum RingOfFireRules {
         case 2:
             return RingOfFireRule(
                 title: "Du bestimmst",
-                nickname: "TWO FOR YOU",
+                nickname: "Two for You",
                 text: "Bestimme jemanden. Diese Person trinkt \(DrinkAmount.sips(2).text).",
                 emoji: "👉"
             )
@@ -111,7 +114,7 @@ enum RingOfFireRules {
             let eigene = DrinkAmount.sips(3)
             return RingOfFireRule(
                 title: "Du selbst",
-                nickname: "THREE FOR ME",
+                nickname: "Three for Me",
                 text: "Pech gehabt: Du trinkst \(eigene.text).",
                 emoji: "🙋",
                 drawerDrinks: eigene
@@ -119,7 +122,7 @@ enum RingOfFireRules {
         case 4:
             return RingOfFireRule(
                 title: "Wasserfall",
-                nickname: "FOUR – WATERFALL",
+                nickname: "Four – Waterfall",
                 text: "Alle fangen gleichzeitig an. Absetzen darf erst, wessen linker Nachbar abgesetzt hat – du fängst an.",
                 emoji: "🌊",
                 duration: "Bis alle abgesetzt haben"
@@ -127,21 +130,21 @@ enum RingOfFireRules {
         case 5:
             return RingOfFireRule(
                 title: "Die Jungs",
-                nickname: "FIVE IS GUYS",
+                nickname: "Five Is Guys",
                 text: "Alle Männer am Tisch trinken \(DrinkAmount.sips(3).text).",
                 emoji: "🙋‍♂️"
             )
         case 6:
             return RingOfFireRule(
                 title: "Die Mädels",
-                nickname: "SIX IS CHICKS",
+                nickname: "Six Is Chicks",
                 text: "Alle Frauen am Tisch trinken \(DrinkAmount.sips(3).text).",
                 emoji: "🙋‍♀️"
             )
         case 7:
             return RingOfFireRule(
                 title: "Hände hoch",
-                nickname: "SEVEN TO HEAVEN",
+                nickname: "Seven to Heaven",
                 text: "Alle Hände sofort nach oben. Wer als Letzter oben ist, hat verloren.",
                 emoji: "☝️",
                 penalty: DrinkAmount.sips(3).text
@@ -149,7 +152,7 @@ enum RingOfFireRules {
         case 8:
             return RingOfFireRule(
                 title: "Trink-Duo",
-                nickname: "EIGHT – MATE",
+                nickname: "Eight – Mate",
                 text: "Such dir einen Trinkpartner. Muss einer von euch trinken, trinkt der andere dieselbe Menge mit.",
                 emoji: "🤝",
                 role: .drinkingMate,
@@ -158,7 +161,7 @@ enum RingOfFireRules {
         case 9:
             return RingOfFireRule(
                 title: "Reimen",
-                nickname: "NINE – RHYME",
+                nickname: "Nine – Rhyme",
                 text: "Sag ein Wort. Reihum wird darauf gereimt. Wer nichts findet oder sich wiederholt, hat verloren.",
                 emoji: "🎤",
                 duration: "Bis jemand patzt",
@@ -167,7 +170,7 @@ enum RingOfFireRules {
         case 10:
             return RingOfFireRule(
                 title: "Zehn Gebote",
-                nickname: "TEN – RULE",
+                nickname: "Ten – Rule",
                 text: "Stell eine Regel auf, die ab sofort für alle gilt.",
                 emoji: "📜",
                 role: .houseRule,
@@ -177,7 +180,7 @@ enum RingOfFireRules {
         case 11:
             return RingOfFireRule(
                 title: "Daumenmeister",
-                nickname: "JACK – DUMB BUMB",
+                nickname: "Jack – Dumb Bumb",
                 text: "Leg die Karte vor dich. Wann immer du den Daumen auf den Tisch legst, ziehen alle nach. Wer als Letzter unten ist, hat verloren.",
                 emoji: "👍",
                 role: .thumbMaster,
@@ -187,7 +190,7 @@ enum RingOfFireRules {
         case 12:
             return RingOfFireRule(
                 title: "Question Queen",
-                nickname: "QUEEN – QUESTION",
+                nickname: "Queen – Question",
                 text: "Leg die Karte vor dich. Wer dir ab jetzt auf eine Frage antwortet, hat verloren.",
                 emoji: "👑",
                 role: .questionQueen,
@@ -197,7 +200,7 @@ enum RingOfFireRules {
         case 13:
             return RingOfFireRule(
                 title: "Kategorie",
-                nickname: "KING – CATEGORY",
+                nickname: "King – Category",
                 text: "Nenne eine Kategorie. Reihum nennt jeder einen Begriff. Wer patzt oder sich wiederholt, hat verloren.",
                 emoji: "📚",
                 duration: "Bis jemand patzt",
@@ -207,7 +210,7 @@ enum RingOfFireRules {
             let eigene = DrinkAmount.shot
             return RingOfFireRule(
                 title: "Ass",
-                nickname: "ACE – SHOT",
+                nickname: "Ace – Shot",
                 text: "Du trinkst \(eigene.text).",
                 emoji: "🥃",
                 drawerDrinks: eigene

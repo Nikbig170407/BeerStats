@@ -108,17 +108,21 @@ struct RingOfFireActionView: View {
                             .shadow(color: tint.opacity(0.4), radius: 24)
                             .padding(.top, 12)
 
-                            Text(rule.nickname)
+                            // Klein die deutsche Anweisung, gross der Name, unter
+                            // dem die Karte am Tisch bekannt ist
+                            Text(rule.title)
+                                .textCase(.uppercase)
                                 .font(.scaled(11, weight: .heavy, design: .rounded))
                                 .kerning(2)
                                 .foregroundStyle(BeerStatsColor.textSecondary)
 
                             HStack(spacing: 10) {
                                 Text(rule.emoji).font(.system(size: 30))
-                                Text(rule.title)
+                                Text(rule.nickname)
                                     .font(.scaled(30, weight: .heavy, design: .rounded))
                                     .foregroundStyle(tint)
                                     .multilineTextAlignment(.center)
+                                    .keepsWordsWhole(rule.nickname)
                             }
 
                             Text(rule.text)

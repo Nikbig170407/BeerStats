@@ -239,7 +239,10 @@ den nachgespielten Wurf-Log alter Partien.
   UND Hintergrund), Hintergrund in drei Stufen, Neon-Kanten abschaltbar
   (`AppAppearance`). Kein Hell-Modus, siehe unten.
 - **Ring of Fire in zwei Screens**: der Ring für sich, die gezogene Karte
-  als Vollbild mit „Verstanden". Karten tragen Dauer und Strafe wie die
+  als Vollbild mit „Verstanden". Groß steht dort der Name, unter dem die
+  Karte am Tisch bekannt ist („Nine – Rhyme“), klein darüber die deutsche
+  Anweisung („Reimen“) – so am 4. November gewünscht; die Merkliste nennt
+  weiter nur den deutschen Namen. Karten tragen Dauer und Strafe wie die
   Extreme-Karten, und hinter der Karte läuft eine eigene Szene je Rang
   (`RingCardFlourish`). Der Ring liegt **geschuppt** und spielt mit – wer
   ihn reißt, trinkt. Das ganze Regelwerk dazu steht unten als Vertrag; es
