@@ -172,7 +172,7 @@ struct HitparadeView: View {
         ) {
             // Knapp gehalten (30. Oktober: "nicht viel scrollen"): Was die
             // Knoepfe selbst sagen, steht nicht noch einmal als Satz darunter,
-            // und die Regeln stehen in der Anleitung am Fragezeichen
+            // und die Regeln stehen in der Anleitung auf der Seite des Spiels
             VStack(alignment: .leading, spacing: 16) {
                 block("WIE VIELE SPIELT IHR?") {
                     PlayerCountStepper(count: $playerCount, range: 2...PartyGame.manyPlayers, tint: tint)

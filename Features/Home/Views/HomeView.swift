@@ -10,6 +10,12 @@
 //  liessen das Menue wie eine Einstellungsliste wirken statt wie eine
 //  Spielauswahl.
 //
+//  Aufgebaut wie ein App-Store (Entscheidung des Nutzers vom 4. November,
+//  Entwurf B): Beerpong gross oben, darunter Wuerfel und Turnier als zwei
+//  Abkuerzungen, dann alle Partyspiele als Cover in einem Raster – mit
+//  Filtern nach Gruppe statt vier Ordnern. Ein Ordner war ein Tipp mehr
+//  vor jedem Spiel und versteckte, was drin liegt; ein Cover zeigt es.
+//
 
 import SwiftUI
 
@@ -23,6 +29,8 @@ struct HomeView: View {
     /// Wer heute am Tisch steht. Wie oben: UserDefaults meldet sich nicht von
     /// selbst, also beim Erscheinen neu lesen.
     @State private var tablePlayers: [PlayerProfile] = []
+    /// Welche Gruppe gezeigt wird; `nil` heisst alle.
+    @State private var filter: PartyGame.Group?
 
     /// `currentUserId` ist `nil`, wenn ohne Konto gespielt wird. Dann
     /// fehlen genau zwei Dinge: Beerpong und die Spieler-Zentrale. Alles
@@ -54,8 +62,13 @@ struct HomeView: View {
                     // ausspricht: Mäxchen wird anders getrunken als
                     // Trink-Roulette, und von hier oben aus ist das nicht zu
                     // treffen.
-                    menuGrid
-                    gamePickerLink
+                    beerpongHero
+                    shortcuts
+                    VStack(alignment: .leading, spacing: 14) {
+                        filterChips
+                        gridHeading
+                        coverGrid
+                    }
                     customCardsLink
                 }
                 .padding(20)
@@ -79,46 +92,6 @@ struct HomeView: View {
                 TableRoster.remember(tablePlayers)
             }
         }
-    }
-
-    // MARK: - Der Würfel
-
-    /// Steht UNTER dem Raster, nicht darin.
-    ///
-    /// Als siebte Kachel haette er die Ordnung zerschossen, die das Raster
-    /// ausmacht – Beerpong oben links, Turnier unten rechts, vier Gruppen
-    /// dazwischen. Und er ist auch nichts davon: kein Ort mit Spielen
-    /// dahinter, sondern eine Abkuerzung fuer den Fall, dass die Runde sich
-    /// nicht einigen kann.
-    private var gamePickerLink: some View {
-        NavigationLink {
-            GamePickerView()
-        } label: {
-            HStack(spacing: 12) {
-                Text("🎲").font(.system(size: 24))
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Was spielen wir?")
-                        .font(BeerStatsFont.headline)
-                        .foregroundStyle(BeerStatsColor.textPrimary)
-                    Text("Die App sucht eins aus, das zur Runde passt")
-                        .font(BeerStatsFont.caption)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-            }
-            .padding(.horizontal, 15)
-            .padding(.vertical, 13)
-            .glassPanel(cornerRadius: 16)
-            .neonEdge(BeerStatsColor.accent, cornerRadius: 16, intensity: 0.35)
-            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Eigene Karten
@@ -266,102 +239,85 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Beerpong
 
-    // MARK: - Das Menue
-
-    /// Sechs Kacheln, zwei Spalten: Beerpong oben links, dann die vier
-    /// Gruppen, Turnier unten rechts.
-    ///
-    /// Vorher war es eine Liste ueber die ganze Breite – eine grosse Karte
-    /// fuer Beerpong, darunter vier Ordnerzeilen, darunter das Turnier. Das
-    /// las sich von oben nach unten und hiess jedes Mal: scrollen, lesen,
-    /// treffen. Als Raster liegt alles gleichzeitig da, und jede Kachel
-    /// liegt immer an derselben Stelle – nach dem zweiten Abend trifft man
-    /// sie, ohne hinzusehen.
-    ///
-    /// Beerpong steht oben links, das Turnier unten rechts: Das eine ist der
-    /// haeufigste Griff, das andere der seltenste.
-    private var menuGrid: some View {
-        LazyVGrid(
-            columns: [
-                GridItem(.flexible(), spacing: 14),
-                GridItem(.flexible(), spacing: 14)
-            ],
-            spacing: 14
-        ) {
-            if let ownerId = viewModel.currentUserId {
-                menuTile(
-                    emoji: "🍺",
-                    title: "Beerpong",
-                    subtitle: "Werfen, treffen – die App schreibt mit",
-                    detail: beerpongDetail,
-                    // Wer heute am Tisch steht, statt der Spiele darin: Bei
-                    // Beerpong ist die Frage vor dem Antippen nicht "was",
-                    // sondern "mit wem".
-                    preview: tablePlayers.map(\.emoji),
-                    tint: BeerStatsColor.accent
-                ) {
-                    BeerpongMenuView(container: container, viewModel: viewModel, ownerId: ownerId)
-                }
-            } else {
-                // Ohne Konto bleibt die Kachel stehen und sagt, was fehlt.
-                // Sie wegzulassen waere die schlechtere Wahl: Dann sieht
-                // niemand, dass die App ueberhaupt Beerpong kann, und das
-                // ist der Grund, warum es sie gibt.
-                menuTile(
-                    emoji: "🍺",
-                    title: "Beerpong",
-                    subtitle: "Werfen, treffen – die App schreibt mit",
-                    detail: "Braucht ein Konto",
-                    preview: [],
-                    tint: BeerStatsColor.textSecondary
-                ) {
-                    AccountNeededView()
-                }
+    /// Gross und ueber allem: der haeufigste Griff des Abends.
+    @ViewBuilder
+    private var beerpongHero: some View {
+        if let ownerId = viewModel.currentUserId {
+            NavigationLink {
+                BeerpongMenuView(container: container, viewModel: viewModel, ownerId: ownerId)
+            } label: {
+                // Wer heute am Tisch steht, statt einer Vorschau: Bei
+                // Beerpong ist die Frage vor dem Antippen nicht "was",
+                // sondern "mit wem".
+                heroLabel(detail: beerpongDetail, faces: tablePlayers.map(\.emoji), tint: BeerStatsColor.accent)
             }
-
-            // Die Gruppen kommen aus dem Katalog, nicht von Hand: Ein neues
-            // Spiel landet dadurch von selbst in seiner Kachel.
-            ForEach(PartyGame.Group.allCases) { group in
-                menuTile(
-                    emoji: group.emoji,
-                    title: group.label,
-                    subtitle: group.subtitle,
-                    detail: "\(group.games.count) Spiele",
-                    preview: group.games.map(\.emoji),
-                    tint: group.tint
-                ) {
-                    PartyGameFolderView(group: group)
-                }
+            .buttonStyle(PressableButtonStyle())
+        } else {
+            // Ohne Konto bleibt Beerpong stehen und sagt, was fehlt. Es
+            // wegzulassen waere die schlechtere Wahl: Dann sieht niemand,
+            // dass die App ueberhaupt Beerpong kann, und das ist der Grund,
+            // warum es sie gibt.
+            NavigationLink {
+                AccountNeededView()
+            } label: {
+                heroLabel(detail: "Braucht ein Konto", faces: [], tint: BeerStatsColor.textSecondary)
             }
-
-            menuTile(
-                emoji: "🏆",
-                title: "Turnier",
-                subtitle: "Runde für Runde, die Strafe steigt",
-                detail: "\(tournamentGames.count) Spiele im Topf",
-                preview: tournamentGames.map(\.emoji),
-                tint: BeerStatsColor.warning
-            ) {
-                TournamentView()
-            }
+            .buttonStyle(PressableButtonStyle())
         }
     }
 
-    /// Die Spiele, die das Turnier ueberhaupt auslosen kann.
-    ///
-    /// Gerechnet, nicht getippt – sonst steht hier nach dem naechsten Spiel
-    /// eine falsche Zahl (dieselbe Falle wie beim Spielezaehler).
-    private var tournamentGames: [PartyGame] {
-        PartyGame.allCases.filter(\.isTournamentReady)
+    private func heroLabel(detail: String, faces: [String], tint: Color) -> some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Beerpong")
+                    .font(.scaled(26, weight: .heavy, design: .rounded))
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                Text("Werfen, treffen – die App schreibt mit")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !faces.isEmpty {
+                    // Eine Zeile, notfalls kleiner – umbrechen wuerde den
+                    // Kasten je nach Runde verschieden hoch machen
+                    Text(faces.joined(separator: " "))
+                        .font(.system(size: 17))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        // Fuer VoiceOver Zierde: vorgelesen waere sie eine
+                        // Kette von Emoji-Namen
+                        .accessibilityHidden(true)
+                }
+                Text(detail)
+                    .font(.scaled(11, weight: .heavy, design: .rounded))
+                    .foregroundStyle(tint)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            // Feste Groesse: Emoji in einem festen Rahmen laufen sonst ueber
+            Text("🍺")
+                .font(.system(size: 54))
+                .frame(width: 84, height: 84)
+                .background(tint.opacity(0.18), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .accessibilityHidden(true)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(
+                colors: [tint.opacity(0.22), Color.clear],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+        )
+        .glassPanel(cornerRadius: 20)
+        .neonEdge(tint, cornerRadius: 20, intensity: 0.5)
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     /// Was unter "Beerpong" steht.
-    ///
-    /// Die drei Kennzahlen von vorher – Mitspieler, Partien, Spitzenreiter –
-    /// passen nicht in eine Kachel. Die beiden, die sich ueberhaupt aendern,
-    /// passen in eine Zeile; der Spitzenreiter steht einen Tipp weiter in
-    /// der Rangliste, wo man ihn ohnehin sucht.
     ///
     /// Gezaehlt wird, wer am Tisch steht – dieselbe Quelle wie die
     /// Emoji-Reihe darueber. Mit den aktiven Profilen stuenden sonst vier
@@ -375,83 +331,153 @@ struct HomeView: View {
         return "\(partien) \(wort) · \(tablePlayers.count) am Tisch"
     }
 
-    /// Eine Kachel.
-    ///
-    /// Drei Zeilen und eine Vorschau, nicht bloss Titel und Zahl: Die Kachel
-    /// fuellt den halben Bildschirm, und was darin steht, soll die Frage
-    /// beantworten, die man vor dem Antippen hat – was ist da drin? Die
-    /// Emoji-Reihe ist genau das: die Spiele der Gruppe, am Tisch erkennt
-    /// man sie daran schneller als an ihren Namen.
-    ///
-    /// Die Hoehe ist eine MINDESThoehe: Mit grosser Schrift wird die Kachel
-    /// hoeher, statt den Titel abzuschneiden, und das Raster zieht die
-    /// Nachbarin in derselben Zeile mit.
-    private func menuTile<Destination: View>(
-        emoji: String,
-        title: String,
-        subtitle: String,
-        detail: String,
-        preview: [String],
-        tint: Color,
-        @ViewBuilder destination: () -> Destination
-    ) -> some View {
-        NavigationLink {
-            destination()
-        } label: {
-            VStack(alignment: .leading, spacing: 7) {
-                Text(emoji)
-                    .font(.system(size: 30))
-                    .frame(width: 52, height: 52)
-                    .background(
-                        tint.opacity(0.16),
-                        in: RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    )
+    // MARK: - Abkuerzungen
 
+    /// Wuerfel und Turnier nebeneinander, unter Beerpong und ueber den
+    /// Spielen: Beide sind kein Spiel, sondern ein Weg zu einem – fuer den
+    /// Fall, dass die Runde sich nicht einigen kann oder alles will.
+    private var shortcuts: some View {
+        HStack(spacing: 12) {
+            NavigationLink {
+                GamePickerView()
+            } label: {
+                shortcutLabel(emoji: "🎲", title: "Was spielen wir?", detail: "Die App sucht aus", tint: BeerStatsColor.accent)
+            }
+            .buttonStyle(PressableButtonStyle())
+
+            NavigationLink {
+                TournamentView()
+            } label: {
+                shortcutLabel(emoji: "🏆", title: "Turnier", detail: "\(tournamentGames.count) Spiele im Topf", tint: BeerStatsColor.warning)
+            }
+            .buttonStyle(PressableButtonStyle())
+        }
+        // Erst damit kann `maxHeight: .infinity` beide auf die Hoehe der
+        // hoeheren ziehen
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func shortcutLabel(emoji: String, title: String, detail: String, tint: Color) -> some View {
+        HStack(spacing: 10) {
+            Text(emoji)
+                .font(.system(size: 24))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.scaled(18, weight: .bold, design: .rounded))
+                    .font(.scaled(14, weight: .bold, design: .rounded))
                     .foregroundStyle(BeerStatsColor.textPrimary)
-                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-
-                Text(subtitle)
-                    .font(.scaled(12, weight: .medium, design: .rounded))
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Spacer(minLength: 6)
-
-                if !preview.isEmpty {
-                    // Eine Zeile, notfalls kleiner: Zehn Emoji passen sonst
-                    // nicht in eine halbe Bildschirmbreite, und umbrechen
-                    // wuerde die Kachel je nach Gruppe unterschiedlich hoch
-                    // machen.
-                    Text(preview.joined(separator: " "))
-                        .font(.system(size: 15))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                        // Fuer VoiceOver ist die Reihe Zierde – vorgelesen
-                        // waere sie eine Kette von Emoji-Namen.
-                        .accessibilityHidden(true)
-                }
-
                 Text(detail)
                     .font(.scaled(11, weight: .heavy, design: .rounded))
                     .foregroundStyle(tint)
-                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            // `maxHeight: .infinity` zieht die kuerzere Kachel auf die
-            // Hoehe ihrer Nachbarin: "Beerpong" ist einzeilig, "Schnell
-            // zwischendurch" zweizeilig – ohne das stuenden in einer Reihe
-            // zwei verschieden hohe Panels nebeneinander.
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(minHeight: 172, maxHeight: .infinity, alignment: .topLeading)
-            .padding(16)
-            .glassPanel()
-            .neonEdge(tint, intensity: 0.4)
-            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 13)
+        .padding(.vertical, 12)
+        // Beide gleich hoch, auch wenn ein Titel umbricht
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .glassPanel(cornerRadius: 16)
+        .neonEdge(tint, cornerRadius: 16, intensity: 0.3)
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    /// Die Spiele, die das Turnier ueberhaupt auslosen kann.
+    ///
+    /// Gerechnet, nicht getippt – sonst steht hier nach dem naechsten Spiel
+    /// eine falsche Zahl (dieselbe Falle wie beim Spielezaehler).
+    private var tournamentGames: [PartyGame] {
+        PartyGame.allCases.filter(\.isTournamentReady)
+    }
+
+    // MARK: - Die Spiele
+
+    /// Die Gruppen sind Filter, keine Ordner. Sie kommen aus dem Katalog,
+    /// nicht von Hand: Ein neues Spiel landet von selbst unter seinem Filter.
+    private var filterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                chip(emoji: "✨", label: "Alle", group: nil, tint: BeerStatsColor.accent)
+                ForEach(PartyGame.Group.allCases) { group in
+                    chip(emoji: group.emoji, label: group.label, group: group, tint: group.tint)
+                }
+            }
+            // Platz fuer den Schein der gewaehlten Kante
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func chip(emoji: String, label: String, group: PartyGame.Group?, tint: Color) -> some View {
+        let gewaehlt = filter == group
+        return Button {
+            filter = group
+            HapticManager.lightImpact()
+        } label: {
+            HStack(spacing: 5) {
+                Text(emoji)
+                Text(label)
+            }
+            .font(.scaled(13, weight: .heavy, design: .rounded))
+            .foregroundStyle(gewaehlt ? BeerStatsColor.textPrimary : BeerStatsColor.textSecondary)
+            .padding(.horizontal, 13)
+            .padding(.vertical, 9)
+            .background(
+                gewaehlt ? tint.opacity(0.3) : BeerStatsColor.surfaceElevated.opacity(0.6),
+                in: Capsule()
+            )
+            .overlay(Capsule().strokeBorder(gewaehlt ? tint : Color.clear, lineWidth: 1.5))
+            .contentShape(Capsule())
         }
         .buttonStyle(PressableButtonStyle())
+        .accessibilityAddTraits(gewaehlt ? .isSelected : [])
+    }
+
+    /// Was gerade gezeigt wird – mit dem Satz der Gruppe, der vorher oben im
+    /// Ordner stand: Passt diese Gruppe gerade zur Runde?
+    private var gridHeading: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(filter?.label ?? "Alle Spiele")
+                    .font(BeerStatsFont.headline)
+                    .foregroundStyle(BeerStatsColor.textPrimary)
+                Spacer(minLength: 8)
+                Text("\(shownGames.count) Spiele")
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+            }
+            if let filter {
+                Text(filter.subtitle)
+                    .font(BeerStatsFont.caption)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var shownGames: [PartyGame] {
+        filter?.games ?? PartyGame.allCases
+    }
+
+    /// Zwei Spalten Cover. Ein Tipp fuehrt auf die Seite des Spiels, nicht
+    /// direkt hinein: Dort stehen Anleitung und "Spielen", und die Anleitung
+    /// liegt nicht mehr als Fragezeichen genau neben dem Weg ins Spiel.
+    private var coverGrid: some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: 14),
+                GridItem(.flexible(), spacing: 14)
+            ],
+            spacing: 16
+        ) {
+            ForEach(shownGames) { game in
+                NavigationLink {
+                    PartyGameDetailView(game: game)
+                } label: {
+                    PartyGameCover(game: game)
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+        }
     }
 }

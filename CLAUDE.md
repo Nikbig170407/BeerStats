@@ -226,14 +226,17 @@ den nachgespielten Wurf-Log alter Partien.
 - **Team-Chemie im Profil**: bester Partner, schlimmster Gegner. Quote erst
   ab drei gemeinsamen Partien. Kostet keinen zusätzlichen Lesezugriff – sie
   braucht nur die Aufstellungen, die in den Partien ohnehin stehen.
-- **Hauptmenü als vier Ordner**: Mit Karten, Raten & reden, Schnell
-  zwischendurch, Läuft nebenher – dahinter die Spiele. Oben nur zwei
-  Symbole: Spieler und Einstellungen. **„Zuletzt gespielt" gibt es nicht
-  mehr** (13. Oktober): Die Idee war, den häufigsten Weg zu verkürzen;
-  tatsächlich stand oben eine Liste, die sich bei jedem Aufmachen anders
-  sortiert, und die vier Ordner – die immer gleich liegen – rutschten dafür
-  nach unten. `RecentPartyGames` ist mit entfernt, nicht nur ausgeblendet:
-  Was niemand liest, soll auch niemand schreiben.
+- **Hauptmenü wie ein App-Store** (4. November, Entwurf B): Beerpong groß
+  oben, darunter Würfel und Turnier als zwei Abkürzungen, dann alle
+  Partyspiele als **Cover** in einem Raster aus zwei Spalten. Die vier
+  Gruppen sind **Filter** über dem Raster, keine Ordner mehr – ein Ordner
+  war ein Tipp mehr vor jedem Spiel und versteckte, was drin liegt. Ein
+  Cover führt auf die **Seite des Spiels** (`PartyGameDetailView`): Cover,
+  Dauer, Spielerzahl, Anleitung und „Spielen“. Oben nur zwei Symbole:
+  Spieler und Einstellungen. **„Zuletzt gespielt" gibt es nicht mehr**
+  (13. Oktober): eine Liste, die sich bei jedem Aufmachen anders sortiert,
+  schob das, was immer gleich liegt, nach unten. Was niemand liest, soll
+  auch niemand schreiben.
 - **Einstellungs-Screen**: Darstellung (Farbschema, Hintergrund, Kanten),
   Ton, Sprachansage, Shots, Härte-Vorgabe, Entwicklereinstellungen,
   Abmelden.
@@ -262,7 +265,7 @@ den nachgespielten Wurf-Log alter Partien.
   hörte nach der vierten richtigen Antwort auf („Das Handy geht weiter"),
   und der Bussfahrer, der dem Spiel den Namen gibt, kam nie vor. Jetzt deckt
   er fünf Karten auf, und jede Bildkarte schickt ihn zurück an den Anfang.
-- **„Was spielen wir?"** (18. Oktober): ein Würfel unter dem Raster im
+- **„Was spielen wir?"** (18. Oktober): ein Würfel neben dem Turnier im
   Hauptmenü. Fünfundzwanzig Spiele heißen am Tisch nicht Auswahl, sondern
   fünf Minuten Diskussion, in denen niemand spielt. Gelost wird aus dem,
   was zur Runde **passt**: Die Spielerzahl ist eine Bedingung, keine
@@ -302,7 +305,7 @@ den nachgespielten Wurf-Log alter Partien.
   teilbar als Text.
 - **Erinnerung an die Sicherung**: die Karte sagt, wann zuletzt gesichert
   wurde, und wird nach vier Wochen deutlich.
-- **Anleitung je Partyspiel**: Fragezeichen auf jeder Spielkachel.
+- **Anleitung je Partyspiel**: auf der Seite des Spiels, unter „Spielen“.
 - **Karten aussortieren und eigene dazu** – jetzt in vier Stapeln: Ich hab
   noch nie, Wahrheit oder Pflicht, **Wer würde eher?** und Beerpong Extreme.
   Der Daumen nach unten steht in jedem Schritt da, nicht erst nach dem
@@ -360,8 +363,8 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Titel, Emoji, Untertitel, Farbe, Gruppe und Ziel-Ansicht liegen dort
   beisammen; `HomeView` baut die Liste daraus. Ein neues Spiel ist ein
   neuer Fall in der Aufzählung – und zwar der einzige nötige Eingriff: Am
-  Katalog hängen inzwischen Ordner, Anleitung, Turnier-Eignung und die
-  Härte. Wer ein Spiel stattdessen in die View schreibt, hat es nirgends
+  Katalog hängen inzwischen Filter, Cover, Anleitung, Turnier-Eignung und
+  die Härte. Wer ein Spiel stattdessen in die View schreibt, hat es nirgends
   davon. **Seit dem Würfel sind es zwei Angaben mehr**: `length` (wie lange
   eine Runde dauert) und `players` (mit wie vielen es funktioniert). Beide
   sind vollständige `switch` ohne `default` – der Compiler erzwingt also,
@@ -628,11 +631,13 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     `GameSetupScreen` und `HandoffPanel` ihre Schrift. Kein Spiel muss
     dafür etwas tun, und keines kann es vergessen. In Menüs ist keine Welt
     gesetzt – sie bleiben im Rahmen der App. Einzige Ausnahme sind die
-    Spielkacheln in den Ordnern: Sie tragen den Grund ihrer Welt als
-    **stillen Deckel** (`WorldGround(…, moves: false, fillsScreen: false)`)
-    und den Titel in ihrer Schrift. Man soll das Spiel erkennen, bevor man
-    es aufmacht – still, weil eine Liste, in der überall etwas läuft, sich
-    nicht mehr liest. „Schlicht“ gilt auch für den Deckel.
+    Cover im Hauptmenü: Sie tragen den Titel in der Schrift ihrer Welt,
+    und solange ein Spiel noch keine Zeichnung hat, den Grund seiner Welt
+    als **stillen Deckel** (`WorldGround(…, moves: false, fillsScreen:
+    false)`). Man soll das Spiel erkennen, bevor man es aufmacht – still,
+    weil ein Raster, in dem überall etwas läuft, sich nicht mehr liest.
+    „Schlicht“ gilt auch für den Deckel. Siehe „Jedes Spiel bekommt ein
+    gezeichnetes Cover“.
   - **Die Welt steht im Katalog** (`PartyGame.world`, vollständiges
     `switch`), gesetzt in `PartyGame.destination` – auch für den Vorspann.
     Auslosen und Turnier sind kein Spiel, haben aber einen eigenen Ort
@@ -676,6 +681,37 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   - **Die Satz-Regel der Szenen gilt auch für Beerpong**: Umstellen,
     Redemption und Trickshot haben je eine eigene Bewegung statt eines
     gemeinsamen einfliegenden Symbols (`HighlightOverlayView`).
+
+- **Jedes Spiel bekommt ein gezeichnetes Cover** (`DesignSystem/Covers/`).
+  Entscheidung des Nutzers vom 4. November: Bilder statt eines Emoji auf
+  einem Farbverlauf, im Stil eines **Siebdruck-Plakats** – flache,
+  kräftige Formen in wenigen Farben, dunkle Kontur, Rasterpunkte im Grund.
+  Das erste ist Ring of Fire („Der Kronkorken“), die anderen folgen Gruppe
+  für Gruppe. Was gilt:
+  - **Gezeichnet, nicht als Bilddatei.** Das Repository ist öffentlich;
+    eine Zeichnung hat keine Lizenzfrage, bleibt scharf und lässt sich
+    Strich für Strich nachbessern – dieselbe Regel wie bei den Klängen.
+  - **Ein Cover ist ein Fall von `CoverArt`**, und welches Spiel welches
+    trägt, steht im Katalog (`PartyGame.coverArt`, vollständiges `switch`
+    ohne `default`). `nil` heißt: noch keine Zeichnung, dann trägt das
+    Cover den stillen Grund seiner Welt mit dem Emoji. Was alle Plakate
+    teilen – Papier, Druckfarben, Flamme, Stern, Rasterpunkte –, steht in
+    `PosterInk`; die Farben eines einzelnen Motivs stehen bei ihm.
+  - **Gezeichnet wird in 300 × 370 Einheiten**, die Ansicht zieht es auf.
+    Die unteren 74 liegen unter dem Titelbalken – dort steht nur Grund,
+    nie Motiv.
+  - **Der Titel kommt aus der App, nicht aus der Zeichnung**: in der
+    Schrift der Welt, scharf, und er folgt der Schriftgröße. Der Balken
+    trägt das Dunkelste des Plakats (`CoverArt.band`), damit er zum Bild
+    gehört.
+  - **Still.** Ein Raster, in dem überall etwas läuft, liest sich nicht.
+  - **Satz-Regel**: Jedes Cover lässt sich in einem Satz sagen, ohne
+    Emoji, kein Satz kommt doppelt vor, und kein Cover hängt an zwei
+    Spielen (`CoverArtTests`).
+  - **Der Weg ins Spiel ist `PartyGame.playScreen`** – das Spiel samt
+    Vermerk im Abend, an einer Stelle. Die Seite des Spiels nimmt ihn.
+    Würfel und Turnier öffnen ihre Spiele bisher über `destination` und
+    vermerken sie deshalb nicht im Abend – bekannt, noch nicht entschieden.
 
 - **Jede Szene hat ihre eigene Bewegung**
   (`DesignSystem/Components/DrawnScenes.swift`). Entscheidung des Nutzers
@@ -907,13 +943,12 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Zähler direkt bucht, schreibt ab der zweiten Runde ins Leere.
 
 - **Einstellungen vor dem Spiel gehören in `GameSetupScreen`**, die Auswahl
-  aus wenigen Werten in `ChoiceRow`, eine Spielkachel in `PartyGameCard`,
-  die Zeile „Wie lange / Strafe" in `TermRow`, die leise Nebenhandlung
+  aus wenigen Werten in `ChoiceRow`, ein Spiel im Hauptmenü in
+  `PartyGameCover`, die Zeile „Wie lange / Strafe" in `TermRow`, die leise Nebenhandlung
   („Neu mischen", „Spielerzahl ändern", „Rückgängig") in `QuietButton`.
   Alles geteilte Bausteine wie `PlayerCountStepper` und `HandoffPanel` –
   wer einen eigenen baut, lässt ihn anders aussehen. `TermRow` war die
-  zweite Kopie, `PartyGameCard` die zweite Stelle, an der man das Vermerken
-  im Abend vergessen kann, `QuietButton` stand vierundzwanzigmal da – und
+  zweite Kopie, `QuietButton` stand vierundzwanzigmal da – und
   jedes Mal ohne Trefferfläche (siehe Lessons Learned Nr. 12).
 
 - **Anleitung und Untertitel stehen im Katalog**, nicht im Spiel
@@ -1766,13 +1801,13 @@ oben; was schief aussieht, unten.
   - **Steht der Text nach einer halben Sekunde?** Das war die Rückmeldung
     zur Vorschau (Spion, Bussfahrer). Wo etwas noch länger braucht – sag
     wo.
-  - **Erkennt man jedes Spiel ohne seinen Titel?** Auch an der Kachel im
-    Ordner, die jetzt den Grund ihrer Welt als Deckel trägt.
+  - **Erkennt man jedes Spiel ohne seinen Titel?** Auch am Cover im
+    Hauptmenü, das bis zu seiner Zeichnung den Grund der Welt trägt.
   - **Bleibt aller Text lesbar**, mit großer Schrift und im Tischmodus?
     Am ehesten eng: die Abfahrtstafel beim Würfel, die Stirnkarte bei
     „Wer bin ich?" und die Anzeigetafel im Turnier. Und bricht nirgends
     mehr ein Titel mitten im Wort um (gemeldet: Schätzmeister und
-    Reaktionsduell in den Kacheln)?
+    Reaktionsduell, damals in den Kacheln – jetzt auf den Covern)?
   - **Ruckelt etwas auf dem iPhone 13?** Am meisten zu tun haben die
     Leuchtreklame bei „Ich hab noch nie", das Casino-Rad, die Herde, die
     Fallblätter und die Gründe mit Bewegung (Glut, Lampe, Filmkorn).
@@ -1982,8 +2017,8 @@ oben; was schief aussieht, unten.
   geschätzt, nicht gemessen – zu kurz, um zu zeigen, dass gelost wird,
   oder zu lang zum Warten? Und stimmen die
   Dauer-Angaben („2 Minuten", „10 Minuten") ungefähr mit dem überein, was
-  eine Runde tatsächlich braucht? Sie stehen jetzt auch auf jeder
-  Spielkachel im Ordner.
+  eine Runde tatsächlich braucht? Sie stehen jetzt auch auf jedem
+  Cover im Hauptmenü.
 - **Blätter verteilen (22. Oktober)**: Kommen die Bilder in WhatsApp
   lesbar an, oder sind sechzehn Felder auf einem Handybild zu klein? Und
   geht AirDrop an mehrere gleichzeitig?
@@ -2021,19 +2056,20 @@ oben; was schief aussieht, unten.
   freien Raum. Zu prüfen, ob irgendwo das Gegenteil passiert – eine Karte,
   die mit kurzem Text riesig und leer dasteht.
 ### Oberfläche
-- **Hauptmenü vom 13. Oktober**: Die Ordner sind größer, und die Zahl steht
-  jetzt als „5 Spiele" in der Unterzeile statt fett und farbig am rechten
-  Rand – dort sah sie aus wie eine ungelesene Nachricht. „Zuletzt gespielt"
-  ist weg. Passt das Ganze noch, auch mit großer Schrift?
-- **Sechs Kacheln im Hauptmenü** (17. Oktober): Beerpong oben links, Turnier
-  unten rechts. Passt das Raster auf dem Gerät, auch mit großer Schrift?
-- **Inhalt in den Kacheln** (18. Oktober): Jede Kachel trägt jetzt einen
-  halben Satz und eine Emoji-Reihe – die Spiele der Gruppe, bei Beerpong die
-  Leute am Tisch. Zu prüfen: Bleiben zehn Emoji bei „Raten & reden" in einer
-  Zeile lesbar, stehen die beiden Kacheln einer Reihe gleich hoch, und
-  stimmt die Zahl unter Beerpong mit der Reihe darüber überein? Dazu die
-  Ordner: „Läuft nebenher" hat zwei Spiele – sind die Kacheln dort jetzt zu
-  groß, statt dass der Platz darunter leer bleibt?
+- **Hauptmenü als Cover-Raster (4. November)**: nie auf einem Gerät
+  gelaufen. Zu prüfen:
+  - **Das Ring-of-Fire-Cover**: Sieht man Kronkorken, Kartenkranz und die
+    Glut in der Lücke, auch auf einem kleinen iPhone? Liest sich der
+    Titel im Balken? Wirken die übrigen Cover (noch Grund und Emoji)
+    daneben zu leer – dann früher nachzeichnen.
+  - **Filter**: Wechselt das Raster sofort, und sieht man, welcher Filter
+    gewählt ist? Passen die Chips ohne Rand nebeneinander oder rollen sie
+    sauber zur Seite?
+  - **Seite des Spiels**: Ist „Spielen“ ohne Scrollen zu sehen? Landet ein
+    Spiel, das von dort gestartet wird, im laufenden Abend?
+  - **Beerpong oben**: Stimmt die Zahl unter Beerpong mit der Emoji-Reihe
+    überein, und erklärt es sich ohne Konto? Stehen Würfel und Turnier
+    gleich hoch, auch mit großer Schrift?
 - **Knöpfe vom 12. Oktober**: Der Daumen nach unten muss jetzt bei **jeder**
   Karte gehen, nicht nur bei der ersten – zweimal hintereinander in „Ich hab
   noch nie" ausprobieren. Dazu „Wer würde eher?", das ihn neu hat, und einmal
@@ -2043,8 +2079,7 @@ oben; was schief aussieht, unten.
 - **Aufstellung, Vorbereitung, Hintergrund**: „am Tisch", das Setzen beim
   Pferderennen, Dauer und Strafe auf den Extreme-Karten, die Frage nach der
   offenen Partie, der Hintergrund.
-- **Ordner, Einstellungen, Farbschemata**: die vier
-  Ordner, der Einstellungs-Screen, die vier Farbschemata (Minze, Beere und
+- **Einstellungen, Farbschemata**: der Einstellungs-Screen, die vier Farbschemata (Minze, Beere und
   Eis sind gerechnet, nicht gesehen – besonders die Statusfarben auf dem
   neuen Grund), „Nochmal dieselben", frühere Abende samt Teilen, die
   Sicherungs-Erinnerung, die Anleitungen. Und einmal mit großer Schrift

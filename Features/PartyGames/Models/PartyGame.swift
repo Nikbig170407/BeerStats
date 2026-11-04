@@ -352,6 +352,25 @@ enum PartyGame: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Das gezeichnete Cover in der Spielauswahl (`CoverArt`) – `nil`, solange
+    /// ein Spiel noch keines hat; dann traegt es den stillen Grund seiner
+    /// Welt mit seinem Zeichen.
+    ///
+    /// Vollstaendig und ohne `default`, wie `world`: Ein neues Spiel muss hier
+    /// eingeordnet werden, auch wenn die Antwort vorerst `nil` ist.
+    var coverArt: CoverArt? {
+        switch self {
+        case .ringOfFire:
+            return .bottleCap
+        case .horseRace, .busRide, .truthOrDare, .neverHaveIEver, .timeline,
+             .schocken, .maexchen, .twoTruths, .spy, .headsUp, .countTo21,
+             .estimation, .categories, .mostLikely, .knowYourPeople, .charades,
+             .spectrum, .bombPass, .reactionDuel, .drinkRoulette, .herd,
+             .forbiddenWords, .drinkBingo, .eveningRule:
+            return nil
+        }
+    }
+
     // MARK: - Wie lange und mit wie vielen
 
     /// Wie lange eine Runde dauert.
@@ -596,6 +615,15 @@ enum PartyGame: String, CaseIterable, Identifiable {
                 // einer harten Runde Schocken auch hart.
                 .onDisappear { DrinkIntensity.clearActive() }
         )
+    }
+
+    /// Der Weg ins Spiel aus der Spielauswahl: das Spiel samt Vermerk im
+    /// Abend. An EINER Stelle, damit es keinen zweiten Weg gibt, der das
+    /// Vermerken vergisst. Vermerkt wird beim Erscheinen, nicht beim
+    /// Antippen: Wer sich vertippt und sofort zurueckgeht, hat nicht
+    /// gespielt. Ohne laufenden Abend tut der Vermerk nichts.
+    var playScreen: AnyView {
+        AnyView(destination.onAppear { EveningLog.record(partyGame: self) })
     }
 
     private var screen: AnyView {
