@@ -518,6 +518,8 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Namen weiter. Beide Wege müssen im Spiel stehen, nicht nur der schöne.
   Nicht zu verwechseln mit `PlayerProfile.isActive`: Das heißt „gehört noch
   zur Truppe" und gilt für Monate, die Aufstellung heißt „ist heute da".
+  **Gesetzt wird sie außen am `NavigationStack`** in `HomeView`, nicht an
+  seinem ersten Screen – siehe Lessons Learned Nr. 18.
 
 - **Abend und Tisch sind EINE Liste** (Entscheidung des Nutzers vom
   3. November, nach „ich hab bei Mitspieler andere ausgewählt als beim
@@ -1674,6 +1676,18 @@ Regel gilt für Abschnitt 9.
     starten (`DispatchQueue.main.async { withAnimation { … } }`). Das
     braucht jeder Baustein, der etwas aufblitzen, anschlagen oder
     zurückfedern lässt; in den Spielwelten steht es an mehreren Stellen.
+
+18. **Was ein `NavigationStack` hereinschiebt, erbt die Umgebung vom
+    Stack – nicht vom Screen, auf dem der Link sitzt.** `HomeView` setzte
+    `\.tablePlayers` an der ScrollView INNEN im Stack. Im Hauptmenü stimmte
+    alles, in den Spielen kam die Liste leer an: „Kennst du deine Leute?“
+    verlangte Mitspieler, obwohl sie angehakt waren (4. November, am Gerät
+    gemeldet). An derselben Liste hängen das Setzen beim Pferderennen und
+    die Spielerzahl beim Würfel. Monatelang
+    fiel es nicht auf, weil die übrigen Spiele ihre Namen aus UserDefaults
+    lesen (`PlayerNames`) und nicht aus der Umgebung. Ein eigener
+    Umgebungswert für Spiele gehört deshalb **außen** an den Stack. Kein
+    Test sieht das, und `check.py` auch nicht.
 
 ---
 

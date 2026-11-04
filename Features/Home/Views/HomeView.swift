@@ -78,8 +78,6 @@ struct HomeView: View {
             // zurueck - irgendein Kind ist breiter als der Bildschirm.
             .verticalScrollOnly()
             .toolbar { toolbarContent }
-            // Jedes Spiel, das Namen zeigen kann, nimmt sie sich von hier.
-            .environment(\.tablePlayers, tablePlayers)
             .onAppear {
                 runningEvening = EveningLog.current
                 tablePlayers = TableRoster.players(from: viewModel.profiles)
@@ -92,6 +90,13 @@ struct HomeView: View {
                 TableRoster.remember(tablePlayers)
             }
         }
+        // Jedes Spiel, das Namen zeigen kann, nimmt sie sich von hier – und
+        // zwar AUSSEN am Stack, nicht an seinem ersten Screen. Was der
+        // NavigationStack hereinschiebt, erbt die Umgebung vom Stack, nicht
+        // vom Screen, auf dem der Link sass: Innen gesetzt kam die Liste in
+        // keinem Spiel an, und "Kennst du deine Leute?" verlangte Mitspieler,
+        // obwohl sie angehakt waren (4. November).
+        .environment(\.tablePlayers, tablePlayers)
     }
 
     // MARK: - Eigene Karten

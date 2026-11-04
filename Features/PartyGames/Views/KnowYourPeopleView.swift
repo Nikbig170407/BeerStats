@@ -62,6 +62,10 @@ struct KnowYourPeopleView: View {
         .navigationBarTitleDisplayMode(.inline)
         .roundSettings(for: .knowYourPeople)
         .onAppear(perform: buildQuestionsIfNeeded)
+        // Die Profile kommen ueber einen Listener nach: Wer das Spiel gleich
+        // nach dem App-Start aufmacht, sieht beim Erscheinen noch niemanden.
+        // Ohne das blieben die Fragen leer, bis man das Spiel neu oeffnet.
+        .onChange(of: tablePlayers.count) { _ in buildQuestionsIfNeeded() }
     }
 
     // MARK: - Die Frage
