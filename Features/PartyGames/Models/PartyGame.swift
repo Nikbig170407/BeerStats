@@ -470,8 +470,12 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .truthOrDare: return .splitBolt
         case .neverHaveIEver: return .neonHand
         case .timeline: return .vinyl
-        case .schocken, .maexchen, .twoTruths, .spy, .headsUp, .countTo21,
-             .estimation, .categories, .mostLikely, .knowYourPeople, .charades,
+        case .schocken: return .diceCup
+        case .maexchen: return .liarsDice
+        case .twoTruths: return .clothesline
+        case .spy: return .dossier
+        case .countTo21: return .twentyOne
+        case .headsUp, .estimation, .categories, .mostLikely, .knowYourPeople, .charades,
              .spectrum, .bombPass, .reactionDuel, .drinkRoulette, .herd,
              .forbiddenWords, .drinkBingo, .eveningRule:
             return nil

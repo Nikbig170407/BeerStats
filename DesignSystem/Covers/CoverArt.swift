@@ -36,6 +36,16 @@ enum CoverArt: CaseIterable {
     case neonHand
     /// Hitparade.
     case vinyl
+    /// Schocken.
+    case diceCup
+    /// Maexchen.
+    case liarsDice
+    /// Zwei Wahrheiten.
+    case clothesline
+    /// Der Spion.
+    case dossier
+    /// 21.
+    case twentyOne
 
     /// Gezeichnet wird in diesem Rahmen; die Ansicht zieht ihn auf das Cover
     /// auf. Die unteren 74 Einheiten liegen unter dem Titelbalken – dort
@@ -59,6 +69,16 @@ enum CoverArt: CaseIterable {
             return "Eine pinke Neonhand zeigt drei Finger auf dunklem Backstein, der kleine ist eingeknickt, ein blauer Rahmen leuchtet in den Ecken."
         case .vinyl:
             return "Eine Schallplatte rutscht vor einem Strahlenkranz aus ihrer gestreiften Hülle, ein Tonarm liegt auf, Noten fliegen heraus."
+        case .diceCup:
+            return "Ein Lederbecher hebt sich von drei Einsen, daneben liegt ein Stapel Bierdeckel im Lampenlicht."
+        case .liarsDice:
+            return "Zwei Würfel zeigen Zwei und Eins, darüber schlägt die rote Nadel eines Lügendetektors auf Millimeterpapier aus."
+        case .clothesline:
+            return "An einer Leine hängen drei Zettel, zwei mit grünem Haken, der mittlere mit rotem Kreuz und Fingerabdruck."
+        case .dossier:
+            return "Über eine Akte mit rotem Stempel späht ein Hut mit zwei Augen, eine Lupe zeigt einen Fingerabdruck."
+        case .twentyOne:
+            return "Kärtchen mit achtzehn, neunzehn und zwanzig laufen im Bogen auf eine große rote Einundzwanzig zu, die in einem Stern explodiert."
         }
     }
 
@@ -72,6 +92,11 @@ enum CoverArt: CaseIterable {
         case .splitBolt: return SceneArt.rgb(42, 9, 7)
         case .neonHand: return SceneArt.rgb(13, 6, 12)
         case .vinyl: return SceneArt.rgb(6, 23, 30)
+        case .diceCup: return SceneArt.rgb(23, 13, 6)
+        case .liarsDice: return SceneArt.rgb(6, 23, 26)
+        case .clothesline: return SceneArt.rgb(20, 8, 34)
+        case .dossier: return SceneArt.rgb(23, 14, 7)
+        case .twentyOne: return SceneArt.rgb(8, 31, 24)
         }
     }
 
@@ -85,6 +110,11 @@ enum CoverArt: CaseIterable {
         case .splitBolt: Self.drawSplitBolt(&bild)
         case .neonHand: Self.drawNeonHand(&bild)
         case .vinyl: Self.drawVinyl(&bild)
+        case .diceCup: Self.drawDiceCup(&bild)
+        case .liarsDice: Self.drawLiarsDice(&bild)
+        case .clothesline: Self.drawClothesline(&bild)
+        case .dossier: Self.drawDossier(&bild)
+        case .twentyOne: Self.drawTwentyOne(&bild)
         }
     }
 

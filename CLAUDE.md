@@ -707,9 +707,10 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Entscheidung des Nutzers vom 4. November: Bilder statt eines Emoji auf
   einem Farbverlauf, im Stil eines **Siebdruck-Plakats** – flache,
   kräftige Formen in wenigen Farben, dunkle Kontur, Rasterpunkte im Grund.
-  Ring of Fire („Der Kronkorken“) und die übrigen fünf aus „Mit Karten“
-  sind gezeichnet (6. November abgenommen: „die cover sind gut“), die
-  anderen Gruppen folgen – jede erst als Vorschau im Browser, dann in
+  Gezeichnet sind ganz „Mit Karten“ und von „Raten & reden“ Schocken,
+  Mäxchen, Zwei Wahrheiten, Der Spion und 21 (6. November abgenommen:
+  „die cover sind gut“; „Wer bin ich?“ wurde verworfen und neu gezeichnet).
+  Die anderen folgen – jede erst als Vorschau im Browser, dann in
   Swift. Was gilt:
   - **Gezeichnet, nicht als Bilddatei.** Das Repository ist öffentlich;
     eine Zeichnung hat keine Lizenzfrage, bleibt scharf und lässt sich
@@ -2147,9 +2148,10 @@ oben; was schief aussieht, unten.
 ### Oberfläche
 - **Hauptmenü als Cover-Raster (4. November)**: nie auf einem Gerät
   gelaufen. Zu prüfen:
-  - **Die sechs gezeichneten Cover** („Mit Karten“): Sieht man die Motive
-    auf einem kleinen iPhone – Kronkorken, Pferdekopf, Bus, Blitz,
-    Neonhand, Schallplatte? Steht das Fragezeichen bei Wahrheit oder
+  - **Die gezeichneten Cover**: Sieht man die Motive auf einem kleinen
+    iPhone – Kronkorken, Pferdekopf, Bus, Blitz, Neonhand, Schallplatte,
+    Würfelbecher, Lügendetektor, Wäscheleine, Akte, die 21? Steht die
+    Kontur der 21 sauber, und passt „GEHEIM“ in seinen Stempel? Steht das Fragezeichen bei Wahrheit oder
     Pflicht mittig in seiner Blase? Liest sich der Titel im Balken?
   - **Beerpong-Plakat und neues App-Icon**: Steht das Plakat rechts im
     Kasten, ohne dass Text darauf liegt, auch mit großer Schrift? Und zeigt
