@@ -618,6 +618,12 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     einmal im `ScrollView`: Gescrollt wird nur, wenn es selbst mit
     kleinstem Bild nicht passt – bei sehr großer Schrift. Abgeschnittener
     Text wäre schlimmer als ein Screen, der ausnahmsweise rollt.
+  - **Aber `ViewThatFits` hält die Ansicht ZWEIMAL im Baum**, und jede
+    Änderung rechnet beide durch. Wo sich viel bewegt, kostet das: Ring of
+    Fire misst deshalb, wie hoch alles unter dem Ring ist
+    (`RingTableLowerHeightKey`), rechnet den kleinsten Ring dazu und baut
+    nur eine der beiden Fassungen (6. November, „laggt beim Austeilen und
+    Ziehen“).
 
 - **Jedes Spiel hat seine eigene Welt** (`DesignSystem/Worlds/`).
   Entscheidung des Nutzers vom 28. Oktober: „Im Moment sieht jedes Spiel
@@ -671,7 +677,15 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     kleiner. Ohne das stand in der Kachel „Schätzmeiste“ über einem „r“.
   - **Texturen werden einmal gezeichnet** (`WorldGround` ist
     gleichsetzbar, ein Tastendruck rechnet den Grund nicht neu), leise
-    Bewegung höchstens mit 30 Bildern je Sekunde.
+    Bewegung höchstens mit 30 Bildern je Sekunde. Wo nur ein Teil sich
+    bewegt, liegt das Stille auf einer eigenen Leinwand
+    (`SceneArt.GroundLayer`): Die Glut von Ring of Fire zog vorher die
+    ganzen Dielen dreißigmal je Sekunde neu, nur damit das Licht atmet.
+  - **Kein `shadow` an vielen Dingen, die sich bewegen.** Ein Schatten wird
+    auch dann gerechnet, wenn seine Farbe durchsichtig ist – an den
+    zweiundfünfzig Karten des Rings in jedem Bild des Austeilens. Leuchten
+    soll nur, was gerade leuchtet, und dann als eigene Schicht
+    (`background { if … }`).
   - **Die Dinge einer Welt liegen neben ihrem Grund**, eine Datei je Welt
     in `DesignSystem/Worlds/` (`SecretFile`, `NightBus`, `Casino` …). Die
     Spiele benutzen sie und zeichnen nicht selbst. Geteilte Bausteine

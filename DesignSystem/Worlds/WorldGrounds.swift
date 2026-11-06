@@ -37,11 +37,26 @@ struct WorldGround: View, Equatable {
     var body: some View {
         Group {
             if moves {
-                // Leise Bewegung braucht keine 60 Bilder je Sekunde
-                SwiftUI.TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
-                    Canvas { context, size in
-                        let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600)
-                        SceneArt.ground(world, &context, size, t, plain: plain)
+                ZStack {
+                    // Was still liegt, wird einmal gezeichnet. Vorher zog
+                    // die Glut von Ring of Fire die ganzen Dielen dreissigmal
+                    // je Sekunde neu, nur damit das Licht darueber atmet –
+                    // ausgerechnet unter dem Spiel mit den meisten Animationen
+                    // (6. November: "laggt ein bisschen")
+                    if SceneArt.groundSplits(world) {
+                        Canvas { context, size in
+                            SceneArt.ground(world, &context, size, 0, plain: plain, layer: .still)
+                        }
+                    }
+                    // Leise Bewegung braucht keine 60 Bilder je Sekunde
+                    SwiftUI.TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                        Canvas { context, size in
+                            let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600)
+                            SceneArt.ground(
+                                world, &context, size, t, plain: plain,
+                                layer: SceneArt.groundSplits(world) ? .moving : .whole
+                            )
+                        }
                     }
                 }
             } else {
@@ -151,10 +166,22 @@ extension SceneArt {
 
     /// Der Grund einer Welt. `plain` ist "Hintergrund: Schlicht" – nur die
     /// Grundfarbe, ohne Textur.
-    static func ground(_ world: GameWorld, _ g: inout GraphicsContext, _ size: CGSize, _ t: Double, plain: Bool) {
+    /// Welcher Teil eines Grundes gezeichnet wird. Ein Grund, der sich
+    /// bewegt, zeichnet sein stilles Teil einmal (`still`) und nur das
+    /// bewegte im Takt (`moving`) – wo er das kann (`groundSplits`).
+    enum GroundLayer { case whole, still, moving }
+
+    /// Ob ein bewegter Grund still und bewegt getrennt zeichnen kann. Bei
+    /// der Lampe und beim Filmkorn bewegt sich das Ganze; bei der Glut nur
+    /// das Licht ueber den Dielen.
+    static func groundSplits(_ world: GameWorld) -> Bool {
+        world == .campfire
+    }
+
+    static func ground(_ world: GameWorld, _ g: inout GraphicsContext, _ size: CGSize, _ t: Double, plain: Bool, layer: GroundLayer = .whole) {
         let w = Double(size.width), h = Double(size.height)
         switch world {
-        case .campfire: campfireGround(&g, w, h, t, plain)
+        case .campfire: campfireGround(&g, w, h, t, plain, layer)
         case .racetrack: racetrackGround(&g, w, h, plain)
         case .nightBus: nightBusGround(&g, w, h, plain)
         case .twoPiles: twoPilesGround(&g, w, h, plain)
@@ -187,9 +214,11 @@ extension SceneArt {
     private static func full(_ w: Double, _ h: Double) -> CGSize { CGSize(width: w, height: h) }
 
     // Ring of Fire: dunkle Dielen, aus der Mitte glimmt es
-    private static func campfireGround(_ g: inout GraphicsContext, _ w: Double, _ h: Double, _ t: Double, _ plain: Bool) {
-        box(&g, 0, 0, w, h, rgb(22, 15, 10), 1)
-        if !plain {
+    private static func campfireGround(_ g: inout GraphicsContext, _ w: Double, _ h: Double, _ t: Double, _ plain: Bool, _ layer: GroundLayer) {
+        if layer != .moving {
+            box(&g, 0, 0, w, h, rgb(22, 15, 10), 1)
+        }
+        if !plain, layer != .moving {
             var naehte: [(Point, Point)] = []
             for b in 0...Int(w / 60) + 1 {
                 let x0 = Double(b) * 60 - 10
@@ -207,6 +236,7 @@ extension SceneArt {
             }
             lines(&g, naehte, rgb(6, 4, 2), 0.8, 2)
         }
+        guard layer != .still else { return }
         let atem = 0.5 + 0.5 * sin(t * 1.7) * sin(t * 2.9)
         glow(&g, w / 2, h * 0.47, 280, rgb(255, 110, 30), 0.2 + 0.06 * atem)
         vignette(&g, full(w, h), 0.7, inner: 0.25)

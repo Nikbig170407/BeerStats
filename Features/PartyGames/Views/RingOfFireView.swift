@@ -65,6 +65,8 @@ struct RingOfFireView: View {
 
     /// Vor dem Start steht die Vorbereitung, danach der Tisch.
     @State private var hasStarted = false
+    /// Wie hoch alles unter dem Ring ist (`RingTableLowerHeightKey`).
+    @State private var lowerTableHeight: CGFloat = 0
 
     /// `nil` bedeutet: Platz im Ring, Karte schon gezogen.
     @State private var ring: [PlayingCard?] = []
@@ -287,11 +289,25 @@ struct RingOfFireView: View {
             // Risses rechnet mit Winkeln, nicht mit Punkten, und bleibt davon
             // unberuehrt. Gescrollt wird nur noch, wenn es selbst mit
             // kleinstem Ring nicht passt (sehr grosse Schrift).
-            ViewThatFits(in: .vertical) {
-                tableLayout
-                ScrollView { tableLayout }
-                    .verticalScrollOnly()
+            //
+            // Entschieden wird ueber eine Rechnung statt ueber
+            // `ViewThatFits`: Das hielt den ganzen Ring ZWEIMAL im Baum –
+            // einmal fuer den Fall ohne, einmal fuer den mit Scrollen –, und
+            // jeder Schritt des Lichts rechnete beide durch (6. November:
+            // "laeuft nicht fluessig"). Jetzt steht nur einer da.
+            GeometryReader { platz in
+                let scrollt = lowerTableHeight + Self.tableFixedHeight > platz.size.height
+                Group {
+                    if scrollt {
+                        ScrollView { tableLayout }
+                            .verticalScrollOnly()
+                    } else {
+                        tableLayout
+                    }
+                }
+                .frame(width: platz.size.width, height: platz.size.height)
             }
+            .onPreferenceChange(RingTableLowerHeightKey.self) { lowerTableHeight = $0 }
         }
         // Der Riss-Moment liegt ueber dem ganzen Screen: Er dunkelt alles
         // ab bis auf die Stelle, und dort brennt es. Der Ring meldet von
@@ -351,7 +367,7 @@ struct RingOfFireView: View {
     /// Ring hat Vorrang (`layoutPriority`) und nimmt den Rest. Schrumpfen
     /// soll er, nicht der Text der Merkliste.
     private var tableLayout: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Self.tableSpacing) {
             // Der Ring darf naeher an den Rand als der Rest: Die Karten
             // werden mit ihm groesser (27. Oktober, "Karten groesser"). Die
             // negative Polsterung gibt ihm 24 pt mehr Breite, ohne die
@@ -360,7 +376,7 @@ struct RingOfFireView: View {
                 .padding(.horizontal, -12)
                 .frame(minHeight: Self.ringMinimum)
                 .layoutPriority(1)
-            Group {
+            VStack(spacing: Self.tableSpacing) {
                 tearStatus
                 emptyRingPanel
                 TurnRow(turn: turn, tint: BeerStatsColor.error)
@@ -368,9 +384,24 @@ struct RingOfFireView: View {
                 roleBoard
             }
             .fixedSize(horizontal: false, vertical: true)
+            // Wie hoch alles unter dem Ring ist – daraus rechnet `table`,
+            // ob ohne Scrollen Platz ist
+            .background(
+                GeometryReader { unten in
+                    Color.clear.preference(key: RingTableLowerHeightKey.self, value: unten.size.height)
+                }
+            )
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.vertical, Self.tableVerticalPadding)
+    }
+
+    private static let tableSpacing: CGFloat = 14
+    private static let tableVerticalPadding: CGFloat = 12
+    /// Was neben dem Teil unter dem Ring sicher gebraucht wird: der Ring in
+    /// seiner kleinsten Groesse, der Abstand dazu und der Rand oben und unten.
+    private static var tableFixedHeight: CGFloat {
+        ringMinimum + tableSpacing + 2 * tableVerticalPadding
     }
 
     /// Kleiner wird der Ring nicht: Darunter liegen zweiundfuenfzig Karten
@@ -657,7 +688,17 @@ struct RingOfFireView: View {
                         lineWidth: isLit ? 1.8 : 1.1
                     )
             )
-            .shadow(color: BeerStatsColor.error.opacity(isLit ? 0.9 : 0), radius: 10)
+            // Der Schein nur um die Karte unter dem Licht. Als `shadow` an
+            // jeder Karte – unsichtbar bei allen anderen – rechnete iOS ihn
+            // trotzdem fuer alle mit, in jedem Bild des Austeilens und des
+            // Losens (6. November: "laggt ein bisschen")
+            .background {
+                if isLit {
+                    form
+                        .fill(BeerStatsColor.error.opacity(0.9))
+                        .blur(radius: 8)
+                }
+            }
             .frame(width: width, height: height)
             .scaleEffect(isLit ? 1.45 : 1)
             // Der leere Platz ist unsichtbar: Mit einem Platzhalter saehe
@@ -1396,5 +1437,14 @@ private struct RingTearQuake: GeometryEffect {
             .rotated(by: q.turn * .pi / 180)
             .translatedBy(x: -cx, y: -cy)
         return ProjectionTransform(t)
+    }
+}
+
+/// Die Hoehe von allem unter dem Ring – gemessen, damit der Tisch weiss, ob
+/// er ohne Scrollen auskommt.
+private struct RingTableLowerHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
