@@ -27,47 +27,13 @@ struct GamePickerView: View {
 
     private enum Phase: Equatable { case setup, rolling, drawn }
 
-    /// Die Dauer als Filter – mit "egal" als eigenem Fall, damit die
-    /// Auswahl ohne Optional auskommt.
-    private enum LengthFilter: Hashable, CaseIterable {
-        case any, quick, round, long
-
-        var length: PartyGame.Length? {
-            switch self {
-            case .any: return nil
-            case .quick: return .quick
-            case .round: return .round
-            case .long: return .long
-            }
-        }
-
-        var title: String {
-            switch self {
-            case .any: return "Egal"
-            case .quick: return "Kurz"
-            case .round: return "Mittel"
-            case .long: return "Lang"
-            }
-        }
-
-        var detail: String? {
-            switch self {
-            case .any: return nil
-            case .quick: return "2 Min."
-            case .round: return "10 Min."
-            case .long: return "länger"
-            }
-        }
-    }
-
     @State private var phase: Phase = .setup
     @State private var playerCount = 4
-    @State private var filter: LengthFilter = .any
     @State private var game: PartyGame?
     @State private var rollTask: Task<Void, Never>?
 
     private var passende: [PartyGame] {
-        PartyGame.fitting(players: playerCount, length: filter.length)
+        PartyGame.fitting(players: playerCount)
     }
 
     var body: some View {
@@ -103,16 +69,8 @@ struct GamePickerView: View {
                     PlayerCountStepper(count: $playerCount, range: 2...PartyGame.manyPlayers, tint: BeerStatsColor.accent)
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    label("WIE LANGE?")
-                    ChoiceRow(
-                        options: LengthFilter.allCases.map {
-                            ChoiceOption(value: $0, title: $0.title, detail: $0.detail)
-                        },
-                        selection: $filter,
-                        tint: BeerStatsColor.accent
-                    )
-                }
+                // Nach der Dauer wird nicht mehr gefragt (6. November:
+                // "schreib nicht dazu, wie lange die Spiele dauern")
 
                 Text(auswahlHinweis)
                     .font(BeerStatsFont.caption)
@@ -132,7 +90,7 @@ struct GamePickerView: View {
     /// Sagt, woraus gelost wird – und wenn nichts passt, warum.
     private var auswahlHinweis: String {
         guard !passende.isEmpty else {
-            return "Dazu passt gerade nichts – nimm „Egal“."
+            return "Dazu passt gerade nichts."
         }
         let wort = passende.count == 1 ? "Spiel" : "Spiele"
         return "\(passende.count) \(wort) kommen in Frage."
@@ -214,26 +172,14 @@ struct GamePickerView: View {
 
             SplitFlapText(text: game.title)
 
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("DAUER")
-                        .font(tafel.font(11, weight: .semibold))
-                        .kerning(2)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                    Text(game.length.label.uppercased())
-                        .font(tafel.font(17, weight: .heavy))
-                        .foregroundStyle(DepartureBoard.yellow)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("SPIELER")
-                        .font(tafel.font(11, weight: .semibold))
-                        .kerning(2)
-                        .foregroundStyle(BeerStatsColor.textSecondary)
-                    Text(game.playersLabel.uppercased())
-                        .font(tafel.font(17, weight: .heavy))
-                        .foregroundStyle(DepartureBoard.yellow)
-                }
+            VStack(spacing: 4) {
+                Text("SPIELER")
+                    .font(tafel.font(11, weight: .semibold))
+                    .kerning(2)
+                    .foregroundStyle(BeerStatsColor.textSecondary)
+                Text(game.playersLabel.uppercased())
+                    .font(tafel.font(17, weight: .heavy))
+                    .foregroundStyle(DepartureBoard.yellow)
             }
 
             Text(game.subtitle)
@@ -282,11 +228,8 @@ struct GamePickerView: View {
                 guard !Task.isCancelled else { return }
             }
 
-            game = PartyGame.draw(
-                players: playerCount,
-                length: filter.length,
-                excluding: vorher
-            ) ?? passende.randomElement()
+            game = PartyGame.draw(players: playerCount, excluding: vorher)
+                ?? passende.randomElement()
 
             withAnimation(AppAnimation.standard) { phase = .drawn }
             HapticManager.success()

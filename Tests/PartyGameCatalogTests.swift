@@ -60,11 +60,11 @@ final class PartyGameCatalogTests: XCTestCase {
 
     /// Wer nochmal wuerfelt, will etwas anderes sehen.
     func testRollingAgainAvoidsTheLastResult() {
-        let vorher = PartyGame.fitting(players: 6, length: .quick)
-        XCTAssertGreaterThan(vorher.count, 1, "Testvoraussetzung: mehr als ein kurzes Spiel")
+        let vorher = PartyGame.fitting(players: 6)
+        XCTAssertGreaterThan(vorher.count, 1, "Testvoraussetzung: mehr als ein passendes Spiel")
 
         for _ in 0..<30 {
-            let gezogen = PartyGame.draw(players: 6, length: .quick, excluding: vorher[0])
+            let gezogen = PartyGame.draw(players: 6, excluding: vorher[0])
             XCTAssertNotEqual(gezogen, vorher[0])
         }
     }

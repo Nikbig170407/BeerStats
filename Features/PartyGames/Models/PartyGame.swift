@@ -477,11 +477,12 @@ enum PartyGame: String, CaseIterable, Identifiable {
 
     // MARK: - Wie lange und mit wie vielen
 
-    /// Wie lange eine Runde dauert.
+    /// Wie lange eine Runde dauert – fuer die Rechnung, nicht zum Anzeigen.
     ///
-    /// Steht hier und nicht im Spiel, weil die Frage am Tisch VOR dem
-    /// Antippen gestellt wird: "Haben wir noch zehn Minuten oder reicht es
-    /// nur fuer eine schnelle?" Im Spiel selbst waere die Antwort zu spaet.
+    /// Angezeigt wird die Dauer nirgends mehr (6. November: "schreib nicht
+    /// dazu, wie lange die Spiele dauern"). Gebraucht wird sie trotzdem:
+    /// Sie gewichtet einen Sieg im Pokal (`points`), und was nebenher
+    /// laeuft, kommt im Wuerfel nicht vor.
     enum Length: Hashable, CaseIterable {
         /// Zwei Minuten – eine Runde zwischendurch.
         case quick
@@ -491,15 +492,6 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case long
         /// Hat keine Dauer, sondern begleitet den Abend.
         case alongside
-
-        var label: String {
-            switch self {
-            case .quick: return "2 Minuten"
-            case .round: return "10 Minuten"
-            case .long: return "eine Viertelstunde"
-            case .alongside: return "läuft nebenher"
-            }
-        }
 
         /// Was ein Sieg in einem Spiel dieser Laenge im Pokal wert ist.
         ///
@@ -514,16 +506,6 @@ enum PartyGame: String, CaseIterable, Identifiable {
             case .round: return 2
             case .long: return 3
             case .alongside: return 0
-            }
-        }
-
-        /// Kurzform fuer die Auswahl – dort stehen vier nebeneinander.
-        var shortLabel: String {
-            switch self {
-            case .quick: return "Kurz"
-            case .round: return "Mittel"
-            case .long: return "Lang"
-            case .alongside: return "Nebenher"
             }
         }
     }
@@ -590,12 +572,9 @@ enum PartyGame: String, CaseIterable, Identifiable {
     /// Was **nebenher** laeuft, ist nie dabei. Die Frage lautet "was
     /// spielen wir jetzt", und darauf ist "Trinkbingo" keine Antwort – das
     /// laeuft mit, waehrend etwas anderes gespielt wird.
-    static func fitting(players count: Int, length: Length? = nil) -> [PartyGame] {
+    static func fitting(players count: Int) -> [PartyGame] {
         allCases.filter { game in
-            guard game.length != .alongside else { return false }
-            guard game.players.contains(count) else { return false }
-            guard let length else { return true }
-            return game.length == length
+            game.length != .alongside && game.players.contains(count)
         }
     }
 
@@ -604,8 +583,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
     /// `excluding` ist das zuletzt gezogene: Wer noch einmal wuerfelt, will
     /// etwas anderes sehen. Bleibt dadurch nichts uebrig, zaehlt die Auswahl
     /// mehr als die Abwechslung.
-    static func draw(players count: Int, length: Length? = nil, excluding last: PartyGame? = nil) -> PartyGame? {
-        let passend = fitting(players: count, length: length)
+    static func draw(players count: Int, excluding last: PartyGame? = nil) -> PartyGame? {
+        let passend = fitting(players: count)
         let offen = passend.filter { $0 != last }
         return (offen.isEmpty ? passend : offen).randomElement()
     }

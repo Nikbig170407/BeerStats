@@ -234,7 +234,8 @@ den nachgespielten Wurf-Log alter Partien.
   Cover führt auf die **Seite des Spiels** (`PartyGameDetailView`): Cover,
   Spielerzahl, Anleitung und „Spielen“. **Wie lange ein Spiel dauert, steht
   nirgends** (6. November: „schreib nicht dazu, wie lange die Spiele
-  dauern“) – `length` bleibt im Katalog, weil der Würfel danach filtert. Oben nur zwei Symbole:
+  dauern“) – auch nicht im Würfel. `length` bleibt im Katalog, weil sie einen Sieg
+  im Pokal gewichtet. Oben nur zwei Symbole:
   Spieler und Einstellungen. **„Zuletzt gespielt" gibt es nicht mehr**
   (13. Oktober): eine Liste, die sich bei jedem Aufmachen anders sortiert,
   schob das, was immer gleich liegt, nach unten. Was niemand liest, soll
@@ -272,7 +273,7 @@ den nachgespielten Wurf-Log alter Partien.
   fünf Minuten Diskussion, in denen niemand spielt. Gelost wird aus dem,
   was zur Runde **passt**: Die Spielerzahl ist eine Bedingung, keine
   Empfehlung – „Der Spion" zu zweit wäre kein Vorschlag, sondern ein
-  Fehler. Dazu kommt eine Filterung nach Dauer. Was nebenher läuft, ist nie
+  Fehler. Nach der Dauer wird nicht gefragt. Was nebenher läuft, ist nie
   dabei: Auf „was spielen wir jetzt" ist Trinkbingo keine Antwort.
 - **Nochmal dieselben**: die letzte Aufstellung als Zeile im Beerpong-Menü,
   gestartet mit den aktuellen Hausregeln.
@@ -2095,9 +2096,7 @@ oben; was schief aussieht, unten.
   Spiel? Gelost wird auf einer Abfahrtstafel: Eine halbe Sekunde klappern
   die Fallblätter, dann steht der Titel nach knapp einer weiteren. Beides
   geschätzt, nicht gemessen – zu kurz, um zu zeigen, dass gelost wird,
-  oder zu lang zum Warten? Und stimmen die
-  Dauer-Angaben („2 Minuten", „10 Minuten") ungefähr mit dem überein, was
-  eine Runde tatsächlich braucht? Sie stehen nur noch im Würfel.
+  oder zu lang zum Warten?
 - **Blätter verteilen (22. Oktober)**: Kommen die Bilder in WhatsApp
   lesbar an, oder sind sechzehn Felder auf einem Handybild zu klein? Und
   geht AirDrop an mehrere gleichzeitig?
