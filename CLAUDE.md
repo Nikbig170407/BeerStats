@@ -232,7 +232,9 @@ den nachgespielten Wurf-Log alter Partien.
   Gruppen sind **Filter** über dem Raster, keine Ordner mehr – ein Ordner
   war ein Tipp mehr vor jedem Spiel und versteckte, was drin liegt. Ein
   Cover führt auf die **Seite des Spiels** (`PartyGameDetailView`): Cover,
-  Dauer, Spielerzahl, Anleitung und „Spielen“. Oben nur zwei Symbole:
+  Spielerzahl, Anleitung und „Spielen“. **Wie lange ein Spiel dauert, steht
+  nirgends** (6. November: „schreib nicht dazu, wie lange die Spiele
+  dauern“) – `length` bleibt im Katalog, weil der Würfel danach filtert. Oben nur zwei Symbole:
   Spieler und Einstellungen. **„Zuletzt gespielt" gibt es nicht mehr**
   (13. Oktober): eine Liste, die sich bei jedem Aufmachen anders sortiert,
   schob das, was immer gleich liegt, nach unten. Was niemand liest, soll
@@ -2070,7 +2072,6 @@ oben; was schief aussieht, unten.
     „Über die Box spielen“ sauber weiter?
   - Dreht sich die Platte, liegt der Tonarm auf, läuft der Ring mit? Ist
     das Zählwerk am Tisch schnell genug zu bedienen?
-  - Stimmt die geschätzte Dauer im Vorspann ungefähr?
 - **Pokal (22. Oktober)**: Stimmt die Wertung am Ende mit dem überein, was
   ihr im Kopf habt? Von allein melden nur **Hitparade** und **Beerpong**;
   bei allen anderen tippt ihr den Sieger im Abend-Screen an. Zu prüfen, ob
@@ -2096,8 +2097,7 @@ oben; was schief aussieht, unten.
   geschätzt, nicht gemessen – zu kurz, um zu zeigen, dass gelost wird,
   oder zu lang zum Warten? Und stimmen die
   Dauer-Angaben („2 Minuten", „10 Minuten") ungefähr mit dem überein, was
-  eine Runde tatsächlich braucht? Sie stehen jetzt auch auf jedem
-  Cover im Hauptmenü.
+  eine Runde tatsächlich braucht? Sie stehen nur noch im Würfel.
 - **Blätter verteilen (22. Oktober)**: Kommen die Bilder in WhatsApp
   lesbar an, oder sind sechzehn Felder auf einem Handybild zu klein? Und
   geht AirDrop an mehrere gleichzeitig?

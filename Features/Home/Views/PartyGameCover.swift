@@ -4,7 +4,7 @@
 //
 //  Ein Spiel als Cover im Raster der Spielauswahl.
 //
-//  Oben das Bild, unten ein Balken mit Titel, Dauer und Spielerzahl. Der
+//  Oben das Bild, unten ein Balken mit Titel und Spielerzahl. Der
 //  Titel kommt aus der App und nicht aus der Zeichnung: So steht er in der
 //  Schrift der Spielwelt, bleibt scharf und folgt der Schriftgroesse.
 //
@@ -39,7 +39,7 @@ struct PartyGameCover: View {
         .shadow(color: .black.opacity(0.45), radius: 10, y: 6)
         .contentShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(game.title), \(game.length.label), Spieler \(game.playersLabel)")
+        .accessibilityLabel("\(game.title), Spieler \(game.playersLabel)")
     }
 
     @ViewBuilder
@@ -74,15 +74,16 @@ struct PartyGameCover: View {
         }
     }
 
-    /// Titel und die zwei Angaben, nach denen am Tisch gefragt wird, bevor
-    /// jemand antippt: Wie lange dauert das, und reichen wir dafuer?
+    /// Titel und die Spielerzahl – reichen wir dafuer? Die Dauer steht
+    /// nicht mehr da (6. November: "schreib nicht dazu, wie lange die
+    /// Spiele dauern"); der Wuerfel filtert weiter danach.
     private var titleBand: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(game.title)
                 .font(Font.world(game.world, 15, weight: .heavy))
                 .foregroundStyle(PosterInk.cream)
                 .keepsWordsWhole(game.title)
-            Text("\(game.length.label) · \(game.playersLabel)")
+            Text("Spieler \(game.playersLabel)")
                 .font(.scaled(10, weight: .heavy, design: .rounded))
                 .foregroundStyle(PosterInk.cream.opacity(0.7))
                 .lineLimit(1)

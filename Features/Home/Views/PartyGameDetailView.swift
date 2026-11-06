@@ -2,8 +2,9 @@
 //  PartyGameDetailView.swift
 //  BeerStats
 //
-//  Die Seite eines Spiels: Cover, worum es geht, wie lange und mit wie
-//  vielen – und "Spielen".
+//  Die Seite eines Spiels: Cover, worum es geht, mit wie vielen – und
+//  "Spielen". Wie lange es dauert, steht bewusst nicht da (Wunsch des
+//  Nutzers vom 6. November).
 //
 //  Die Anleitung liegt hinter "Wie geht's?" unter dem grossen Knopf, nicht
 //  als Absatz auf der Seite (6. November: "viel zu viel Text"). Wer sie
@@ -39,7 +40,6 @@ struct PartyGameDetailView: View {
 
                     WrappingRow(spacing: 8, lineSpacing: 8, alignment: .leading) {
                         fact(game.group.emoji, game.group.label)
-                        fact("⏱️", game.length.label)
                         fact("👥", "Spieler \(game.playersLabel)")
                     }
 

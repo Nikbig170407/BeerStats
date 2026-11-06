@@ -79,13 +79,6 @@ struct HitparadeView: View {
     private let penalty = DrinkAmount.sips(2)
     private var tint: Color { BeerStatsColor.accentSecondary }
 
-    /// Grob gerechnet fuer die Dauer im Vorspann: Richtig liegt man am Tisch
-    /// etwa bei drei von fuenf Liedern, und ein Lied dauert mit Hoeren,
-    /// Raten und Aufdecken gut eine Dreiviertelminute. Geschaetzt, nicht
-    /// gemessen – steht deshalb auch unter den Pruefpunkten am Geraet.
-    private static let hitRate = 0.6
-    private static let minutesPerSong = 0.75
-
     /// Der Aufkleber im Zug – klein genug fuer eine Zeile mit dem Namen.
     private static let stickerSize: CGFloat = 110
     /// So klein und so gross darf der Plattenspieler werden. Darunter waere
@@ -188,7 +181,6 @@ struct HitparadeView: View {
                         selection: $target,
                         tint: tint
                     )
-                    hint(lengthHint)
                 }
 
                 questionsBlock
@@ -217,12 +209,6 @@ struct HitparadeView: View {
                 tint: tint
             )
         }
-    }
-
-    private var lengthHint: String {
-        let lieder = Int((Double(max(1, target - 1) * playerCount) / Self.hitRate).rounded())
-        let minuten = max(5, Int((Double(lieder) * Self.minutesPerSong).rounded()))
-        return "Mit \(playerCount) Leuten sind das ungefähr \(lieder) Lieder, also gut \(minuten) Minuten."
     }
 
     /// Fuenf Schalter als umbrechende Reihe statt als Raster: Ein Raster
