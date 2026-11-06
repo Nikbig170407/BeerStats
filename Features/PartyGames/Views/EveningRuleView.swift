@@ -71,12 +71,12 @@ struct EveningRuleView: View {
                     .kerning(1.8)
                     .foregroundStyle(BeerStatsColor.textSecondary)
 
-                Text("Ihr zieht eine Regel und legt das Handy weg. Wer sie bricht, trinkt \(penalty.text) – das entscheidet die Runde, nicht die App. Wenn es langweilig wird, zieht ihr die nächste; die alten gelten weiter.")
+                Text("Wer eine Regel bricht, trinkt \(penalty.text). Alte Regeln gelten weiter.")
                     .font(BeerStatsFont.body)
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("\(EveningRuleDeck.count) Regeln im Stapel. Gezogen wird nur, was noch nicht gilt.")
+                Text("\(EveningRuleDeck.count) Regeln im Stapel.")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)

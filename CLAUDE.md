@@ -305,7 +305,9 @@ den nachgespielten Wurf-Log alter Partien.
   teilbar als Text.
 - **Erinnerung an die Sicherung**: die Karte sagt, wann zuletzt gesichert
   wurde, und wird nach vier Wochen deutlich.
-- **Anleitung je Partyspiel**: auf der Seite des Spiels, unter „Spielen“.
+- **Anleitung je Partyspiel**: hinter einem Fragezeichen – auf der Seite
+  des Spiels („Wie geht's?“ unter „Spielen“) und im Spiel oben rechts
+  neben dem Zahnrad, auch im Vorspann.
 - **Karten aussortieren und eigene dazu** – jetzt in vier Stapeln: Ich hab
   noch nie, Wahrheit oder Pflicht, **Wer würde eher?** und Beerpong Extreme.
   Der Daumen nach unten steht in jedem Schritt da, nicht erst nach dem
@@ -957,6 +959,23 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   (`PartyGame.howToPlay`). Im Spiel stünden sie in so vielen Formen, wie
   es Spiele gibt, und ein neues hätte sie garantiert nicht.
 
+- **Wenig Text** (Entscheidung des Nutzers vom 6. November: „allgemein in
+  der App ist viel zu viel Text“). Jeder Vorspann erklärte die Regeln noch
+  einmal mit eigenen Worten, Ring of Fire mit einem Absatz über den
+  Glutfaden. Jetzt gilt:
+  - **Erklärt wird an einer Stelle**: `howToPlay` als kurze Schritte, eine
+    Zeile je Schritt, gezeigt von `HowToPlaySheet` hinter dem
+    Fragezeichen. Was nur begründet, WARUM eine Regel so ist, gehört in
+    einen Kommentar, nicht auf den Screen.
+  - **Auf einem Screen höchstens eine kurze Hinweiszeile**, und nur, wenn
+    sie im Moment gebraucht wird („Ein Bild kostet jetzt 3 Schlücke“).
+    Vorspänne zeigen, was entschieden wird – nicht die Regeln.
+  - **Das Fragezeichen bringt `roundSettings` mit**, zusammen mit dem
+    Zahnrad und in EINEM `sheet(item:)` – zwei Blätter an einer Ansicht
+    vertragen sich nicht. Es steht auch im Vorspann; nur solange eine Uhr
+    läuft oder ein Rad dreht (`isTiming`), fehlen beide. Der Härte-Vorspann
+    (`IntensityGate`) und die Seite des Spiels hängen es selbst an.
+
 - **Extreme-Karten tragen Dauer und Strafe als eigene Felder**, nicht im
   Text. Die Dauer steht auf jeder Karte, auch wenn sie „Sofort" lautet; die
   Strafe fehlt nur dort, wo es nichts zu brechen gibt. Drei Tests halten das
@@ -1000,9 +1019,10 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     noch nie“, „Wer bin ich?“, Pantomime), Fragen und Musikquelle der
     Hitparade, die Kartenzahl von Ring of Fire – jeweils ab dem nächsten
     Lied, der nächsten Runde.
-  - **Nicht im Vorspann und nicht, solange eine Uhr läuft**
-    (`isAvailable`). Über einer laufenden Bombe läge das Blatt auf der Uhr,
-    und die Runde liefe ungesehen ab.
+  - **Nicht im Vorspann** (`isAvailable`) **und nicht, solange eine Uhr
+    läuft** (`isTiming` – dann fehlt auch das Fragezeichen). Über einer
+    laufenden Bombe läge das Blatt auf der Uhr, und die Runde liefe
+    ungesehen ab.
   - **Macht ein Spiel selbst etwas auf, wartet es aufs Zahnrad – nicht
     umgekehrt.** Zwei Blätter zugleich zeigt SwiftUI nicht; der Kartenscreen
     von Ring of Fire fiele unter einem offenen Zahnrad stillschweigend weg.

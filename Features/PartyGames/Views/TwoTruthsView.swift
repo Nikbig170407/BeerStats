@@ -89,7 +89,7 @@ struct TwoTruthsView: View {
     }
 
     private var instructions: some View {
-        Text("Sag drei Sätze zu diesem Thema – zwei stimmen, einer ist erfunden. Die Runde zeigt gleichzeitig auf den Satz, den sie für gelogen hält.")
+        Text("Drei Sätze, einer erfunden. Alle zeigen gleichzeitig auf die Lüge.")
             .font(BeerStatsFont.body)
             .foregroundStyle(BeerStatsColor.textSecondary)
             .multilineTextAlignment(.center)

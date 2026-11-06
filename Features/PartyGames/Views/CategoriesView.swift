@@ -60,7 +60,7 @@ struct CategoriesView: View {
         .navigationTitle("Kategorien")
         .navigationBarTitleDisplayMode(.inline)
         // Nicht, solange die Sanduhr laeuft – das Blatt laege darueber
-        .roundSettings(for: .categories, isAvailable: phase != .running)
+        .roundSettings(for: .categories, isTiming: phase == .running)
         .onDisappear { tickTask?.cancel() }
     }
 

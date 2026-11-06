@@ -41,6 +41,8 @@ struct IntensityGate<Content: View>: View {
             ) {
                 DrinkIntensityPicker(game: game)
             }
+            // Das Zahnrad samt Fragezeichen haengt erst am Spiel dahinter
+            .howToPlay(for: game)
         }
     }
 }

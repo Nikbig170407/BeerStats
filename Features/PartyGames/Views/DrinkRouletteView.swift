@@ -72,7 +72,7 @@ struct DrinkRouletteView: View {
         }
         .navigationTitle("Trink-Roulette")
         .navigationBarTitleDisplayMode(.inline)
-        .roundSettings(for: .drinkRoulette, isAvailable: hasStarted && !isSpinning)
+        .roundSettings(for: .drinkRoulette, isAvailable: hasStarted, isTiming: isSpinning)
         .onDisappear { spinTask?.cancel() }
         .sheet(isPresented: $isEditing) {
             RouletteWedgeEditor()
@@ -115,7 +115,7 @@ struct DrinkRouletteView: View {
                     QuietButton(title: "Eigene Felder bearbeiten") { isEditing = true }
 
                     if !selectedWheel.isPlayable {
-                        Text("Ab \(RouletteWedges.minimum) Feldern lässt sich drehen. Mit zwei ist es eine Münze und kein Rad.")
+                        Text("Ab \(RouletteWedges.minimum) Feldern lässt sich drehen.")
                             .font(BeerStatsFont.caption)
                             .foregroundStyle(BeerStatsColor.warning)
                             .fixedSize(horizontal: false, vertical: true)

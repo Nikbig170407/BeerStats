@@ -80,7 +80,7 @@ struct SpyView: View {
                 .font(Font.world(world, 22, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Alle bekommen dasselbe Wort – außer einem. Reihum beschreibt jeder das Wort mit einem Satz, ohne es zu nennen.")
+            Text("Alle bekommen dasselbe Wort – außer einem.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -151,7 +151,7 @@ struct SpyView: View {
                 .font(Font.world(world, 22, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("\(PlayerNames.plainName(for: 0)) fängt an. Jeder sagt genau einen Satz über das Wort – nicht zu genau, sonst hilft er dem Spion.")
+            Text("\(PlayerNames.plainName(for: 0)) fängt an. Jeder sagt einen Satz zum Wort.")
                 .font(BeerStatsFont.body)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)

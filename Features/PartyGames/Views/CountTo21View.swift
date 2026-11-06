@@ -69,7 +69,7 @@ struct CountTo21View: View {
             Text("Reihum von 1 bis 21 zählen")
                 .font(Font.world(world, 20, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
-            Text("Wer 21 sagt, trinkt und ersetzt eine Zahl durch eine eigene Regel. Dann von vorne.")
+            Text("Wer 21 sagt, trinkt und erfindet eine Regel.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)

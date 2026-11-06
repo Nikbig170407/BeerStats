@@ -125,10 +125,13 @@ extension View {
     ///
     /// - Parameters:
     ///   - game: Wessen Haerte im Blatt steht.
-    ///   - isAvailable: `false` im Vorspann, solange eine Uhr laeuft und
-    ///     solange das Spiel gleich selbst etwas aufmacht.
-    func roundSettings(for game: PartyGame, isAvailable: Bool = true) -> some View {
-        roundSettings(for: game, isAvailable: isAvailable, note: RoundSettingsNote.nextPenalty) {
+    ///   - isAvailable: `false` im Vorspann und solange das Spiel gleich
+    ///     selbst etwas aufmacht. Gilt nur fuer das Zahnrad.
+    ///   - isTiming: `true`, solange eine Uhr laeuft oder ein Rad dreht.
+    ///     Dann fehlen Zahnrad UND Fragezeichen – jedes Blatt laege ueber
+    ///     der Uhr, und die Runde liefe ungesehen ab.
+    func roundSettings(for game: PartyGame, isAvailable: Bool = true, isTiming: Bool = false) -> some View {
+        roundSettings(for: game, isAvailable: isAvailable, isTiming: isTiming, note: RoundSettingsNote.nextPenalty) {
             EmptyView()
         }
     }
@@ -143,6 +146,7 @@ extension View {
     func roundSettings<Extra: View>(
         for game: PartyGame,
         isAvailable: Bool = true,
+        isTiming: Bool = false,
         note: String,
         onOpen: @escaping () -> Void = {},
         onClose: @escaping () -> Void = {},
@@ -154,6 +158,7 @@ extension View {
         modifier(RoundSettingsModifier(
             game: game,
             isAvailable: isAvailable,
+            isTiming: isTiming,
             note: note,
             onOpen: onOpen,
             onClose: onClose,
@@ -174,33 +179,58 @@ private struct RoundSettingsModifier<Extra: View>: ViewModifier {
 
     let game: PartyGame
     let isAvailable: Bool
+    let isTiming: Bool
     let note: String
     let onOpen: () -> Void
     let onClose: () -> Void
     let extra: Extra
 
-    @State private var showsSettings = false
+    /// Welches Blatt offen ist. EIN `sheet(item:)` statt zwei
+    /// `sheet(isPresented:)` an derselben Ansicht – zwei davon vertragen
+    /// sich in SwiftUI nicht zuverlaessig.
+    private enum Panel: Identifiable {
+        case settings, help
+        var id: Self { self }
+    }
+
+    @State private var panel: Panel?
     @Environment(\.gameWorld) private var world
 
     func body(content: Content) -> some View {
         content
             .toolbar {
+                // Das Fragezeichen auch im Vorspann: Dort stand die Anleitung
+                // frueher als Absatz (6. November: "viel zu viel Text")
                 ToolbarItem(placement: .topBarTrailing) {
-                    if isAvailable {
-                        RoundSettingsButton {
-                            onOpen()
-                            showsSettings = true
-                        }
+                    if !isTiming {
+                        HowToPlayButton { open(.help) }
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    if isAvailable && !isTiming {
+                        RoundSettingsButton { open(.settings) }
                     }
                 }
             }
-            .sheet(isPresented: $showsSettings, onDismiss: onClose) {
-                RoundSettingsSheet(note: note) {
-                    extra
-                    DrinkIntensityPicker(game: game)
+            // Beide Blaetter melden sich beim Spiel – sonst fiele ein
+            // Kartenscreen, der gerade kommen will, unter ihnen weg
+            .sheet(item: $panel, onDismiss: onClose) { offen in
+                switch offen {
+                case .settings:
+                    RoundSettingsSheet(note: note) {
+                        extra
+                        DrinkIntensityPicker(game: game)
+                    }
+                    // Das Blatt gehoert zum Spiel und steht in seiner Welt
+                    .environment(\.gameWorld, world)
+                case .help:
+                    HowToPlaySheet(game: game)
                 }
-                // Das Blatt gehoert zum Spiel und steht deshalb in seiner Welt
-                .environment(\.gameWorld, world)
             }
+    }
+
+    private func open(_ welches: Panel) {
+        onOpen()
+        panel = welches
     }
 }

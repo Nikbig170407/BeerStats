@@ -132,10 +132,10 @@ struct GamePickerView: View {
     /// Sagt, woraus gelost wird – und wenn nichts passt, warum.
     private var auswahlHinweis: String {
         guard !passende.isEmpty else {
-            return "Dazu passt gerade nichts. Mit dieser Spielerzahl gibt es keine Runde in dieser Länge – nimm „Egal“."
+            return "Dazu passt gerade nichts – nimm „Egal“."
         }
         let wort = passende.count == 1 ? "Spiel" : "Spiele"
-        return "\(passende.count) \(wort) kommen in Frage. Was nebenher läuft – Trinkbingo, verbotene Wörter, die Regel des Abends – ist nicht dabei: Das begleitet den Abend, statt eine Runde zu sein."
+        return "\(passende.count) \(wort) kommen in Frage."
     }
 
     // MARK: - Das Ergebnis

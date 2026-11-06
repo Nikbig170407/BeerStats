@@ -224,14 +224,10 @@ struct RingOfFireView: View {
             tint: BeerStatsColor.error,
             onStart: start
         ) {
-            VStack(alignment: .leading, spacing: 10) {
-                cardCountChoice
-
-                Text("Die Karten liegen geschuppt im Kreis, jede ein Stück unter der nächsten. Darunter glüht ein Faden: Kleine Lücken hält er, und je weiter sie werden, desto dünner glüht er. Reißt er nach deinem Zug, ist der Ring gerissen. Das kostet dich \(DrinkAmount.shot.text), und der Ring wird neu gelegt. Für dieselbe Lücke zahlt niemand zweimal, aber die Karte NEBEN einer Lücke reißt umso leichter. Drei Risse hat die Runde; danach ist die Glut aus.")
-                    .font(BeerStatsFont.caption)
-                    .foregroundStyle(BeerStatsColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            // Wie der Ring reisst, steht in der Anleitung hinter dem
+            // Fragezeichen – hier nur, was entschieden wird (6. November:
+            // "viel zu viel Text")
+            cardCountChoice
 
             DrinkIntensityPicker(game: .ringOfFire)
         }
@@ -255,11 +251,6 @@ struct RingOfFireView: View {
                 selection: $cardCount,
                 tint: BeerStatsColor.error
             )
-
-            Text(stapelHinweis)
-                .font(BeerStatsFont.caption)
-                .foregroundStyle(BeerStatsColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -572,26 +563,6 @@ struct RingOfFireView: View {
         return offen == 1
             ? "Der Ring wird neu gelegt. Der nächste Riss ist der letzte."
             : "Der Ring wird neu gelegt. Danach kosten noch \(offen) Risse einen Shot."
-    }
-
-    /// Welche Karten bei dieser Einstellung im Ring liegen.
-    ///
-    /// Gerechnet und nicht getippt: Die Auswahl steht in
-    /// `PlayingCardDeck.highestRanks` – staende sie hier als Satz, waere
-    /// sie nach der naechsten Aenderung falsch.
-    private var stapelHinweis: String {
-        let raenge = PlayingCardDeck.highestRanks(count: cardCount)
-            .map(\.rank)
-            .reduce(into: Set<Int>()) { $0.insert($1) }
-            .sorted()
-
-        guard let kleinster = raenge.first else { return "" }
-        let name = PlayingCard(rank: kleinster, suit: .hearts).rankName
-
-        if raenge.count == PlayingCardDeck.ranks.count {
-            return "Das ganze Blatt: alle dreizehn Ränge, von jedem alle vier Karten."
-        }
-        return "Die \(raenge.count) höchsten Ränge – ab \(name) aufwärts, von jedem alle vier Karten. Die kleinen Karten sagen nur Mengen an; was den Tisch beschäftigt, steht oben."
     }
 
     /// Welche Nachbarin der Luecke eine Karte gerade ist: -1 die linke, 1

@@ -59,6 +59,7 @@ struct HeadsUpView: View {
         .roundSettings(
             for: .headsUp,
             isAvailable: phase == .finished,
+            isTiming: phase == .playing,
             note: "Die Kategorie gilt ab der nächsten Runde, die Härte ab der nächsten Strafe."
         ) {
             categoryChoice
@@ -74,7 +75,7 @@ struct HeadsUpView: View {
                 .font(Font.world(world, 34, weight: .black))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Die Runde beschreibt, du rätst. Ein Nachbar tippt: links daneben, rechts getroffen.")
+            Text("Die Runde beschreibt, du rätst.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)

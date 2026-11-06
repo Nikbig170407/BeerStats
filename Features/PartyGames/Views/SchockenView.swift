@@ -79,7 +79,7 @@ struct SchockenView: View {
                 .font(Font.world(world, 22, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Drei Würfel, bis zu drei Würfe. Der Erste legt fest, wie viele Würfe die Runde hat.")
+            Text("Drei Würfel, bis zu drei Würfe.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -104,7 +104,7 @@ struct SchockenView: View {
             Text("Zahl · Straße · General · Schock · Schock aus")
                 .font(Font.world(world, 14, weight: .semibold))
                 .foregroundStyle(BeerStatsColor.textPrimary)
-            Text("Bei der Zahl zählt die Eins 100, jeder andere Würfel zehnfach. 1-6-5 ergibt 210.")
+            Text("Eins zählt 100, sonst zehnfach: 1-6-5 ist 210.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

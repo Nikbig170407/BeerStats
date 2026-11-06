@@ -77,12 +77,12 @@ struct BingoHandoutView: View {
 
     private var intro: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Jeder bekommt ein eigenes Blatt – anders gemischt, mit seinem Namen darauf. Als Bild, damit es auf jedem Handy ankommt, auch ohne diese App.")
+            Text("Jeder bekommt ein eigenes Blatt als Bild.")
                 .font(BeerStatsFont.body)
                 .foregroundStyle(BeerStatsColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Abgehakt wird dann im Kopf oder per Screenshot. Antippen geht nur auf dem Blatt in der Tischmitte.")
+            Text("Antippen geht nur auf dem Blatt in der Tischmitte.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -108,7 +108,7 @@ struct BingoHandoutView: View {
                 // einem Bild in einer Gruppe – das hilft niemandem beim
                 // Zuordnen. Dann heissen die Blaetter lieber nach ihrer
                 // Nummer, und wer welches nimmt, klaert die Runde.
-                Text("Es steht noch niemand am Tisch – die Blätter heißen dann „Blatt 1“ bis „Blatt \(playerCount)“. Wer heute dabei ist, stellst du im Hauptmenü über das Personen-Symbol ein.")
+                Text("Niemand am Tisch – die Blätter heißen „Blatt 1“ bis „Blatt \(playerCount)“.")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.warning)
                     .fixedSize(horizontal: false, vertical: true)
@@ -148,7 +148,7 @@ struct BingoHandoutView: View {
                 .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
 
-            Text("In den Gruppenchat schicken ist am schnellsten – auf jedem Blatt steht oben, wem es gehört.")
+            Text("Am schnellsten: in den Gruppenchat.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

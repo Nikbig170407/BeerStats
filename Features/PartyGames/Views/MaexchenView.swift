@@ -73,7 +73,7 @@ struct MaexchenView: View {
                 .font(Font.world(world, 28, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Verdeckt würfeln, ansagen – wahr oder gelogen. Der Nächste glaubt dir oder deckt auf.")
+            Text("Verdeckt würfeln, ansagen – wahr oder gelogen.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)

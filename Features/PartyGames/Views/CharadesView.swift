@@ -63,6 +63,7 @@ struct CharadesView: View {
         .roundSettings(
             for: .charades,
             isAvailable: phase == .ready || phase == .finished,
+            isTiming: phase == .playing,
             note: "Die Kategorie gilt ab der nächsten Runde, die Härte ab der nächsten Strafe."
         ) {
             categoryChoice
@@ -84,7 +85,7 @@ struct CharadesView: View {
             VStack(alignment: .leading, spacing: 10) {
                 categoryChoice
 
-                Text("Kein Wort, kein Laut, nichts aufmalen – nur spielen. Zeigen auf Dinge im Raum zählt nicht.")
+                Text("Kein Wort, kein Laut – nur spielen.")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -143,7 +144,7 @@ struct CharadesView: View {
                             Text("Nimm das Handy")
                                 .font(Font.world(world, 32, weight: .bold))
 
-                            Text("Nur du siehst die Begriffe. Die anderen rufen, was sie erkennen – du tippst unten, ob es gepasst hat.")
+                            Text("Nur du siehst die Begriffe.")
                                 .font(Font.world(world, 16, weight: .regular).italic())
                                 .opacity(0.7)
                                 .fixedSize(horizontal: false, vertical: true)

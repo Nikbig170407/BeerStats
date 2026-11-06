@@ -308,7 +308,7 @@ struct HorseRaceView: View {
                     betRow(profile)
                 }
 
-                Text("Nochmal auf dieselbe Farbe tippen nimmt den Einsatz zurück. Nach dem Rennen bleiben die Einsätze stehen.")
+                Text("Nochmal tippen nimmt den Einsatz zurück.")
                     .font(.scaled(10, weight: .medium, design: .rounded))
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -412,8 +412,8 @@ struct HorseRaceView: View {
                     .kerning(1.5)
                     .foregroundStyle(BeerStatsColor.textPrimary)
                 Text(tablePlayers.isEmpty
-                     ? "Jeder sagt laut, auf welche Farbe er setzt. Wer auf den Sieger tippt, verteilt \(winnerReward.text) – alle anderen trinken \(loserPenalty.text)."
-                     : "Setzt euch unten auf eine Farbe. Wer auf den Sieger tippt, verteilt \(winnerReward.text) – alle anderen trinken \(loserPenalty.text).")
+                     ? "Jeder sagt laut seine Farbe. Richtig: verteilt \(winnerReward.text). Falsch: trinkt \(loserPenalty.text)."
+                     : "Setzt unten auf eine Farbe. Richtig: verteilt \(winnerReward.text). Falsch: trinkt \(loserPenalty.text).")
                     .font(BeerStatsFont.caption)
                     .foregroundStyle(BeerStatsColor.textSecondary)
                     .multilineTextAlignment(.center)

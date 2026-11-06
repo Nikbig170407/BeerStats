@@ -77,7 +77,7 @@ struct TournamentView: View {
                 .kerning(3)
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Die App lost Spiele aus. Wer eine Runde verliert, trinkt – und je später die Runde, desto teurer.")
+            Text("Wer eine Runde verliert, trinkt – je später, desto teurer.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)

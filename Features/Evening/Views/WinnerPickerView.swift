@@ -52,7 +52,7 @@ struct WinnerPickerView: View {
                             }
                         }
 
-                        Text("Mehrere antippen, wenn zu zweit gewonnen wurde – die Punkte bekommen dann beide. Ein geteilter Sieg ist kein halber.")
+                        Text("Zu zweit gewonnen? Beide antippen.")
                             .font(BeerStatsFont.caption)
                             .foregroundStyle(BeerStatsColor.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)

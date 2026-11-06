@@ -59,7 +59,7 @@ struct ReactionDuelView: View {
         .navigationTitle("Reaktionsduell")
         .navigationBarTitleDisplayMode(.inline)
         // Nicht, solange auf das Signal gewartet wird – das Blatt laege darueber
-        .roundSettings(for: .reactionDuel, isAvailable: phase != .waiting && phase != .go)
+        .roundSettings(for: .reactionDuel, isTiming: phase == .waiting || phase == .go)
         .onDisappear { armTask?.cancel() }
     }
 

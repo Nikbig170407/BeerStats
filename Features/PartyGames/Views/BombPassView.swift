@@ -77,7 +77,7 @@ struct BombPassView: View {
         .navigationTitle("Bombe")
         .navigationBarTitleDisplayMode(.inline)
         // Nicht, solange die Bombe tickt – das Blatt laege darueber
-        .roundSettings(for: .bombPass, isAvailable: phase != .running)
+        .roundSettings(for: .bombPass, isTiming: phase == .running)
         .onDisappear { stop() }
     }
 
@@ -109,7 +109,7 @@ struct BombPassView: View {
     private var subline: String {
         switch phase {
         case .idle:
-            return "Zünden, dann das Handy reihum weitergeben. Wer es hält, wenn es knallt, trinkt \(penalty.text)."
+            return "Zünden und weitergeben. Wer sie beim Knall hält, trinkt \(penalty.text)."
         case .running:
             return "Nicht zögern – die Restzeit sieht niemand."
         case .exploded:

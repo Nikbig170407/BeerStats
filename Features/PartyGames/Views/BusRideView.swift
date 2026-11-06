@@ -214,7 +214,7 @@ struct BusRideView: View {
         case .rideReady:
             resultPanel(
                 board: ("DIE BUSFAHRT", "\(Self.rideLength) KARTEN"),
-                message: "Wer am meisten daneben lag, fährt Bus. \(Self.rideLength) Karten aufdecken – jede Bildkarte schickt dich zurück an den Anfang. Je weiter du kommst, desto teurer.",
+                message: "Wer am meisten daneben lag, fährt Bus. Jedes Bild: zurück an den Anfang.",
                 tint: BeerStatsColor.warning
             )
 
@@ -222,7 +222,7 @@ struct BusRideView: View {
             panel(tint: BeerStatsColor.warning, intensity: 0.6) {
                 DestinationBoard(top: "HALT \(ridePosition + 1) VON \(Self.rideLength)", bottom: "BILD: ZURÜCK")
 
-                Text("Zahl ist gut, Bild ist schlecht. Ein Bild kostet jetzt \(DrinkAmount.sips(ridePosition + 1).text).")
+                Text("Ein Bild kostet jetzt \(DrinkAmount.sips(ridePosition + 1).text).")
                     .font(Font.world(world, 15, weight: .semibold))
                     .foregroundStyle(NightBus.amber)
                     .multilineTextAlignment(.center)

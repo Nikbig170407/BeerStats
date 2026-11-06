@@ -91,7 +91,7 @@ struct SpectrumView: View {
                 .font(Font.world(world, 30, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Du siehst gleich eine Stelle zwischen zwei Begriffen. Gib der Runde einen Hinweis, der genau dorthin führt – ein Wort oder ein Beispiel, keine Zahl.")
+            Text("Gib einen Hinweis, der genau zur Stelle führt – keine Zahl.")
                 .font(BeerStatsFont.body)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -142,7 +142,7 @@ struct SpectrumView: View {
 
             poles
 
-            Text("Zieht die Nadel gemeinsam am Bogen entlang. Wenn ihr euch einig seid, festlegen.")
+            Text("Nadel gemeinsam ziehen, dann festlegen.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)

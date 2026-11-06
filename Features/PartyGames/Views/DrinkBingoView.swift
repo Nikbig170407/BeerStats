@@ -73,7 +73,7 @@ struct DrinkBingoView: View {
 
     private var rules: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Passiert eines der Felder, wird es angetippt – wer es ausgelöst hat, trinkt \(spotPenalty.text).")
+            Text("Feld passiert: antippen. Wer es ausgelöst hat, trinkt \(spotPenalty.text).")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textPrimary)
             Text("Wer eine Reihe vollmacht, ruft Bingo und verteilt \(bingoReward.text).")

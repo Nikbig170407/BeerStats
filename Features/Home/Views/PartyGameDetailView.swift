@@ -3,11 +3,11 @@
 //  BeerStats
 //
 //  Die Seite eines Spiels: Cover, worum es geht, wie lange und mit wie
-//  vielen, die Anleitung – und "Spielen".
+//  vielen – und "Spielen".
 //
-//  Ersetzt das Fragezeichen auf den alten Kacheln. Wer eine Anleitung
-//  suchte, musste dort genau neben den Weg ins Spiel tippen; hier steht sie
-//  einfach da, und der Weg ins Spiel ist der grosse Knopf darueber.
+//  Die Anleitung liegt hinter "Wie geht's?" unter dem grossen Knopf, nicht
+//  als Absatz auf der Seite (6. November: "viel zu viel Text"). Wer sie
+//  sucht, findet sie; wer spielen will, liest nicht daran vorbei.
 //
 
 import SwiftUI
@@ -15,6 +15,8 @@ import SwiftUI
 struct PartyGameDetailView: View {
 
     let game: PartyGame
+
+    @State private var showsHelp = false
 
     /// Breiter als das wird das Cover nicht – sonst schiebt es auf einem
     /// grossen Geraet "Spielen" unter den Rand.
@@ -48,7 +50,10 @@ struct PartyGameDetailView: View {
                     }
                     .buttonStyle(PressableButtonStyle())
 
-                    rules
+                    QuietButton(title: "Wie geht's?", systemImage: "questionmark.circle") {
+                        showsHelp = true
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 .padding(20)
             }
@@ -56,6 +61,9 @@ struct PartyGameDetailView: View {
         }
         .navigationTitle(game.title)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showsHelp) {
+            HowToPlaySheet(game: game)
+        }
     }
 
     private func fact(_ emoji: String, _ text: String) -> some View {
@@ -68,26 +76,5 @@ struct PartyGameDetailView: View {
         .padding(.horizontal, 11)
         .padding(.vertical, 7)
         .background(BeerStatsColor.surfaceElevated.opacity(0.7), in: Capsule())
-    }
-
-    private var rules: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("WIE GEHT DAS?")
-                .font(.scaled(12, weight: .heavy, design: .rounded))
-                .kerning(1.6)
-                .foregroundStyle(BeerStatsColor.textSecondary)
-            Text(game.howToPlay)
-                .font(BeerStatsFont.body)
-                .foregroundStyle(BeerStatsColor.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-            Text("Wie hart getrunken wird, stellst du vor dem Spiel ein.")
-                .font(.scaled(11, weight: .medium, design: .rounded))
-                .foregroundStyle(BeerStatsColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 4)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .glassPanel(cornerRadius: 16)
     }
 }

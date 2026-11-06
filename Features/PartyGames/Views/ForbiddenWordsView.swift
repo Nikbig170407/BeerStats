@@ -64,7 +64,7 @@ struct ForbiddenWordsView: View {
                 .font(Font.world(world, 30, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Jeder zieht ein Wort, das er ab jetzt nicht mehr sagen darf. Läuft neben allen anderen Spielen weiter.")
+            Text("Jeder zieht ein Wort, das er nicht mehr sagen darf.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)

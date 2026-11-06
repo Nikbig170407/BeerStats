@@ -141,7 +141,7 @@ struct EveningView: View {
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Der Abend sammelt alles, was ihr spielt – Beerpong und Partyspiele – und führt nebenbei die Trinkbilanz. Die Auswahl ist dieselbe wie unter Mitspieler.")
+            Text("Sammelt eure Spiele und die Trinkbilanz.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -214,7 +214,7 @@ struct EveningView: View {
             // sich vertippt hat, soll nicht erst an acht Namen vorbei.
             LastBookingRow(evening: abend) { evening = EveningLog.current }
 
-            Text("Wer dazukommt oder geht, hakst du unter Mitspieler an oder ab – der Abend zieht mit.")
+            Text("Wer dazukommt oder geht: unter Mitspieler an- oder abhaken.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -242,7 +242,7 @@ struct EveningView: View {
                         gespieltZeile(eintrag)
                     }
 
-                    Text("Antippen, um den Sieger einzutragen – die meisten Spiele rechnen nur aus, wer verloren hat.")
+                    Text("Antippen, um den Sieger einzutragen.")
                         .font(.scaled(10, weight: .medium, design: .rounded))
                         .foregroundStyle(BeerStatsColor.textSecondary)
                 }

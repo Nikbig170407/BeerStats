@@ -60,7 +60,7 @@ struct MostLikelyView: View {
         .navigationTitle("Wer würde eher?")
         .navigationBarTitleDisplayMode(.inline)
         // Nicht waehrend des Countdowns – das Blatt laege darueber
-        .roundSettings(for: .mostLikely, isAvailable: !isCounting)
+        .roundSettings(for: .mostLikely, isTiming: isCounting)
         .onDisappear { countTask?.cancel() }
     }
 

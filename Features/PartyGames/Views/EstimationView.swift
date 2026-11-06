@@ -245,11 +245,11 @@ struct EstimationView: View {
     private var cardHint: String {
         switch (questionMode, phase) {
         case (.writeDown, .allIn):
-            return "Alle haben geschätzt. Jetzt wird aufgedeckt – von ganz daneben bis am nächsten dran."
+            return "Alle haben geschätzt."
         case (.writeDown, _):
-            return "Vorlesen, dann geht das Handy reihum. Jeder tippt seine Schätzung geheim ein."
+            return "Vorlesen, dann reihum geheim tippen."
         case (.callOut, _):
-            return "Reihum schätzt jeder eine Zahl. Keine Zahl darf doppelt kommen."
+            return "Reihum eine Zahl – keine doppelt."
         }
     }
 

@@ -210,8 +210,8 @@ struct KnowYourPeopleView: View {
                 .multilineTextAlignment(.center)
 
             Text(tablePlayers.count < 2
-                 ? "Stell im Hauptmenü über das Personen-Symbol ein, wer heute am Tisch ist – mindestens zwei Leute."
-                 : "Die Fragen kommen aus euren Beerpong-Zahlen. Solange zwei Leute dort fast gleichauf liegen, gäbe es keine richtige Antwort – also fragt die App lieber nicht. Spielt ein paar Partien, dann steht hier was.")
+                 ? "Hake unter Mitspieler mindestens zwei Leute an."
+                 : "Eure Beerpong-Zahlen liegen noch zu nah beieinander. Spielt ein paar Partien.")
                 .font(BeerStatsFont.body)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)

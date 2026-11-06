@@ -65,7 +65,7 @@ struct CustomCardsView: View {
                 .font(BeerStatsFont.title)
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Werden unter die vorhandenen gemischt, nicht vorne angestellt – so tauchen sie über den Abend verteilt auf.")
+            Text("Werden unter die vorhandenen gemischt.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)

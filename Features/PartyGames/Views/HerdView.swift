@@ -82,7 +82,7 @@ struct HerdView: View {
                     PlayerCountStepper(count: $playerCount, range: 3...PartyGame.manyPlayers, tint: BeerStatsColor.success)
                 }
 
-                Text("Die App liest die Frage vor, zählt herunter, und alle sagen ihre Antwort gleichzeitig. Danach tippt ihr an, wer allein dastand – und nur das. Wer zweimal hintereinander allein ist, bekommt die Kuh und zahlt mehr.")
+                Text("Alle antworten gleichzeitig. Wer allein dasteht, trinkt.")
                     .font(BeerStatsFont.body)
                     .foregroundStyle(BeerStatsColor.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -138,7 +138,7 @@ struct HerdView: View {
                 .font(Font.world(world, 28, weight: .heavy))
                 .foregroundStyle(BeerStatsColor.textPrimary)
 
-            Text("Antippen, wer eine Antwort hatte, die sonst niemand hatte. Waren alle einer Meinung, tippt niemanden an.")
+            Text("Antippen, wer allein stand – oder niemanden.")
                 .font(BeerStatsFont.caption)
                 .foregroundStyle(BeerStatsColor.textSecondary)
                 .multilineTextAlignment(.center)
