@@ -136,6 +136,27 @@ extension PosterInk {
         )
     }
 
+    /// Ein Zeichen mit dunkler Kontur. Text auf der Leinwand kennt keinen
+    /// Strich – die Kontur ist ein Ring aus versetzten Kopien darunter.
+    static func outlinedLetter(_ g: inout GraphicsContext, _ text: String, at mitte: CGPoint, size: CGFloat, color: Color, outline: CGFloat = 3) {
+        for k in 0..<12 {
+            let w = Double(k) * .pi / 6
+            letter(&g, text, at: CGPoint(x: mitte.x + outline * CGFloat(cos(w)), y: mitte.y + outline * CGFloat(sin(w))), size: size, color: ink)
+        }
+        letter(&g, text, at: mitte, size: size, color: color)
+    }
+
+    /// Ein Keil aus der Mitte bis zum Rand, die Winkel wie bei `point`:
+    /// null oben, im Uhrzeigersinn.
+    static func wedge(_ mitte: CGPoint, _ r: CGFloat, from a0: Double, to a1: Double) -> Path {
+        var p = Path()
+        p.move(to: mitte)
+        p.addLine(to: point(mitte, r, a0))
+        p.addArc(center: mitte, radius: r, startAngle: .degrees(a0 - 90), endAngle: .degrees(a1 - 90), clockwise: false)
+        p.closeSubpath()
+        return p
+    }
+
     // MARK: - Kartenfarben
 
     /// Als Pfade, nicht als Zeichen: "♥" kaeme auf manchen Geraeten als

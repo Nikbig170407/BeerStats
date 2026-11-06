@@ -708,10 +708,10 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Entscheidung des Nutzers vom 4. November: Bilder statt eines Emoji auf
   einem Farbverlauf, im Stil eines **Siebdruck-Plakats** – flache,
   kräftige Formen in wenigen Farben, dunkle Kontur, Rasterpunkte im Grund.
-  Gezeichnet sind ganz „Mit Karten“ und von „Raten & reden“ Schocken,
-  Mäxchen, Zwei Wahrheiten, Der Spion und 21 (6. November abgenommen:
-  „die cover sind gut“; „Wer bin ich?“ wurde verworfen und neu gezeichnet).
-  Die anderen folgen – jede erst als Vorschau im Browser, dann in
+  Gezeichnet sind ganz „Mit Karten“ und „Raten & reden“ bis auf den
+  Schätzmeister (6. November abgenommen: „die cover sind gut“; „Wer bin
+  ich?“ wurde einmal verworfen und neu gezeichnet, der Schätzmeister ist
+  in Überarbeitung). Die anderen folgen – jede erst als Vorschau im Browser, dann in
   Swift. Was gilt:
   - **Gezeichnet, nicht als Bilddatei.** Das Repository ist öffentlich;
     eine Zeichnung hat keine Lizenzfrage, bleibt scharf und lässt sich
@@ -2151,7 +2151,9 @@ oben; was schief aussieht, unten.
   gelaufen. Zu prüfen:
   - **Die gezeichneten Cover**: Sieht man die Motive auf einem kleinen
     iPhone – Kronkorken, Pferdekopf, Bus, Blitz, Neonhand, Schallplatte,
-    Würfelbecher, Lügendetektor, Wäscheleine, Akte, die 21? Steht die
+    Würfelbecher, Lügendetektor, Wäscheleine, Akte, die 21, Handy mit
+    Stoppuhr, Sanduhr, zeigende Hände, Quartettkarten, Handschuhe an der
+    Scheibe, die Skala? Steht die
     Kontur der 21 sauber, und passt „GEHEIM“ in seinen Stempel? Steht das Fragezeichen bei Wahrheit oder
     Pflicht mittig in seiner Blase? Liest sich der Titel im Balken?
   - **Beerpong-Plakat und neues App-Icon**: Steht das Plakat rechts im

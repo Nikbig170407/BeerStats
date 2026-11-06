@@ -46,6 +46,18 @@ enum CoverArt: CaseIterable {
     case dossier
     /// 21.
     case twentyOne
+    /// Wer bin ich?.
+    case phoneGuess
+    /// Kategorien.
+    case hourglass
+    /// Wer wuerde eher?.
+    case pointingHands
+    /// Kennst du deine Leute?.
+    case statCards
+    /// Pantomime.
+    case mimeGloves
+    /// Die Skala.
+    case dial
 
     /// Gezeichnet wird in diesem Rahmen; die Ansicht zieht ihn auf das Cover
     /// auf. Die unteren 74 Einheiten liegen unter dem Titelbalken – dort
@@ -79,6 +91,18 @@ enum CoverArt: CaseIterable {
             return "Über eine Akte mit rotem Stempel späht ein Hut mit zwei Augen, eine Lupe zeigt einen Fingerabdruck."
         case .twentyOne:
             return "Kärtchen mit achtzehn, neunzehn und zwanzig laufen im Bogen auf eine große rote Einundzwanzig zu, die in einem Stern explodiert."
+        case .phoneGuess:
+            return "Ein Handy zeigt eine verdeckte Gestalt mit Zylinder hinter einem Fragezeichen, ein grüner Pfeil kippt nach unten, ein oranger nach oben, daneben tickt eine Stoppuhr."
+        case .hourglass:
+            return "Eine Sanduhr läuft, daneben fächern sich drei Karten mit Apfel, Auto und Stern auf."
+        case .pointingHands:
+            return "Aus allen Richtungen zeigen sechs Hände mit ausgestrecktem Finger auf eine leuchtende Gestalt in der Mitte."
+        case .statCards:
+            return "Zwei Quartettkarten mit Balken stehen sich schräg gegenüber, zwischen ihnen knallt ein gelber Stern mit VS."
+        case .mimeGloves:
+            return "Zwei weiße Handschuhe drücken gegen eine unsichtbare Glaswand zwischen roten Vorhängen, unten läuft ein Filmstreifen."
+        case .dial:
+            return "Eine halbrunde Skala mit bunter Zielzone, die rote Nadel steht kurz davor, links ein Eiswürfel, rechts eine Flamme."
         }
     }
 
@@ -97,6 +121,12 @@ enum CoverArt: CaseIterable {
         case .clothesline: return SceneArt.rgb(20, 8, 34)
         case .dossier: return SceneArt.rgb(23, 14, 7)
         case .twentyOne: return SceneArt.rgb(8, 31, 24)
+        case .phoneGuess: return SceneArt.rgb(13, 7, 32)
+        case .hourglass: return SceneArt.rgb(37, 18, 4)
+        case .pointingHands: return SceneArt.rgb(28, 5, 22)
+        case .statCards: return SceneArt.rgb(7, 22, 42)
+        case .mimeGloves: return SceneArt.rgb(14, 13, 12)
+        case .dial: return SceneArt.rgb(5, 22, 27)
         }
     }
 
@@ -115,6 +145,12 @@ enum CoverArt: CaseIterable {
         case .clothesline: Self.drawClothesline(&bild)
         case .dossier: Self.drawDossier(&bild)
         case .twentyOne: Self.drawTwentyOne(&bild)
+        case .phoneGuess: Self.drawPhoneGuess(&bild)
+        case .hourglass: Self.drawHourglass(&bild)
+        case .pointingHands: Self.drawPointingHands(&bild)
+        case .statCards: Self.drawStatCards(&bild)
+        case .mimeGloves: Self.drawMimeGloves(&bild)
+        case .dial: Self.drawDial(&bild)
         }
     }
 
