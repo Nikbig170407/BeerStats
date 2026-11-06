@@ -59,8 +59,9 @@ Lösungen. Diesen Anspruch bitte beibehalten.
   Findet Klammerfehler, mitten im Satz endende Literale, iOS-17-only-APIs
   (Deployment-Target ist **iOS 16**), Swift-Dateien, die in keinem
   Quellordner aus `project.yml` liegen und deshalb stillschweigend gar
-  nicht übersetzt werden, und ein `switch self` ohne `default`, dem ein
-  neuer Fall seiner Aufzählung fehlt. Es ist kein Compiler und ersetzt den
+  nicht übersetzt werden, ein `switch self` ohne `default`, dem ein
+  neuer Fall seiner Aufzählung fehlt, und einen statischen Wert, der wie
+  ein Fall seiner Aufzählung heißt. Es ist kein Compiler und ersetzt den
   Lauf nicht.
 - **Pushen ist erwünscht.** Push auf `main` löst den Build aus.
 - **Das Ergebnis kann Claude selbst nachlesen** – das Repo ist öffentlich,

@@ -186,7 +186,7 @@ extension CoverArt {
 
     /// Die Hand als ein Zug: drei Finger hoch, der kleine eingeknickt,
     /// der Daumen zur Seite. Die Fingerkuppen sind Halbkreise.
-    private static let neonHand: Path = {
+    private static let neonHandPath: Path = {
         var p = Path()
         func kuppe(_ mitteX: CGFloat, _ y: CGFloat, _ r: CGFloat) {
             p.addArc(center: CGPoint(x: mitteX, y: y), radius: r,
@@ -245,7 +245,7 @@ extension CoverArt {
 
         P.line(&g, P.path("M150 240 C150 262 210 262 216 296"), SceneArt.rgb(26, 16, 22), 3)
         neon(&g, P.path("M40 56 L40 34 L64 34 M236 34 L260 34 L260 56 M260 236 L260 262 L236 262 M64 262 L40 262 L40 236"), blau)
-        neon(&g, neonHand, pink)
+        neon(&g, neonHandPath, pink)
         neon(&g, P.path("M184 150 Q193 160 202 150"), pink)
 
         // Halter, die die Roehren an der Wand halten

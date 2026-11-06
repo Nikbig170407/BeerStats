@@ -256,6 +256,18 @@ def enum_switch_findings(dateien):
             if not faelle:
                 continue
 
+            # Ein statischer Wert, der wie ein Fall heisst, ist eine
+            # Doppeldeklaration - am 6. November hiess ein Pfad `neonHand`
+            # wie der Fall `.neonHand`, und der Lauf brach ab.
+            for brel, bcode, bauf, bzu in bereiche:
+                oben = top_level(bcode, bauf + 1, bzu)
+                for treffer in re.finditer(r"\bstatic\s+(?:let|var)\s+(\w+)", oben):
+                    if treffer.group(1) in faelle:
+                        funde.append(
+                            f"{brel}  static {treffer.group(1)} heisst wie der Fall "
+                            f".{treffer.group(1)} von {name} - anders nennen"
+                        )
+
             for brel, bcode, bauf, bzu in bereiche:
                 # Verschachtelte Typen haben ihr eigenes `self`
                 innen = [(m.end() - 1, block_end(bcode, m.end() - 1))
