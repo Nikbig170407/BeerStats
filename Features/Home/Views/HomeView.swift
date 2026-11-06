@@ -299,16 +299,28 @@ struct HomeView: View {
                     .foregroundStyle(tint)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: 0)
-            // Feste Groesse: Emoji in einem festen Rahmen laufen sonst ueber
-            Text("🍺")
-                .font(.system(size: 54))
-                .frame(width: 84, height: 84)
-                .background(tint.opacity(0.18), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .accessibilityHidden(true)
+            // Platz fuer das Plakat rechts, damit kein Text darauf steht
+            Spacer(minLength: Self.heroArtVisible)
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Das Plakat "Der Wurf" statt eines Bierglases (6. November) –
+        // dieselbe Zeichnung wie das App-Icon. Links blendet es aus, damit
+        // es in den Kasten uebergeht statt daraufzukleben.
+        .background(alignment: .trailing) {
+            BeerpongPosterView()
+                .frame(width: Self.heroArtSize, height: Self.heroArtSize)
+                .offset(x: 8)
+                .mask(
+                    LinearGradient(
+                        stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.34)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+        }
+        // Das Plakat ist hoeher als der Kasten – es endet an seinem Rand
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .background(
             LinearGradient(
                 colors: [tint.opacity(0.22), Color.clear],
@@ -321,6 +333,11 @@ struct HomeView: View {
         .neonEdge(tint, cornerRadius: 20, intensity: 0.5)
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
+
+    /// So gross steht das Plakat im Beerpong-Kasten, und so viel davon ist
+    /// zu sehen, bevor es nach links ausblendet.
+    private static let heroArtSize: CGFloat = 150
+    private static let heroArtVisible: CGFloat = 92
 
     /// Was unter "Beerpong" steht.
     ///

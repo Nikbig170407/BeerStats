@@ -707,8 +707,10 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Entscheidung des Nutzers vom 4. November: Bilder statt eines Emoji auf
   einem Farbverlauf, im Stil eines **Siebdruck-Plakats** – flache,
   kräftige Formen in wenigen Farben, dunkle Kontur, Rasterpunkte im Grund.
-  Das erste ist Ring of Fire („Der Kronkorken“), die anderen folgen Gruppe
-  für Gruppe. Was gilt:
+  Ring of Fire („Der Kronkorken“) und die übrigen fünf aus „Mit Karten“
+  sind gezeichnet (6. November abgenommen: „die cover sind gut“), die
+  anderen Gruppen folgen – jede erst als Vorschau im Browser, dann in
+  Swift. Was gilt:
   - **Gezeichnet, nicht als Bilddatei.** Das Repository ist öffentlich;
     eine Zeichnung hat keine Lizenzfrage, bleibt scharf und lässt sich
     Strich für Strich nachbessern – dieselbe Regel wie bei den Klängen.
@@ -718,6 +720,15 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     Cover den stillen Grund seiner Welt mit dem Emoji. Was alle Plakate
     teilen – Papier, Druckfarben, Flamme, Stern, Rasterpunkte –, steht in
     `PosterInk`; die Farben eines einzelnen Motivs stehen bei ihm.
+  - **Die Pfade kommen wörtlich aus der Vorschau** (`PosterInk.path`, liest
+    M, L, C, Q und Z): dieselben Zahlen an beiden Stellen, statt sie von
+    Hand in `addCurve` umzuschreiben. Bögen stehen als `addArc` im Code.
+    Kartenfarben sind Pfade, keine Zeichen – „♥“ käme sonst als Emoji.
+  - **Beerpong hat sein eigenes Plakat** (`BeerpongPoster`, „Der Wurf“):
+    quadratisch, ohne Titelbalken, oben im Hauptmenü im Beerpong-Kasten –
+    und als **App-Icon**. Das Icon rechnet `scripts/make_app_icon.js` aus
+    derselben Zeichnung als SVG; wer das Plakat ändert, ändert beide und
+    rechnet das Icon neu. Es wird ohne Alphakanal geschrieben, das will iOS.
   - **Gezeichnet wird in 300 × 370 Einheiten**, die Ansicht zieht es auf.
     Die unteren 74 liegen unter dem Titelbalken – dort steht nur Grund,
     nie Motiv.
@@ -2136,10 +2147,13 @@ oben; was schief aussieht, unten.
 ### Oberfläche
 - **Hauptmenü als Cover-Raster (4. November)**: nie auf einem Gerät
   gelaufen. Zu prüfen:
-  - **Das Ring-of-Fire-Cover**: Sieht man Kronkorken, Kartenkranz und die
-    Glut in der Lücke, auch auf einem kleinen iPhone? Liest sich der
-    Titel im Balken? Wirken die übrigen Cover (noch Grund und Emoji)
-    daneben zu leer – dann früher nachzeichnen.
+  - **Die sechs gezeichneten Cover** („Mit Karten“): Sieht man die Motive
+    auf einem kleinen iPhone – Kronkorken, Pferdekopf, Bus, Blitz,
+    Neonhand, Schallplatte? Steht das Fragezeichen bei Wahrheit oder
+    Pflicht mittig in seiner Blase? Liest sich der Titel im Balken?
+  - **Beerpong-Plakat und neues App-Icon**: Steht das Plakat rechts im
+    Kasten, ohne dass Text darauf liegt, auch mit großer Schrift? Und zeigt
+    Sideloadly das neue Icon auf dem Homescreen?
   - **Filter**: Wechselt das Raster sofort, und sieht man, welcher Filter
     gewählt ist? Passen die Chips ohne Rand nebeneinander oder rollen sie
     sauber zur Seite?

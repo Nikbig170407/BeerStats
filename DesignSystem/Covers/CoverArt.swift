@@ -26,6 +26,16 @@ enum CoverArt: CaseIterable {
 
     /// Ring of Fire.
     case bottleCap
+    /// Pferderennen.
+    case raceAce
+    /// Bussfahrer.
+    case nightBus
+    /// Wahrheit oder Pflicht.
+    case splitBolt
+    /// Ich hab noch nie.
+    case neonHand
+    /// Hitparade.
+    case vinyl
 
     /// Gezeichnet wird in diesem Rahmen; die Ansicht zieht ihn auf das Cover
     /// auf. Die unteren 74 Einheiten liegen unter dem Titelbalken – dort
@@ -39,6 +49,16 @@ enum CoverArt: CaseIterable {
         switch self {
         case .bottleCap:
             return "Von oben gesehen liegt ein Kranz aus Kartenrücken um einen Kronkorken mit Flamme, oben klafft eine Lücke mit Glut."
+        case .raceAce:
+            return "Ein Pferdekopf springt aus einem Pik-Ass, rechts weht eine karierte Zielflagge über der Bahn."
+        case .nightBus:
+            return "Ein Nachtbus kommt frontal mit Lichtkegeln auf der Straße, auf der Zielanzeige leuchten die vier Kartenfarben."
+        case .splitBolt:
+            return "Diagonal geteilt: links eine Sprechblase mit Fragezeichen auf Blau, rechts ein Ausrufezeichen im Zackenstern auf Rot, dazwischen ein Blitz."
+        case .neonHand:
+            return "Eine pinke Neonhand zeigt drei Finger auf dunklem Backstein, der kleine ist eingeknickt, ein blauer Rahmen leuchtet in den Ecken."
+        case .vinyl:
+            return "Eine Schallplatte rutscht vor einem Strahlenkranz aus ihrer gestreiften Hülle, ein Tonarm liegt auf, Noten fliegen heraus."
         }
     }
 
@@ -47,6 +67,11 @@ enum CoverArt: CaseIterable {
     var band: Color {
         switch self {
         case .bottleCap: return PosterInk.night
+        case .raceAce: return SceneArt.rgb(11, 42, 20)
+        case .nightBus: return SceneArt.rgb(7, 11, 30)
+        case .splitBolt: return SceneArt.rgb(42, 9, 7)
+        case .neonHand: return SceneArt.rgb(13, 6, 12)
+        case .vinyl: return SceneArt.rgb(6, 23, 30)
         }
     }
 
@@ -55,6 +80,11 @@ enum CoverArt: CaseIterable {
         bild.scaleBy(x: size.width / Self.width, y: size.height / Self.height)
         switch self {
         case .bottleCap: Self.drawBottleCap(&bild)
+        case .raceAce: Self.drawRaceAce(&bild)
+        case .nightBus: Self.drawNightBus(&bild)
+        case .splitBolt: Self.drawSplitBolt(&bild)
+        case .neonHand: Self.drawNeonHand(&bild)
+        case .vinyl: Self.drawVinyl(&bild)
         }
     }
 
@@ -144,19 +174,29 @@ enum PosterInk {
 
     /// Der Grund: ein Verlauf von innen nach aussen und darueber Rasterpunkte
     /// wie im Siebdruck – nur ueber dem Bild, nicht unter dem Titelbalken.
-    static func ground(_ g: inout GraphicsContext, inner: Color, outer: Color, center: CGPoint) {
-        let alles = CGRect(x: 0, y: 0, width: CoverArt.width, height: CoverArt.height)
-        g.fill(Path(alles), with: .radialGradient(
+    static func ground(
+        _ g: inout GraphicsContext,
+        inner: Color,
+        outer: Color,
+        center: CGPoint,
+        size: CGSize = CGSize(width: CoverArt.width, height: CoverArt.height),
+        dotsUntil: CGFloat = CoverArt.height - 74
+    ) {
+        g.fill(Path(CGRect(origin: .zero, size: size)), with: .radialGradient(
             Gradient(colors: [inner, outer]),
             center: center, startRadius: 0, endRadius: 260))
+        dots(&g, width: size.width, until: dotsUntil)
+    }
 
+    /// Die Rasterpunkte allein – fuer einen Grund, der kein Kreisverlauf ist.
+    static func dots(_ g: inout GraphicsContext, width: CGFloat, until bottom: CGFloat, opacity: Double = 0.09) {
         var punkte = Path()
-        for x in stride(from: CGFloat(5), to: CoverArt.width, by: 10) {
-            for y in stride(from: CGFloat(5), to: CoverArt.height - 74, by: 10) {
+        for x in stride(from: CGFloat(5), to: width, by: 10) {
+            for y in stride(from: CGFloat(5), to: bottom, by: 10) {
                 punkte.addEllipse(in: CGRect(x: x - 1.5, y: y - 1.5, width: 3, height: 3))
             }
         }
-        g.fill(punkte, with: .color(Color.white.opacity(0.09)))
+        g.fill(punkte, with: .color(Color.white.opacity(opacity)))
     }
 
     static func circle(_ center: CGPoint, _ r: CGFloat) -> Path {
@@ -184,8 +224,8 @@ enum PosterInk {
     }
 
     /// Ein kleiner Funke mit vier Spitzen.
-    static func sparkle(_ g: inout GraphicsContext, _ center: CGPoint, _ r: CGFloat) {
-        g.fill(star(center, outer: r, inner: r * 0.3, points: 4), with: .color(yellow))
+    static func sparkle(_ g: inout GraphicsContext, _ center: CGPoint, _ r: CGFloat, color: Color = PosterInk.yellow) {
+        g.fill(star(center, outer: r, inner: r * 0.3, points: 4), with: .color(color))
     }
 
     /// Eine Flamme, Spitze oben, Fuss unten – im Rahmen gut 100 Einheiten

@@ -464,10 +464,13 @@ enum PartyGame: String, CaseIterable, Identifiable {
     /// eingeordnet werden, auch wenn die Antwort vorerst `nil` ist.
     var coverArt: CoverArt? {
         switch self {
-        case .ringOfFire:
-            return .bottleCap
-        case .horseRace, .busRide, .truthOrDare, .neverHaveIEver, .timeline,
-             .schocken, .maexchen, .twoTruths, .spy, .headsUp, .countTo21,
+        case .ringOfFire: return .bottleCap
+        case .horseRace: return .raceAce
+        case .busRide: return .nightBus
+        case .truthOrDare: return .splitBolt
+        case .neverHaveIEver: return .neonHand
+        case .timeline: return .vinyl
+        case .schocken, .maexchen, .twoTruths, .spy, .headsUp, .countTo21,
              .estimation, .categories, .mostLikely, .knowYourPeople, .charades,
              .spectrum, .bombPass, .reactionDuel, .drinkRoulette, .herd,
              .forbiddenWords, .drinkBingo, .eveningRule:
