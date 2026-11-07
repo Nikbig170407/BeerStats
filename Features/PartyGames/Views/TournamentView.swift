@@ -168,7 +168,7 @@ struct TournamentView: View {
             // Nach dem Spiel landet man wieder hier – deshalb geht es von
             // dort aus weiter zur Wertung und nicht direkt zur nächsten Runde.
             NavigationLink {
-                game.destination
+                game.playScreen
             } label: {
                 Text("Spielen")
                     .font(BeerStatsFont.headline)

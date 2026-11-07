@@ -743,9 +743,10 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
     Emoji, kein Satz kommt doppelt vor, und kein Cover hängt an zwei
     Spielen (`CoverArtTests`).
   - **Der Weg ins Spiel ist `PartyGame.playScreen`** – das Spiel samt
-    Vermerk im Abend, an einer Stelle. Die Seite des Spiels nimmt ihn.
-    Würfel und Turnier öffnen ihre Spiele bisher über `destination` und
-    vermerken sie deshalb nicht im Abend – bekannt, noch nicht entschieden.
+    Vermerk im Abend, an einer Stelle. Die Seite des Spiels und das
+    Turnier nehmen ihn. Der Würfel vermerkt selbst am Link und nimmt
+    deshalb `destination` – nähme er `playScreen`, stünde das Spiel doppelt
+    im Abend.
 
 - **Jede Szene hat ihre eigene Bewegung**
   (`DesignSystem/Components/DrawnScenes.swift`). Entscheidung des Nutzers
