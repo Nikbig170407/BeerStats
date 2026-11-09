@@ -951,8 +951,9 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   weiß, wer die Drei ist. Zwei Feinheiten, die beide in einem Kommentar am
   Zähler stehen: Bei „Ich hab noch nie" zählt eine **Strafkarte nicht**
   weiter (sie trifft alle, danach liest dieselbe Person), und beim
-  Bussfahrer zählt sie nur nach einer **geschafften** Hand – nach einem
-  Fehler fängt dieselbe Person von vorne an.
+  Bussfahrer zählt jeder Versuch weiter, auch nach einem Fehler (7. November:
+  „stand immer Björn ist dran“ – eine Zeile, die bei Fehlern stehen bleibt,
+  sieht eingefroren aus).
 
 - **Beerpong nennt seine Teams nach den Leuten** (18. Oktober), nicht
   „Team 1". Die Zeichenarbeit liegt in `Team` und ist getestet, weil mit den
@@ -2099,8 +2100,8 @@ oben; was schief aussieht, unten.
   scheitern kann, und sie fällt nur am Tisch auf. Dazu: Ist das Antippen,
   wer allein stand, mit sieben Leuten schnell genug, oder bremst es?
 - **Die Skala (22. Oktober)**: Trifft die Runde die Zone oft genug, dass
-  es sich nach Können anfühlt? Die Trefferzone ist 15 Prozent breit, der
-  straffreie Ring 36 – beides gerechnet, nicht erprobt. Zu schmal heißt
+  es sich nach Können anfühlt? Die Trefferzone ist 12 Prozent breit (vorher 15, auf Wunsch schmaler), der
+  straffreie Ring 30 – beides gerechnet, nicht erprobt. Zu schmal heißt
   Lotterie, zu breit heißt, jeder Hinweis gewinnt. Und: Lässt sich der
   Zeiger am Tisch gemeinsam bedienen, oder reißt ihn einer an sich? Seit
   dem 28. Oktober zieht man ihn direkt auf der Scheibe statt an einem

@@ -199,8 +199,8 @@ struct BusRideView: View {
 
         case .wrong(let sips):
             resultPanel(
-                board: ("DANEBEN", "VON VORN"),
-                message: "Trink \(DrinkAmount.sips(sips).text) und fang von vorne an.",
+                board: ("DANEBEN", "WEITER"),
+                message: "Trink \(DrinkAmount.sips(sips).text). Das Handy geht weiter.",
                 tint: BeerStatsColor.error
             )
 
@@ -414,13 +414,11 @@ struct BusRideView: View {
 
     private func restartHand() {
         if deck.count < 8 { deck = PlayingCardDeck.shuffled() }
-        // Nach einer geschafften Hand ist der Naechste dran. Nach einem
-        // Fehler faengt DIESELBE Person von vorne an – so steht es in der
-        // Anleitung, und der Zug darf dann nicht weiterlaufen.
-        switch phase {
-        case .wrong, .busted: break
-        default: turn += 1
-        }
+        // Jeder Versuch gehoert der naechsten Person – auch nach einem
+        // Fehler. Am Tisch reicht die Runde das Handy weiter, und eine
+        // Zeile, die bei Fehlern auf demselben Namen stehen bleibt, sah
+        // aus wie eingefroren (gemeldet: \"immer Bjoern\").
+        turn += 1
 
         withAnimation(AppAnimation.standard) {
             drawn.removeAll()

@@ -32,10 +32,10 @@ struct SpectrumView: View {
         case result
     }
 
-    /// Haelfte der Trefferzone: funfzehn Prozent der Skala insgesamt.
-    private static let bullseye: Double = 7.5
+    /// Haelfte der Trefferzone: zwoelf Prozent der Skala insgesamt.
+    private static let bullseye: Double = 6
     /// Haelfte des straffreien Rings.
-    private static let nearMiss: Double = 18
+    private static let nearMiss: Double = 15
 
     @State private var phase: Phase = .handoff
     @State private var deck: [SpectrumCard] = []
