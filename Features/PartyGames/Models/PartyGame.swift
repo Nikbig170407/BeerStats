@@ -481,7 +481,8 @@ enum PartyGame: String, CaseIterable, Identifiable {
         case .knowYourPeople: return .statCards
         case .charades: return .mimeGloves
         case .spectrum: return .dial
-        case .estimation, .bombPass, .reactionDuel, .drinkRoulette, .herd,
+        case .estimation: return .slotCounter
+        case .bombPass, .reactionDuel, .drinkRoulette, .herd,
              .forbiddenWords, .drinkBingo, .eveningRule:
             return nil
         }

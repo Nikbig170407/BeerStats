@@ -58,6 +58,8 @@ enum CoverArt: CaseIterable {
     case mimeGloves
     /// Die Skala.
     case dial
+    /// Schaetzmeister.
+    case slotCounter
 
     /// Gezeichnet wird in diesem Rahmen; die Ansicht zieht ihn auf das Cover
     /// auf. Die unteren 74 Einheiten liegen unter dem Titelbalken – dort
@@ -101,6 +103,8 @@ enum CoverArt: CaseIterable {
             return "Zwei Quartettkarten mit Balken stehen sich schräg gegenüber, zwischen ihnen knallt ein gelber Stern mit VS."
         case .mimeGloves:
             return "Zwei weiße Handschuhe drücken gegen eine unsichtbare Glaswand zwischen roten Vorhängen, unten läuft ein Filmstreifen."
+        case .slotCounter:
+            return "Drei Zahlenwalzen in einem goldenen Zählwerk zeigen Vier, Zwei und ein Fragezeichen, ringsum Glühbirnen, unten rollt sich ein gelbes Maßband aus."
         case .dial:
             return "Eine halbrunde Skala mit bunter Zielzone, die rote Nadel steht kurz davor, links ein Eiswürfel, rechts eine Flamme."
         }
@@ -127,6 +131,7 @@ enum CoverArt: CaseIterable {
         case .statCards: return SceneArt.rgb(7, 22, 42)
         case .mimeGloves: return SceneArt.rgb(14, 13, 12)
         case .dial: return SceneArt.rgb(5, 22, 27)
+        case .slotCounter: return SceneArt.rgb(22, 4, 13)
         }
     }
 
@@ -151,6 +156,7 @@ enum CoverArt: CaseIterable {
         case .statCards: Self.drawStatCards(&bild)
         case .mimeGloves: Self.drawMimeGloves(&bild)
         case .dial: Self.drawDial(&bild)
+        case .slotCounter: Self.drawEstimation(&bild)
         }
     }
 
