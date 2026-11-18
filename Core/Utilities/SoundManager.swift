@@ -250,6 +250,21 @@ enum SoundManager {
         scheduleFadeOutIfNeeded(for: sound, player: player)
     }
 
+    /// Laedt Klaenge vor, damit der erste Ton nicht beim Abspielen von der
+    /// Platte gelesen wird. Ein Spieler entsteht sonst erst beim ersten
+    /// `play` – und genau das ruckelte am Anfang von Ring of Fire, beim
+    /// ersten Austeilen und beim ersten Drehen. Einer je Durchgang der
+    /// Hauptschleife, damit das Vorladen selbst nichts blockiert.
+    @MainActor
+    static func warmUp(_ sounds: [GameSound]) async {
+        guard isEnabled else { return }
+        configureSessionIfNeeded()
+        for sound in sounds {
+            for name in sound.fileNames { _ = player(named: name) }
+            await Task.yield()
+        }
+    }
+
     /// Beendet alles Laufende – etwa beim Verlassen des Spielscreens.
     static func stopAll() {
         pendingStops.values.forEach { $0.cancel() }

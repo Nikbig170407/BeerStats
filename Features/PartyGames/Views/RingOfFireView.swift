@@ -172,6 +172,12 @@ struct RingOfFireView: View {
     @State private var isAskingForRule = false
     @State private var ruleDraft = ""
 
+    private static let warmSounds: [GameSound] =
+        [.ringShuffle, .ringTick, .ringStop, .ringDraw, .ringTear, .ringHolds, .ringOut]
+        + (2...14).map { GameSound.ringRank($0) }
+        + [.ringSplat, .ringGush, .ringStream, .ringThunder, .ringShimmer, .ringChoir,
+           .ringBeat, .ringWhoosh, .ringHeartbeat, .ringSpotlight, .ringFlutter, .ringBlaze]
+
     private var remaining: Int { ring.compactMap { $0 }.count }
 
     var body: some View {
@@ -184,6 +190,13 @@ struct RingOfFireView: View {
         }
         .navigationTitle("Ring of Fire")
         .navigationBarTitleDisplayMode(.inline)
+        // Klaenge und Haptik vorladen: Der erste Ton und der erste Stoss
+        // lasen sonst beim Austeilen und beim ersten Drehen erst ihre
+        // Dateien, und genau dort ruckelte es.
+        .task {
+            HapticManager.warmUp()
+            await SoundManager.warmUp(Self.warmSounds)
+        }
         // Das Zahnrad bleibt stehen, auch waehrend gezogen und ausgeteilt
         // wird. Bis zum 30. Oktober verschwand es dabei, damit es dem
         // Kartenscreen nicht in die Quere kommt – und tauchte so bei jedem

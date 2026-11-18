@@ -18,6 +18,22 @@ enum HapticManager {
     private static let heavyGenerator = UIImpactFeedbackGenerator(style: .heavy)
     private static let notificationGenerator = UINotificationFeedbackGenerator()
 
+    /// Weckt Generatoren und Muster-Maschine vor dem ersten Gebrauch. Der
+    /// erste Stoss braucht sonst spuerbar laenger als alle folgenden.
+    static func warmUp() {
+        lightGenerator.prepare()
+        mediumGenerator.prepare()
+        heavyGenerator.prepare()
+        notificationGenerator.prepare()
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        if engine == nil, let maschine = try? CHHapticEngine() {
+            maschine.isAutoShutdownEnabled = true
+            maschine.resetHandler = { [weak maschine] in try? maschine?.start() }
+            engine = maschine
+        }
+        try? engine?.start()
+    }
+
     /// Für kleine, häufige Interaktionen: Button-Taps, Auswahl-Änderungen.
     static func lightImpact() {
         lightGenerator.prepare()
