@@ -60,6 +60,20 @@ enum CoverArt: CaseIterable {
     case dial
     /// Schaetzmeister.
     case slotCounter
+    /// Bombe.
+    case timeBomb
+    /// Reaktionsduell.
+    case buzzerLight
+    /// Trink-Roulette.
+    case rouletteWheel
+    /// Die Herde.
+    case blackSheep
+    /// Verbotene Woerter.
+    case bannedCard
+    /// Trinkbingo.
+    case bingoSheet
+    /// Regel des Abends.
+    case gavelScroll
 
     /// Gezeichnet wird in diesem Rahmen; die Ansicht zieht ihn auf das Cover
     /// auf. Die unteren 74 Einheiten liegen unter dem Titelbalken – dort
@@ -105,6 +119,20 @@ enum CoverArt: CaseIterable {
             return "Zwei weiße Handschuhe drücken gegen eine unsichtbare Glaswand zwischen roten Vorhängen, unten läuft ein Filmstreifen."
         case .slotCounter:
             return "Drei Zahlenwalzen in einem goldenen Zählwerk zeigen Vier, Zwei und ein Fragezeichen, ringsum Glühbirnen, unten rollt sich ein gelbes Maßband aus."
+        case .timeBomb:
+            return "Eine schwarze Bombe mit zischender Zündschnur, auf ihrem Bauch ein Zifferblatt kurz vor zwölf, ringsum Funken."
+        case .buzzerLight:
+            return "Eine Ampel springt auf Grün, links und rechts darunter je ein Buzzer, ein Blitz schlägt dazwischen."
+        case .rouletteWheel:
+            return "Ein Roulette-Rad aus roten und schwarzen Tortenstücken mit goldener Nabe, oben zeigt ein Zeiger auf das grüne Feld, eine Kugel liegt im Rad."
+        case .blackSheep:
+            return "Eine Herde weißer Schafe drängt sich auf einer Wiese unter dem Mond, ein schwarzes Schaf steht allein links davor."
+        case .bannedCard:
+            return "Eine Karte mit einem großen Wort, die drei Zeilen darunter sind rot durchgestrichen, davor ein Verbotsschild und ein Streifen Klebeband."
+        case .bingoSheet:
+            return "Ein Bingoblatt mit vier mal vier Feldern, einige tragen rote Klekse, eine Reihe ist grün durchgestrichen."
+        case .gavelScroll:
+            return "Ein Richterhammer schlägt auf ein aufgerolltes Pergament mit dem Wort REGEL, daneben ein rotes Wachssiegel."
         case .dial:
             return "Eine halbrunde Skala mit bunter Zielzone, die rote Nadel steht kurz davor, links ein Eiswürfel, rechts eine Flamme."
         }
@@ -132,6 +160,13 @@ enum CoverArt: CaseIterable {
         case .mimeGloves: return SceneArt.rgb(14, 13, 12)
         case .dial: return SceneArt.rgb(5, 22, 27)
         case .slotCounter: return SceneArt.rgb(22, 4, 13)
+        case .timeBomb: return SceneArt.rgb(31, 6, 5)
+        case .buzzerLight: return SceneArt.rgb(4, 24, 15)
+        case .rouletteWheel: return SceneArt.rgb(4, 20, 11)
+        case .blackSheep: return SceneArt.rgb(5, 11, 32)
+        case .bannedCard: return SceneArt.rgb(26, 5, 20)
+        case .bingoSheet: return SceneArt.rgb(4, 26, 38)
+        case .gavelScroll: return SceneArt.rgb(11, 6, 28)
         }
     }
 
@@ -157,6 +192,13 @@ enum CoverArt: CaseIterable {
         case .mimeGloves: Self.drawMimeGloves(&bild)
         case .dial: Self.drawDial(&bild)
         case .slotCounter: Self.drawEstimation(&bild)
+        case .timeBomb: Self.drawTimeBomb(&bild)
+        case .buzzerLight: Self.drawBuzzerLight(&bild)
+        case .rouletteWheel: Self.drawRouletteWheel(&bild)
+        case .blackSheep: Self.drawBlackSheep(&bild)
+        case .bannedCard: Self.drawBannedCard(&bild)
+        case .bingoSheet: Self.drawBingoSheet(&bild)
+        case .gavelScroll: Self.drawGavelScroll(&bild)
         }
     }
 

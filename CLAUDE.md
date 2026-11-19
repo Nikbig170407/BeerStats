@@ -708,18 +708,19 @@ dem Code allein erst sieht, wenn man sie schon gebrochen hat.
   Entscheidung des Nutzers vom 4. November: Bilder statt eines Emoji auf
   einem Farbverlauf, im Stil eines **Siebdruck-Plakats** – flache,
   kräftige Formen in wenigen Farben, dunkle Kontur, Rasterpunkte im Grund.
-  Gezeichnet sind ganz „Mit Karten“ und „Raten & reden“ (6. November
-  abgenommen: „die cover sind gut“; „Wer bin ich?“ und der Schätzmeister
-  wurden je einmal verworfen und neu gezeichnet). Die anderen folgen –
-  jede erst als Vorschau im Browser, dann in
+  Gezeichnet sind alle Spiele (6. November abgenommen: „die cover sind
+  gut“; „Wer bin ich?“ und der Schätzmeister wurden je einmal verworfen und
+  neu gezeichnet; die letzten sieben am 19. November). Ein neues Spiel
+  bekommt sein Cover so: erst als Vorschau im Browser, dann in
   Swift. Was gilt:
   - **Gezeichnet, nicht als Bilddatei.** Das Repository ist öffentlich;
     eine Zeichnung hat keine Lizenzfrage, bleibt scharf und lässt sich
     Strich für Strich nachbessern – dieselbe Regel wie bei den Klängen.
   - **Ein Cover ist ein Fall von `CoverArt`**, und welches Spiel welches
     trägt, steht im Katalog (`PartyGame.coverArt`, vollständiges `switch`
-    ohne `default`). `nil` heißt: noch keine Zeichnung, dann trägt das
-    Cover den stillen Grund seiner Welt mit dem Emoji. Was alle Plakate
+    ohne `default`). `nil` heißt: noch keine Zeichnung – derzeit hat jedes
+    Spiel eine; dann trägt das Cover den stillen Grund seiner Welt mit dem
+    Emoji. Was alle Plakate
     teilen – Papier, Druckfarben, Flamme, Stern, Rasterpunkte –, steht in
     `PosterInk`; die Farben eines einzelnen Motivs stehen bei ihm.
   - **Die Pfade kommen wörtlich aus der Vorschau** (`PosterInk.path`, liest
